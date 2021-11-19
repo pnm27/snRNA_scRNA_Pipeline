@@ -1,0 +1,48 @@
+__default__:
+  - "-P acc_CommonMind"
+  - "-W 48:00"
+
+PICARD_metrics:
+  - "-q express"
+
+create_FB:
+  - "-q express"
+
+create_mismatch_fasta:
+  - "-q express"
+
+build_kallisto_index:
+  - "-q express"
+
+run_kallisto:
+  - "-q express"
+
+run_bustools_correct:
+  - "-q express"
+
+run_bustools_sort:
+  - "-q express"
+
+run_bustools_count:
+  - "-q express"
+
+create_h5ad_bustools:
+  - "-q express"
+
+run_calico_solo:
+  - "-q express"
+
+demux_samples_MULTIseq_solo_STARsolo:
+  - "-q express"
+
+cellSNP:
+  - "-q premium"
+  - "-W 06:00"
+
+vireoSNP:
+  - "-W 00:50"
+  - "-q express"
+
+update_stats:
+  - "-q express"
+
