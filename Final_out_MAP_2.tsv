@@ -1,0 +1,159 @@
+Started job on	JOB_START	STAR	REG	
+Started mapping on	MAP_START	STAR	REG	
+Finished on	JOB_FINISH	STAR	REG	
+"Mapping speed, Million of reads per hour"	MAP_SPEED	STAR	REG	
+Number of input reads	N_READS	STAR	REG	
+Average input read length	AVG_READ_LEN	STAR	REG	
+Uniquely mapped reads number	N_UNI_MAP_READS	STAR	REG	
+Uniquely mapped reads %	PER_UNI_MAP_READS	STAR	REG	
+Average mapped length	AVG_MAP_LEN	STAR	REG	
+Number of splices: Total	TOTAL_N_SPLICES	STAR	REG	
+Number of splices: Annotated (sjdb)	ANNO_TOTAL_SPLICES	STAR	REG	
+Number of splices: GT/AG	GTAG_N_SPLICES	STAR	REG	
+Number of splices: GC/AG	GCAG_N_SPLICES	STAR	REG	
+Number of splices: AT/AC	ATAC_N_SPLICES	STAR	REG	
+Number of splices: Non-canonical	NON_CANON_N_SPLICES	STAR	REG	
+"Mismatch rate per base, %"	MMR_PER_BASE	STAR	REG	
+Deletion rate per base	DEL_RATE_PER_BASE	STAR	REG	
+Deletion average length	DEL_AVG_LEN	STAR	REG	
+Insertion rate per base	INS_RATE_PER_BASE	STAR	REG	
+Insertion average length	INS_AVG_LEN	STAR	REG	
+Number of reads mapped to multiple loci	N_MULTI_MAP_READS	STAR	REG	
+% of reads mapped to multiple loci	PER_MULTI_MAP_READS	STAR	REG	
+Number of reads mapped to too many loci	N_TOO_MANY_MAP_READS	STAR	REG	
+% of reads mapped to too many loci	PER_TOO_MANY_MAP_READS	STAR	REG	
+Number of reads unmapped: too many mismatches	N_UNMAP_READS_TOO_MANY_MM	STAR	REG	
+% of reads unmapped: too many mismatches	PER_UNMAP_READS_TOO_MANY_MM	STAR	REG	
+Number of reads unmapped: too short	N_UNMAP_READS_TOO_SHORT	STAR	REG	
+% of reads unmapped: too short	PER_UNMAP_READS_TOO_SHORT	STAR	REG	
+Number of reads unmapped: other	N_UNMAP_READS_OTHER	STAR	REG	
+% of reads unmapped: other	PER_UNMAP_READS_OTHER	STAR	REG	
+Number of chimeric reads	N_CHIMERIC_READS	STAR	REG	
+% of chimeric reads	PER_CHIMERIC_READS	STAR	REG	
+ACCUMULATION_LEVEL	ACCUMULATION_LEVEL	PICARD	GC	
+READS_USED	READS_USED	PICARD	GC	
+WINDOW_SIZE	WINDOW_SIZE	PICARD	GC	
+TOTAL_CLUSTERS	TOTAL_CLUSTERS	PICARD	GC	
+ALIGNED_READS	ALIGNED_READS	PICARD	GC	
+AT_DROPOUT	AT_DROPOUT	PICARD	GC	
+GC_DROPOUT	GC_DROPOUT	PICARD	GC	
+GC_NC_0_19	GC_NC_0_19	PICARD	GC	
+GC_NC_20_39	GC_NC_20_39	PICARD	GC	
+GC_NC_40_59	GC_NC_40_59	PICARD	GC	
+GC_NC_60_79	GC_NC_60_79	PICARD	GC	
+GC_NC_80_100	GC_NC_80_100	PICARD	GC	
+LIBRARY	LIBRARY	PICARD	GC	
+READ_GROUP	READ_GROUP	PICARD	GC	
+PF_BASES	PF_BASES	PICARD	RNASEQMETRIC	
+PF_ALIGNED_BASES	PF_ALIGNED_BASES	PICARD	RNASEQMETRIC	
+RIBOSOMAL_BASES	RIBOSOMAL_BASES	PICARD	RNASEQMETRIC	
+CODING_BASES	CODING_BASES	PICARD	RNASEQMETRIC	
+UTR_BASES	UTR_BASES	PICARD	RNASEQMETRIC	
+INTRONIC_BASES	INTRONIC_BASES	PICARD	RNASEQMETRIC	
+INTERGENIC_BASES	INTERGENIC_BASES	PICARD	RNASEQMETRIC	
+IGNORED_READS	IGNORED_READS	PICARD	RNASEQMETRIC	
+CORRECT_STRAND_READS	CORRECT_STRAND_READS	PICARD	RNASEQMETRIC	
+INCORRECT_STRAND_READS	INCORRECT_STRAND_READS	PICARD	RNASEQMETRIC	
+NUM_R1_TRANSCRIPT_STRAND_READS	NUM_R1_TRANSCRIPT_STRAND_READS	PICARD	RNASEQMETRIC	
+NUM_R2_TRANSCRIPT_STRAND_READS	NUM_R2_TRANSCRIPT_STRAND_READS	PICARD	RNASEQMETRIC	
+NUM_UNEXPLAINED_READS	NUM_UNEXPLAINED_READS	PICARD	RNASEQMETRIC	
+PCT_R1_TRANSCRIPT_STRAND_READS	PCT_R1_TRANSCRIPT_STRAND_READS	PICARD	RNASEQMETRIC	
+PCT_R2_TRANSCRIPT_STRAND_READS	PCT_R2_TRANSCRIPT_STRAND_READS	PICARD	RNASEQMETRIC	
+PCT_RIBOSOMAL_BASES	PCT_RIBOSOMAL_BASES	PICARD	RNASEQMETRIC	
+PCT_CODING_BASES	PCT_CODING_BASES	PICARD	RNASEQMETRIC	
+PCT_UTR_BASES	PCT_UTR_BASES	PICARD	RNASEQMETRIC	
+PCT_INTRONIC_BASES	PCT_INTRONIC_BASES	PICARD	RNASEQMETRIC	
+PCT_INTERGENIC_BASES	PCT_INTERGENIC_BASES	PICARD	RNASEQMETRIC	
+PCT_MRNA_BASES	PCT_MRNA_BASES	PICARD	RNASEQMETRIC	
+PCT_USABLE_BASES	PCT_USABLE_BASES	PICARD	RNASEQMETRIC	
+PCT_CORRECT_STRAND_READS	PCT_CORRECT_STRAND_READS	PICARD	RNASEQMETRIC	
+MEDIAN_CV_COVERAGE	MEDIAN_CV_COVERAGE	PICARD	RNASEQMETRIC	
+MEDIAN_5PRIME_BIAS	MEDIAN_5PRIME_BIAS	PICARD	RNASEQMETRIC	
+MEDIAN_3PRIME_BIAS	MEDIAN_3PRIME_BIAS	PICARD	RNASEQMETRIC	
+MEDIAN_5PRIME_TO_3PRIME_BIAS	MEDIAN_5PRIME_TO_3PRIME_BIAS	PICARD	RNASEQMETRIC	
+LIBRARY	LIBRARY	PICARD	RNASEQMETRIC	
+READ_GROUP	READ_GROUP	PICARD	RNASEQMETRIC	
+nUnmapped	N_READS_UNMAP	STARsolo	GENE_FEATURE	number of reads unmapped to the genome
+nNoFeature	N_READS _NO_FEATURE	STARsolo	GENE_FEATURE	number of reads that map to the genome but do not belong to a feature
+nAmbigFeature	N_READS_AMBI_FEATURE	STARsolo	GENE_FEATURE	number of reads that belong to more than one feature
+nAmbigFeatureMultimap	N_READS_AMBI_FEATURE_MULTI_MAP	STARsolo	GENE_FEATURE	number of reads that belong to more than one feature and are also multimapping to the genome (this is a subset of the nAmbigFeature)
+nTooMany	N_READS_TOO_MANY	STARsolo	GENE_FEATURE	number of reads with ambiguous CB (i.e. CB matches whitelist with one mismatch but with posterior probability 0.95)
+nNoExactMatch	N_READS_NO_EXACT_MATCH	STARsolo	GENE_FEATURE	"number of reads with CB that matches a whitelist barcode with 1 mismatch, but this whitelist barcode does not get any other reads with exact matches of CB"
+nExactMatch	N_READS_EXACT_MATCH	STARsolo	GENE_FEATURE	number of reads with CB that match the whitelist exactly
+nMatch	N_READS_MATCH	STARsolo	GENE_FEATURE	total number of reads that match CB with 0 or 1 mismatches (this is superset of nExactMatch)
+nCellBarcodes	N_CB_UNIQ	STARsolo	GENE_FEATURE	
+nUMIs	N_UMI_UNIQ	STARsolo	GENE_FEATURE	
+Number of Reads	N_READS	STARsolo	GENE_SUMM	
+Reads With Valid Barcodes	N_READS_VALID_BC	STARsolo	GENE_SUMM	
+Sequencing Saturation	SEQ_SAT	STARsolo	GENE_SUMM	
+Q30 Bases in CB+UMI	N_Q30_BASES_CB_UMI	STARsolo	GENE_SUMM	
+Q30 Bases in RNA read	N_Q30_BASES_READS	STARsolo	GENE_SUMM	
+Reads Mapped to Genome: Unique+Multiple	FRAC_MAP_GENOME_ALL	STARsolo	GENE_SUMM	
+Reads Mapped to Genome: Unique	FRAC_MAP_GENOME_UNIQ	STARsolo	GENE_SUMM	
+Reads Mapped to Transcriptome: Unique+Multipe Genes	FRAC_MAP_TRANS_ALL	STARsolo	GENE_SUMM	
+Reads Mapped to Transcriptome: Unique Genes	FRAC_MAP_TRANS_UNIQ	STARsolo	GENE_SUMM	
+Estimated Number of Cells	N_CELLS_EST	STARsolo	GENE_SUMM	
+Reads in Cells Mapped to Unique Genes	N_READS_MAP_UNIQ_GENES	STARsolo	GENE_SUMM	
+Fraction of Reads in Cells	FRAC_READS_CELLS	STARsolo	GENE_SUMM	
+Mean Reads per Cell	MEAN_READS_PER_CELL	STARsolo	GENE_SUMM	
+Median Reads per Cell	MEDIAN_READS_PER_CELL	STARsolo	GENE_SUMM	
+UMIs in Cells	N_UMI_CELL	STARsolo	GENE_SUMM	
+Mean UMI per Cell	MEAN_UMI_PER_CELL	STARsolo	GENE_SUMM	
+Median UMI per Cell	MEDIAN_UMI_PER_CELL	STARsolo	GENE_SUMM	
+Mean Genes per Cell	MEAN_GENES_PER_CELL	STARsolo	GENE_SUMM	
+Median Genes per Cell	MEDIAN_GENES_PER_CELL	STARsolo	GENE_SUMM	
+Total Genes Detected	TOTAL_GENES_DETECT	STARsolo	GENE_SUMM	
+nUnmapped	N_READS_UNMAP	STARsolo	GENEFULL_FEATURE	
+nNoFeature	N_READS _NO_FEATURE	STARsolo	GENEFULL_FEATURE	
+nAmbigFeature	N_READS_AMBI_FEATURE	STARsolo	GENEFULL_FEATURE	
+nAmbigFeatureMultimap	N_READS_AMBI_FEATURE_MULTI_MAP	STARsolo	GENEFULL_FEATURE	
+nTooMany	N_READS_TOO_MANY	STARsolo	GENEFULL_FEATURE	
+nNoExactMatch	N_READS_NO_EXACT_MATCH	STARsolo	GENEFULL_FEATURE	
+nExactMatch	N_READS_EXACT_MATCH	STARsolo	GENEFULL_FEATURE	
+nMatch	N_READS_MATCH	STARsolo	GENEFULL_FEATURE	
+nCellBarcodes	N_CB_UNIQ	STARsolo	GENEFULL_FEATURE	
+nUMIs	N_UMI_UNIQ	STARsolo	GENEFULL_FEATURE	
+Number of Reads	N_READS	STARsolo	GENEFULL_SUMM	
+Reads With Valid Barcodes	N_READS_VALID_BC	STARsolo	GENEFULL_SUMM	
+Sequencing Saturation	SEQ_SAT	STARsolo	GENEFULL_SUMM	
+Q30 Bases in CB+UMI	N_Q30_BASES_CB_UMI	STARsolo	GENEFULL_SUMM	
+Q30 Bases in RNA read	N_Q30_BASES_READS	STARsolo	GENEFULL_SUMM	
+Reads Mapped to Genome: Unique+Multiple	FRAC_MAP_GENOME_ALL	STARsolo	GENEFULL_SUMM	
+Reads Mapped to Genome: Unique	FRAC_MAP_GENOME_UNIQ	STARsolo	GENEFULL_SUMM	
+Reads Mapped to Transcriptome: Unique+Multipe GeneFulls	FRAC_MAP_TRANS_ALL	STARsolo	GENEFULL_SUMM	
+Reads Mapped to Transcriptome: Unique GeneFulls	FRAC_MAP_TRANS_UNIQ	STARsolo	GENEFULL_SUMM	
+Estimated Number of Cells	N_CELLS_EST	STARsolo	GENEFULL_SUMM	
+Reads in Cells Mapped to Unique GeneFulls	N_READS_MAP_UNIQ_GENES	STARsolo	GENEFULL_SUMM	
+Fraction of Reads in Cells	FRAC_READS_CELLS	STARsolo	GENEFULL_SUMM	
+Mean Reads per Cell	MEAN_READS_PER_CELL	STARsolo	GENEFULL_SUMM	
+Median Reads per Cell	MEDIAN_READS_PER_CELL	STARsolo	GENEFULL_SUMM	
+UMIs in Cells	N_UMI_CELL	STARsolo	GENEFULL_SUMM	
+Mean UMI per Cell	MEAN_UMI_PER_CELL	STARsolo	GENEFULL_SUMM	
+Median UMI per Cell	MEDIAN_UMI_PER_CELL	STARsolo	GENEFULL_SUMM	
+Mean GeneFulls per Cell	MEAN_GENES_PER_CELL	STARsolo	GENEFULL_SUMM	
+Median GeneFulls per Cell	MEDIAN_GENES_PER_CELL	STARsolo	GENEFULL_SUMM	
+Total GeneFulls Detected	TOTAL_GENES_DETECT	STARsolo	GENEFULL_SUMM	
+nNoAdapter	N_READS_NO_ADAPTER	STARsolo	BARCODE_STATS	
+nNoUMI	N_READS_NO_UMI	STARsolo	BARCODE_STATS	
+nNoCB	N_READS_NO_CB	STARsolo	BARCODE_STATS	
+nNinCB	N_READS_NN_IN_CB	STARsolo	BARCODE_STATS	number of reads with more than 2 Ns in cell barcode (CB)
+nNinUMI	N_READS_NN_IN_UMI	STARsolo	BARCODE_STATS	
+nUMIhomopolymer	N_READS_UMI_HOMOPOLY	STARsolo	BARCODE_STATS	number of reads with homopolymer in CB
+nTooMany	N_READS_TOO_MANY	STARsolo	BARCODE_STATS	
+nNoMatch	N_READS_NO_MATCH	STARsolo	BARCODE_STATS	number of reads with CBs that do not match whitelist even with one mismatch
+nMismatchesInMultCB	N_READS_MISMATCH_MULTI_CB	STARsolo	BARCODE_STATS	
+nExactMatch	N_READS_EXACT_MATCH	STARsolo	BARCODE_STATS	
+nMismatchOneWL	N_MM_ONE_WL	STARsolo	BARCODE_STATS	
+nMismatchToMultWL	N_MM_MULTI_WL	STARsolo	BARCODE_STATS	
+Started with cells	N_CELLS_START	STARsolo	DEMUX	
+Started with genes	N_GENES_START	STARsolo	DEMUX	
+Unique genes	N_GENES_UNIQ	STARsolo	DEMUX	
+min #genes expressed per cell	THRESH_N_GENES_PER_CELL	STARsolo	DEMUX	min no. of genes to be expressed by a cell to pass filter (Basic Filter)
+min #cells expressing per gene	THRESH_N_CELLS_EXPRESS_GENE	STARsolo	DEMUX	min no. of cells required to express a gene for it to pass filter (Basic Filter)
+Retained cells after previous filter	N_CELLS_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining cells after applying Basic Filter
+Retained genes after previous filter	N_GENES_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining genes after applying Basic Filter
+max percent mito content per cell	THRESH_MAX_MITO_PERCENT	STARsolo	DEMUX	max. mitochondrial genes percent per cell
+cells with low mito percent	N_CELLS_LOW_MITO_PERCENT	STARsolo	DEMUX	cells that pass the mitochondrial content filter
+Doublets #cells_cs	N_DOUBLET_CELLS_CS	STARsolo	DEMUX	doublet cells as identified by calico solo
+Negative #cells_cs	N_NEGATIVE_CELLS_CS	STARsolo	DEMUX	negative cells as identified by calico solo
+After demultiplexing #cells_cs	N_CELLS_AFTER_DEMUX_CS	STARsolo	DEMUX	Remaining cells after demultiplexing

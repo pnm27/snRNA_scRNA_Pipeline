@@ -36,7 +36,8 @@ parser.add_argument('wet_lab_file', help="Path to file that contains HTO info fo
 parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
 parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
 parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
-
+parser.add_argument('-h', '--headers', nargs=3, help="List of column names RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), \
+    HTO numbers and Donors/SubIDs. Default: ['cDNA_ID', 'hashtag', 'SubID']", default=['cDNA_ID', 'hashtag', 'SubID'])
 
 args = parser.parse_args()
 
@@ -44,13 +45,16 @@ args = parser.parse_args()
 # Storing parsed inputs
 starsolo_hashsolo_out = args.hashsolo_out
 starsolo_mat = args.matrix_file[:-13]
+columns_to_pick = args.headers
 
+# Extra information/annotation -------------------------------------------
 # Batch and round info
 batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
 r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
 preparer_rep=batch.split('-')[2]
 replicate=preparer_rep[1]
 preparer=preparer_rep[0]
+# ------------------------------------------------------------------------
 
 # Parameters for filtering
 max_mito=args.max_mito
@@ -69,7 +73,7 @@ t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
 # Shan's new csv file
 df = pd.read_csv(args.wet_lab_file)
-df = df.loc[df["cDNA_ID"] == batch]
+df = df.loc[df[columns_to_pick[0]] == batch]
 
 
 def ret_htos_calico_solo(bcs, df_shan):
@@ -108,7 +112,7 @@ def ret_htos_calico_solo(bcs, df_shan):
                 #print(hto_n)
                 #print(bc)
                 hash_n.append(hto_n)
-                ret_samp.append(df_shan.loc[df_shan["hashtag"] == hto_n.replace('HTO', '#'), "SubID"].values[0])
+                ret_samp.append(df_shan.loc[df_shan[columns_to_pick[0]] == hto_n.replace('HTO', '#'), columns_to_pick[0]].values[0])
                 #try:
                     #ret_dict[bc] = df_shan.loc[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag"] == hto_n.replace('HTO', '#')), "SubID"].values[0]
                 #except:

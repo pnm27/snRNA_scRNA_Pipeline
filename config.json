@@ -1,6 +1,7 @@
 {
     "last_step": "STARsolo_kb_solo",
     "wet_lab_info": "/sc/arion/projects/psychAD/upload2synpase/final_NPSAD_snRNAseq_metrics_combo.csv",
+    "columns_to_pick": ["cDNA_ID", "hashtag", "SubID"],
     "select_fastqs": "/sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt",
     "cDNA_fastqs_dir": "/sc/arion/projects/psychAD/fastq_test_run/",
     "R1_suffix": ".R1.fastq.gz",
@@ -49,6 +50,7 @@
     "kallisto_bustools_dir": "/sc/arion/projects/psychAD/snakemake_pipeline/HTO_info/feature_barcodes/",
     "featuremap_script": "/sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py",
     "feature_barcodes": "FeatureBarcodes.csv",
+    "headers": "yes",
     "features_mismatch_fa": "FeaturesMismatch.fa",
     "features_mismatch_t2g": "FeaturesMismatch.t2g",
     "k_mer_length": 15,

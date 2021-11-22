@@ -147,10 +147,10 @@ def get_latest_extra_columns():
 
 # Run this only when executed through Snakemake
 if __name__ == "__main__":
-    print("This script will update info/logs for all Samples simulatneously!!!")
-    print("Run this script after all logs described below has been produced.")
-    print("Logs produced by STARsolo-Log.final.out, Summary.csv and Features.stats for Gene and GeneFull, info from PICARD's CollectGCBiasMetrics, RNASeqMetrics and demultiplex output stats for each sample will be used.")
-    print("If any of the above mentioned files (9) does not exist that sample won't be processed")
+    # print("This script will update info/logs for all Samples simulatneously!!!")
+    # print("Run this script after all logs described below has been produced.")
+    # print("Logs produced by STARsolo-Log.final.out, Summary.csv and Features.stats for Gene and GeneFull, info from PICARD's CollectGCBiasMetrics, RNASeqMetrics and demultiplex output stats for each sample will be used.")
+    # print("If any of the above mentioned files (9) does not exist that sample won't be processed")
     #print("Currently all files exist for only for samples in round1-3 excluding:")
     #print("round1_Sample-NPSAD-20201021-A2\nround3_Sample-NPSAD-20201218-A1\nround1_Sample-NPSAD-20201013-A1\nround1_Sample-NPSAD-20201022-A1\n\
     #round3_Sample-NPSAD-20201218-A2\nround1_Sample-NPSAD-20201016-A1\nround1_Sample-NPSAD-20201022-A2\nround1_Sample-NPSAD-20201021-A1")
@@ -159,8 +159,39 @@ if __name__ == "__main__":
     print("Fastq files: NPSAD-<yyyymmdd>-<one_letter_for_preparer><one_digit_for_rep_num>-cDNA_<Lane_info>.R<1/2>.fastq.gz")
     print("\t\t\tExample: NPSAD-20201110-A1-cDNA_L001_001.R1.fastq.gz")
 
-    out=snakemake.output[0]
-    map_names = pd.read_csv(snakemake.params["map_file"], delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
+
+    #Parse Command-Line arguments
+    parser = argparse.ArgumentParser(description="Update or produce logs for the files produced by the pipeline")
+
+    parser.add_argument('--ss_l', nargs='+', help="List of \"Log.final.out\" files produced by STARsolo")
+    parser.add_argument('--ss_g_f', nargs='+', help="List of \"Fearues.stats\" files produced in \"Gene\" of \"Solo.out\" dir produced by STARsolo")
+    parser.add_argument('--ss_gf_f', nargs='+', help="List of \"Fearues.stats\" files produced in \"GeneFull\" of \"Solo.out\" dir produced by STARsolo")
+    parser.add_argument('--ss_g_s', nargs='+', help="List of \"Summary.csv\" files produced in \"Gene\" of \"Solo.out\" dir produced by STARsolo")
+    parser.add_argument('--ss_gf_s', nargs='+', help="List of \"Summary.csv\" files produced in \"GeneFull\" of \"Solo.out\" dir produced by STARsolo")
+    parser.add_argument('--ss_bc', nargs='+', help="List of \"Barcodes.stats\" files produced in \"Solo.out\" dir produced by STARsolo")
+    parser.add_argument('--pc_gc', nargs='+', help="List of \"Log_final\" files produced by PICARD's CollectGCBiasMetrics")
+    parser.add_argument('--pc_rs', nargs='+', help="List of \"Log_final\" files produced by PICARD's RNASeqMetrics")
+    parser.add_argument('--dem_info', nargs='+', help="List of \"STARsolo_info.tsv\" files produced after demultiplexing by calico_solo/hashsolo")
+    parser.add_argument('-o', '--output', help="Output file. Default: \"All_logs.tsv\" in the current dir", default='All_Logs.tsv')
+    parser.add_argument('-m', '--map_file', help="Mapping file relating columns in the info files to the columns in final output file. Default: \"Final_out_MAP_2.tsv\" in the current dir", default='Final_out_MAP_2.tsv')
+
+
+
+    args = parser.parse_args()
+
+    args_d = ['STAR': args.ss_l, 'GC': args.pc_gc, 'RNASEQMETRIC': args.pc_rs, 'STARsolo': args.ss_g_f, 'STARsolo': args.ss_gf_f, 'STARsolo': rgs.ss_g_s, 'STARsolo': args.ss_gf_s, 'STARsolo': args.ss_bc, 'DEMUX': args.dem_info]
+    out=args.output
+    map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
+
+    # Filter map_file to only include outputs produced by the pipeline
+    map_names_progs = []
+    map_names_sub_progs = []
+
+    for k, j in args_d:
+        if j is not None:
+            map_names_progs.append()
+
+
     #cl = pd.DataFrame([['Round', 'lab', 'Batch'], ['Preparer', 'lab', 'Batch'], ['Sample', 'lab', 'Sample']], columns=list(map_names.columns.values)[1:-1])
     #cols = map_names.iloc[:, 1:-1]
     #cols = cols.append(cl, ignore_index=True)
@@ -181,14 +212,14 @@ if __name__ == "__main__":
     cl = cl.iloc[:, [1, 2, 0]]
 
     # Integrity check
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["PICARD_GC"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["PICARD_RNAseq"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_G_Feat"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_GF_Feat"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_G_Summ"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_GF_Summ"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_Barcodes"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["Demultiplex_info"])
+    assert len(args.ss_l) == len(args.pc_gc)
+    assert len(args.ss_l) == len(args.pc_rs)
+    assert len(args.ss_l) == len(args.ss_g_f)
+    assert len(args.ss_l) == len(args.ss_gf_f)
+    assert len(args.ss_l) == len(args.ss_g_s)
+    assert len(args.ss_l) == len(args.ss_gf_s)
+    assert len(args.ss_l) == len(args.ss_bc)
+    assert len(args.ss_l) == len(args.dem_info)
 
     # If file doesn't exist create one else open as pandas dataframe
     try:
@@ -205,7 +236,7 @@ if __name__ == "__main__":
         combo_log = pd.DataFrame(columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
 
 
-    for i in range(len(snakemake.input["STAR_log"])):
+    for i in range(len(args.ss_l)):
         
 
            # flag
@@ -237,8 +268,8 @@ if __name__ == "__main__":
         #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/Barcodes.stats".format(num=val_set[i][0], samp_name=val_set[i][1]),
         #               "/sc/arion/projects/psychAD/demultiplex/info/round{num}_Sample-{samp_name}_STARsolo_info.tsv".format(num=val_set[i][0], samp_name=val_set[i][1])]
 
-        files_dict = {"STAR_final":snakemake.input["STAR_log"][i], "PICARD_GC":snakemake.input["PICARD_GC"][i], "PICARD_RNASeq":snakemake.input["PICARD_RNAseq"][i], "Gene_Features":snakemake.input["SS_G_Feat"][i], "GeneFull_Features":snakemake.input["SS_GF_Feat"][i], 
-                      "Gene_Summary":snakemake.input["SS_G_Summ"][i], "GeneFull_Summary":snakemake.input["SS_GF_Summ"][i], "Barcodes_stats":snakemake.input["SS_Barcodes"][i], "Demultiplex_stats":snakemake.input["Demultiplex_info"][i]}
+        files_dict = {"STAR_final":args.ss_l[i], "PICARD_GC":args.pc_gc[i], "PICARD_RNASeq":args.pc_rs[i], "Gene_Features":args.ss_g_f[i], "GeneFull_Features":args.ss_gf_f[i], 
+                      "Gene_Summary":args.ss_g_s[i], "GeneFull_Summary":args.ss_gf_s[i], "Barcodes_stats":args.ss_bc[i], "Demultiplex_stats":args.dem_info[i]}
 
         # file_check = list(map(os.path.isfile, files_list))
 

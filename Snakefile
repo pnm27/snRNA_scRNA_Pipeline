@@ -103,26 +103,37 @@ fold_struct_demux="{id1}-cDNA/{id1}-cDNA"#"{num}_Sample-{id1}-cDNA"
 # 3) STARsolo* + PICARD's RNAseq metrics - "STARsolo_rnaseqmet"
 # 4) STARsolo* + PICARD's GC bias metrics - "STARsolo_gcbiasmet"
 # 5) STARsolo* + kallisto_bustools + demux by calico_solo/hashsolo - "STARsolo_kb_solo"
-# 6) cellSNP + vireoSNP (Not yet implemented)
+# 6) STARsolo* + PICARD's RNAseq metrics + PICARD's GC bias metrics - "STARsolo_PICARD"
+# 7) cellSNP + vireoSNP - "STARsolo_gt_demux" (Not yet implemented)
 
 
 # Run STARsolo_sort, index_bams and filter_GeneFull_STARsolo
-def targets_STARsolo(inp_pref=config['bams_dir'], folder_st=fold_struct, bai_suff=config['bai'], gf_mat=config['genefull_lun_matrix'], gf_features=config['genefull_lun_features'], 
-    gf_barcodes=config['genefull_lun_barcodes']) -> "str":
+def targets_STARsolo(conf_f, folder_st=fold_struct) -> "str":
 
-        # expand( zip,  id1=sample_name),
-        # expand(f"{config['bams_dir']}{fold_struct}{}", zip,  id1=sample_name),
-        # expand(f"{config['bams_dir']}{fold_struct}{}", zip,  id1=sample_name),
+    inp_pref=conf_f['bams_dir']
+    bai_suff=conf_f['bai']
+    gf_mat=conf_f['genefull_lun_matrix']
+    gf_features=conf_f['genefull_lun_features']
+    gf_barcodes=conf_f['genefull_lun_barcodes']
+
     target_list = [f"{inp_pref}{fold_struct}{bai_suff}", f"{inp_pref}{fold_struct}{gf_mat}", f"{inp_pref}{fold_struct}{gf_features}", f"{inp_pref}{fold_struct}{gf_barcodes}"]
     return target_list
 
 
 
-def targets_PICARD(inp_pref=config['bams_dir'], progs='all',folder_st=fold_struct, rna_seq_suff=config['rnaseq_metrics'], gc_met_suff=config['gc_bias_metrics'], gc_summ_suff=config['gc_summary_metrics'], bai_suff=config['bai']
-    , gf_mat=config['genefull_lun_matrix'], gf_features=config['genefull_lun_features'], gf_barcodes=config['genefull_lun_barcodes']) -> "list":
+def targets_PICARD(conf_f, folder_st=fold_struct, progs='all') -> "list":
+    
+    inp_pref = conf_f['bams_dir']
+    rna_seq_suff = conf_f['rnaseq_metrics']
+    gc_met_suff = conf_f['gc_bias_metrics']
+    gc_summ_suff = conf_f['gc_summary_metrics']
+    # bai_suff = conf_f['bai']
+    # gf_mat = conf_f['genefull_lun_matrix']
+    # gf_features = conf_f['genefull_lun_features']
+    # gf_barcodes = conf_f['genefull_lun_barcodes']
 
     files_dict = {'RNAseq':rna_seq_suff, 'GC':[gc_met_suff, gc_summ_suff]}
-    target_list = targets_STARsolo(inp_pref=inp_pref, folder_st=folder_st, bai_suff=bai_suff, gf_mat=config['genefull_lun_matrix'], gf_features=config['genefull_lun_features'], gf_barcodes=config['genefull_lun_barcodes'])
+    target_list = targets_STARsolo(conf_f=conf_f, folder_st=folder_st)
     if progs == 'all':
        # Run both PICARD programs
         for k, val in files_dict.items():
@@ -135,11 +146,11 @@ def targets_PICARD(inp_pref=config['bams_dir'], progs='all',folder_st=fold_struc
 
     elif progs == "RNAseq":
         # Only RNAseq metrics
-        target_list.extend(f"{inp_pref}{val}"  for val in files_dict[prog] )
+        target_list.extend(f"{inp_pref}{val}"  for val in files_dict[progs] )
 
     elif progs == "GC":
         # Only GC bias metrics
-        target_list.extend(f"{inp_pref}{val}"  for val in files_dict[prog] )
+        target_list.extend(f"{inp_pref}{val}"  for val in files_dict[progs] )
     else:
         print("Wrong input; Check for editing errors!")
         return []
@@ -150,64 +161,135 @@ def targets_PICARD(inp_pref=config['bams_dir'], progs='all',folder_st=fold_struc
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 
-def targets_all(bam_pref=config['bams_dir'], bai_suff=config['bai'],folder_st_bam=fold_struct, demuxed_mat_dir=config['final_count_matrix_dir'], demuxed_info_dir=config['demultiplex_info_dir'], folder_st=fold_struct_demux, demux_mat_suff=config['final_count_matrix_h5ad']
-    , demux_info_suff=config['demultiplex_info'], PICARD=True, progs='all', rna_seq_suff=config['rnaseq_metrics'], gc_met_suff=config['gc_bias_metrics'], gc_summ_suff=config['gc_summary_metrics'], gf_mat=config['genefull_lun_matrix'] 
-    , gf_features=config['genefull_lun_features'], gf_barcodes=config['genefull_lun_barcodes']) -> "list":
+def targets_all(conf_f, folder_st_bam=fold_struct, folder_st=fold_struct_demux, PICARD=True, progs='all') -> "list":
+
+    demuxed_mat_dir = conf_f['final_count_matrix_dir']
+    demuxed_info_dir = conf_f['demultiplex_info_dir']    
+    demux_mat_suff = conf_f['final_count_matrix_h5ad']
+    demux_info_suff = conf_f['demultiplex_info']
 
     # STARsolo* + PICARD (any) progs
-    if PICARD and ( progs == 'all' or progs == 'RNAseq' or progs == 'GC'):
-        target_list = targets_PICARD(inp_pref=bam_pref, progs=progs, bai_suff=bai_suff, folder_st=folder_st_bam, rna_seq_suff=rna_seq_suff, gc_met_suff=gc_met_suff, gc_summ_suff=gc_summ_suff, gf_mat=config['genefull_lun_matrix']
-            , gf_features=config['genefull_lun_features'], gf_barcodes=config['genefull_lun_barcodes'])
+    if PICARD and (progs == 'all' or progs == 'RNAseq' or progs == 'GC'):
+        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs=progs)
 
     else: # For any wrong values to progs or progs == None or just PICARD == False or everything else, run STARsolo*
-        target_list = targets_STARsolo(inp_pref=bam_pref, folder_st=folder_st_bam, bai_suff=bai_suff, gf_mat=config['genefull_lun_matrix'], gf_features=config['genefull_lun_features'], gf_barcodes=config['genefull_lun_barcodes'])
+        target_list = targets_STARsolo(conf_f=conf_f, folder_st=folder_st_bam)
 
 
     # kb pipeline
     target_list.extend([f"{demuxed_mat_dir}{folder_st}{demux_mat_suff}", f"{demuxed_info_dir}{folder_st}{demux_info_suff}"])
-    print(f"{demuxed_mat_dir}{folder_st}{demux_mat_suff}")
+    
     return target_list
 
 
 
-#def targets_all(): -> "list"
-    
-
-
-
-def produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fold_struct_demux, id=sample_name, PICARD_progs='all') -> "list":
+def produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fold_struct_demux, id=sample_name) -> "list":
 
     target_step = config_file['last_step']
 
-    if target_step == "all" or target_step == "STARsolo_rnaseqmet" or target_step == "STARsolo_gcbiasmet":
-        target_files = targets_all(bam_pref=config_file['bams_dir'], bai_suff=config_file['bai'],folder_st_bam=folder_st_bam, demuxed_mat_dir=config_file['final_count_matrix_dir'], demuxed_info_dir=config_file['demultiplex_info_dir'],
-            folder_st=folder_st, demux_mat_suff=config_file['final_count_matrix_h5ad'], demux_info_suff=config_file['demultiplex_info'], PICARD=True, progs=PICARD_progs, rna_seq_suff=config_file['rnaseq_metrics'],
-            gc_met_suff=config_file['gc_bias_metrics'], gc_summ_suff=config_file['gc_summary_metrics'], gf_mat=config_file['genefull_lun_matrix'], gf_features=config_file['genefull_lun_features'], gf_barcodes=config_file['genefull_lun_barcodes'])
+    if target_step == "all":
+        target_files = targets_all(conf_f=config_file, folder_st_bam=fold_struct, folder_st=fold_struct_demux, PICARD=True, progs=target_step)
 
         return [expand(f"{target}", id1=id) for target in target_files]
 
-    if target_step == "STARsolo_kb_solo":
-        target_files = targets_all(bam_pref=config_file['bams_dir'], bai_suff=config_file['bai'],folder_st_bam=folder_st_bam, demuxed_mat_dir=config_file['final_count_matrix_dir'], demuxed_info_dir=config_file['demultiplex_info_dir'],
-            folder_st=folder_st, demux_mat_suff=config_file['final_count_matrix_h5ad'], demux_info_suff=config_file['demultiplex_info'], PICARD=False, progs=None, rna_seq_suff=config_file['rnaseq_metrics'],
-            gc_met_suff=config_file['gc_bias_metrics'], gc_summ_suff=config_file['gc_summary_metrics'], gf_mat=config_file['genefull_lun_matrix'], gf_features=config_file['genefull_lun_features'], gf_barcodes=config_file['genefull_lun_barcodes'])
+    elif target_step == "STARsolo_kb_solo":
+        target_files = targets_all(conf_f=config_file, folder_st_bam=fold_struct, folder_st=fold_struct_demux, PICARD=False, progs=None)
 
         return [expand(f"{target}", id1=id) for target in target_files]
 
     elif target_step == "STARsolo":
-        target_files = targets_STARsolo(inp_pref=config_file['bams_dir'], folder_st=folder_st_bam, bai_suff=config_file['bai'], gf_mat=config_file['genefull_lun_matrix'], gf_features=config_file['genefull_lun_features'], 
-            gf_barcodes=config_file['genefull_lun_barcodes'])
+        target_files = targets_STARsolo(conf_f=conf_f, folder_st=folder_st_bam)
 
         return [expand(f"{target}", id1=id) for target in target_files]
         
+    elif target_step == "STARsolo_PICARD":
+        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='all')
+
+        return [expand(f"{target}", id1=id) for target in target_files]
+
+    elif target_step == "STARsolo_rnaseqmet":
+        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='RNAseq')
+
+        return [expand(f"{target}", id1=id) for target in target_files]
+
+    elif target_step == "STARsolo_gcbiasmet":
+        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='GC')
+
+        return [expand(f"{target}", id1=id) for target in target_files]
 
     # Not yet implemented
-    elif target_step == "cellSNP + vireoSNP":
+    elif target_step == "STARsolo_gt_demux":
         pass        
 
     else:
         print("Wrong inputs to produce_targets function!!", )
         return []
         
+
+
+def stats_produce_inp(wildcards):
+    STAR_log=expand(f"{config['bams_dir']}{fold_struct}{config['STAR_log_final']}", zip, id1=wildcards.id1)
+    SS_G_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['gene_features']}", zip, id1=wildcards.id1)
+    SS_GF_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_features']}", zip, id1=wildcards.id1)
+    SS_G_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['gene_summary']}", zip, id1=wildcards.id1)
+    SS_GF_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_summary']}", zip, id1=wildcards.id1)
+    SS_Barcodes=expand(f"{config['bams_dir']}{fold_struct}{config['barcodes_stats']}", zip, id1=wildcards.id1)
+    PICARD_GC=expand(f"{config['bams_dir']}{fold_struct}{config['gc_summary_metrics']}", zip, id1=wildcards.id1)
+    PICARD_RNAseq=expand(f"{config['bams_dir']}{fold_struct}{config['rnaseq_metrics']}", zip, id1=wildcards.id1)
+    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{fold_struct_demux}{config['demultiplex_info']}", zip, id1=wildcards.id1)
+
+    if config['last_step'] == "all":
+        
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes, PICARD_GC, PICARD_RNAseq, Demultiplex_info]
+
+    elif config['last_step'] == "STARsolo_kb_solo":
+
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes, Demultiplex_info]
+
+    elif config['last_step'] == "STARsolo":
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes]
+
+    elif config['last_step'] == "STARsolo_PICARD":
+
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes, PICARD_GC, PICARD_RNAseq]
+
+    elif config['last_step'] == "STARsolo_rnaseqmet":
+
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes, PICARD_RNAseq]
+
+    elif config['last_step'] == "STARsolo_gcbiasmet":
+
+        return [STAR_log, SS_G_Feat, SS_GF_Feat, SS_G_Summ, SS_GF_Summ, SS_Barcodes, PICARD_GC]
+
+    # Not yet implemented
+    elif config['last_step'] == "STARsolo_gt_demux":
+        pass
+
+    else:
+        raise ValueError(f"Invalid Value to {config['last_step']} in the json file")
+
+
+
+def stats_produce_params(wildcards, input):
+
+    # Files for update log files
+    log_dict = {'STAR_log':[config['STAR_log_final'], '--ss_l'], 'PICARD_GC':[config['gc_summary_metrics'], '--pc_gc'], 'PICARD_RNAseq':[config['rnaseq_metrics'], '--pc_rs'], 'SS_G_Feat':[config['gene_features'], '--ss_g_f'],
+              'SS_GF_Feat':[config['genefull_features'], '--ss_gf_f'], 'SS_G_Summ':[config['gene_summary'], '--ss_g_s'], 'SS_GF_Summ':[config['genefull_summary'], '--ss_gf_s'], 'SS_Barcodes':[config['barcodes_stats'], '--ss_bc'],
+               'Demultiplex_info':[config['demultiplex_info'], '--dem_info']}
+
+    cons_param = ""
+    for i in range(len(input)):
+        s_temp = pd.Series(input[i])
+        for k, v in log_dict:
+            # All files should contain the pattern string
+            if all(s_temp.str.contains(v[0])):
+                curr_param = v[1] + f" {{input[{i}]}}"
+                cons_param += curr_param
+
+
+    return cons_param
+
+
 
 
 def check_log_version() -> "list":
@@ -242,31 +324,17 @@ def check_log_version() -> "list":
     return []
 
 
-print(produce_targets(config_file=config, id=sample_name))
+print(produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fold_struct_demux, id=sample_name))
 
 rule all:
     input:
-        produce_targets(config_file=config, id=sample_name)
-        # expand(f"{config['bams_dir']}{fold_struct}{config['bai']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{{num}}/Sample_{{id1}}/{{id1}}{config['gene_lun_matrix']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{{num}}/Sample_{{id1}}/{{id1}}{config['gene_lun_features']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{{num}}/Sample_{{id1}}/{{id1}}{config['gene_lun_barcodes']}", zip,  id1=sample_name),
-        # expand(f"{config['bams_dir']}{fold_struct}{config['genefull_lun_matrix']}", zip,  id1=sample_name),
-        # expand(f"{config['bams_dir']}{fold_struct}{config['genefull_lun_features']}", zip,  id1=sample_name),
-        # expand(f"{config['bams_dir']}{fold_struct}{config['genefull_lun_barcodes']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{fold_struct}{config['gc_bias_metrics']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{fold_struct}{config['summary_metrics.txt']}", zip,  id1=sample_name),
-        #expand(f"{config['bams_dir']}{fold_struct}{config['rnaseq_metrics']}", zip,  id1=sample_name),
-        #expand(f"{config['final_count_matrix_dir']}{fold_struct_demux}{config['bus_file_sorted']}", zip,  id1=sample_name),
-        #expand(f"{config['demultiplex_info_dir']}{fold_struct_demux}{config['demultiplex_info']}", zip,  id1=sample_name)
-        #expand(f"{config['vireosnp_dir']}{{num}}/Sample_{{id1}}/{config['donors_vcf']}", zip,  id1=sample_name),
-        #expand(f"{config['filt_vcf_dir']}{{num}}/Sample_{{id1}}/{config['filt_vcf']}", zip,  id1=sample_name)
+        produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fold_struct_demux, id=sample_name)
         # check_log_version()
 
 
 
 
-# TO check if the last digit of the line in the error log of STARsolo is a number
+# To check if the last digit of the line in the error log of STARsolo is a number
 def check_isnumber(x):
     try:
         int(x)
@@ -279,9 +347,9 @@ def check_isnumber(x):
 
 # This function reads the log file created per attempt to change the parameter "limitsjdbInsertNsj" in STARsolo   
 # We can use this to similarly change other params in the log
-def get_limitsjdbval(wildcards, resources, config):
+def get_limitsjdbval(wildcards, resources):
     # This is to check the log file produced after each attempt for the error value
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct, num=wildcards.num, id1=wildcards.id1))
+    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct))
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
@@ -298,9 +366,9 @@ def get_limitsjdbval(wildcards, resources, config):
 
 
 
-def get_limitsjcollapsed(wildcards, resources, config):
+def get_limitsjcollapsed(wildcards, resources):
     # This is to check the log file produced after each attempt for the error value
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct, num=wildcards.num, id1=wildcards.id1))
+    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct))
     for log_file in log_list:
         with open(log_file) as fin:
             for line in fin:
@@ -321,56 +389,56 @@ def get_limitsjcollapsed(wildcards, resources, config):
 
 
 
-def get_bams(wildcards, config):
-    bam_files = [f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*{c}".format(config['bams_dir'], a=wildcards.num, b=wildcards.id1, c=config['bam']))]
-    return bam_files
+# def get_bams(wildcards):
+#     bam_files = [f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*{c}".format(config['bams_dir'], a=wildcards.num, b=wildcards.id1, c=config['bam']))]
+#     return bam_files
 
 
 
-def get_fastqs(wildcards, config):
-    fastq_files = sorted([f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*.R?.fastq.gz".format(config['cDNA_fastqs_dir'], a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))])
-    return fastq_files
+# def get_fastqs(wildcards):
+#     fastq_files = sorted([f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*.R?.fastq.gz".format(config['cDNA_fastqs_dir'], a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))])
+#     return fastq_files
 
 
 
-def get_STARsolo_mat(wildcards):
-    ss_mats = [f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*_Solo.out/GeneFull/filtered_Lun/matrix.mtx.gz".format(config['bams_dir'], a=wildcards.num, b=wildcards.id1))]
-    return ss_mats
+# def get_STARsolo_mat(wildcards):
+#     ss_mats = [f for f in glob2.glob("{}{a}/Sample_{b}/{b}_*_Solo.out/GeneFull/filtered_Lun/matrix.mtx.gz".format(config['bams_dir'], a=wildcards.num, b=wildcards.id1))]
+#     return ss_mats
 
 
 
-def get_hto_demux(wildcards):
-    hto_d_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/Single_cell_data/preprocess/{a}/HTO_demultiplexed/Sample_{b}_HTOdemux.csv".format(a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))]
-    return hto_d_f
+# def get_hto_demux(wildcards):
+#     hto_d_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/Single_cell_data/preprocess/{a}/HTO_demultiplexed/Sample_{b}_HTOdemux.csv".format(a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))]
+#     return hto_d_f
 
 
 
-def get_multiseq(wildcards):
-    multi_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/Single_cell_data/preprocess/{a}/HTO_demultiplexed/Sample_{b}_MULTIseq.csv".format(a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))]
-    return multi_f
+# def get_multiseq(wildcards):
+#     multi_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/Single_cell_data/preprocess/{a}/HTO_demultiplexed/Sample_{b}_MULTIseq.csv".format(a=wildcards.num, b=wildcards.id1.replace('-cDNA', '-*HTO*')))]
+#     return multi_f
 
 
 
-def get_filt_barcodes(wildcards, config):
+def get_filt_barcodes(wildcards):
     barc_f = [f for f in glob2.glob("{}{}{a}_{b}.txt".format(config['filt_barcodes_dir'], config['filt_barcodes'], a=wildcards.num.replace('round_num', ''), b=wildcards.id1))]
     return barc_f
 
 
 
-def get_filt_barcodes_cr(wildcards):
-    barc_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/pnm/inp_for_vireo/filt_bc_vireo_{a}_{b}_cr.txt".format(a=wildcards.num.replace('round_num', ''), b=wildcards.id1))]
-    return barc_f
+# def get_filt_barcodes_cr(wildcards):
+#     barc_f = [f for f in glob2.glob("/sc/arion/projects/psychAD/pnm/inp_for_vireo/filt_bc_vireo_{a}_{b}_cr.txt".format(a=wildcards.num.replace('round_num', ''), b=wildcards.id1))]
+#     return barc_f
 
 
 
-def calc_donors(wildcards, config):
+def calc_donors(wildcards):
     temp_df = pd.read_csv(config['wet_lab_info'])
     n_donors = temp_df.loc[temp_df["cDNA_ID"] == wildcards.id1, "SubID"].shape[0]
     return n_donors
 
 
 
-def get_donors(wildcards, config):
+def get_donors(wildcards):
     temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=["SubID", "Orig_VCF_ID", "Samples"])
     donors = ','.join(temp_df.loc[temp_df["Samples"] == wildcards.id1[:-6], "Orig_VCF_ID"].to_list())
     return donors
@@ -421,7 +489,7 @@ rule STARsolo_sort:
         star_def_log_out=f"{config['bams_dir']}{fold_struct}_Log.out",
         limitsjcollap=get_limitsjcollapsed,
         solo_cell_filter=config['solo_cell_filter'],
-        out_pref=lambda wildcards, output: output.genefull_lun_matrix[:-13],
+        out_pref=lambda wildcards, output: output[7][:-13],
         struct_fold=fold_struct
         #cell_filtering not present in 2.7.5b
         #cell_filtering="EmptyDrops_CR" # Cell Filtering matching CellRanger 3.0.0 from Lun et. al. 2019
@@ -457,9 +525,9 @@ rule STARsolo_sort:
         """
         ml {config[STAR_version]}
         echo "{params.limitsjdbval}, {resources.attempt}"
-        if [ ! -d {config[star_params_dir]} ]; then mkdir {config[star_params_dir]}; fi
-        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.limitsjdbval} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.limitsjcollap} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config['bams_dir']}{params.struct_fold}_ &> {log}_{resources.attempt}
-        gzip {config['bams_dir']}{params.struct_fold}{params.out_pref}*
+        if [ ! -d {config[star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
+        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.limitsjdbval} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.limitsjcollap} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
+        gzip {config[bams_dir]}{params.struct_fold}{params.out_pref}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
         if [ ! -f "{params.save_params}" ]; then 
@@ -590,6 +658,9 @@ rule create_mismatch_fasta:
         f"{config['kallisto_bustools_dir']}{fold_struct_kb}{config['features_mismatch_fa']}",
         f"{config['kallisto_bustools_dir']}{fold_struct_kb}{config['features_mismatch_t2g']}"
 
+    params:
+        headers=config['headers'] # Does the feature barcodes file hasve headers
+
     resources:
         mem_mb=100, #allocate_mem_KBP,
         time_min=10
@@ -597,7 +668,13 @@ rule create_mismatch_fasta:
 
     shell: 
         """
-        python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]}
+        if [[ "{params.headers}" == "yes" ]; then
+            python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
+
+        else
+            python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]}
+
+        fi
         """
 
 
@@ -791,6 +868,7 @@ rule demux_samples_MULTIseq_solo_STARsolo:
         min_genes=config['min_genes_per_cell'], # Min #genes per cell
         min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
+        cols=config['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         genes_info=config['gene_info_file'] # File containing gene names and gene ids for annotations
 
     
@@ -800,7 +878,7 @@ rule demux_samples_MULTIseq_solo_STARsolo:
 
     shell:
         """
-        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} -m {params.mito} -g {params.min_genes} -c {params.min_cells}
+        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} -m {params.mito} -g {params.min_genes} -c {params.min_cells} -h {params.cols}
         sleep 100
         """
         
@@ -941,18 +1019,11 @@ rule split_bams:
 # Rule to run update.py
 rule update_stats:
     input:
-        STAR_log=expand(f"{config['bams_dir']}{fold_struct}{config['STAR_log_final']}", zip,  id1=sample_name),
-        PICARD_GC=expand(f"{config['bams_dir']}{fold_struct}{config['gc_summary_metrics']}", zip,  id1=sample_name),
-        PICARD_RNAseq=expand(f"{config['bams_dir']}{fold_struct}{config['rnaseq_metrics']}", zip,  id1=sample_name),
-        SS_G_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['gene_features']}", zip,  id1=sample_name),
-        SS_GF_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_features']}", zip,  id1=sample_name),
-        SS_G_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['gene_summary']}", zip,  id1=sample_name),
-        SS_GF_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_summary']}", zip,  id1=sample_name),
-        SS_Barcodes=expand(f"{config['bams_dir']}{fold_struct}{config['barcodes_stats']}", zip,  id1=sample_name),
-        Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{fold_struct_demux}{config['demultiplex_info']}", zip,  id1=sample_name)
-
+        inp_files = stats_produce_inp()
+            
     params:
-        map_file=config['meta_data']
+        map_file=config['meta_data'],
+        files_present=stats_produce_params
 
     output:
         config['log_all_stats']
