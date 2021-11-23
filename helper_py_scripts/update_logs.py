@@ -179,7 +179,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    args_d = ['STAR': args.ss_l, 'GC': args.pc_gc, 'RNASEQMETRIC': args.pc_rs, 'STARsolo': args.ss_g_f, 'STARsolo': args.ss_gf_f, 'STARsolo': rgs.ss_g_s, 'STARsolo': args.ss_gf_s, 'STARsolo': args.ss_bc, 'DEMUX': args.dem_info]
+    args_d = {'STAR': args.ss_l, 'GC': args.pc_gc, 'RNASEQMETRIC': args.pc_rs, 'STARsolo': args.ss_g_f, 'STARsolo': args.ss_gf_f, 'STARsolo': rgs.ss_g_s, 'STARsolo': args.ss_gf_s, 'STARsolo': args.ss_bc, 'DEMUX': args.dem_info}
     out=args.output
     map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
 

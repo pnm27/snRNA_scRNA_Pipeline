@@ -228,15 +228,15 @@ def produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fol
 
 
 def stats_produce_inp(wildcards):
-    STAR_log=expand(f"{config['bams_dir']}{fold_struct}{config['STAR_log_final']}", zip, id1=wildcards.id1)
-    SS_G_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['gene_features']}", zip, id1=wildcards.id1)
-    SS_GF_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_features']}", zip, id1=wildcards.id1)
-    SS_G_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['gene_summary']}", zip, id1=wildcards.id1)
-    SS_GF_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_summary']}", zip, id1=wildcards.id1)
-    SS_Barcodes=expand(f"{config['bams_dir']}{fold_struct}{config['barcodes_stats']}", zip, id1=wildcards.id1)
-    PICARD_GC=expand(f"{config['bams_dir']}{fold_struct}{config['gc_summary_metrics']}", zip, id1=wildcards.id1)
-    PICARD_RNAseq=expand(f"{config['bams_dir']}{fold_struct}{config['rnaseq_metrics']}", zip, id1=wildcards.id1)
-    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{fold_struct_demux}{config['demultiplex_info']}", zip, id1=wildcards.id1)
+    STAR_log=expand(f"{config['bams_dir']}{fold_struct}{config['STAR_log_final']}", id1=wildcards.id1)
+    SS_G_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['gene_features']}", id1=wildcards.id1)
+    SS_GF_Feat=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_features']}", id1=wildcards.id1)
+    SS_G_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['gene_summary']}", id1=wildcards.id1)
+    SS_GF_Summ=expand(f"{config['bams_dir']}{fold_struct}{config['genefull_summary']}", id1=wildcards.id1)
+    SS_Barcodes=expand(f"{config['bams_dir']}{fold_struct}{config['barcodes_stats']}", id1=wildcards.id1)
+    PICARD_GC=expand(f"{config['bams_dir']}{fold_struct}{config['gc_summary_metrics']}", id1=wildcards.id1)
+    PICARD_RNAseq=expand(f"{config['bams_dir']}{fold_struct}{config['rnaseq_metrics']}", id1=wildcards.id1)
+    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{fold_struct_demux}{config['demultiplex_info']}", id1=wildcards.id1)
 
     if config['last_step'] == "all":
         
@@ -354,12 +354,18 @@ def get_limitsjdbval(wildcards, resources):
         with open(log_file) as fin:
             for line in fin:
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
+                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing from the default value of 1000000 to {}".format(line.split()[-1]))
                     return line.split()[-1]
+
+                else:
+                    return 1000000
+
    # This is to check the parameters file (if there was a previous successful run)
     else:
         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
+                    print("Found limitSjdbInsertNsj value from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     return re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
 
         return 1000000
@@ -373,16 +379,24 @@ def get_limitsjcollapsed(wildcards, resources):
         with open(log_file) as fin:
             for line in fin:
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
+                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing the value of limitOutSJcollapsed from the default value of 1000000 to {}".format(line.split()[-1]))
                     return line.split()[-1]
            
                 elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
+                    print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
                     return 1000000*(1+resources.attempt)
+
+                else:
+                    return 1000000
+
 
    # This is to check the parameters file (if there was a previous successful run)
     else:
         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
+                    print("Found limitOutSJcollapsed value from the previous successfull run in {}. CHangin it to {}".format(config['star_params_dir'], 
+                        int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)))
                     return int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)
 
         return 1000000
@@ -433,7 +447,7 @@ def get_filt_barcodes(wildcards):
 
 def calc_donors(wildcards):
     temp_df = pd.read_csv(config['wet_lab_info'])
-    n_donors = temp_df.loc[temp_df["cDNA_ID"] == wildcards.id1, "SubID"].shape[0]
+    n_donors = temp_df.loc[temp_df[config['columns_to_pick'][0]] == wildcards.id1, config['columns_to_pick'][2]].shape[0]
     return n_donors
 
 
@@ -524,7 +538,7 @@ rule STARsolo_sort:
         shell(
         """
         ml {config[STAR_version]}
-        echo "{params.limitsjdbval}, {resources.attempt}"
+        echo "{params.limitsjdbval}, {resources.attempt}, {params.limitsjcollap}"
         if [ ! -d {config[star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
         STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.limitsjdbval} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.limitsjcollap} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
         gzip {config[bams_dir]}{params.struct_fold}{params.out_pref}*
@@ -1011,7 +1025,7 @@ rule split_bams:
     shell:
         """
         helper_py_scripts/split_bam_indiv_barc_samtools.sh {input.bam} {input.barcode_list} {params.output_pref} > {output}
-        sleep 100
+        sleep 60
         """
 
 
@@ -1023,7 +1037,7 @@ rule update_stats:
             
     params:
         map_file=config['meta_data'],
-        files_present=stats_produce_params
+        cl_inp_params=stats_produce_params
 
     output:
         config['log_all_stats']
@@ -1034,8 +1048,11 @@ rule update_stats:
         mem_mb=500,
         time_min=30
 
-    script:
-        "helper_py_scripts/update_logs.py"
+    shell:
+        """
+        python3 helper_py_scripts/update_logs.py {params.cl_inp_params} -m {params.map_file} -o {output}
+        sleep 60
+        """
 
 
 #rule 

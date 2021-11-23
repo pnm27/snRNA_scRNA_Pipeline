@@ -49,11 +49,11 @@ columns_to_pick = args.headers
 
 # Extra information/annotation -------------------------------------------
 # Batch and round info
-batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
-r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
-preparer_rep=batch.split('-')[2]
-replicate=preparer_rep[1]
-preparer=preparer_rep[0]
+#batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
+#r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
+#preparer_rep=batch.split('-')[2]
+#replicate=preparer_rep[1]
+#preparer=preparer_rep[0]
 # ------------------------------------------------------------------------
 
 # Parameters for filtering
