@@ -154,11 +154,12 @@ if __name__ == "__main__":
     #print("Currently all files exist for only for samples in round1-3 excluding:")
     #print("round1_Sample-NPSAD-20201021-A2\nround3_Sample-NPSAD-20201218-A1\nround1_Sample-NPSAD-20201013-A1\nround1_Sample-NPSAD-20201022-A1\n\
     #round3_Sample-NPSAD-20201218-A2\nround1_Sample-NPSAD-20201016-A1\nround1_Sample-NPSAD-20201022-A2\nround1_Sample-NPSAD-20201021-A1")
-    print("\n\n")
-    print("Naming Convention Assumed to run this script")
-    print("Fastq files: NPSAD-<yyyymmdd>-<one_letter_for_preparer><one_digit_for_rep_num>-cDNA_<Lane_info>.R<1/2>.fastq.gz")
-    print("\t\t\tExample: NPSAD-20201110-A1-cDNA_L001_001.R1.fastq.gz")
-
+    # print("\n\n")
+    # print("Naming Convention Assumed to run this script")
+    # print("Fastq files: NPSAD-<yyyymmdd>-<one_letter_for_preparer><one_digit_for_rep_num>-cDNA_<Lane_info>.R<1/2>.fastq.gz")
+    # print("\t\t\tExample: NPSAD-20201110-A1-cDNA_L001_001.R1.fastq.gz")
+    print("This script will aggregate all provided set of files provided by one or all of STARsolo-Log.final.out, Summary.csv and Features.stats for Gene and GeneFull, info from PICARD's CollectGCBiasMetrics, RNASeqMetrics and demultiplex output stats.")
+    print("According to the inputs the output log will be produced!")
 
     #Parse Command-Line arguments
     parser = argparse.ArgumentParser(description="Update or produce logs for the files produced by the pipeline")
@@ -169,8 +170,8 @@ if __name__ == "__main__":
     parser.add_argument('--ss_g_s', nargs='+', help="List of \"Summary.csv\" files produced in \"Gene\" of \"Solo.out\" dir produced by STARsolo")
     parser.add_argument('--ss_gf_s', nargs='+', help="List of \"Summary.csv\" files produced in \"GeneFull\" of \"Solo.out\" dir produced by STARsolo")
     parser.add_argument('--ss_bc', nargs='+', help="List of \"Barcodes.stats\" files produced in \"Solo.out\" dir produced by STARsolo")
-    parser.add_argument('--pc_gc', nargs='+', help="List of \"Log_final\" files produced by PICARD's CollectGCBiasMetrics")
-    parser.add_argument('--pc_rs', nargs='+', help="List of \"Log_final\" files produced by PICARD's RNASeqMetrics")
+    parser.add_argument('--pc_gc', nargs='+', help="List of \"summary_metrics.txt\" files produced by PICARD's CollectGCBiasMetrics")
+    parser.add_argument('--pc_rs', nargs='+', help="List of \"rnaseq_metrics.txt\" files produced by PICARD's RNASeqMetrics")
     parser.add_argument('--dem_info', nargs='+', help="List of \"STARsolo_info.tsv\" files produced after demultiplexing by calico_solo/hashsolo")
     parser.add_argument('-o', '--output', help="Output file. Default: \"All_logs.tsv\" in the current dir", default='All_Logs.tsv')
     parser.add_argument('-m', '--map_file', help="Mapping file relating columns in the info files to the columns in final output file. Default: \"Final_out_MAP_2.tsv\" in the current dir", default='Final_out_MAP_2.tsv')
@@ -179,7 +180,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    args_d = {'STAR': args.ss_l, 'GC': args.pc_gc, 'RNASEQMETRIC': args.pc_rs, 'STARsolo': args.ss_g_f, 'STARsolo': args.ss_gf_f, 'STARsolo': rgs.ss_g_s, 'STARsolo': args.ss_gf_s, 'STARsolo': args.ss_bc, 'DEMUX': args.dem_info}
+    args_d = {'GC': args.pc_gc, 'RNASEQMETRIC': args.pc_rs, 'STARsolo': [args.ss_l, args.ss_g_f, args.ss_gf_f, args.ss_g_s, args.ss_gf_s, args.ss_bc], 'DEMUX': args.dem_info}
+
     out=args.output
     map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
 
@@ -188,8 +190,19 @@ if __name__ == "__main__":
     map_names_sub_progs = []
 
     for k, j in args_d:
-        if j is not None:
-            map_names_progs.append()
+        if j != 'STARsolo':
+            if j is not None:
+                map_names_sub_progs.append(k)
+            else:
+                print("Info from {} is not being used".format(log_files))
+
+        elif j == 'STARsolo':
+            for a_l in j:
+                if a_l is None:
+                    print("Not all files produced by STARsolo are being used! Please look at the arguments for this script")
+
+
+
 
 
     #cl = pd.DataFrame([['Round', 'lab', 'Batch'], ['Preparer', 'lab', 'Batch'], ['Sample', 'lab', 'Sample']], columns=list(map_names.columns.values)[1:-1])
@@ -273,6 +286,7 @@ if __name__ == "__main__":
 
         # file_check = list(map(os.path.isfile, files_list))
 
+        # Extra Annotations
         sample_name = re.search('/(NPSAD-.*)_Log.final.out', files_dict["STAR_final"]).group(1)
         r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
         preparer = sample_name.split('-')[2][0]

@@ -85,11 +85,11 @@ fold_struct="{id1}-cDNA/{id1}-cDNA" #"{num}/Sample_{id1}-cDNA/{id1}-cDNA"
 # This variable controls the structure of the outputs from kallisto-bustools pipeline (rules create_FB, create_mismatch_fasta, build_kallisto_index, run_kallisto,
 # run_bustools_correct, run_bustools_sort, run_bustools_count and also includes the rules cellSNP and vireoSNP) produced for each set
 # "" for no structure
-fold_struct_kb="{id1}-cDNA/" #"{num}/Sample_{id1}-cDNA/"
+fold_struct_kb="{id1}-HTO/" #"{num}/Sample_{id1}-cDNA/"
 
 # This variable controls the structure of the outputs from the rules create_h5ad_bustools, run_calico_solo and demux_samples_MULTIseq_solo_STARsolo produced for each set
 # "" for no structure
-fold_struct_demux="{id1}-cDNA/{id1}-cDNA"#"{num}_Sample-{id1}-cDNA"
+fold_struct_demux="{id1}-HTO/{id1}-HTO" #"{num}_Sample-{id1}-cDNA"
 
 
 
@@ -349,7 +349,8 @@ def check_isnumber(x):
 # We can use this to similarly change other params in the log
 def get_limitsjdbval(wildcards, resources):
     # This is to check the log file produced after each attempt for the error value
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct))
+    file_p_temp = fold_struct.format(id1=wildcards.id1)
+    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
@@ -358,7 +359,12 @@ def get_limitsjdbval(wildcards, resources):
                     return line.split()[-1]
 
                 else:
-                    return 1000000
+                    continue
+
+            # Empty but existing file
+            else:
+                continue
+                    
 
    # This is to check the parameters file (if there was a previous successful run)
     else:
@@ -371,13 +377,18 @@ def get_limitsjdbval(wildcards, resources):
         return 1000000
 
 
+    return 1000000
+
 
 def get_limitsjcollapsed(wildcards, resources):
     # This is to check the log file produced after each attempt for the error value
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], fold_struct))
+    file_p_temp = fold_struct.format(id1=wildcards.id1)
+    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
+    print(log_list)
     for log_file in log_list:
         with open(log_file) as fin:
             for line in fin:
+                print(line)
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
                     print("Found an Error with the parameter limitSjdbInsertNsj. Changing the value of limitOutSJcollapsed from the default value of 1000000 to {}".format(line.split()[-1]))
                     return line.split()[-1]
@@ -387,7 +398,12 @@ def get_limitsjcollapsed(wildcards, resources):
                     return 1000000*(1+resources.attempt)
 
                 else:
-                    return 1000000
+                    print("Else block inside For block")
+                    continue
+
+            # Empty but existing file
+            else:
+                continue
 
 
    # This is to check the parameters file (if there was a previous successful run)
@@ -399,8 +415,18 @@ def get_limitsjcollapsed(wildcards, resources):
                         int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)))
                     return int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)
 
+        print("Else block compliment to For block")
         return 1000000
 
+
+    return 1000000
+
+
+
+def get_log_file(wildcards, resources):
+
+    file_p_temp = fold_struct.format(id1=wildcards.id1)
+    return f"{config['bams_dir']}{file_p_temp}_STARsolo_log.txt_{resources.attempt}"
 
 
 # def get_bams(wildcards):
@@ -541,7 +567,7 @@ rule STARsolo_sort:
         echo "{params.limitsjdbval}, {resources.attempt}, {params.limitsjcollap}"
         if [ ! -d {config[star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
         STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.limitsjdbval} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.limitsjcollap} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
-        gzip {config[bams_dir]}{params.struct_fold}{params.out_pref}*
+        gzip {params.out_pref}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
         if [ ! -f "{params.save_params}" ]; then 
@@ -682,7 +708,7 @@ rule create_mismatch_fasta:
 
     shell: 
         """
-        if [[ "{params.headers}" == "yes" ]; then
+        if [[ "{params.headers}" == "yes" ]]; then
             python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
 
         else
@@ -832,7 +858,7 @@ rule create_h5ad_bustools:
 
     shell:
         """
-        python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]}
+        python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}
         """
 
 
@@ -1033,7 +1059,7 @@ rule split_bams:
 # Rule to run update.py
 rule update_stats:
     input:
-        inp_files = stats_produce_inp()
+        inp_files = stats_produce_inp
             
     params:
         map_file=config['meta_data'],
