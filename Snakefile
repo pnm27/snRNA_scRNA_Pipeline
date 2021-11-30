@@ -198,22 +198,22 @@ def produce_targets(config_file=config, folder_st_bam=fold_struct, folder_st=fol
         return [expand(f"{target}", id1=id) for target in target_files]
 
     elif target_step == "STARsolo":
-        target_files = targets_STARsolo(conf_f=conf_f, folder_st=folder_st_bam)
+        target_files = targets_STARsolo(conf_f=config_file, folder_st=folder_st_bam)
 
         return [expand(f"{target}", id1=id) for target in target_files]
         
     elif target_step == "STARsolo_PICARD":
-        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='all')
+        target_list = targets_PICARD(conf_f=config_file, folder_st=folder_st_bam, progs='all')
 
         return [expand(f"{target}", id1=id) for target in target_files]
 
     elif target_step == "STARsolo_rnaseqmet":
-        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='RNAseq')
+        target_list = targets_PICARD(conf_f=config_file, folder_st=folder_st_bam, progs='RNAseq')
 
         return [expand(f"{target}", id1=id) for target in target_files]
 
     elif target_step == "STARsolo_gcbiasmet":
-        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st_bam, progs='GC')
+        target_list = targets_PICARD(conf_f=config_file, folder_st=folder_st_bam, progs='GC')
 
         return [expand(f"{target}", id1=id) for target in target_files]
 
@@ -345,18 +345,109 @@ def check_isnumber(x):
 
 
 
-# This function reads the log file created per attempt to change the parameter "limitsjdbInsertNsj" in STARsolo   
+# # This function reads the log file created per attempt to change the parameter "limitsjdbInsertNsj" in STARsolo   
+# # We can use this to similarly change other params in the log
+# def get_limitsjdbval(wildcards, resources):
+#     # This is to check the log file produced after each attempt for the error value
+#     file_p_temp = fold_struct.format(id1=wildcards.id1)
+#     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
+#     for log_file in log_list: 
+#         with open(log_file) as fin:
+#             for line in fin:
+#                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
+#                     print("Found an Error with the parameter limitSjdbInsertNsj. Changing from the default value of 1000000 to {}".format(line.split()[-1]))
+#                     return line.split()[-1]
+
+#                 else:
+#                     continue
+
+#             # Empty but existing file
+#             else:
+#                 continue
+                    
+
+#    # This is to check the parameters file (if there was a previous successful run)
+#     else:
+#         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
+#             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
+#                 for line in fin:
+#                     print("Found limitSjdbInsertNsj value from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
+#                     return re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
+
+#         return 1000000
+
+
+#     return 1000000
+
+
+# def get_limitsjcollapsed(wildcards, resources):
+#     # This is to check the log file produced after each attempt for the error value
+#     file_p_temp = fold_struct.format(id1=wildcards.id1)
+#     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
+#     print(log_list)
+#     for log_file in log_list:
+#         with open(log_file) as fin:
+#             for line in fin:
+#                 print(line)
+#                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
+#                     print("Found an Error with the parameter limitSjdbInsertNsj. Changing the value of limitOutSJcollapsed from the default value of 1000000 to {}".format(line.split()[-1]))
+#                     return line.split()[-1]
+           
+#                 elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
+#                     print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
+#                     return 1000000*(1+resources.attempt)
+
+#                 else:
+#                     print("Else block inside For block")
+#                     continue
+
+#             # Empty but existing file
+#             else:
+#                 continue
+
+
+#    # This is to check the parameters file (if there was a previous successful run)
+#     else:
+#         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
+#             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
+#                 for line in fin:
+#                     print("Found limitOutSJcollapsed value from the previous successfull run in {}. CHangin it to {}".format(config['star_params_dir'], 
+#                         int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)))
+#                     return int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)
+
+#         print("Else block compliment to For block")
+#         return 1000000
+
+
+    # return 1000000
+
+
+
+
 # We can use this to similarly change other params in the log
-def get_limitsjdbval(wildcards, resources):
+def get_limitsjdbval_coll(wildcards, resources):
+    '''
+    This function reads the log file created per attempt to change the parameter "limitsjdbInsertNsj" and "limitOutSJcollapsed" in STARsolo
+    Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
+    '''
     # This is to check the log file produced after each attempt for the error value
     file_p_temp = fold_struct.format(id1=wildcards.id1)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
+    ins_nsj = 1000000
+    sj_collap = 1000000
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
-                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing from the default value of 1000000 to {}".format(line.split()[-1]))
-                    return line.split()[-1]
+                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing defaulkt values of the parameters \
+                        \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the default value of 1000000 to {}".format(line.split()[-1]))
+                    ins_nsj = line.split()[-1] if line.split()[-1] > ins_nsj else ins_nsj
+                    sj_collap = ins_nsj
+
+                elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
+                    print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
+                    sj_collap = 1000000*(1+resources.attempt)
+                    ins_nsj = sj_collap
 
                 else:
                     continue
@@ -371,55 +462,16 @@ def get_limitsjdbval(wildcards, resources):
         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
-                    print("Found limitSjdbInsertNsj value from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
-                    return re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
+                    print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
+                    ins_nsj = re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
+                    sj_collap = re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1)
 
-        return 1000000
-
-
-    return 1000000
+        # return 1000000
 
 
-def get_limitsjcollapsed(wildcards, resources):
-    # This is to check the log file produced after each attempt for the error value
-    file_p_temp = fold_struct.format(id1=wildcards.id1)
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
-    print(log_list)
-    for log_file in log_list:
-        with open(log_file) as fin:
-            for line in fin:
-                print(line)
-                if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
-                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing the value of limitOutSJcollapsed from the default value of 1000000 to {}".format(line.split()[-1]))
-                    return line.split()[-1]
-           
-                elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
-                    print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
-                    return 1000000*(1+resources.attempt)
+    # return 1000000
+    return [ins_nsj, sj_collap]
 
-                else:
-                    print("Else block inside For block")
-                    continue
-
-            # Empty but existing file
-            else:
-                continue
-
-
-   # This is to check the parameters file (if there was a previous successful run)
-    else:
-        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
-            with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
-                for line in fin:
-                    print("Found limitOutSJcollapsed value from the previous successfull run in {}. CHangin it to {}".format(config['star_params_dir'], 
-                        int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)))
-                    return int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))*(1+resources.attempt)
-
-        print("Else block compliment to For block")
-        return 1000000
-
-
-    return 1000000
 
 
 
@@ -519,7 +571,8 @@ rule STARsolo_sort:
         genome_dir=config['genome_dir'],
         #output_prefix=lambda wildcards, input: input[0][:-29],
         overhang=config['sjdboverhang'],
-        limitsjdbval=get_limitsjdbval,
+        opt_params=get_limitsjdbval_coll,
+        # limitsjdbval=get_limitsjdbval,
         chemistry=config['soloType'], # For STARsolo
         whitelist=config['whitelist'], # V3 whitelist
         UMI_length=config['umi_len'], # V3 
@@ -527,7 +580,7 @@ rule STARsolo_sort:
         features=config['features'],
         save_params=f"{config['star_params_dir']}Sample_{{id1}}-cDNA.txt",
         star_def_log_out=f"{config['bams_dir']}{fold_struct}_Log.out",
-        limitsjcollap=get_limitsjcollapsed,
+        # limitsjcollap=get_limitsjcollapsed,
         solo_cell_filter=config['solo_cell_filter'],
         out_pref=lambda wildcards, output: output[7][:-13],
         struct_fold=fold_struct
@@ -564,9 +617,9 @@ rule STARsolo_sort:
         shell(
         """
         ml {config[STAR_version]}
-        echo "{params.limitsjdbval}, {resources.attempt}, {params.limitsjcollap}"
+        echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
-        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.limitsjdbval} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.limitsjcollap} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
+        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
         gzip {params.out_pref}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
@@ -918,7 +971,7 @@ rule demux_samples_MULTIseq_solo_STARsolo:
 
     shell:
         """
-        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} -m {params.mito} -g {params.min_genes} -c {params.min_cells} -h {params.cols}
+        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --headers {params.cols}
         sleep 100
         """
         

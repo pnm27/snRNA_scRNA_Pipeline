@@ -1,17 +1,18 @@
-#!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
+#!/usr/bin/env python
 
 # Solo didn't run through scvi, scvi-tools nor scanpy.external
 # Only this seems to work
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import glob2, os, re, argparse
+import glob2, os, re, argparse, sys
 from collections import Counter
 from openpyxl import load_workbook
 from collections import defaultdict, OrderedDict as ord_dict
 # using datetime module
 import datetime
 import functools
- 
+
+print(sys.executable)
 
  
 sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
@@ -24,6 +25,7 @@ sc.logging.print_version_and_date()
 #Parse Command-Line arguments
 parser = argparse.ArgumentParser(description="Demultiplex sample based on hahsolo produced output")
 
+# Positional Paramaters
 parser.add_argument('hashsolo_out', help="Path to cached output of hashsolo(h5ad)")
 parser.add_argument('matrix_file', help="Path to matrix.mtx.gz")
 parser.add_argument('count_matrix', help="Path to store the final count matrix(h5ad)")
@@ -36,8 +38,8 @@ parser.add_argument('wet_lab_file', help="Path to file that contains HTO info fo
 parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
 parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
 parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
-parser.add_argument('-h', '--headers', nargs=3, help="List of column names RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), \
-    HTO numbers and Donors/SubIDs. Default: ['cDNA_ID', 'hashtag', 'SubID']", default=['cDNA_ID', 'hashtag', 'SubID'])
+parser.add_argument('--headers', nargs=3, help="List of column names RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), \
+    HTO numbers and Donors/SubIDs. Default: ['cDNA_ID', 'hashtag', 'SubID']", metavar=('cDNA_ID', 'hashtag', 'SubID'), default=['cDNA_ID', 'hashtag', 'SubID'])
 
 args = parser.parse_args()
 
@@ -50,6 +52,7 @@ columns_to_pick = args.headers
 # Extra information/annotation -------------------------------------------
 # Batch and round info
 #batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
+batch='NPSAD-set277-cDNA'
 #r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
 #preparer_rep=batch.split('-')[2]
 #replicate=preparer_rep[1]
@@ -79,8 +82,6 @@ df = df.loc[df[columns_to_pick[0]] == batch]
 def ret_htos_calico_solo(bcs, df_shan):
     # List of (barcode, HTO)
     barc_l = []
-    #hto_l = []
-    #samp_n = []
     # SubID from Shan's csv file
     ret_samp = []
     # HTO number as HTO1, HTO2, etc
@@ -109,15 +110,14 @@ def ret_htos_calico_solo(bcs, df_shan):
 
             else:
                 barc_l.append(bc)
-                #print(hto_n)
-                #print(bc)
                 hash_n.append(hto_n)
-                ret_samp.append(df_shan.loc[df_shan[columns_to_pick[0]] == hto_n.replace('HTO', '#'), columns_to_pick[0]].values[0])
-                #try:
-                    #ret_dict[bc] = df_shan.loc[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag"] == hto_n.replace('HTO', '#')), "SubID"].values[0]
-                #except:
-                   #if 'NPSAD-20201021-A1-cDNA' != b or 'NPSAD-20201021-A2-cDNA' != b or 'NPSAD-20201022-A1-cDNA' != b or 'NPSAD-20201022-A2-cDNA' != b:
-                    #print(f'For the Sample: {b} and for the HTO tag {hto_n} there was no data in the excel file!')
+                ret_samp.append(df_shan.loc[df_shan[columns_to_pick[1]] == hto_n.replace('HTO', '#'), columns_to_pick[2]].values[0])
+                # try:
+                #     ret_samp.append(df_shan.loc[df_shan[columns_to_pick[1]] == hto_n.replace('HTO', '#'), columns_to_pick[2]].values[0])
+                # except:
+                #     print(hto_n)
+                #     print(df_shan[columns_to_pick[1]])
+                #     print(df_shan[columns_to_pick[1]] == hto_n.replace('HTO', '#'), columns_to_pick[2])
     
     ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
 
@@ -192,12 +192,14 @@ ct = datetime.datetime.now()
 print(f"Finished: Calculating demultiplexing info for hashsolo/calico solo at: {ct}")
 
 
+# Extra information/annotation -------------------------------------------
 # add few more annotations
 adata.obs['batch'] = batch
-adata.obs['round_num'] = r_num
-adata.obs['prep'] = preparer
-adata.obs['rep'] = replicate
-adata.obs['set'] = batch[:-6]
+# adata.obs['round_num'] = r_num
+# adata.obs['prep'] = preparer
+# adata.obs['rep'] = replicate
+# adata.obs['set'] = batch[:-6]
+#-------------------------------------------------------------------------
 
 # Create obs columns in adata to represent the SubID as assigned by calico solo and its associated hastag number
 SubID_cs = adata.obs_names.to_series().apply(ret_samp_names, args=(hto_tags_cs[0], ))
