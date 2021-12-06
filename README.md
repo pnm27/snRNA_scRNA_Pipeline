@@ -13,10 +13,10 @@ Directed Acyclic Graph of the whole pipeline:
 
 ## Available Modules
 <ul>
-	<li> [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md) </li>
-	<li> [CollectGcBiasMetrics](https://broadinstitute.github.io/picard/command-line-overview.html#CollectGcBiasMetrics)</li>
-	<li> [CollectRnaSeqMetrics](https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics)</li>
-
+	<li><a href="https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md">STARsolo</a> </li>
+	<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectGcBiasMetrics"></a></li>
+	<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics"></a></li>
+</ul>
 
 
 
