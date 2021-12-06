@@ -115,7 +115,7 @@ def check_log_version(conf_f) -> "list":
 
     # If log file is not present then execute the rule to produce it
     if not os.path.isfile(log_file):
-        print("The file {} is not present!".format(log_file))
+        # print("The file {} is not present!".format(log_file))
         return log_file
 
     else:
@@ -126,14 +126,14 @@ def check_log_version(conf_f) -> "list":
     # in the latest version of the logs_file and the last version of the logs_file (this is the "map_file")
     # The extra "2" is for the extra columns added after reading all log files i.e. "doublet percent" and "negative percent"
     if update_logs.get_latest_extra_columns() + mf_df.shape[0] + 2 != lf_df.shape[1]:
-        print("The file {} has fewer columns than expected!\nRemoving the file and producing a newer version of the file".format(log_file))
+        # print("The file {} has fewer columns than expected!\nRemoving the file and producing a newer version of the file".format(log_file))
         os.remove(log_file)
         return log_file
 
     # This function returns "True" if the last version of the logs_file (this is the "map_file") has all samples
     # present in the config['select_fastqs']
     if not all(sample for sample in sample_name if sample in lf_df["LAB"]["SAMPLE"]["SAMPLE"]):
-        print("The file {} doesn't contain all samples present in the \"fastq_files.txt\"!\nRemoving the file and producing a newer version of the file".format(log_file))
+        # print("The file {} doesn't contain all samples present in the \"fastq_files.txt\"!\nRemoving the file and producing a newer version of the file".format(log_file))
         os.remove(log_file)
         return log_file
 
@@ -189,7 +189,7 @@ def targets_PICARD(conf_f, progs='all') -> "list":
         # Only GC bias metrics
         target_list.extend( [f"{inp_pref}{folder_st}{val}"  for val in files_dict[progs]] )
     else:
-        print("Wrong input; Check for editing errors!")
+        # print("Wrong input; Check for editing errors!")
         return []
 
     return target_list
@@ -264,7 +264,7 @@ def produce_targets(conf_f) -> "list":
         pass        
 
     else:
-        print("Wrong inputs to produce_targets function!!", )
+        # print("Wrong inputs to produce_targets function!!")
         return []
         
     final_target_list.append(check_log_version(conf_f=conf_f))
@@ -282,7 +282,7 @@ def stats_produce_inp(wildcards):
     SS_Barcodes=expand(f"{config['bams_dir']}{config['fold_struct']}{config['barcodes_stats']}", id1=wildcards.id1)
     PICARD_GC=expand(f"{config['bams_dir']}{config['fold_struct']}{config['gc_summary_metrics']}", id1=wildcards.id1)
     PICARD_RNAseq=expand(f"{config['bams_dir']}{config['fold_struct']}{config['rnaseq_metrics']}", id1=wildcards.id1)
-    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{config['fold_struct']_demux}{config['demultiplex_info']}", id1=wildcards.id1)
+    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demultiplex_info']}", id1=wildcards.id1)
 
     if config['last_step'] == "all":
         
@@ -338,7 +338,7 @@ def stats_produce_params(wildcards, input):
 
 
 
-print(produce_targets(conf_f=config))
+# print(produce_targets(conf_f=config))
 
 rule all:
     input:
@@ -453,13 +453,13 @@ def get_limitsjdbval_coll(wildcards, resources):
         with open(log_file) as fin:
             for line in fin:
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
-                    print("Found an Error with the parameter limitSjdbInsertNsj. Changing defaulkt values of the parameters \
-                        \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the default value of 1000000 to {}".format(line.split()[-1]))
+                    # print("Found an Error with the parameter limitSjdbInsertNsj. Changing defaulkt values of the parameters \
+                        # \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the default value of 1000000 to {}".format(line.split()[-1]))
                     ins_nsj = line.split()[-1] if line.split()[-1] > ins_nsj else ins_nsj
                     sj_collap = ins_nsj
 
                 elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
-                    print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
+                    # print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
                     sj_collap = 1000000*(1+resources.attempt)
                     ins_nsj = sj_collap
 
@@ -476,7 +476,7 @@ def get_limitsjdbval_coll(wildcards, resources):
         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
-                    print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
+                    # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     ins_nsj = re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
                     sj_collap = re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1)
 
@@ -722,7 +722,7 @@ rule create_FB:
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['feature_barcodes']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['feature_barcodes']}"
 
     resources:
         mem_mb=100, #allocate_mem_KBP,
@@ -738,13 +738,13 @@ rule create_FB:
 
 rule create_mismatch_fasta:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['feature_barcodes']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['feature_barcodes']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['features_mismatch_fa']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['features_mismatch_t2g']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_fa']}",
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_t2g']}"
 
     params:
         headers=config['headers'] # Does the feature barcodes file hasve headers
@@ -768,12 +768,12 @@ rule create_mismatch_fasta:
 
 rule build_kallisto_index:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['features_mismatch_fa']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_fa']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['features_mismatch_idx']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_idx']}"
 
     resources:
         mem_mb=2000, #allocate_mem_KBP,
@@ -788,16 +788,16 @@ rule build_kallisto_index:
 
 rule run_kallisto:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['features_mismatch_idx']}",
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_idx']}",
         R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
         R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['bus_file']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['ec_matrix']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['tx']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file']}",
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['ec_matrix']}",
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['tx']}"
 
     params:
         output_pref= lambda wildcards, output: output[0].replace(f"{config['bus_file']}", ''),
@@ -818,12 +818,12 @@ rule run_kallisto:
 
 rule run_bustools_correct:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['bus_file']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['bus_file_corrected']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_corrected']}"
 
     params:
         whitelist=config['whitelist']
@@ -841,12 +841,12 @@ rule run_bustools_correct:
         
 rule run_bustools_sort:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['bus_file_corrected']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_corrected']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct']_kb}{config['bus_file_sorted']}"
+        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_sorted']}"
 
     threads: 1
 
@@ -914,7 +914,7 @@ rule create_h5ad_bustools:
 rule run_calico_solo:
     input:
         f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}.h5ad",
-        starsolo_out=f"{config['bams_dir']}{fold_struct}{config['genefull_lun_matrix']}" #get_STARsolo_mat
+        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}" #get_STARsolo_mat
 
     priority: 8
    
@@ -943,7 +943,7 @@ rule run_calico_solo:
 rule demux_samples_MULTIseq_solo_STARsolo:
     input:
         f"{config['calico_solo_dir']}{config['fold_struct_demux']}{config['calico_solo_h5ad']}",
-        starsolo_out=f"{config['bams_dir']}{fold_struct}{config['genefull_lun_matrix']}"
+        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}"
 
     priority: 8
 
@@ -977,7 +977,7 @@ rule demux_samples_MULTIseq_solo_STARsolo:
 rule cellSNP:
     input:
         bc=get_filt_barcodes,
-        bams=f"{config['bams_dir']}{fold_struct}{config['bam']}"
+        bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
 
     output:
         f"{config['cellsnp_dir']}{config['fold_struct_kb']}{config['cellsnp_cells']}",
@@ -1088,11 +1088,11 @@ rule vireoSNP:
 
 rule split_bams:
     input:
-        bam=f"{config['bams_dir']}{fold_struct}{config['bam']}",
+        bam=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}",
         barcode_list="" # Barcodes vs sample name txt file, produced after producing final_count_matrices
 
     params:
-        output_pref=f"{config['split_bams_dir']}{fold_struct}_"
+        output_pref=f"{config['split_bams_dir']}{config['fold_struct']}_"
     output:
         f"{config['split_bams_proxy_dir']}{{num}}_Sample_{{id1}}.txt" # Proxy to the output
 
