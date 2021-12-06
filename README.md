@@ -2,13 +2,23 @@
 Snakemake Pipeline with "selectable" modules
 
 ## Requirements
-This pipeline executes the following set of modules:
+This pipeline depends on the following packages:
 
 
 
-## Selectable Modules
+
+## Overview of the pipeline
 Directed Acyclic Graph of the whole pipeline:
 ![DAG](images/Whole_pipeline.png)
+
+## Available Modules
+<ul>
+	<li> [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md) </li>
+	<li> [CollectGcBiasMetrics](https://broadinstitute.github.io/picard/command-line-overview.html#CollectGcBiasMetrics)</li>
+	<li> [CollectRnaSeqMetrics](https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics)</li>
+
+
+
 
 <ul>
 <li> all</li>
@@ -23,7 +33,7 @@ Directed Acyclic Graph of the whole pipeline:
 ### Module Specifications
 <dl>
 	<dt>Whole Pipeline</dt>
-	<dd>This module includes alignment through STARsolo, PICARD's both programs (GcBiasMetrics and RnaSeqMetrics)</dd>
+	<dd>This module includes alignment through STARsolo and PICARD's both programs (GcBiasMetrics and RnaSeqMetrics)</dd>
 	<dt>STARsolo</dt>
 	<dd>Only alignemnt through STARsolo.</dd>
 	<dt>STARsolo_rnaseqmet</dt>
@@ -37,4 +47,5 @@ Directed Acyclic Graph of the whole pipeline:
 	<dt>STARsolo_gt_demux <i>(Not yet implemented)</i></dt>
 	<dd>This module will execute cellSNP and vireoSNP</dd>
 </dl>
+
 
