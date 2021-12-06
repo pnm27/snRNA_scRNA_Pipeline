@@ -471,7 +471,7 @@ def get_limitsjdbval_coll(wildcards, resources):
                 continue
                     
 
-   # This is to check the parameters file (if there was a previous successful run)
+   # This is to check the parameters file, if there was a previous successful run
     else:
         if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
             with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
@@ -574,7 +574,7 @@ rule STARsolo_sort:
         UMI_length=config['umi_len'], # V3 
         SAM_attr=config['SAM_attr'],
         features=config['features'],
-        save_params=f"{config['star_params_dir']}Sample_{{id1}}-cDNA.txt",
+        save_params=f"{config['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
         star_def_log_out=f"{config['bams_dir']}{config['fold_struct']}_Log.out",
         # limitsjcollap=get_limitsjcollapsed,
         solo_cell_filter=config['solo_cell_filter'],
@@ -584,7 +584,7 @@ rule STARsolo_sort:
         # Few more parameters to match CellRanger >=4.0.0
 
     output:
-        f"{config['bams_dir']}{config['fold_struct']}{config['bam']}",
+        f"{config['bams_dir']}{config['fold_struct']}{config['bai']}",
         f"{config['bams_dir']}{config['fold_struct']}{config['STAR_log_final']}",
         f"{config['bams_dir']}{config['fold_struct']}{config['genefull_features']}",
         f"{config['bams_dir']}{config['fold_struct']}{config['genefull_summary']}",
@@ -624,33 +624,35 @@ rule STARsolo_sort:
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}_{resources.attempt}
                cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params}
         fi
+        ml samtools
+        samtools index {config[bams_dir]}{config[fold_struct]}{config[bam]}
         """
         )
 
 
 
-rule index_bams:
-    input:
-        f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
+# rule index_bams:
+#     input:
+#         f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
 
-    priority: 10
+#     priority: 10
 
-    output:
-        f"{config['bams_dir']}{config['fold_struct']}{config['bai']}"
+#     output:
+#         f"{config['bams_dir']}{config['fold_struct']}{config['bai']}"
 
-    threads: 1
+#     threads: 1
 
-    resources:
-        mem_mb=10000,
-        time_min=1440
+#     resources:
+#         mem_mb=10000,
+#         time_min=1440
 
-    group: "BAM_processing"
+#     group: "BAM_processing"
 
-    shell:
-        """
-        ml samtools
-        samtools index {input}
-        """
+#     shell:
+#         """
+#         ml samtools
+#         samtools index {input}
+#         """
 
 
 
@@ -680,7 +682,7 @@ rule Picard_GC_bias_metrics:
     shell:
         """
         ml picard
-        java -jar $PICARD CollectGcBiasMetrics I={input.bams} O={output[0]} CHART={params.output_pref}gc_bias_metrics.pdf SCAN_WINDOW_SIZE={params.window_size} S={params.output_pref}summary_metrics.txt R={params.genome_fasta}
+        java -jar $PICARD CollectGcBiasMetrics I={input.bams} O={output[0]} CHART={params.output_pref}gc_bias_metrics.pdf SCAN_WINDOW_SIZE={params.window_size} S={output[1]} R={params.genome_fasta}
         """
       
 
@@ -782,7 +784,7 @@ rule build_kallisto_index:
     shell:
         """
         ml kallisto
-        kallisto index -i {output} -k 15 {input}
+        kallisto index -i {output} -k {config[k_mer_length]} {input}
         """
 
 
@@ -898,7 +900,7 @@ rule create_h5ad_bustools:
     priority: 10
 
     output:
-        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}.h5ad"
+        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['bustools_h5ad']}"
 
     resources:
         mem_mb=3000, #allocate_mem_KBP,
@@ -913,7 +915,7 @@ rule create_h5ad_bustools:
 
 rule run_calico_solo:
     input:
-        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}.h5ad",
+        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['bustools_h5ad']}",
         starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}" #get_STARsolo_mat
 
     priority: 8
