@@ -31,7 +31,7 @@ THe info for setting up profiles for different HPC's is mentioned [here](https:/
 ## Executing Pipeline
 This pipeline can be executed by executing (in case of HPC, submitting) the script called `run_snakemake.sh`
 
-```unix
+```Shell
 sh run_snakemake.sh
 ```
 
