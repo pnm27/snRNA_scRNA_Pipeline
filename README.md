@@ -16,17 +16,26 @@ This pipeline depends on the following packages/programs:
 </ul>
 
 ### Packages installed through conda
-anaconda3/2018.12
-Python 3.9.5
+All the packages installed through anaconda3/2018.12 for Python 3.9.5 are described [here](requirements/requirements_conda.txt)
 
 ### Packages installed through pip
-For R version 4.1.0
+All the packages installed for R version 4.1.0 are described [here](requirements/requirements_pip.txt)
 
 ## Overview of the pipeline
 Directed Acyclic Graph of the whole pipeline:
 ![DAG](images/Whole_pipeline.png)
 
-## Available Modules
+## Settiung up profiles
+THe info for setting up profiles for different HPC's is mentioned [here](https://github.com/Snakemake-Profiles)
+
+## Executing Pipeline
+This pipeline can be executed by executing (in case of HPC, submitting) the script called `run_snakemake.sh`
+
+```unix
+sh run_snakemake.sh
+```
+
+## Selectable Modules
 
 <ul>
 <li> all</li>
