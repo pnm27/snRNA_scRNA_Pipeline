@@ -26,7 +26,7 @@ Directed Acyclic Graph of the whole pipeline:
 ![DAG](images/Whole_pipeline.png)
 
 ## Settiung up profiles
-THe info for setting up profiles for different HPC's is mentioned [here](https://github.com/Snakemake-Profiles)
+The info for setting up profiles for different HPC's is mentioned [here](https://github.com/Snakemake-Profiles)
 
 ## Executing Pipeline
 This pipeline can be executed by executing (in case of HPC, submitting) the script called `run_snakemake.sh`

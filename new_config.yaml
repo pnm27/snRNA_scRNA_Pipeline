@@ -107,6 +107,7 @@ demultiplex_info: _STARsolo_info.tsv
 # cellSNP and vireoSNP pipeline----------------------------------------------
 cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demux_gt/cellSNP_imp/
 filt_barcodes_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
+inp_for_cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
 ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
 meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
 genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
@@ -114,6 +115,11 @@ vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP_imp/
 filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf_imp/
 donor_genotype: GT
 # Optional params
+demux_col: SubID_cs
+barcode_len: 16
+doublet: Doublet
+negative: Negative
+na: Not Present
 filt_barcodes: filt_bc_vireo_
 cell_tag: CB
 umi_tag: UB

@@ -975,10 +975,41 @@ rule demux_samples_MULTIseq_solo_STARsolo:
        
 
 
+rule create_inp_cellSNP:
+    input:
+        f"{config['final_count_matrix_dir']}{config['fold_struct_demux']}{config['final_count_matrix_h5ad']}"
+
+    priority: 8
+
+    params:
+        col_name=config['demux_col'], # Name of the anndata's obs column that contains classification of cells
+        bc_len=config['barcode_len'], # Barcode length
+        doub=config['doublet'], # Doublets classified as
+        neg=config['negative'], # Negatives classified as
+        na=config['na'] # Cells not present in hashsolo classified as
+
+    resources:
+        mem_mb=1000,
+        time_min=1
+        
+    output:
+        f"{config['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
+
+    shell:
+        """
+        python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+        sleep 100
+        """
+
+
+
+
+
 # UMI tag is turned on. Therefore, PCR duplicates are included
 rule cellSNP:
     input:
-        bc=get_filt_barcodes,
+        # bc=get_filt_barcodes,
+        bc=f"{config['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
         bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
 
     output:
