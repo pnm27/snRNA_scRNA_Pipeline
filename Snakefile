@@ -991,7 +991,9 @@ rule create_inp_cellSNP:
     resources:
         mem_mb=1000,
         time_min=1
-        
+
+    group: "phenotype-demux"
+
     output:
         f"{config['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
 
@@ -1009,12 +1011,14 @@ rule create_inp_cellSNP:
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        bc=f"{config['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
+        bc=f"{config['inp_for_cellsnp_dir']}{config['fold_struct_phe_demux']}.txt"
         bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
 
+    group: "phenotype-demux"
+
     output:
-        f"{config['cellsnp_dir']}{config['fold_struct_kb']}{config['cellsnp_cells']}",
-        f"{config['cellsnp_dir']}{config['fold_struct_kb']}{config['cellsnp_base']}"
+        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_cells']}",
+        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_base']}"
 
     params:
         ref_snps=config['ref_snps'],
@@ -1032,13 +1036,16 @@ rule cellSNP:
 
 rule vireoSNP:
     input:
-        f"{config['cellsnp_dir']}{config['fold_struct_kb']}{config['cellsnp_cells']}",
+        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_cells']}",
         config['genotyped_vcf'],
         config['meta_data_geno_samp']
   
     output:
-        f"{config['vireosnp_dir']}{config['fold_struct_kb']}{config['donors_vcf']}",
-        f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
+        f"{config['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['donors_vcf']}",
+        #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
+
+
+    group: "phenotype-demux"
 
     params:
         n_donors=calc_donors,
@@ -1054,9 +1061,10 @@ rule vireoSNP:
     shell:
         """
         ml bcftools
-        bcftools view {input[1]} -R {input[0]} -s {params.donors} -Oz -o {output[1]}
-        vireo -c {input[0]} -d {output[1]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot
-
+        # bcftools view {input[1]} -R {input[0]} -s {params.donors} -Oz -o {output[1]}
+        #vireo -c {input[0]} -d {output[1]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot
+        vireo -c {input[0]} -d {output} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot
+        sleep 100
         """
 
 

@@ -16,8 +16,10 @@ R2_suffix: .R2.fastq.gz
 fold_struct: "{id1}-cDNA/{id1}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
 fold_struct_kb: "{id1}-HTO/"
-# Folder structure for the kallisto-bustools pipeline
+# Folder structure for demux through the kallisto-bustools pipeline
 fold_struct_demux: "{id1}-HTO/{id1}-HTO"
+# Folder structure for demux through the cellSNP-vireoSNP pipeline
+fold_struct_phe_demux: "{id1}/"
 
 
 # BAM processing pipeline----------------------------------------------------
@@ -130,7 +132,6 @@ min_maf: 0.1
 n_proc: 20
 donors_vcf: GT_donors.vireo.vcf.gz
 filt_vcf: filt.vcf.gz
-
 
 
 
