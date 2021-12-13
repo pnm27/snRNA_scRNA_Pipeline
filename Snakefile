@@ -615,7 +615,7 @@ rule STARsolo_sort:
         """
         ml {config[STAR_version]}
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
-        if [ ! -d {config[STAR_solo_pipeline][star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
+        if [ ! -d {config[STAR_solo_pipeline][star_params_dir]} ]; then mkdir -p {config[STAR_solo_pipeline][star_params_dir]}; fi
         STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[STAR_solo_pipeline][bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
         gzip {params.out_pref}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
