@@ -1,3 +1,4 @@
+# Common Params----------------------------------------------------------------
 # Select pipeline module
 last_step: STARsolo_kb_solo
 
@@ -9,6 +10,14 @@ HTO_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 R1_suffix: .R1.fastq.gz
 R2_suffix: .R2.fastq.gz
+
+# Wet lab Info file which contains all details like sample name; set name(if applicable); donor names, HTOs, and HTO_barcodes(if applicable)
+# ; etc.
+wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.csv
+gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
+whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
+genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
+
 
 # Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
 # Enclose wildcards in {}
@@ -23,115 +32,124 @@ fold_struct_phe_demux: "{id1}/"
 
 
 # BAM processing pipeline----------------------------------------------------
-bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
-STAR_version: star/2.7.8a
-genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o
-gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
-star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
-sjdboverhang: 89
-umi_len: 12
-soloType: CB_UMI_Simple
-solo_cell_filter: EmptyDrops_CR
-SAM_attr: NH HI AS nM NM MD CB UB CR UR GX GN sS sQ sM
-whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt
-features: Gene GeneFull SJ Velocyto
-# Optional params
-bai: _Aligned.sortedByCoord.out.bam.bai
-bam: _Aligned.sortedByCoord.out.bam
-STAR_log_final: _Log.final.out
-barcodes_stats: _Solo.out/Barcodes.stats
-gene_features: _Solo.out/Gene/Features.stats
-gene_lun_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
-gene_lun_features: _Solo.out/Gene/filtered/features.tsv.gz
-gene_lun_matrix: _Solo.out/Gene/filtered/matrix.mtx.gz
-gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
-gene_summary: _Solo.out/Gene/Summary.csv
-genefull_features: _Solo.out/GeneFull/Features.stats
-genefull_lun_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
-genefull_lun_features: _Solo.out/GeneFull/filtered/features.tsv.gz
-genefull_lun_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
-genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
-genefull_summary: _Solo.out/GeneFull/Summary.csv
+STAR_solo_pipeline:
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
+  STAR_version: star/2.7.8a
+  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  
+  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
+  sjdboverhang: 89
+  umi_len: 12
+  soloType: CB_UMI_Simple
+  solo_cell_filter: EmptyDrops_CR
+  SAM_attr: NH HI AS nM NM MD CB UB CR UR GX GN sS sQ sM
+  features: Gene GeneFull SJ Velocyto
+  # Optional params
+  bai: _Aligned.sortedByCoord.out.bam.bai
+  bam: _Aligned.sortedByCoord.out.bam
+  STAR_log_final: _Log.final.out
+  barcodes_stats: _Solo.out/Barcodes.stats
+  gene_features: _Solo.out/Gene/Features.stats
+  gene_lun_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
+  gene_lun_features: _Solo.out/Gene/filtered/features.tsv.gz
+  gene_lun_matrix: _Solo.out/Gene/filtered/matrix.mtx.gz
+  gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
+  gene_summary: _Solo.out/Gene/Summary.csv
+  genefull_features: _Solo.out/GeneFull/Features.stats
+  genefull_lun_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
+  genefull_lun_features: _Solo.out/GeneFull/filtered/features.tsv.gz
+  genefull_lun_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
+  genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
+  genefull_summary: _Solo.out/GeneFull/Summary.csv
 
-# PICARD GcBias Metrics------------------------------------------------------
-window_size: 100
-genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
-# Optional params
-gc_bias_metrics: _gc_bias_metrics.txt
-gc_summary_metrics: _summary_metrics.txt
+# PICARD pipeline--------------------------------------------------------------
+picard_pipeline:
+  # PICARD GcBias Metrics
+  window_size: 100
+  # Optional params
+  gc_bias_metrics: _gc_bias_metrics.txt
+  gc_summary_metrics: _summary_metrics.txt
 
-# PICARD RNAseq Metrics------------------------------------------------------
-flat_ref: /sc/arion/projects/psychAD/ref_GRCh38/refFlat_wo_chr.txt
-strand: NONE
-rnaseq_metrics: _rnaseq_metrics.txt
+  # PICARD RNAseq Metrics
+  flat_ref: /sc/arion/projects/psychAD/ref_GRCh38/refFlat_wo_chr.txt
+  strand: NONE
+  # Optional params
+  rnaseq_metrics: _rnaseq_metrics.txt
 
-# Bustools-kallisto pipeline-------------------------------------------------
-kallisto_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/HTO_info/feature_barcodes/
-featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
-k_mer_length: 15
-chemistry: 10xv3
-# Optional params
-feature_barcodes: FeatureBarcodes.csv
-headers: no
-features_mismatch_fa: FeaturesMismatch.fa
-features_mismatch_t2g: FeaturesMismatch.t2g
-features_mismatch_idx: FeaturesMismatch.idx
-ec_matrix: matrix.ec
-tx: transcripts.txt
-bus_file: output.bus
-bus_file_corrected: output_corrected.bus
-bus_file_sorted: output_sorted.bus
-bus_count_dir: bus_count_out/
-bus_count_barcodes: output.barcodes.txt
-bus_count_genes: output.genes.txt
-bus_count_mtx: output.mtx
+# Bustools-kallisto pipeline---------------------------------------------------
+kb_pipeline:
+  kallisto_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/HTO_info/feature_barcodes/
+  featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
+  k_mer_length: 15
+  chemistry: 10xv3
+  columns_to_pick:
+  - set_ID
+  - hto
+  - hto_barcode
+
+  # Optional params
+  feature_barcodes: FeatureBarcodes.csv
+  headers: no
+  features_mismatch_fa: FeaturesMismatch.fa
+  features_mismatch_t2g: FeaturesMismatch.t2g
+  features_mismatch_idx: FeaturesMismatch.idx
+  ec_matrix: matrix.ec
+  tx: transcripts.txt
+  bus_file: output.bus
+  bus_file_corrected: output_corrected.bus
+  bus_file_sorted: output_sorted.bus
+  bus_count_dir: bus_count_out/
+  bus_count_barcodes: output.barcodes.txt
+  bus_count_genes: output.genes.txt
+  bus_count_mtx: output.mtx
 
 # Demultiplexing pipeline----------------------------------------------------
-h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
-calico_solo_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/solo/
-wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.csv
-columns_to_pick:
-- cDNA_ID
-- hashtag
-- SubID
-gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
-final_count_matrix_dir: /sc/arion/projects/psychAD/snakemake_pipeline/final_count_matrix/solo/
-demultiplex_info_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/info/
-# Optional params
-bustools_h5ad: .h5ad
-max_mito_percentage: 5
-min_genes_per_cell: 1000
-min_cells_per_gene: 10
-calico_solo_h5ad: _STARsolo_out.h5ad
-final_count_matrix_h5ad: _STARsolo_out.h5ad
-demultiplex_info: _STARsolo_info.tsv
+demux_pipeline:
+  h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
+  calico_solo_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/solo/
+  columns_to_pick:
+  - cDNA_ID
+  - hashtag
+  - SubID
+  gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
+  final_count_matrix_dir: /sc/arion/projects/psychAD/snakemake_pipeline/final_count_matrix/solo/
+  demultiplex_info_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/info/
+  # Optional params
+  bustools_h5ad: .h5ad
+  max_mito_percentage: 5
+  min_genes_per_cell: 1000
+  min_cells_per_gene: 10
+  calico_solo_h5ad: _STARsolo_out.h5ad
+  final_count_matrix_h5ad: _STARsolo_out.h5ad
+  demultiplex_info: _STARsolo_info.tsv
 
 # cellSNP and vireoSNP pipeline----------------------------------------------
-cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demux_gt/cellSNP_imp/
-filt_barcodes_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
-inp_for_cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
-ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
-meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
-genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
-vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP_imp/
-filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf_imp/
-donor_genotype: GT
-# Optional params
-demux_col: SubID_cs
-barcode_len: 16
-doublet: Doublet
-negative: Negative
-na: Not Present
-filt_barcodes: filt_bc_vireo_
-cell_tag: CB
-umi_tag: UB
-cellsnp_base: cellSNP.base.vcf.gz
-cellsnp_cells: cellSNP.cells.vcf.gz
-min_aggr_count: 20
-min_maf: 0.1
-n_proc: 20
-donors_vcf: GT_donors.vireo.vcf.gz
-filt_vcf: filt.vcf.gz
+phe_demux_pipeline:
+  cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demux_gt/cellSNP_imp/
+  filt_barcodes_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
+  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
+  donor_id_diff: yes
+  ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
+  meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
+  genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
+  vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP_imp/
+  filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf_imp/
+  donor_genotype: GT
+  # Optional params
+  demux_col: SubID_cs
+  barcode_len: 16
+  doublet: Doublet
+  negative: Negative
+  na: Not Present
+  filt_barcodes: filt_bc_vireo_
+  cell_tag: CB
+  umi_tag: UB
+  cellsnp_base: cellSNP.base.vcf.gz
+  cellsnp_cells: cellSNP.cells.vcf.gz
+  min_aggr_count: 20
+  min_maf: 0.1
+  n_proc: 20
+  donors_vcf: GT_donors.vireo.vcf.gz
+  filt_vcf: filt.vcf.gz
 
 
 

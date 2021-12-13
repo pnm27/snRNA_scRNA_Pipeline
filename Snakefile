@@ -145,11 +145,11 @@ def check_log_version(conf_f) -> "list":
 # Run STARsolo_sort, index_bams and filter_GeneFull_STARsolo
 def targets_STARsolo(conf_f) -> "str":
 
-    inp_pref=conf_f['bams_dir']
-    bai_suff=conf_f['bai']
-    gf_mat=conf_f['genefull_lun_matrix']
-    gf_features=conf_f['genefull_lun_features']
-    gf_barcodes=conf_f['genefull_lun_barcodes']
+    inp_pref=conf_f['STAR_solo_pipeline']['bams_dir']
+    bai_suff=conf_f['STAR_solo_pipeline']['bai']
+    gf_mat=conf_f['STAR_solo_pipeline']['genefull_lun_matrix']
+    gf_features=conf_f['STAR_solo_pipeline']['genefull_lun_features']
+    gf_barcodes=conf_f['STAR_solo_pipeline']['genefull_lun_barcodes']
     folder_st=conf_f['fold_struct']
 
     target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{gf_barcodes}"]
@@ -159,10 +159,10 @@ def targets_STARsolo(conf_f) -> "str":
 
 def targets_PICARD(conf_f, progs='all') -> "list":
     
-    inp_pref = conf_f['bams_dir']
-    rna_seq_suff = conf_f['rnaseq_metrics']
-    gc_met_suff = conf_f['gc_bias_metrics']
-    gc_summ_suff = conf_f['gc_summary_metrics']
+    inp_pref = conf_f['STAR_solo_pipeline']['bams_dir']
+    rna_seq_suff = conf_f['picard_pipeline']['rnaseq_metrics']
+    gc_met_suff = conf_f['picard_pipeline']['gc_bias_metrics']
+    gc_summ_suff = conf_f['picard_pipeline']['gc_summary_metrics']
     folder_st=conf_f['fold_struct']
     # bai_suff = conf_f['bai']
     # gf_mat = conf_f['genefull_lun_matrix']
@@ -200,10 +200,10 @@ def targets_PICARD(conf_f, progs='all') -> "list":
 
 def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 
-    demuxed_mat_dir = conf_f['final_count_matrix_dir']
-    demuxed_info_dir = conf_f['demultiplex_info_dir']    
-    demux_mat_suff = conf_f['final_count_matrix_h5ad']
-    demux_info_suff = conf_f['demultiplex_info']
+    demuxed_mat_dir = conf_f['demux_pipeline']['final_count_matrix_dir']
+    demuxed_info_dir = conf_f['demux_pipeline']['demultiplex_info_dir']    
+    demux_mat_suff = conf_f['demux_pipeline']['final_count_matrix_h5ad']
+    demux_info_suff = conf_f['demux_pipeline']['demultiplex_info']
     folder_st_bam=conf_f['fold_struct']
     folder_st=conf_f['fold_struct_demux']
 
@@ -274,15 +274,15 @@ def produce_targets(conf_f) -> "list":
 
 # Add wildcards info here in the 'expand' function
 def stats_produce_inp(wildcards):
-    STAR_log=expand(f"{config['bams_dir']}{config['fold_struct']}{config['STAR_log_final']}", id1=wildcards.id1)
-    SS_G_Feat=expand(f"{config['bams_dir']}{config['fold_struct']}{config['gene_features']}", id1=wildcards.id1)
-    SS_GF_Feat=expand(f"{config['bams_dir']}{config['fold_struct']}{config['genefull_features']}", id1=wildcards.id1)
-    SS_G_Summ=expand(f"{config['bams_dir']}{config['fold_struct']}{config['gene_summary']}", id1=wildcards.id1)
-    SS_GF_Summ=expand(f"{config['bams_dir']}{config['fold_struct']}{config['genefull_summary']}", id1=wildcards.id1)
-    SS_Barcodes=expand(f"{config['bams_dir']}{config['fold_struct']}{config['barcodes_stats']}", id1=wildcards.id1)
-    PICARD_GC=expand(f"{config['bams_dir']}{config['fold_struct']}{config['gc_summary_metrics']}", id1=wildcards.id1)
-    PICARD_RNAseq=expand(f"{config['bams_dir']}{config['fold_struct']}{config['rnaseq_metrics']}", id1=wildcards.id1)
-    Demultiplex_info=expand(f"{config['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demultiplex_info']}", id1=wildcards.id1)
+    STAR_log=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['STAR_log_final']}", id1=wildcards.id1)
+    SS_G_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}", id1=wildcards.id1)
+    SS_GF_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_features']}", id1=wildcards.id1)
+    SS_G_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}", id1=wildcards.id1)
+    SS_GF_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_summary']}", id1=wildcards.id1)
+    SS_Barcodes=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}", id1=wildcards.id1)
+    PICARD_GC=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}", id1=wildcards.id1)
+    PICARD_RNAseq=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}", id1=wildcards.id1)
+    Demultiplex_info=expand(f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}", id1=wildcards.id1)
 
     if config['last_step'] == "all":
         
@@ -319,9 +319,11 @@ def stats_produce_inp(wildcards):
 def stats_produce_params(wildcards, input):
 
     # Files for update log files
-    log_dict = {'STAR_log':[config['STAR_log_final'], '--ss_l'], 'PICARD_GC':[config['gc_summary_metrics'], '--pc_gc'], 'PICARD_RNAseq':[config['rnaseq_metrics'], '--pc_rs'], 'SS_G_Feat':[config['gene_features'], '--ss_g_f'],
-              'SS_GF_Feat':[config['genefull_features'], '--ss_gf_f'], 'SS_G_Summ':[config['gene_summary'], '--ss_g_s'], 'SS_GF_Summ':[config['genefull_summary'], '--ss_gf_s'], 'SS_Barcodes':[config['barcodes_stats'], '--ss_bc'],
-               'Demultiplex_info':[config['demultiplex_info'], '--dem_info']}
+    log_dict = {'STAR_log':[config['STAR_solo_pipeline']['STAR_log_final'], '--ss_l'], 'PICARD_GC':[config['picard_pipeline']['gc_summary_metrics'], '--pc_gc'],
+                'PICARD_RNAseq':[config['picard_pipeline']['rnaseq_metrics'], '--pc_rs'],
+                'SS_G_Feat':[config['STAR_solo_pipeline']['gene_features'], '--ss_g_f'], 'SS_GF_Feat':[config['STAR_solo_pipeline']['genefull_features'], '--ss_gf_f'],
+                'SS_G_Summ':[config['STAR_solo_pipeline']['gene_summary'], '--ss_g_s'], 'SS_GF_Summ':[config['STAR_solo_pipeline']['genefull_summary'], '--ss_gf_s'],
+                'SS_Barcodes':[config['STAR_solo_pipeline']['barcodes_stats'], '--ss_bc'], 'Demultiplex_info':[config['demux_pipeline']['demultiplex_info'], '--dem_info']}
 
     cons_param = ""
     for i in range(len(input)):
@@ -446,7 +448,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     '''
     # This is to check the log file produced after each attempt for the error value
     file_p_temp = config['fold_struct'].format(id1=wildcards.id1)
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['bams_dir'], file_p_temp))
+    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STAR_solo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
     for log_file in log_list: 
@@ -473,8 +475,8 @@ def get_limitsjdbval_coll(wildcards, resources):
 
    # This is to check the parameters file, if there was a previous successful run
     else:
-        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)):
-            with open("{}Sample_{id1}-cDNA.txt".format(config['star_params_dir'], id1=wildcards.id1)) as fin:
+        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)):
+            with open("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     ins_nsj = re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
@@ -489,10 +491,10 @@ def get_limitsjdbval_coll(wildcards, resources):
 
 
 
-def get_log_file(wildcards, resources):
+# def get_log_file(wildcards, resources):
 
-    file_p_temp = config['fold_struct'].format(id1=wildcards.id1)
-    return f"{config['bams_dir']}{file_p_temp}_STARsolo_log.txt_{resources.attempt}"
+#     file_p_temp = config['fold_struct'].format(id1=wildcards.id1)
+#     return f"{config['bams_dir']}{file_p_temp}_STARsolo_log.txt_{resources.attempt}"
 
 
 # def get_hto_demux(wildcards):
@@ -507,9 +509,9 @@ def get_log_file(wildcards, resources):
 
 
 
-def get_filt_barcodes(wildcards):
-    barc_f = [f for f in glob2.glob("{}{}{a}_{b}.txt".format(config['filt_barcodes_dir'], config['filt_barcodes'], a=wildcards.num.replace('round_num', ''), b=wildcards.id1))]
-    return barc_f
+# def get_filt_barcodes(wildcards):
+#     barc_f = [f for f in glob2.glob("{}{}{a}_{b}.txt".format(config['filt_barcodes_dir'], config['filt_barcodes'], a=wildcards.num.replace('round_num', ''), b=wildcards.id1))]
+#     return barc_f
 
 
 
@@ -527,8 +529,8 @@ def calc_donors(wildcards):
 
 
 def get_donors(wildcards):
-    temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=["SubID", "Orig_VCF_ID", "Samples"])
-    donors = ','.join(temp_df.loc[temp_df["Samples"] == wildcards.id1[:-6], "Orig_VCF_ID"].to_list())
+    temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=config['hash_columns'])
+    donors = ','.join(temp_df.loc[temp_df[config['hash_columns'][2]] == wildcards.id1[:-6], config['hash_columns'][1]].to_list())
     return donors
 
 
@@ -564,40 +566,40 @@ rule STARsolo_sort:
 
     params:
         gtf=config['gtf_file'],
-        genome_dir=config['genome_dir'],
+        genome_dir=config['STAR_solo_pipeline']['genome_dir'],
         #output_prefix=lambda wildcards, input: input[0][:-29],
-        overhang=config['sjdboverhang'],
+        overhang=config['STAR_solo_pipeline']['sjdboverhang'],
         opt_params=get_limitsjdbval_coll,
         # limitsjdbval=get_limitsjdbval,
-        chemistry=config['soloType'], # For STARsolo
+        chemistry=config['STAR_solo_pipeline']['soloType'], # For STARsolo
         whitelist=config['whitelist'], # V3 whitelist
-        UMI_length=config['umi_len'], # V3 
-        SAM_attr=config['SAM_attr'],
-        features=config['features'],
-        save_params=f"{config['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
-        star_def_log_out=f"{config['bams_dir']}{config['fold_struct']}_Log.out",
+        UMI_length=config['STAR_solo_pipeline']['umi_len'], # V3 
+        SAM_attr=config['STAR_solo_pipeline']['SAM_attr'],
+        features=config['STAR_solo_pipeline']['features'],
+        save_params=f"{config['STAR_solo_pipeline']['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
+        star_def_log_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}_Log.out",
         # limitsjcollap=get_limitsjcollapsed,
-        solo_cell_filter=config['solo_cell_filter'],
+        solo_cell_filter=config['STAR_solo_pipeline']['solo_cell_filter'],
         out_pref=lambda wildcards, output: output[7][:-13]
         #cell_filtering not present in 2.7.5b
         #cell_filtering="EmptyDrops_CR" # Cell Filtering matching CellRanger 3.0.0 from Lun et. al. 2019
         # Few more parameters to match CellRanger >=4.0.0
 
     output:
-        f"{config['bams_dir']}{config['fold_struct']}{config['bai']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['STAR_log_final']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['genefull_features']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['genefull_summary']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['gene_features']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['gene_summary']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['barcodes_stats']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_features']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_barcodes']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bai']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['STAR_log_final']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_features']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_summary']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_matrix']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_features']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_barcodes']}"
 
 
     log:
-        f"{config['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
    
     resources:
         mem_mb=70000,
@@ -613,8 +615,8 @@ rule STARsolo_sort:
         """
         ml {config[STAR_version]}
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
-        if [ ! -d {config[star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
-        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
+        if [ ! -d {config[STAR_solo_pipeline][star_params_dir]} ]; then mkdir -p {config[star_params_dir]}; fi
+        STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[STAR_solo_pipeline][bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
         gzip {params.out_pref}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
@@ -625,7 +627,7 @@ rule STARsolo_sort:
                cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params}
         fi
         ml samtools
-        samtools index {config[bams_dir]}{config[fold_struct]}{config[bam]}
+        samtools index {config[STAR_solo_pipeline][bams_dir]}{config[fold_struct]}{config[STAR_solo_pipeline][bam]}
         """
         )
 
@@ -658,17 +660,17 @@ rule STARsolo_sort:
 
 rule Picard_GC_bias_metrics:
     input:
-        bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
+        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     priority: 9
 
     output:
-        f"{config['bams_dir']}{config['fold_struct']}{config['gc_bias_metrics']}",
-        f"{config['bams_dir']}{config['fold_struct']}{config['gc_summary_metrics']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_bias_metrics']}",
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}"
 
     params:
-        output_pref=lambda wildcards, output: output[0].replace(f"{config['gc_bias_metrics']}", '_'),
-        window_size=config["window_size"],
+        output_pref=lambda wildcards, output: output[0].replace(f"{config['picard_pipeline']['gc_bias_metrics']}", '_'),
+        window_size=config['picard_pipeline']["window_size"],
         genome_fasta=config["genome_fasta"]
 
     resources:
@@ -689,16 +691,16 @@ rule Picard_GC_bias_metrics:
 
 rule Picard_RNAseq_metrics:
     input:
-        bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
+        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['bam']}"
 
     priority: 9
 
     output:
-        f"{config['bams_dir']}{config['fold_struct']}{config['rnaseq_metrics']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}"
 
     params:
-        flat_ref=config['flat_ref'],
-        strand=config['strand']
+        flat_ref=config['picard_pipeline']['flat_ref'],
+        strand=config['picard_pipeline']['strand']
 
     resources:
         mem_mb=allocate_mem_PM,
@@ -724,7 +726,11 @@ rule create_FB:
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['feature_barcodes']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
+
+    params:
+        samples_info=config['wet_lab_info'],
+        sample_name="{id1}"
 
     resources:
         mem_mb=100, #allocate_mem_KBP,
@@ -732,7 +738,7 @@ rule create_FB:
 
     shell: 
         """
-        python3 helper_py_scripts/create_Feat_Barc.py
+        python3 helper_py_scripts/create_Feat_Barc.py {params.samples_info} -o {output} -s {params.sample_name} -c {config['kb_pipeline']['columns_to_pick']}
         """
 
          
@@ -740,16 +746,16 @@ rule create_FB:
 
 rule create_mismatch_fasta:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['feature_barcodes']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_fa']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_t2g']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
 
     params:
-        headers=config['headers'] # Does the feature barcodes file hasve headers
+        headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
     resources:
         mem_mb=100, #allocate_mem_KBP,
@@ -770,13 +776,15 @@ rule create_mismatch_fasta:
 
 rule build_kallisto_index:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_fa']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_idx']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}"
 
+    params:
+        k_mer_len=config['kb_pipeline']['k_mer_length']
     resources:
         mem_mb=2000, #allocate_mem_KBP,
         time_min=10
@@ -784,26 +792,26 @@ rule build_kallisto_index:
     shell:
         """
         ml kallisto
-        kallisto index -i {output} -k {config[k_mer_length]} {input}
+        kallisto index -i {output} -k {params.k_mer_len} {input}
         """
 
 
 rule run_kallisto:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_idx']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}",
         R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
         R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['ec_matrix']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['tx']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}"
 
     params:
-        output_pref= lambda wildcards, output: output[0].replace(f"{config['bus_file']}", ''),
-        chemistry=config['chemistry']
+        output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
+        chemistry=config['kb_pipeline']['chemistry']
 
     threads: 1
 
@@ -820,12 +828,12 @@ rule run_kallisto:
 
 rule run_bustools_correct:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_corrected']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
 
     params:
         whitelist=config['whitelist']
@@ -843,12 +851,12 @@ rule run_bustools_correct:
         
 rule run_bustools_sort:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_corrected']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_sorted']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}"
 
     threads: 1
 
@@ -865,20 +873,20 @@ rule run_bustools_sort:
 
 rule run_bustools_count:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_file_sorted']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['ec_matrix']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['tx']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['features_mismatch_t2g']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
 
     priority: 10
 
     output:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_mtx']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_genes']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_barcodes']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
 
     params:
-        output_pref=lambda wildcards, output: output[0].replace(f"{config['bus_count_mtx']}", '')
+        output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
 
     resources:
         mem_mb=3000, #allocate_mem_KBP,
@@ -893,14 +901,14 @@ rule run_bustools_count:
 
 rule create_h5ad_bustools:
     input:
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_mtx']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_genes']}",
-        f"{config['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['bus_count_dir']}{config['bus_count_barcodes']}"
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
 
     priority: 10
 
     output:
-        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['bustools_h5ad']}"
+        f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"
 
     resources:
         mem_mb=3000, #allocate_mem_KBP,
@@ -915,18 +923,18 @@ rule create_h5ad_bustools:
 
 rule run_calico_solo:
     input:
-        f"{config['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['bustools_h5ad']}",
-        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}" #get_STARsolo_mat
+        f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}",
+        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_matrix']}" #get_STARsolo_mat
 
     priority: 8
    
     output:
-        f"{config['calico_solo_dir']}{config['fold_struct_demux']}{config['calico_solo_h5ad']}"
+        f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
   
     params:
-        mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        min_genes=config['min_genes_per_cell'], # Min #genes per cell
-        min_cells=config['min_cells_per_gene']  # Min #cells expressing a gene for it to pass the filter
+        mito=config['demux_pipeline']['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
+        min_cells=config['demux_pipeline']['min_cells_per_gene']  # Min #cells expressing a gene for it to pass the filter
 
     threads: 2
 
@@ -942,24 +950,24 @@ rule run_calico_solo:
 
 
 
-rule demux_samples_MULTIseq_solo_STARsolo:
+rule demux_samples_calico_solo_STARsolo:
     input:
-        f"{config['calico_solo_dir']}{config['fold_struct_demux']}{config['calico_solo_h5ad']}",
-        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['genefull_lun_matrix']}"
+        f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}",
+        starsolo_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_matrix']}"
 
     priority: 8
 
     output:
-        f"{config['final_count_matrix_dir']}{config['fold_struct_demux']}{config['final_count_matrix_h5ad']}",
-        f"{config['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demultiplex_info']}"
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
+        f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}"
 
     params:
-        mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        min_genes=config['min_genes_per_cell'], # Min #genes per cell
-        min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+        mito=config['demux_pipeline']['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
+        min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-        cols=config['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
-        genes_info=config['gene_info_file'] # File containing gene names and gene ids for annotations
+        cols=config['demux_pipeline']['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+        genes_info=config['demux_pipeline']['gene_info_file'] # File containing gene names and gene ids for annotations
 
     
     resources:
@@ -977,16 +985,16 @@ rule demux_samples_MULTIseq_solo_STARsolo:
 
 rule create_inp_cellSNP:
     input:
-        f"{config['final_count_matrix_dir']}{config['fold_struct_demux']}{config['final_count_matrix_h5ad']}"
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
 
     priority: 8
 
     params:
-        col_name=config['demux_col'], # Name of the anndata's obs column that contains classification of cells
-        bc_len=config['barcode_len'], # Barcode length
-        doub=config['doublet'], # Doublets classified as
-        neg=config['negative'], # Negatives classified as
-        na=config['na'] # Cells not present in hashsolo classified as
+        col_name=config['phe_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
+        bc_len=config['phe_demux_pipeline']['barcode_len'], # Barcode length
+        doub=config['phe_demux_pipeline']['doublet'], # Doublets classified as
+        neg=config['phe_demux_pipeline']['negative'], # Negatives classified as
+        na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
 
     resources:
         mem_mb=1000,
@@ -995,7 +1003,7 @@ rule create_inp_cellSNP:
     group: "phenotype-demux"
 
     output:
-        f"{config['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
+        f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
 
     shell:
         """
@@ -1004,44 +1012,61 @@ rule create_inp_cellSNP:
         """
 
 
+if config['donor_id_diff']:
+    rule get_id_hash:
+        input:
 
+
+        output:
+
+
+        shell:
+            """
+
+            sleep 100
+            """
 
 
 # UMI tag is turned on. Therefore, PCR duplicates are included
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        bc=f"{config['inp_for_cellsnp_dir']}{config['fold_struct_phe_demux']}.txt"
-        bams=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}"
+        bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_phe_demux']}.txt",
+        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     group: "phenotype-demux"
 
     output:
-        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_cells']}",
-        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_base']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_base']}"
 
     params:
-        ref_snps=config['ref_snps'],
-        umi_tag=config['umi_tag'],
-        cell_tag=config['cell_tag'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['cellsnp_cells']}", '')
+        ref_snps=config['phe_demux_pipeline']['ref_snps'],
+        umi_tag=config['phe_demux_pipeline']['umi_tag'],
+        cell_tag=config['phe_demux_pipeline']['cell_tag'],
+        processors=config['phe_demux_pipeline']['n_proc'],
+        min_maf=config['phe_demux_pipeline']['min_maf'],
+        min_ct=config['phe_demux_pipeline']['min_aggr_count'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", '')
 
     threads: 8
 
     resources:
         mem_mb=allocate_mem_cS
 
-    shell: "cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.ref_snps} -p {config[n_proc]} --minMAF {config[min_maf]} --minCOUNT {config[min_aggr_count]} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip"
+    shell: "cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.ref_snps} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip"
+
+
 
 
 rule vireoSNP:
     input:
-        f"{config['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['cellsnp_cells']}",
-        config['genotyped_vcf'],
-        config['meta_data_geno_samp']
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
+        config['phe_demux_pipeline']['genotyped_vcf'],
+        config['phe_demux_pipeline']['meta_data_geno_samp']
   
     output:
-        f"{config['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['donors_vcf']}",
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_vcf']}",
         #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
 
@@ -1050,8 +1075,8 @@ rule vireoSNP:
     params:
         n_donors=calc_donors,
         donors=get_donors,
-        geno_tag=config['donor_genotype'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['donors_vcf']}", '')
+        geno_tag=config['phe_demux_pipeline']['donor_genotype'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_vcf']}", '')
 
     threads: 7
 
@@ -1129,7 +1154,7 @@ rule vireoSNP:
 
 rule split_bams:
     input:
-        bam=f"{config['bams_dir']}{config['fold_struct']}{config['bam']}",
+        bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}",
         barcode_list="" # Barcodes vs sample name txt file, produced after producing final_count_matrices
 
     params:
