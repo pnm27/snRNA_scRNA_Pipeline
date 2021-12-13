@@ -31,10 +31,13 @@ fold_struct_demux: "{id1}-HTO/{id1}-HTO"
 fold_struct_phe_demux: "{id1}/"
 
 
+STAR_version: star/2.7.8a
+featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
+
+
 # BAM processing pipeline----------------------------------------------------
 STAR_solo_pipeline:
   bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
-  STAR_version: star/2.7.8a
   genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  
   star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
   sjdboverhang: 89
@@ -78,7 +81,6 @@ picard_pipeline:
 # Bustools-kallisto pipeline---------------------------------------------------
 kb_pipeline:
   kallisto_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/HTO_info/feature_barcodes/
-  featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
   k_mer_length: 15
   chemistry: 10xv3
   columns_to_pick:
