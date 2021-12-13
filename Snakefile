@@ -691,7 +691,7 @@ rule Picard_GC_bias_metrics:
 
 rule Picard_RNAseq_metrics:
     input:
-        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['bam']}"
+        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     priority: 9
 
