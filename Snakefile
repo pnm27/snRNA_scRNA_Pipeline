@@ -924,7 +924,7 @@ rule create_h5ad_bustools:
 rule run_calico_solo:
     input:
         f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}",
-        starsolo_out=f"{config['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_matrix']}" #get_STARsolo_mat
+        starsolo_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_lun_matrix']}" #get_STARsolo_mat
 
     priority: 8
    
