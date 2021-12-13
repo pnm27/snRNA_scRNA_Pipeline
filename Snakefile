@@ -1012,19 +1012,19 @@ rule create_inp_cellSNP:
         """
 
 
-if config['donor_id_diff']:
-    rule get_id_hash:
-        input:
+# if config['donor_id_diff']:
+#     rule get_id_hash:
+#         input:
 
 
-        output:
+#         output:
 
 
-        shell:
-            """
+#         shell:
+#             """
 
-            sleep 100
-            """
+#             sleep 100
+#             """
 
 
 # UMI tag is turned on. Therefore, PCR duplicates are included
