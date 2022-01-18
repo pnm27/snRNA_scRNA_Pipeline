@@ -13,15 +13,14 @@ R2_suffix: .R2.fastq.gz
 
 # Wet lab Info file which contains all details like sample name; set name(if applicable); donor names, HTOs, and HTO_barcodes(if applicable)
 # ; etc.
-wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.csv
+wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
 gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
 whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
 genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
 
-
+# ENCLOSE WILDCARDS IN {}
+# HERE, 'id1' IS THE WILDCARD.
 # Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
-# Enclose wildcards in {}
-# Here, 'id1' is the wildcard. 
 fold_struct: "{id1}-cDNA/{id1}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
 fold_struct_kb: "{id1}-HTO/"
@@ -29,11 +28,15 @@ fold_struct_kb: "{id1}-HTO/"
 fold_struct_demux: "{id1}-HTO/{id1}-HTO"
 # Folder structure for demux through the cellSNP-vireoSNP pipeline
 fold_struct_phe_demux: "{id1}/"
-
+fold_struct_filt_bc: "filt_bc_vireo_{num}_Sample_{id1}-cDNA"
+# Folder structures for split bams pipeline
+fold_struct_bam_split1: "{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
+fold_struct_bam_split2: "{id1}-cDNA/" # Used for per-barcode and per-donor bam files
 
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 
+# inp_bams: No
 
 # BAM processing pipeline----------------------------------------------------
 STAR_solo_pipeline:
@@ -109,8 +112,9 @@ demux_pipeline:
   h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
   calico_solo_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/solo/
   columns_to_pick:
-  - cDNA_ID
-  - hashtag
+  - set_ID
+  - hto
+  - hto_barcode
   - SubID
   gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
   final_count_matrix_dir: /sc/arion/projects/psychAD/snakemake_pipeline/final_count_matrix/solo/
@@ -126,15 +130,15 @@ demux_pipeline:
 
 # cellSNP and vireoSNP pipeline----------------------------------------------
 phe_demux_pipeline:
-  cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demux_gt/cellSNP_imp/
-  filt_barcodes_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
-  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/snakemake_pipeline/inp_for_vireo/
+  cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/cellSNP/
+  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/inp_for_cellsnp/
   donor_id_diff: yes
   ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
+  genotype_info: /sc/arion/projects/psychAD/pnm/VA_BR_Clinical_combo_matched_CMC_AMPAD_10082020.csv
   meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
   genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
-  vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP_imp/
-  filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf_imp/
+  vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP/
+  filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf/
   donor_genotype: GT
   # Optional params
   demux_col: SubID_cs
@@ -152,7 +156,27 @@ phe_demux_pipeline:
   n_proc: 20
   donors_vcf: GT_donors.vireo.vcf.gz
   filt_vcf: filt.vcf.gz
+  hash_columns:
+  - SubID
+  - Orig_VCF_ID
+  - Samples
 
+
+# split bams pipeline------------------------------------------------------
+split_bams_pipeline:
+  inp_split_bams_dir:  /sc/arion/projects/psychAD/inp_split_filt_bams/
+  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams/
+  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/
+  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs/
+  reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
+  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp/
+  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/
+  overwrite: yes
+  sort_cb_bam: _Aligned.sortedByCB.out.bam
+  sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
+  split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
+  sam: _Aligned.sortedByCB.out.sam
+  bc_per_donor: 800
 
 
 # RNA velocity pipeline------------------------------------------------------
@@ -169,15 +193,9 @@ meta_data_headers:
 - sub_prog
 - desc
 log_all_stats: /sc/arion/projects/psychAD/pnm/All_logs.tsv
-
-
-
-
-
-
-
-
-
-
-
-
+spreadsheet_dir: /sc/arion/projects/psychAD/pnm/NPSAD_spreadsheet/
+preparers:
+- Aram
+- Clara
+- Stathis
+converter_file: /sc/arion/projects/psychAD/pnm/NPSAD_spreadsheet/converter.xlsx

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #import sys
 import pandas as pd
-import re, argparse
-
+import re, argparse, os
 
 #Parse Command-Line arguments
 parser = argparse.ArgumentParser(description="Create FeatureBarcodes file for a given sample from a wet lab manifest")
@@ -26,9 +25,9 @@ print(fout)
 #samples_hto_df['HTOs'] = samples_hto_df['HTOs'].apply(eval)
 
 #val_list = []
-# samp_val = re.search('\/Sample_(NPSAD.*)-cDNA\/', fout).group(1)
-samp_val = args.sample_name
+samp_val = args.sample_name.replace('-', '_') +'_HTO'
 cols = args.columns
+
 
 #for htos in samples_hto_df[samp_val == samples_hto_df['Samples']]['HTOs']:
  #  for hto in sorted([int(x) for x in htos]):
@@ -37,10 +36,17 @@ cols = args.columns
     #   val_list.append(('HTO' + str(hto), seq))
 
 
-pd_df = pd.read_csv(args.wet_lab_file)
-a = pd_df.loc[pd_df[cols[0]] == samp_val].loc[:, cols[1:]].reset_index(drop=True)
+pd_df = pd.read_csv(args.wet_lab_file, sep='\t')
+a = pd_df.loc[pd_df[cols[0]] == samp_val, cols[1:]] # Series as an output, HTOs at a[0] and barcode sequences at a[1]
+a[cols[1]] = a[cols[1]].apply(lambda x: x.replace('HTO#', ''))
 
 # Custom-requirement
-a.columns = ['HTO', 'HTO_seq']
-a['HTO'] = a.HTO.map(lambda x: 'HTO'+x.replace('#', ''))
-a.to_csv(fout, sep=',', header=False, index=False, mode='w+')
+htos=a.iloc[0,0].split(',')
+hto_barc_seq=a.iloc[0,1].split(',')
+
+df_to_save=[]
+for i in range(len(htos)):
+    df_to_save.append( ('HTO' + htos[i], hto_barc_seq[i]) )
+
+df = pd.DataFrame(df_to_save)
+df.to_csv(fout, sep=',', header=False, index=False, mode='w+')

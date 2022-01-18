@@ -2,6 +2,9 @@ __default__:
   - "-P acc_CommonMind"
   - "-W 48:00"
 
+BAM_processing:
+  - "-q express"
+
 PICARD_metrics:
   - "-q express"
 
@@ -42,6 +45,9 @@ cellSNP:
 vireoSNP:
   - "-W 00:50"
   - "-q express"
+
+# split_bams:
+#   - "-q "
 
 update_stats:
   - "-q express"

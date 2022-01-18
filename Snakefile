@@ -196,6 +196,27 @@ def targets_PICARD(conf_f, progs='all') -> "list":
 
 
 
+# Temporary function, will change to targets_phe_demux
+def targets_cellSNP(conf_f) -> "list":
+    out_dir = conf_f['phe_demux_pipeline']['cellsnp_dir']
+    fs_phe = conf_f['fold_struct_phe_demux']
+    cells_suff = conf_f['phe_demux_pipeline']['cellsnp_cells']
+    base_suff = conf_f['phe_demux_pipeline']['cellsnp_base']
+
+    target_list = [f"{out_dir}{fs_phe}{cells_suff}", f"{out_dir}{fs_phe}{base_suff}"]
+    return target_list
+
+
+# To split bams
+def targets_SplitBams(conf_f) -> "list":
+    inp_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
+    fs_sB = conf_f['fold_struct_bam_split1']
+    target_list = targets_all(conf_f=conf_f, PICARD=False)
+    target_list.append(f"{inp_dir}{fs_sB}.txt")
+    return target_list
+
+
+
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 
 def targets_all(conf_f, PICARD=True, progs='all') -> "list":
@@ -259,6 +280,24 @@ def produce_targets(conf_f) -> "list":
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
+    elif target_step == "STARsolo_cellSNP":
+        target_files = targets_cellSNP(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]    
+
+    elif target_step == "STARsolo_split_bams":
+        target_files = targets_SplitBams(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+    else:
+        # print("Wrong inputs to produce_targets function!!")
+        return []
+        
+    if not check_log_version(conf_f=conf_f):
+        return final_target_list
+    else:
+        final_target_list.append(check_log_version(conf_f=conf_f))
+        return final_target_list
     # Not yet implemented
     elif target_step == "STARsolo_gt_demux":
         pass        
@@ -536,16 +575,60 @@ def get_donors(wildcards):
 
 
 # Mem allocation per thread (here thread is core/tasks), everything is in MB
-def allocate_mem_PM(wildcards, attempt):
+def allocate_mem_PGCB(wildcards, attempt):
     return 2500*attempt+2500
 
 
-def allocate_mem_KBP(wildcards, attempt):
+def allocate_mem_PRNA(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_mem_CFB(wildcards, attempt):
+    return 50*attempt+80
+
+
+def allocate_mem_CMF(wildcards, attempt):
+    return 50*attempt+70
+
+
+def allocate_mem_BKI(wildcards, attempt):
+   return 1000*attempt+1000
+
+
+def allocate_mem_RK(wildcards, attempt):
+   return 1000*attempt + 500
+
+
+def allocate_mem_RBCor(wildcards, attempt):
+    return 1500*attempt+1500
+
+
+def allocate_mem_RBS(wildcards, attempt):
+   return 3000*attempt+3000
+
+
+def allocate_mem_RBCnt(wildcards, attempt):
+    return 1500*attempt+1500
+
+
+def allocate_mem_CHB(wildcards, attempt):
+   return 1500*attempt+1500
+
+
+def allocate_mem_RCS(wildcards, attempt):
     return 2500*attempt+2500
 
 
 def allocate_mem_DXP(wildcards, attempt):
    return 3500*attempt+3500
+
+
+def allocate_mem_CICS(wildcards, attempt):
+    return 500*attempt+500
+
+
+def allocate_mem_GIH(wildcards, attempt):
+   return 3500*attempt+3500 # Not finalised yet
 
 
 def allocate_mem_cS(wildcards, attempt):
@@ -554,6 +637,72 @@ def allocate_mem_cS(wildcards, attempt):
 
 def allocate_mem_vS(wildcards, attempt):
    return 10000*attempt+10000
+
+
+def allocate_mem_US(wildcards, attempt):
+   return 250*attempt+250
+
+
+# Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
+# CAREFULL about exceeding time limits
+def allocate_time_PGCB(wildcards, attempt):
+    return 60*attempt+60
+
+
+def allocate_time_PRNA(wildcards, attempt):
+    return 210*attempt+210
+
+
+def allocate_time_CFB(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_CMF(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_BKI(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RK(wildcards, attempt):
+   return 20*attempt + 20
+
+
+def allocate_time_RBCor(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_RBS(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RBCnt(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_CHB(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RCS(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_DXP(wildcards, attempt):
+   return 15*attempt+15
+
+
+def allocate_time_CICS(wildcards, attempt):
+    return attempt
+
+
+def allocate_time_GIH(wildcards, attempt):
+   return 3500*attempt+3500 # Not finalised yet
+
+
+def allocate_time_US(wildcards, attempt):
+   return 15*attempt+15
 
 
 
@@ -580,7 +729,8 @@ rule STARsolo_sort:
         star_def_log_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}_Log.out",
         # limitsjcollap=get_limitsjcollapsed,
         solo_cell_filter=config['STAR_solo_pipeline']['solo_cell_filter'],
-        out_pref=lambda wildcards, output: output[7][:-13]
+        out_pref=lambda wildcards, output: output[7][:-13],
+        struct_fold=config['fold_struct']
         #cell_filtering not present in 2.7.5b
         #cell_filtering="EmptyDrops_CR" # Cell Filtering matching CellRanger 3.0.0 from Lun et. al. 2019
         # Few more parameters to match CellRanger >=4.0.0
@@ -614,6 +764,7 @@ rule STARsolo_sort:
         shell(
         """
         ml {config[STAR_version]}
+        ml samtools
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[STAR_solo_pipeline][star_params_dir]} ]; then mkdir -p {config[STAR_solo_pipeline][star_params_dir]}; fi
         STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {config[STAR_solo_pipeline][bams_dir]}{params.struct_fold}_ &> {log}_{resources.attempt}
@@ -626,7 +777,6 @@ rule STARsolo_sort:
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}_{resources.attempt}
                cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params}
         fi
-        ml samtools
         samtools index {config[STAR_solo_pipeline][bams_dir]}{config[fold_struct]}{config[STAR_solo_pipeline][bam]}
         """
         )
@@ -674,8 +824,8 @@ rule Picard_GC_bias_metrics:
         genome_fasta=config["genome_fasta"]
 
     resources:
-        mem_mb=allocate_mem_PM,
-        time_min=120
+        mem_mb=allocate_mem_PGCB,
+        time_min=allocate_time_PGCB
        
     threads: 2
 
@@ -703,8 +853,8 @@ rule Picard_RNAseq_metrics:
         strand=config['picard_pipeline']['strand']
 
     resources:
-        mem_mb=allocate_mem_PM,
-        time_min=420
+        mem_mb=allocate_mem_PRNA,
+        time_min=allocate_time_PRNA
 
     threads: 4
 
@@ -729,16 +879,16 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        samples_info=config['wet_lab_info'],
+        sample_sheet=config['wet_lab_info'],
         sample_name="{id1}"
 
     resources:
-        mem_mb=100, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_CFB, #allocate_mem_KBP,
+        time_min=allocate_time_CFB
 
     shell: 
         """
-        python3 helper_py_scripts/create_Feat_Barc.py {params.samples_info} -o {output} -s {params.sample_name} -c {config['kb_pipeline']['columns_to_pick']}
+        python3 helper_py_scripts/create_Feat_Barc.py {params.sample_sheet} -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
         """
 
          
@@ -758,8 +908,8 @@ rule create_mismatch_fasta:
         headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
     resources:
-        mem_mb=100, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
+        time_min=allocate_time_CMF
 
 
     shell: 
@@ -786,8 +936,8 @@ rule build_kallisto_index:
     params:
         k_mer_len=config['kb_pipeline']['k_mer_length']
     resources:
-        mem_mb=2000, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
+        time_min=allocate_time_BKI
 
     shell:
         """
@@ -816,8 +966,8 @@ rule run_kallisto:
     threads: 1
 
     resources:
-        mem_mb=lambda wildcards, attempt: 1000*attempt + 500, #allocate_mem_KBP,
-        time_min=40
+        mem_mb=allocate_mem_RK, #allocate_mem_KBP,
+        time_min=allocate_time_RK
 
     shell:
         """
@@ -839,8 +989,8 @@ rule run_bustools_correct:
         whitelist=config['whitelist']
 
     resources:
-        mem_mb=3000, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
+        time_min=allocate_time_RBCor
 
     shell:
         """
@@ -861,8 +1011,8 @@ rule run_bustools_sort:
     threads: 1
 
     resources:
-        mem_mb=6000, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
+        time_min=allocate_time_RBS
 
     shell:
         """
@@ -889,8 +1039,8 @@ rule run_bustools_count:
         output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
 
     resources:
-        mem_mb=3000, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
+        time_min=allocate_time_RBCnt
 
     shell:
         """
@@ -911,8 +1061,8 @@ rule create_h5ad_bustools:
         f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"
 
     resources:
-        mem_mb=3000, #allocate_mem_KBP,
-        time_min=10
+        mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
+        time_min=allocate_time_CHB
 
     shell:
         """
@@ -939,8 +1089,8 @@ rule run_calico_solo:
     threads: 2
 
     resources:
-        mem_mb=5000,
-        time_min=10
+        mem_mb=allocate_mem_RCS,
+        time_min=allocate_time_RCS
 
     shell: 
         """
@@ -967,16 +1117,18 @@ rule demux_samples_calico_solo_STARsolo:
         min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
         cols=config['demux_pipeline']['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
-        genes_info=config['demux_pipeline']['gene_info_file'] # File containing gene names and gene ids for annotations
+        genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
+        sample_name="{id1}"
 
     
     resources:
         mem_mb=allocate_mem_DXP,
-        time_min=30
+        time_min=allocate_time_DXP
 
     shell:
         """
-        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --headers {params.cols}
+        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
+        -s {params.sample_name}
         sleep 100
         """
         
@@ -997,13 +1149,13 @@ rule create_inp_cellSNP:
         na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
 
     resources:
-        mem_mb=1000,
-        time_min=1
+        mem_mb=allocate_mem_CICS,
+        time_min=allocate_time_CICS
 
     group: "phenotype-demux"
 
     output:
-        f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_demux']}.txt"
+        f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
 
     shell:
         """
@@ -1012,26 +1164,25 @@ rule create_inp_cellSNP:
         """
 
 
-# if config['donor_id_diff']:
-#     rule get_id_hash:
-#         input:
+# Not yet finished implementing
+rule get_id_hash:
+    input:
 
 
-#         output:
+    output:
+        config['phe_demux_pipeline']['meta_data_geno_samp']
 
-
-#         shell:
-#             """
-
-#             sleep 100
-#             """
+    shell:
+        """
+        sleep 100
+        """
 
 
 # UMI tag is turned on. Therefore, PCR duplicates are included
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_phe_demux']}.txt",
+        bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
         bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     group: "phenotype-demux"
@@ -1152,19 +1303,123 @@ rule vireoSNP:
 
 
 
-rule split_bams:
+rule create_inp_splitBams:
     input:
-        bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}",
-        barcode_list="" # Barcodes vs sample name txt file, produced after producing final_count_matrices
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+
+    priority: 7
+
+    output:
+        f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
 
     params:
-        output_pref=f"{config['split_bams_dir']}{config['fold_struct']}_"
-    output:
-        f"{config['split_bams_proxy_dir']}{{num}}_Sample_{{id1}}.txt" # Proxy to the output
+        overwrite=config['split_bams_pipeline']['overwrite']
+
+    group: "split_bams"
+
+    threads: 2
+
+    resources:
+        mem_mb=10000
 
     shell:
         """
-        helper_py_scripts/split_bam_indiv_barc_samtools.sh {input.bam} {input.barcode_list} {params.output_pref} > {output}
+        if [ "{params.overwrite}" == True ]; then
+            python3 helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
+
+        else
+            python3 helper_py_scripts/create_inp_splitBam.py {input} {output}
+
+        fi
+        sleep 60
+        """
+
+
+rule bamsort_by_CB:
+    input:
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+
+    output:
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
+
+    params:
+        temp_pref=f"{config['split_bams_pipeline']['sort_temp_dir']}{{num}}_{{id1}}"
+
+    group: "split_bams"
+
+    threads: 5
+
+    resources:
+        mem_mb=20000
+
+    shell:
+        """
+        mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
+        ml samtools
+        # samtools view -h {input} | grep -E "^@|CB:Z:[ATGCN]+" | samtools view -b - | samtools sort -@ 12 -t CB -o {output} -T {params.temp_pref} -
+        samtools sort -@ 12 -t CB -T {params.temp_pref} {input} | samtools view -h - | grep -E "^@|CB:Z:[ATGCN]+" | samtools view -b - > {output}
+        """
+
+
+# This rule will always overwrite the files (i.e. even if certain barcodes are already produced and present in the output folder, this script will overwrite them)
+# This is much more efficient in the long run
+rule prep_split_bams:
+    input:
+        bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
+
+    priority: 7
+
+    params:
+        # output_pref=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct']}_"
+        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct_bam_split2']}" # Directory where each barcode per sample is kept until merged into per 'donor', per sample
+
+    group: "split_bams"
+
+    threads: 4
+
+    resources:
+        mem_mb=30000
+
+    output:
+        f"{config['split_bams_pipeline']['split_bams_script_dir']}{config['fold_struct_bam_split1']}.sh", # This is the shell script which will split the bams (practically, sam)
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
+        f"{config['split_bams_pipeline']['reads_v_barcodes_dir']}{config['fold_struct_bam_split1']}.txt" # This is the 'txt' files containing barcode and reads associated with it
+
+    shell:
+        """
+        bash helper_sh_scripts/split_bam_indiv_barc_samtools_4.sh {input.bam} {output[2]} {output[0]} {params.temp_bam_per_cell_dir}
+        sleep 60
+        """
+
+
+rule split_bams:
+    input:
+        f"{config['split_bams_pipeline']['split_bams_script_dir']}{config['fold_struct_bam_split1']}.sh",
+        sam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
+        barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
+
+    priority: 7
+
+    params:
+        split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
+        # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
+        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct_bam_split2']}",
+        split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}"
+
+    group: "split_bams"
+
+    threads: 5
+
+    resources:
+        mem_mb=30000
+
+    output:
+        f"{config['split_bams_pipeline']['split_bams_proxy_dir']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+
+    shell:
+        """
+        bash {input[0]} &> {output}
+        bash helper_sh_scripts/create_bams_per_donor.sh {input.barcodes_vs_donor} {params.split_bams_dir} {params.temp_bam_per_cell_dir} {params.split_at} >> {output} 2>&1
         sleep 60
         """
 
@@ -1185,8 +1440,8 @@ rule update_stats:
     threads: 1
 
     resources:
-        mem_mb=500,
-        time_min=30
+        mem_mb=allocate_mem_US,
+        time_min=allocate_time_US
 
     shell:
         """
