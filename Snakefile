@@ -60,7 +60,7 @@ sample_name=[]
 #tag=[]
 
 
-# Limitting Step for the run of Snakemake
+# Limitting Step for the run of Snakemake, creating the wildcards
 with open(config['select_fastqs']) as fq:
     for line in fq:
         line_sp = line.split('/')
@@ -132,7 +132,7 @@ def check_log_version(conf_f) -> "list":
 
     # This function returns "True" if the last version of the logs_file (this is the "map_file") has all samples
     # present in the config['select_fastqs']
-    if not all(sample for sample in sample_name if sample in lf_df["LAB"]["SAMPLE"]["SAMPLE"]):
+    if not all(sample + '-cDNA' in lf_df["LAB"]["SAMPLE"]["SAMPLE"] for sample in sample_name ):
         # print("The file {} doesn't contain all samples present in the \"fastq_files.txt\"!\nRemoving the file and producing a newer version of the file".format(log_file))
         os.remove(log_file)
         return log_file
@@ -313,15 +313,15 @@ def produce_targets(conf_f) -> "list":
 
 # Add wildcards info here in the 'expand' function
 def stats_produce_inp(wildcards):
-    STAR_log=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['STAR_log_final']}", id1=wildcards.id1)
-    SS_G_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}", id1=wildcards.id1)
-    SS_GF_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_features']}", id1=wildcards.id1)
-    SS_G_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}", id1=wildcards.id1)
-    SS_GF_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_summary']}", id1=wildcards.id1)
-    SS_Barcodes=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}", id1=wildcards.id1)
-    PICARD_GC=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}", id1=wildcards.id1)
-    PICARD_RNAseq=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}", id1=wildcards.id1)
-    Demultiplex_info=expand(f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}", id1=wildcards.id1)
+    STAR_log=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['STAR_log_final']}", id1=sample_name)
+    SS_G_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}", id1=sample_name)
+    SS_GF_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_features']}", id1=sample_name)
+    SS_G_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}", id1=sample_name)
+    SS_GF_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_summary']}", id1=sample_name)
+    SS_Barcodes=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}", id1=sample_name)
+    PICARD_GC=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}", id1=sample_name)
+    PICARD_RNAseq=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}", id1=sample_name)
+    Demultiplex_info=expand(f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}", id1=sample_name)
 
     if config['last_step'] == "all":
         
@@ -367,7 +367,7 @@ def stats_produce_params(wildcards, input):
     cons_param = ""
     for i in range(len(input)):
         s_temp = pd.Series(input[i])
-        for k, v in log_dict:
+        for k, v in log_dict.items():
             # All files should contain the pattern string
             if all(s_temp.str.contains(v[0])):
                 curr_param = v[1] + f" {{input[{i}]}}"
@@ -486,7 +486,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
     '''
     # This is to check the log file produced after each attempt for the error value
-    file_p_temp = config['fold_struct'].format(id1=wildcards.id1)
+    file_p_temp = f"{config['fold_struct']}".format(num=wildcards.num, id1=wildcards.id1)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STAR_solo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
@@ -496,7 +496,7 @@ def get_limitsjdbval_coll(wildcards, resources):
                 if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
                     # print("Found an Error with the parameter limitSjdbInsertNsj. Changing defaulkt values of the parameters \
                         # \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the default value of 1000000 to {}".format(line.split()[-1]))
-                    ins_nsj = line.split()[-1] if line.split()[-1] > ins_nsj else ins_nsj
+                    ins_nsj = int(line.split()[-1]) if int(line.split()[-1]) > ins_nsj else ins_nsj
                     sj_collap = ins_nsj
 
                 elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
@@ -513,13 +513,14 @@ def get_limitsjdbval_coll(wildcards, resources):
                     
 
    # This is to check the parameters file, if there was a previous successful run
+   # Use try except block to catch file issues
     else:
-        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)):
-            with open("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)) as fin:
+        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], num=wildcards.num, id1=wildcards.id1)):
+            with open("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], num=wildcards.num, id1=wildcards.id1)) as fin:
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
-                    ins_nsj = re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1)
-                    sj_collap = re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1)
+                    ins_nsj = int(re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1))
+                    sj_collap = int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))
 
         # return 1000000
 
