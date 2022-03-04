@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python ==3.9
+  - pysam ==0.16
+  - pip:
+      - anndata==0.7.6

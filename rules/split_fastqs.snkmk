@@ -1,0 +1,42 @@
+rule convert_sort_fastqs:
+	input:
+        R1=f"{config['cDNA_fastqs_dir']}{config['fold_struct']}{config['R1_suffix']}",
+        R2=f"{config['cDNA_fastqs_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	params:
+		temp_R1_file=lambda wildcards, output: os.path.join(config['split_fastqs_pipeline']['split_temp_dir'], "temp_{id1}.R1.fastq"),
+		temp_R2_file=lambda wildcards, output: os.path.join(config['split_fastqs_pipeline']['split_temp_dir'], "temp_{id1}.R2.fastq")
+
+	output:
+		f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R1_suffix']}",
+		f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	shell:
+		"""
+		gunzip -c {input.R1} | sed 'N;N;N;s/\n/\\/g' > {params.temp_R1_file}
+		gunzip -c {input.R2} | sed 'N;N;N;s/\n/\\/g' > {params.temp_R2_file}
+		processes=$((`nproc`/2))
+		sort --parallel $processes -t "\\" -k2,2 {params.temp_R1_file} > {output[0]} && rm {params.temp_R1_file}
+		awk 'FNR==NR {a[$1] = $0; next} $1 in a {print a[$1]}' {params.temp_R2_file} {output[0]} > {output[1]}
+		rm {params.temp_R2_file}
+		sed -i 's/\\/\n/g' {output[0]}
+		sed -i 's/\\/\n/g' {output[1]}
+		"""
+
+rule split_fastqs_by_CB:
+	input:
+		R1=f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R1_suffix']}",
+		R2=f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	params:
+
+
+	output:
+		f"{config['split_fastqs_pipeline']['cDNA_split_dir']}{config['fold_struct']}{config['R1_suffix']}",
+		f"{config['split_fastqs_pipeline']['cDNA_split_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	shell:
+		"""
+
+
+		"""

@@ -7,21 +7,36 @@ import numpy as np
 import glob2
 import re
 from time import sleep
-import errno
+import errno, argparse
+
+
+# This function returns the filename if it exists
+# otherwise an empty string
+def get_filename(loc_dir, file_struct, fn, suffix):
+
+    try:
+        if file_struct.endswith('/'):
+            return glob2.glob(os.path.join(loc_dir, file_struct, f"{fn}{suffix}"))[0]
+        else:
+            # print(os.path.join(loc_dir, f"{file_struct}{fn}{suffix}"))
+            return glob2.glob(os.path.join(loc_dir, f"{file_struct}{fn}{suffix}"))[0]
+    except:
+        return ""
+
 
 
 # This function is to read files with extension '.stats', which are formatted weirdly
 # and return a pandas Dataframe for easy use
 def get_df(inp_path):
-   col1 = []
-   col2 = []
-   with open(inp_path) as f1:
-       for line in f1:
-           col1.append(line.strip().split()[0])
-           col2.append(line.strip().split()[1])
+    col1 = []
+    col2 = []
+    with open(inp_path) as f1:
+        for line in f1:
+            col1.append(line.strip().split()[0])
+            col2.append(line.strip().split()[1])
    
-   n_df = pd.DataFrame({'cols':col1,'vals':col2})
-   return n_df
+    n_df = pd.DataFrame({'cols':col1,'vals':col2})
+    return n_df
 
 
 # This function is used to caluclate ratios like doublet pct and negative pct
@@ -33,137 +48,193 @@ def calc_ratio(numer, denom):
     return ratios
 
 
-# Main function to write rows of samples into the
-def write_logs(big_df, mapper, all_files_dict, **kwargs):
+# Main function to write rows of samples into a df
+def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
    
-   new_row = []
-   new_row.append(kwargs["round_num"])
-   new_row.append(kwargs["sample"])
-   new_row.append(kwargs["set_num"])
-   new_row.append(kwargs["prep"])
-   new_row.append(kwargs["rep"])
-   # Store Barcode.stats and Feature.stats files as DF in a list for easy access
-   # Seq is Feature.stats for Gene, Feature.stats for GeneFull, Barcode.stats
-   stats_file = [x for k, x in all_files_dict.items() if '.stats' in x ]
-   list_df = [get_df(x) for x in stats_file ]
-   
-   # Add values to a list in the same sequence as the final output file/dataframe
-   for prog, sub_prog, val in big_df.columns.tolist():
-       if prog != "LAB":
-           if prog == "STAR":
-               temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
-               temp_df["vals"] = temp_df.vals.str.strip()
-               temp_df["cols"] = temp_df.cols.str.strip()
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value.replace(" ","/"))
+    new_row = []
+    new_row.append(kwargs["round_num"])
+    new_row.append(kwargs["sample"])
+    new_row.append(kwargs["set_num"])
+    new_row.append(kwargs["prep"])
+    new_row.append(kwargs["rep"])
+    # Store Barcode.stats and Feature.stats files as DF in a list for easy access
+    # Seq is Feature.stats for Gene, Feature.stats for GeneFull, Barcode.stats
+    stats_file = [x for k, x in all_files_dict.items() if '.stats' in x ]
+    list_df = [get_df(x) for x in stats_file ]
+    
+    
+    # Add values to a list in the same sequence as the final output file/dataframe
+    for prog, sub_prog, val in big_df.columns.tolist():
+        add_value=""
+        if prog != "LAB" and sub_prog not in no_progs:
+            if sub_prog == "REG":
+                temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
+                temp_df["vals"] = temp_df.vals.str.strip()
+                temp_df["cols"] = temp_df.cols.str.strip()
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value.replace(" ","/"))
 
-           elif sub_prog == "GC":
-               temp_df = pd.read_csv(all_files_dict["PICARD_GC"], sep='\t', skiprows=6)
-               add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
-               new_row.append(add_value)
+            elif sub_prog == "GC":
+                temp_df = pd.read_csv(all_files_dict["PICARD_GC"], sep='\t', skiprows=6)
+                add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
+                new_row.append(add_value)
                
-           elif sub_prog == "RNASEQMETRIC":
-               temp_df = pd.read_csv(all_files_dict["PICARD_RNASeq"], sep='\t', nrows=1, skiprows=6)
-               add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
-               new_row.append(add_value)
+            elif sub_prog == "RNASEQMETRIC":
+                temp_df = pd.read_csv(all_files_dict["PICARD_RNASeq"], sep='\t', nrows=1, skiprows=6)
+                add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
+                new_row.append(add_value)
 
-           elif sub_prog == "GENE_FEATURE":
-               temp_df = get_df(all_files_dict["Gene_Features"]) 
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value)
+            elif sub_prog == "GENE_FEATURE":
+                temp_df = get_df(all_files_dict["Gene_Features"]) 
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value)
 
-           elif sub_prog == "GENE_SUMM":
-               temp_df = pd.read_csv(all_files_dict["Gene_Summary"], names=['cols', 'vals'])
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value)
+            elif sub_prog == "GENE_SUMM":
+                temp_df = pd.read_csv(all_files_dict["Gene_Summary"], names=['cols', 'vals'])
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value)
 
-           elif sub_prog == "GENEFULL_FEATURE":
-               temp_df = get_df(all_files_dict["GeneFull_Features"])
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value)
+            elif sub_prog == "GENEFULL_FEATURE":
+                temp_df = get_df(all_files_dict["GeneFull_Features"])
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value)
 
-           elif sub_prog == "GENEFULL_SUMM":
-               temp_df = pd.read_csv(all_files_dict["GeneFull_Summary"], names=['cols', 'vals'])
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value)
+            elif sub_prog == "GENEFULL_SUMM":
+                temp_df = pd.read_csv(all_files_dict["GeneFull_Summary"], names=['cols', 'vals'])
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value)
 
-           elif sub_prog == "BARCODE_STATS":
-               temp_df = get_df(all_files_dict["Barcodes_stats"])
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
-               new_row.append(add_value)
+            elif sub_prog == "BARCODE_STATS":
+                temp_df = get_df(all_files_dict["Barcodes_stats"])
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
+                new_row.append(add_value)
            
-           elif sub_prog == "DEMUX":
-               temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
-               add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX"), "val_in_log"].values[0], "vals"].values[0]
-               if val == "N_CELLS_AFTER_DEMUX_CS":
+            elif sub_prog == "DEMUX":
+                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX"), "val_in_log"].values[0], "vals"].values[0]
+                if val == "N_CELLS_AFTER_DEMUX_CS" and add_value.endswith(','):
+                    new_row.append(add_value[:-1])
+
+                # Compatibility with older-style of producing demux_info file
+                elif val == "N_CELLS_AFTER_DEMUX_CS" and 'Name:' in add_value:
                    add_value = add_value[:add_value.find('Name:')]
                    add_value= re.sub('[^\S\r\n]+', ':', add_value)
                    add_value = add_value[:-1]
+                   add_value = re.sub('\n', ',', add_value)
                    new_row.append(add_value)
 
-               else:
-                   new_row.append(add_value)           
+                else:
+                     new_row.append(add_value)        
 
-           else:
-               raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
+            else:
+                raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
 
+        elif prog != "LAB" and sub_prog in no_progs:
+            new_row.append(add_value)
 
-   return new_row
-
-
-# Mention the file structure for each log file
-#'/sc/arion/projects/psychAD/STARsolo_bams/round2/Sample_NPSAD-20201117-C2-cDNA/NPSAD-20201117-C2-cDNA_L004_001_Solo.out/Gene/Features.stats'
-#pd.read_csv("../STARsolo_bams/round2/Sample_NPSAD-20201125-A1-cDNA/NPSAD-20201125-A1-cDNA_rnaseq_metrics.txt", sep='\t', nrows=1, skiprows=6)
-#pd.read_csv("../STARsolo_bams/round2/Sample_NPSAD-20201125-A1-cDNA/NPSAD-20201125-A1-cDNA_summary_metrics.txt", sep='\t', skiprows=6)
-#pd.read_csv("../STARsolo_bams/round2/Sample_NPSAD-20201125-A1-cDNA/NPSAD-20201125-A1-cDNA_qual_score_dist.txt", sep='\t', skiprows=7)
-#demultiplex/solo/round1_Sample-NPSAD-20201105-A1-cDNA_calicosolo_info.tsv
-   
+        else:
+            continue
 
 
-# Extract the round info and Sample info from fastqs: val_set is a list of sets, which comprises of (round, sample_name)
+    return new_row
 
-# Constraints to limit the fastq output
-# no_op = [('1', 'NPSAD-20201021-A1-cDNA', 'A', '1'), ('3', 'NPSAD-20201218-A1-cDNA', 'A', '1'), ('1', 'NPSAD-20201013-A1-cDNA', 'A', '1'), ('3', 'NPSAD-20201218-A2-cDNA', 'A', '2'),  \
-#          ('1', 'NPSAD-20201016-A1-cDNA', 'A', '1'), ('1', 'NPSAD-20201022-A1-cDNA', 'A', '1'), ('1', 'NPSAD-20201021-A2-cDNA', 'A', '2'), ('1', 'NPSAD-20201022-A2-cDNA', 'A', '2')]
-# val_set = [(re.search('/round([0-9]+)/', f).group(1), re.search('/Sample_(NPSAD-.*-cDNA)/', f).group(1), os.path.basename(f).split('-')[2][0], os.path.basename(f).split('-')[2][1]) for f in glob2.glob("/sc/arion/projects/psychAD/fastqs/round*/*-cDNA/*R1.fastq.gz") if 'round4' not in f]
-# val_set = [vals for vals in val_set if vals not in no_op]
-
-
-#all_logs = glob2.glob("/sc/arion/projects/psychAD/STARsolo_bams/round*/*/*_Log.final.out")
-#print(len(all_logs))
 
 new_cols_to_add = [['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], ['REP', 'LAB', 'BATCH']]
 
 # Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
 def get_latest_extra_columns():
     global new_cols_to_add
-    # if curr_length == len(new_cols_to_add)
-    #     return True
-    # else
-    #     return False
     return len(new_cols_to_add)
 
 
 # Run this only when executed through Snakemake
 if __name__ == "__main__":
-    print("This script will update info/logs for all Samples simulatneously!!!")
-    print("Run this script after all logs described below has been produced.")
-    print("Logs produced by STARsolo-Log.final.out, Summary.csv and Features.stats for Gene and GeneFull, info from PICARD's CollectGCBiasMetrics, RNASeqMetrics and demultiplex output stats for each sample will be used.")
-    print("If any of the above mentioned files (9) does not exist that sample won't be processed")
-    #print("Currently all files exist for only for samples in round1-3 excluding:")
-    #print("round1_Sample-NPSAD-20201021-A2\nround3_Sample-NPSAD-20201218-A1\nround1_Sample-NPSAD-20201013-A1\nround1_Sample-NPSAD-20201022-A1\n\
-    #round3_Sample-NPSAD-20201218-A2\nround1_Sample-NPSAD-20201016-A1\nround1_Sample-NPSAD-20201022-A2\nround1_Sample-NPSAD-20201021-A1")
-    print("\n\n")
-    print("Naming Convention Assumed to run this script")
-    print("Fastq files: NPSAD-<yyyymmdd>-<one_letter_for_preparer><one_digit_for_rep_num>-cDNA_<Lane_info>.R<1/2>.fastq.gz")
-    print("\t\t\tExample: NPSAD-20201110-A1-cDNA_L001_001.R1.fastq.gz")
 
-    out=snakemake.output[0]
-    map_names = pd.read_csv(snakemake.params["map_file"], delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
-    #cl = pd.DataFrame([['Round', 'lab', 'Batch'], ['Preparer', 'lab', 'Batch'], ['Sample', 'lab', 'Sample']], columns=list(map_names.columns.values)[1:-1])
-    #cols = map_names.iloc[:, 1:-1]
-    #cols = cols.append(cl, ignore_index=True)
-    #cols = cols.iloc[:, [0, 2, 1]]
+
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Compile all the files to combine all stats. NOTE: For all optional files (including all folder structures), if parameter is present but no value is \
+        provided then values will be used as described by the defaults in respective help message. Folder structures for STARsolo output and PICARD is assumed to be the same, by default. \
+        For optional files, the only required value is that of the parent folder.")
+
+    parser.add_argument('samples', nargs='+', help="List of samples. This will be the prefix(es) for all the name(s) of the output file(s)")
+
+
+    # Optional parameters
+    parser.add_argument('-m', '--map_file', help="Mapping file that contains info on the headers in the output. DEFAULT: <current working directory>/Final_out_MAP_2.tsv", 
+        default=os.path.join(os.getcwd()+"Final_out_MAP_2.tsv"))
+    parser.add_argument('-o', '--output_file', help="output file. DEFAULT: <current working directory>/All_logs.tsv", default=os.path.join(os.getcwd()+"All_logs.tsv"))
+    parser.add_argument('-b', '--bam_dir', help="Directory containing bam file(s). DEFAULT: current working directory", default=os.getcwd())
+    parser.add_argument('-p', '--picard_dir', help="Directoy containing PICARD outputs. DEFAULT: current working directory", default=os.getcwd())
+    parser.add_argument('-d', '--demul_dir', help="Directory containing demultiplexing stats. DEFAULT: current working directory", default=os.getcwd())
+    parser.add_argument('--bam_struct', help="Regex to identify bam file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
+        provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
+    parser.add_argument('--pc_struct', help="Regex to identify picard file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
+        provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
+    parser.add_argument('--dem_struct', help="Regex to identify demultiplex info containing file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
+        provided to this script. DEFAULT: \"<current_working_dir>/<sample>\"", default=os.path.join(os.getcwd(), "<sample>"))
+    # parser.add_argument('--ss_fold_struct', dest='ssfs', nargs='?', help="Folder structure for the bam files produced by STARsolo. If no value provided, then the strucutre is assmued to be \
+    #     <cwd>/<samples>/ for all samples. DEFAULT: \"current working dir, _Log.final.out\"", default='default')
+    # parser.add_argument('--pc_fold_struct', dest='pcfs', nargs='?', help="Folder structure for the bam files produced by STARsolo. If no value provided, then the strucutre is assmued to be \
+    #     <cwd>/<samples>/ for all samples. DEFAULT: \"current working dir, _Log.final.out\"", default='default')
+    parser.add_argument('--ss_l', nargs='?', help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Log.final.out\"", const="_Log.final.out", default=None)
+    parser.add_argument('--pc_gc', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_summary_metrics.txt\"", const="_summary_metrics.txt", default=None)
+    parser.add_argument('--pc_rs', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_rnaseq_metrics.txt\"", const="_rnaseq_metrics.txt", default=None)
+    parser.add_argument('--ss_g_f', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Solo.out/Gene/Features.stats\"", const="_Solo.out/Gene/Features.stats", default=None)
+    parser.add_argument('--ss_gf_f', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Solo.out/GeneFull/Features.stats\"", const="_Solo.out/GeneFull/Features.stats", default=None)
+    parser.add_argument('--ss_g_s', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Solo.out/Gene/Summary.csv\"", const="_Solo.out/Gene/Summary.csv", default=None)
+    parser.add_argument('--ss_gf_s', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Solo.out/GeneFull/Summary.csv\"", const="_Solo.out/GeneFull/Summary.csv", default=None)
+    parser.add_argument('--ss_bc', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_Solo.out/Barcodes.stats\"", const="_Solo.out/Barcodes.stats", default=None)
+    parser.add_argument('--dem_info', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+        DEFAULT: \"_STARsolo_info.tsv\"", const="_STARsolo_info.tsv", default=None)
+
+
+    args = parser.parse_args()
+
+
+    # print(args)
+
+    # Parse directory values
+    bam_dir = args.bam_dir
+    pic_dir = args.picard_dir
+    dem_dir = args.demul_dir
+
+
+
+    # Validate the optional parameters, if present
+    opt_file_params = {'ss_l': ['.out', 'REG'], 'pc_gc': ['.txt', 'GC'], 'pc_rs':['.txt', 'RNASEQMETRIC'], 'ss_g_f': ['.stats', 'GENE_FEATURE'], 'ss_gf_f': ['.stats', 'GENEFULL_FEATURE'],
+                       'ss_g_s': ['.csv', 'GENE_SUMM'], 'ss_gf_s': ['.csv', 'GENEFULL_SUMM'], 'ss_bc': ['.stats', 'BARCODE_STATS'], 'dem_info': ['.tsv', 'DEMUX'], 'output_file': ['.tsv', None],
+                       'map_file': ['.tsv', None]}
+
+    # List of programs from which no stats need be recorded
+    exclude_progs=[]
+
+    # Extension test for files and dir exists for directories
+    for k, v in vars(args).items():
+        # If these parameters are present, they should have appropriate extensions
+        if k in opt_file_params and v != None and not v.endswith(opt_file_params[k][0]):
+            raise ValueError(f"The file extension in {v} for the parameter {k} is unexpected!")
+        elif k.endswith('dir') and ( v == None or not os.path.isdir(v)):
+            raise ValueError(f"The directory {v} provided for the parameter {k} doesn't exist!")
+        elif k in opt_file_params and v == None and not k.endswith('dir') and not k.endswith('file'):
+            exclude_progs.append(opt_file_params[k][1])
+        else:
+            continue
+
+
+
+
+
+
+    out=args.output_file
+    map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
     cl = pd.DataFrame(new_cols_to_add, columns=list(map_names.columns.values)[1:-1])
     cols = map_names.iloc[:, 1:-1]
     cl = cl.append(cols, ignore_index=True)
@@ -179,19 +250,9 @@ if __name__ == "__main__":
     #N_READS
     cl = cl.iloc[:, [1, 2, 0]]
 
-    # Integrity check
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["PICARD_GC"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["PICARD_RNAseq"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_G_Feat"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_GF_Feat"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_G_Summ"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_GF_Summ"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["SS_Barcodes"])
-    assert len(snakemake.input["STAR_log"]) == len(snakemake.input["Demultiplex_info"])
 
     # If file doesn't exist create one else open as pandas dataframe
     try:
-        #if os.path.isfile(snakemake.output[0]) :
         combo_log = pd.read_csv(out, sep = "\t", header=[0, 1, 2])
 
         # Catch older files that may have lesser columns than expected
@@ -204,71 +265,72 @@ if __name__ == "__main__":
         combo_log = pd.DataFrame(columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
 
 
-    for i in range(len(snakemake.input["STAR_log"])):
+
+    # Process each sample -----------------------------------------------------------------------------------------------------------------------------------------------
+    # List containing per sample values as lists (list of lists)
+    row_list = []
+    for sample in args.samples:
+
+
+        # create per sample copy of exclude_prog list
+        samp_excl_progs = exclude_progs.copy()
+
+        # Parse file structures for bam files, picard files and demultiplex info files
+        bam_st = args.bam_struct.replace("<sample>", sample)
+        pc_st = args.pc_struct.replace("<sample>", sample)
+        dem_st = args.dem_struct.replace("<sample>", sample)
         
+        # print("Entered loop")
+        # Get full filenames if user requires them to be tabulated
+        ss_log_final = get_filename(bam_dir, bam_st, sample, args.ss_l) if args.ss_l != None else ""
+        ss_gene_summary = get_filename(bam_dir, bam_st, sample, args.ss_g_s) if args.ss_g_s != None else ""
+        ss_genefull_summary = get_filename(bam_dir, bam_st, sample, args.ss_gf_s) if args.ss_gf_s != None else ""
+        ss_gene_features = get_filename(bam_dir, bam_st, sample, args.ss_g_f) if args.ss_g_f != None else ""
+        ss_genefull_features = get_filename(bam_dir, bam_st, sample, args.ss_gf_f) if args.ss_gf_f != None else ""
+        ss_bc_stats = get_filename(bam_dir, bam_st, sample, args.ss_bc) if args.ss_bc != None else ""
+        pc_gc_file = get_filename(pic_dir, pc_st, sample, args.pc_gc) if args.pc_gc != None else ""
+        pc_rs_file = get_filename(pic_dir, pc_st, sample, args.pc_rs) if args.pc_rs != None else ""
+        dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info) if args.dem_info != None else ""
 
-           # flag
-        flag = 1
-        #cols = [["STAR"], map_names.curr_val.tolist()]
-        #cl = list(itertools.product(*cols))
-        #cl = [('lab', 'Batch', 'Round'), ('lab', 'Batch', 'Preparer'), ('Sample', 'Sample', 'Sample')]+cl
-           #if os.path.isfile(snakemake.output[0]) :
-           #if not(combo_log["Sample"]["Sample"].str.contains(os.path.basename(all_logs[i]).replace("_Log.final.out", "")).any()) :
-               #combo_log.loc[len(combo_log.iloc[:, 0])] = write_logs(all_logs[i], combo_log, map_names)
-
-           #combo_log.to_csv(snakemake.output[0], sep = "\t", index=False)
-           #with open(snakemake.output[0], 'w+') as fout:
-           #combo_log = pd.DataFrame(columns=pd.MultiIndex.from_tuples(cl, names=["prog", "sub_prog", "value"]))
-           #combo_log.loc[0] = write_logs(all_logs[i], combo, map_names)
-           #df.to_csv(snakemake.output[0], sep = "\t", index=False)
-
-        #print(type(combo_log))
-        #print(combo_log.columns)
+        files_dict = {"STAR_final": ss_log_final, "PICARD_GC": pc_gc_file, "PICARD_RNASeq": pc_rs_file, "Gene_Features": ss_gene_features, "GeneFull_Features": ss_genefull_features, 
+                      "Gene_Summary": ss_gene_summary, "GeneFull_Summary": ss_genefull_summary, "Barcodes_stats": ss_bc_stats, "Demultiplex_stats": dem_file}
 
 
-        # files_list = ["/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Log.final.out".format(num=val_set[i][0], samp_name=val_set[i][1]), 
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_summary_metrics.txt".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_rnaseq_metrics.txt".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/Gene/Features.stats".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/GeneFull/Features.stats".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/Gene/Summary.csv".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/GeneFull/Summary.csv".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/STARsolo_bams/round{num}/Sample_{samp_name}/{samp_name}_Solo.out/Barcodes.stats".format(num=val_set[i][0], samp_name=val_set[i][1]),
-        #               "/sc/arion/projects/psychAD/demultiplex/info/round{num}_Sample-{samp_name}_STARsolo_info.tsv".format(num=val_set[i][0], samp_name=val_set[i][1])]
+        # Check for each sample in the list if it has all required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
+        per_samp_check = {'REG': ss_log_final, 'GC': pc_gc_file, 'RNASEQMETRIC': pc_rs_file, 'GENE_FEATURE': ss_gene_features, 'GENEFULL_FEATURE': ss_genefull_features,
+                        'GENE_SUMM': ss_gene_summary, 'GENEFULL_SUMM': ss_genefull_summary, 'BARCODE_STATS': ss_bc_stats, 'DEMUX': dem_file}
+        for k, v in per_samp_check.items():
+            if k not in samp_excl_progs and v == "":
+                samp_excl_progs.append(k)
 
-        files_dict = {"STAR_final":snakemake.input["STAR_log"][i], "PICARD_GC":snakemake.input["PICARD_GC"][i], "PICARD_RNASeq":snakemake.input["PICARD_RNAseq"][i], "Gene_Features":snakemake.input["SS_G_Feat"][i], "GeneFull_Features":snakemake.input["SS_GF_Feat"][i], 
-                      "Gene_Summary":snakemake.input["SS_G_Summ"][i], "GeneFull_Summary":snakemake.input["SS_GF_Summ"][i], "Barcodes_stats":snakemake.input["SS_Barcodes"][i], "Demultiplex_stats":snakemake.input["Demultiplex_info"][i]}
 
-        # file_check = list(map(os.path.isfile, files_list))
-
-        sample_name = re.search('/(NPSAD-.*)_Log.final.out', files_dict["STAR_final"]).group(1)
+        # extract additional info per sample
         r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
-        preparer = sample_name.split('-')[2][0]
-        replicate = sample_name.split('-')[2][1]
-        set_val = sample_name[:-6]
-
-        # Redundant file check
-        # if not all(map(os.path.isfile, files_list)):
-        #     for key, val in files_dict.items():
-        #         raise FileNotFoundError(errno.ENOENT, "From round {} the sample {} does not have the {} file at: ".format(round_num, sample_name, key), val)
+        preparer = sample.split('-')[2][0]
+        replicate = sample.split('-')[2][1]
+        set_val = sample[:-6]
 
 
            
-        if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample_name).any()) :
-           #combo_log.loc[len(combo_log.iloc[:, 0])] = write_logs(combo_log, map_names, file1, file2, file3, file4, file5, file6, file7, file8, round_num=val_set[i][0], sample=val_set[i][1], prep=val_set[i][2], rep=val_set[i][3])
-            combo_log.loc[len(combo_log.iloc[:, 0])] = write_logs(combo_log, map_names, files_dict, round_num=r_num, sample=sample_name, prep=preparer, rep=replicate, set_num=set_val)
+        if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any()) :
+            row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, round_num=r_num, sample=sample, prep=preparer, rep=replicate, set_num=set_val))
 
-        print(f"Finished adding {sample_name} to the file")
+        print(f"Finished adding {sample} to the file")
+
+
+    temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
+    combo_log = pd.concat([combo_log, temp_df], ignore_index=True)
+
 
     try:
         combo_log["STARsolo", "DEMUX", "DOUBLET_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
     except:
-        print("Doublet ratio for: {}".format(sample_name))
+        print("Doublet ratio for: {}".format(sample))
 
     try:
         combo_log["STARsolo", "DEMUX", "NEGATIVE_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
     except:
-        print("Negative ratio for: {}".format(sample_name))
+        print("Negative ratio for: {}".format(sample))
 
 
     combo_log.to_csv(out, sep = "\t", index=False)

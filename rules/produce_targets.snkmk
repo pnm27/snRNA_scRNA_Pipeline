@@ -1,0 +1,170 @@
+# Run STARsolo_sort, index_bams and filter_GeneFull_STARsolo
+def targets_STARsolo(conf_f) -> "list":
+
+    inp_pref=conf_f['STAR_solo_pipeline']['bams_dir']
+    bai_suff=conf_f['STAR_solo_pipeline']['bai']
+    gf_mat=conf_f['STAR_solo_pipeline']['genefull_lun_matrix']
+    gf_features=conf_f['STAR_solo_pipeline']['genefull_lun_features']
+    gf_barcodes=conf_f['STAR_solo_pipeline']['genefull_lun_barcodes']
+    folder_st=conf_f['fold_struct']
+
+    target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{gf_barcodes}"]
+    return target_list
+
+
+
+def targets_PICARD(conf_f, progs='all') -> "list":
+    
+    inp_pref = conf_f['STAR_solo_pipeline']['bams_dir']
+    rna_seq_suff = conf_f['picard_pipeline']['rnaseq_metrics']
+    gc_met_suff = conf_f['picard_pipeline']['gc_bias_metrics']
+    gc_summ_suff = conf_f['picard_pipeline']['gc_summary_metrics']
+    folder_st=conf_f['fold_struct']
+    # bai_suff = conf_f['bai']
+    # gf_mat = conf_f['genefull_lun_matrix']
+    # gf_features = conf_f['genefull_lun_features']
+    # gf_barcodes = conf_f['genefull_lun_barcodes']
+
+    files_dict = {'RNAseq':rna_seq_suff, 'GC':[gc_met_suff, gc_summ_suff]}
+    target_list = targets_STARsolo(conf_f=conf_f)
+    if progs == 'all':
+       # Run both PICARD programs
+        for k, val in files_dict.items():
+            if isinstance(val, list):
+                for l_val in val:
+                    target_list.append(f"{inp_pref}{folder_st}{l_val}")
+
+            else:
+                target_list.append(f"{inp_pref}{folder_st}{val}")
+
+    elif progs == "RNAseq":
+        # Only RNAseq metrics
+        target_list.extend( [f"{inp_pref}{folder_st}{val}"  for val in files_dict[progs]] )
+
+    elif progs == "GC":
+        # Only GC bias metrics
+        target_list.extend( [f"{inp_pref}{folder_st}{val}"  for val in files_dict[progs]] )
+    else:
+        # print("Wrong input; Check for editing errors!")
+        return []
+
+    return target_list
+
+
+
+# Temporary function, will change to targets_phe_demux
+def targets_cellSNP(conf_f) -> "list":
+    out_dir = conf_f['phe_demux_pipeline']['cellsnp_dir']
+    fs_phe = conf_f['fold_struct_phe_demux']
+    cells_suff = conf_f['phe_demux_pipeline']['cellsnp_cells']
+    base_suff = conf_f['phe_demux_pipeline']['cellsnp_base']
+
+    target_list = [f"{out_dir}{fs_phe}{cells_suff}", f"{out_dir}{fs_phe}{base_suff}"]
+    return target_list
+
+
+# To split bams
+def targets_SplitBams(conf_f) -> "list":
+    inp_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
+    fs_sB = conf_f['fold_struct_bam_split1']
+    target_list = targets_all(conf_f=conf_f, PICARD=False)
+    target_list.append(f"{inp_dir}{fs_sB}.txt")
+    return target_list
+
+
+
+# To run STARsolo* + kb pipeline + (optional)PICARD progs
+def targets_all(conf_f, PICARD=True, progs='all') -> "list":
+
+    demuxed_mat_dir = conf_f['demux_pipeline']['final_count_matrix_dir']
+    demuxed_info_dir = conf_f['demux_pipeline']['demultiplex_info_dir']    
+    demux_mat_suff = conf_f['demux_pipeline']['final_count_matrix_h5ad']
+    demux_info_suff = conf_f['demux_pipeline']['demultiplex_info']
+    folder_st_bam=conf_f['fold_struct']
+    folder_st=conf_f['fold_struct_demux']
+
+    # STARsolo* + PICARD (any) progs
+    if PICARD and (progs == 'all' or progs == 'RNAseq' or progs == 'GC'):
+        target_list = targets_PICARD(conf_f=conf_f, progs=progs)
+
+    else: # For any wrong values to progs or progs == None or just PICARD == False or everything else, run STARsolo*
+        target_list = targets_STARsolo(conf_f=conf_f)
+
+
+    # kb pipeline
+    target_list.extend( [f"{demuxed_mat_dir}{folder_st}{demux_mat_suff}", f"{demuxed_info_dir}{folder_st}{demux_info_suff}"] )
+    
+    return target_list
+
+
+
+# Add wildcards info here in the 'expand' function
+def produce_targets(conf_f) -> "list":
+
+    target_step = conf_f['last_step']
+    folder_st_bam=conf_f['fold_struct']
+    folder_st=conf_f['fold_struct_demux']
+
+
+    if target_step == "all":
+        target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
+
+        final_target_list = [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "STARsolo_kb_solo":
+        target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "STARsolo":
+        target_files = targets_STARsolo(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        
+    elif target_step == "STARsolo_PICARD":
+        target_list = targets_PICARD(conf_f=conf_f, progs='all')
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "STARsolo_rnaseqmet":
+        target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "STARsolo_gcbiasmet":
+        target_list = targets_PICARD(conf_f=conf_f, progs='GC')
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "STARsolo_cellSNP":
+        target_files = targets_cellSNP(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]    
+
+    elif target_step == "STARsolo_split_bams":
+        target_files = targets_SplitBams(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+    else:
+        # print("Wrong inputs to produce_targets function!!")
+        return []
+        
+    if not check_log_version(conf_f=conf_f):
+        return final_target_list
+    else:
+        final_target_list.append(check_log_version(conf_f=conf_f))
+        return final_target_list
+    # Not yet implemented
+    elif target_step == "STARsolo_gt_demux":
+        pass        
+
+    else:
+        # print("Wrong inputs to produce_targets function!!")
+        return []
+        
+    final_target_list.append(check_log_version(conf_f=conf_f))
+
+    return final_target_list
+
+
+

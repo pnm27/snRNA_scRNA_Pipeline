@@ -1,0 +1,17 @@
+rule split_fastqs_by_CB:
+	input:
+		R1=f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R1_suffix']}",
+		R2=f"{config['split_fastqs_pipeline']['one_liner_sort_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	params:
+
+
+	output:
+		f"{config['split_fastqs_pipeline']['cDNA_split_dir']}{config['fold_struct']}{config['R1_suffix']}",
+		f"{config['split_fastqs_pipeline']['cDNA_split_dir']}{config['fold_struct']}{config['R2_suffix']}"
+
+	shell:
+		"""
+
+
+		"""

@@ -38,13 +38,14 @@ sh run_snakemake.sh
 ## Selectable Modules
 
 <ul>
-<li> all</li>
+<li> all (STARsolo + PICARD's RNAseq metrics + GCBias metrics + kallisto-bustools-calico solo demultiplexing)</li>
 <li> STARsolo</li>
 <li> STARsolo_rnaseqmet</li>
 <li> STARsolo_gcbiasmet</li>
 <li> STARsolo_kb_solo</li>
 <li> STARsolo_PICARD</li>
-<li> STARsolo_gt_demux</li>
+<li> STARsolo_gt_demux (WIP)</li>
+<li> STARsolo_splitbams (WIP)</li>
 </ul>
 
 ### Module Specifications

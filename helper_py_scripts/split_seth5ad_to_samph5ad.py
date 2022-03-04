@@ -19,7 +19,7 @@ has resulted in the identification of a new donor)
 
 '''
 
-df = pd.read_csv('/sc/arion/projects/psychAD/upload2synpase/final_NPSAD_snRNAseq_metrics_combo.csv')
+df = pd.read_csv('/sc/arion/projects/psychAD/pnm/NPSAD_spreadsheet/New_wet_lab_spreadsheet.tsv', sep='\t')
 out_dir = "/sc/arion/projects/psychAD/NPS-AD/freeze1_rc/h5ad/"
 for setid, sub in zip(df['set_ID'], df['SubID']):
 	# If one of the donors is not present remove all donors and redo them

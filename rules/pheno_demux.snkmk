@@ -1,0 +1,124 @@
+def calc_donors(wildcards):
+    temp_df = pd.read_csv(config['wet_lab_info'])
+    n_donors = temp_df.loc[temp_df[config['columns_to_pick'][0]] == wildcards.id1, config['columns_to_pick'][2]].shape[0]
+    return n_donors
+
+
+
+def get_donors(wildcards):
+    temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=config['hash_columns'])
+    donors = ','.join(temp_df.loc[temp_df[config['hash_columns'][2]] == wildcards.id1[:-6], config['hash_columns'][1]].to_list())
+    return donors
+
+
+
+
+
+rule create_inp_cellSNP:
+    input:
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+
+    priority: 8
+
+    params:
+        col_name=config['phe_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
+        bc_len=config['phe_demux_pipeline']['barcode_len'], # Barcode length
+        doub=config['phe_demux_pipeline']['doublet'], # Doublets classified as
+        neg=config['phe_demux_pipeline']['negative'], # Negatives classified as
+        na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
+
+    resources:
+        mem_mb=allocate_mem_CICS,
+        time_min=allocate_time_CICS
+
+    group: "phenotype-demux"
+
+    output:
+        f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
+
+    shell:
+        """
+        python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+        sleep 100
+        """
+
+
+# Not yet finished implementing
+rule get_id_hash:
+    input:
+
+
+    output:
+        config['phe_demux_pipeline']['meta_data_geno_samp']
+
+    shell:
+        """
+        sleep 100
+        """
+
+
+# UMI tag is turned on. Therefore, PCR duplicates are included
+rule cellSNP:
+    input:
+        # bc=get_filt_barcodes,
+        bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
+        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+
+    group: "phenotype-demux"
+
+    output:
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_base']}"
+
+    params:
+        ref_snps=config['phe_demux_pipeline']['ref_snps'],
+        umi_tag=config['phe_demux_pipeline']['umi_tag'],
+        cell_tag=config['phe_demux_pipeline']['cell_tag'],
+        processors=config['phe_demux_pipeline']['n_proc'],
+        min_maf=config['phe_demux_pipeline']['min_maf'],
+        min_ct=config['phe_demux_pipeline']['min_aggr_count'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", '')
+
+    threads: 8
+
+    resources:
+        mem_mb=allocate_mem_cS
+
+    shell: "cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.ref_snps} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip"
+
+
+
+
+rule vireoSNP:
+    input:
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
+        config['phe_demux_pipeline']['genotyped_vcf'],
+        config['phe_demux_pipeline']['meta_data_geno_samp']
+  
+    output:
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_vcf']}",
+        #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
+
+
+    group: "phenotype-demux"
+
+    params:
+        n_donors=calc_donors,
+        donors=get_donors,
+        geno_tag=config['phe_demux_pipeline']['donor_genotype'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_vcf']}", '')
+
+    threads: 7
+
+    resources:
+        mem_mb=allocate_mem_vS
+        
+    shell:
+        """
+        ml bcftools
+        # bcftools view {input[1]} -R {input[0]} -s {params.donors} -Oz -o {output[1]}
+        #vireo -c {input[0]} -d {output[1]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot
+        vireo -c {input[0]} -d {output} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot
+        sleep 100
+        """
+

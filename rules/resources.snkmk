@@ -1,0 +1,130 @@
+# Mem allocation per thread (here thread is core/tasks), everything is in MB
+def allocate_mem_PGCB(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_mem_PRNA(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_mem_CFB(wildcards, attempt):
+    return 50*attempt+80
+
+
+def allocate_mem_CMF(wildcards, attempt):
+    return 50*attempt+70
+
+
+def allocate_mem_BKI(wildcards, attempt):
+   return 1000*attempt+1000
+
+
+def allocate_mem_RK(wildcards, attempt):
+   return 1000*attempt + 500
+
+
+def allocate_mem_RBCor(wildcards, attempt):
+    return 1500*attempt+1500
+
+
+def allocate_mem_RBS(wildcards, attempt):
+   return 3000*attempt+3000
+
+
+def allocate_mem_RBCnt(wildcards, attempt):
+    return 1500*attempt+1500
+
+
+def allocate_mem_CHB(wildcards, attempt):
+   return 1500*attempt+1500
+
+
+def allocate_mem_RCS(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_mem_DXP(wildcards, attempt):
+   return 3500*attempt+3500
+
+
+def allocate_mem_CICS(wildcards, attempt):
+    return 500*attempt+500
+
+
+def allocate_mem_GIH(wildcards, attempt):
+   return 3500*attempt+3500 # Not finalised yet
+
+
+def allocate_mem_cS(wildcards, attempt):
+   return 1000*attempt+1500
+
+
+def allocate_mem_vS(wildcards, attempt):
+   return 10000*attempt+10000
+
+
+def allocate_mem_US(wildcards, attempt):
+   return 250*attempt+250
+
+
+# Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
+# CAREFULL about exceeding time limits
+def allocate_time_PGCB(wildcards, attempt):
+    return 60*attempt+60
+
+
+def allocate_time_PRNA(wildcards, attempt):
+    return 210*attempt+210
+
+
+def allocate_time_CFB(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_CMF(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_BKI(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RK(wildcards, attempt):
+   return 20*attempt + 20
+
+
+def allocate_time_RBCor(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_RBS(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RBCnt(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_CHB(wildcards, attempt):
+   return 5*attempt+5
+
+
+def allocate_time_RCS(wildcards, attempt):
+    return 5*attempt+5
+
+
+def allocate_time_DXP(wildcards, attempt):
+   return 15*attempt+15
+
+
+def allocate_time_CICS(wildcards, attempt):
+    return attempt
+
+
+def allocate_time_GIH(wildcards, attempt):
+   return 3500*attempt+3500 # Not finalised yet
+
+
+def allocate_time_US(wildcards, attempt):
+   return 15*attempt+15
+

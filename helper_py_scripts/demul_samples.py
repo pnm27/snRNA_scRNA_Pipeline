@@ -48,12 +48,12 @@ args = parser.parse_args()
 starsolo_hashsolo_out = args.hashsolo_out
 starsolo_mat = args.matrix_file[:-13]
 cols=args.columns
-batch=args.sample_name.replace('-', '_')+'-cDNA'
+batch=args.sample_name.replace('-', '_')+'_cDNA'
 
 # Batch and round info
 # batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
 r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
-preparer_rep=batch.split('-')[2]
+preparer_rep=batch.split('_')[2]
 replicate=preparer_rep[1]
 preparer=preparer_rep[0]
 
