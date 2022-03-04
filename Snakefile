@@ -20,7 +20,6 @@ round_num=[] # wildcard 'num'
 sample_name=[] # wildcard 'id1'
 
 
-
 # Limitting Step for the run of Snakemake, creating wildcards
 with open(config['select_fastqs']) as fq:
     for line in fq:
@@ -30,14 +29,14 @@ with open(config['select_fastqs']) as fq:
 
 
 
+include: "rules/produce_targets.snkmk"
+include: "rules/helper_functions.snkmk"
+include: "rules/resources.snkmk"
 include: "rules/calico_solo_demux.snkmk"
 include: "rules/create_logs.snkmk"
-include: "rules/helper_functions.snkmk"
 include: "rules/kite.snkmk"
 include: "rules/pheno_demux.snkmk"
 include: "rules/picard_metrics.snkmk"
-include: "rules/produce_targets.snkmk"
-include: "rules/resources.snkmk"
 include: "rules/split_fastqs.snkmk"
 include: "rules/split_fastqs_2.snkmk"
 include: "rules/STARsolo.snkmk"

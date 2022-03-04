@@ -50,7 +50,7 @@ all_f=$(echo "${all_f}" | xargs)
 
 if [ ! -z "${all_f}" ]
 then
-    echo "Processing ${c} samples, starting at: "
+    echo "Processing ${c} files, starting at: "
     date
     python3 ${run_script} ${all_f} -o ${spreadsheet_file} -c ${converter_file} -l ${files_tracker_log} --columns ${columns}
 fi
@@ -61,5 +61,5 @@ do
     echo "${i}" >> ${process_log}
 done
 
-echo "Finished processing ${c} samples at: "
+echo "Finished processing ${c} files at: "
 date

@@ -8,7 +8,6 @@ import glob2, os, re, argparse
 from collections import Counter
 from openpyxl import load_workbook
 from collections import defaultdict, OrderedDict as ord_dict
-# using datetime module
 import datetime
 import functools
  
@@ -64,7 +63,6 @@ min_cells=args.min_cells
 
 # Load hashsolo/calico_solo output (h5ad)
 dem_cs = ad.read(starsolo_hashsolo_out)
-#dem_ms = ad.read(multiseq_out)
 
 
 t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
@@ -79,21 +77,26 @@ df = df.loc[df[cols[0]] == batch]
 
 
 def ret_htos_calico_solo(bcs, df_shan):
-    # List of (barcode, HTO)
+
+    # List of htos from the wet lab spreadsheet
+    hto_l = df_shan[cols[1]].values[0].replace('HTO#', '').split(',')
+    hto_l = [ 'HTO' + str(h) for h in hto_l ]
+    # List of subIDs from the wet lab spreadsheet
+    subid_l = df_shan[cols[3]].values[0].split(',')
+
+    # List of barcodes
     barc_l = []
-    #hto_l = []
-    #samp_n = []
     # SubID from Shan's csv file
     ret_samp = []
-    # HTO number as HTO1, HTO2, etc
+    # List of HTOs as HTO1, HTO2, etc
     hash_n = []
     # Doublets' count
     doublet_n = 0
     # Negatives' count
     negative_n = 0
+
     for bc in bcs:
         if bc in dem_cs.obs_names:
-           #hto_l.append(hash_data.obs[hash_data.obs_names == bc].Classification.values[0])
             hto_n = dem_cs.obs[dem_cs.obs_names == bc].Classification.values[0]
             
            #samp_n.append(df_shan[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag" == hto_n]), "sample_ID"].values[0])
@@ -111,15 +114,9 @@ def ret_htos_calico_solo(bcs, df_shan):
 
             else:
                 barc_l.append(bc)
-                #print(hto_n)
-                #print(bc)
                 hash_n.append(hto_n)
-                ret_samp.append(df_shan.loc[df_shan[cols[1]] == hto_n.replace('HTO', '#'), cols[3]].values[0])
-                #try:
-                    #ret_dict[bc] = df_shan.loc[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag"] == hto_n.replace('HTO', '#')), "SubID"].values[0]
-                #except:
-                   #if 'NPSAD-20201021-A1-cDNA' != b or 'NPSAD-20201021-A2-cDNA' != b or 'NPSAD-20201022-A1-cDNA' != b or 'NPSAD-20201022-A2-cDNA' != b:
-                    #print(f'For the Sample: {b} and for the HTO tag {hto_n} there was no data in the excel file!')
+                ret_samp.append(subid_l[hto_l.index(hto_n)])
+
     
     ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
 
@@ -216,8 +213,12 @@ solo_run_info.append(('Negative #cells_cs', hto_tags_cs[2]))
 rem_cells_cs = adata.obs.SubID_cs.value_counts()
 prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index != "Negative")]
 od = ord_dict(sorted(prop_dict.items()))
+a = ""
+for k, v in od.items():
+    b = k + ": " + str(v) + ", "
+    a += b
 
-solo_run_info.append(( 'After demultiplexing #cells_cs', od ))
+solo_run_info.append(( 'After demultiplexing #cells_cs', a[:-1] ))
 
 
 ct = datetime.datetime.now()

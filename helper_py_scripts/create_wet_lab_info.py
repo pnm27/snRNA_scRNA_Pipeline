@@ -7,6 +7,7 @@ import os, re, sys, glob2, time
 from openpyxl import load_workbook
 from collections import Counter
 import pandas as pd, numpy as np, argparse
+from itertools import chain, repeat
 
 
 
@@ -14,24 +15,24 @@ def get_subid(ser1, df1, df2):
 	ret_val=[]
 	c=1
 	wrong_sets=[]
-	for set_n in ser1:
+	for set_n in ser1.unique():
 	    subids=[]
         # Using unique because of repeated sets
 	    for sample in df1.loc[df1["Set_number"] == set_n, "unique_sample_ID"].squeeze().unique():
 	#             print(df2.loc[df2["Sample_ID"] == sample, "SubID"].values[0])
 	        try:
-	            val=df2.loc[df2["Sample_ID"] == sample, "SubID"].values[0]
+	            val=df2.loc[df2["Sample_ID"] == sample.strip(), "SubID"].values[0]
 	        except:
-	            val=str(set_n).replace('.0', '') + "_unknown_donor" + str(c)
+	            val=str(set_n).replace('.0', '') + "_unknown_" + str(c)
 	            # wrong_sets.append((sample, set_n))
 	            c+=1
 	        subids.append(val)
 	    
 	    ret_val.append(','.join(subids))
 
-	#     print(c)
-	# print(set(wrong_sets))
-	return ret_val
+
+	# Assuming per set there will be 4 rows representing 2 reps plus cDNA and HTO
+	return list(chain.from_iterable(repeat(v, 4) for v in ret_val))
         
 
 
@@ -71,16 +72,27 @@ if isinstance(args.input, list):
 	for inp_f in args.input:
 		t_df = pd.read_excel(inp_f, names=col_names, skiprows=1, usecols=list(range(len(col_names))))
 		t_df["filename"] = os.path.basename(inp_f).replace('.xlsx', '')
+		t_df['unique_sample_ID'] = t_df['unique_sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
+
+		# Strip leading and trailing whitespaces
+		df_obj2 = t_df.select_dtypes(['object'])
+		t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
+		
 		# Save donor info
 		t_donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains("NPSAD", na=False)]
 		donor_info = pd.concat([donor_info, t_donor_info])
+
 		# Temporarily add an empty column for SubID
 		t_df["SubID"]=""
 		# Retain multiplexed sample info
 		t_df = t_df.loc[t_df["unique_sample_ID"].str.contains("NPSAD", na=False)]
 		# if not t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
 		# For those samples that weren't present in the ouput already
-		t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
+		try:
+			t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
+		except:
+			print(inp_f)
+			print(op_df.columns)
 		if not t_df.empty:
 			op_df = pd.concat([op_df, t_df])
 		# For those samples that were present in the output
@@ -92,31 +104,40 @@ if isinstance(args.input, list):
 		if df1.merge(df2).shape != df1.shape:
 			op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"])].index, inplace=True)
 			op_df = pd.concat([op_df, t_df_present])
-			with open(args.files_tracker, 'w') as fout:
+			with open(args.files_tracker, 'a') as fout:
 				fout.write("The file {} has been updated. The following samples inside this file were updated:".format(inp_f))
 				for sample in df2["unique_sample_ID"]:
 					fout.write("\t\t{}".format(sample))
 
-	with open(args.files_tracker, 'w') as fout:
+	with open(args.files_tracker, 'a') as fout:
 		fout.write("Hence, Re-do all related analyses.")
 			
 
 else:
 	t_df = pd.read_excel(args.input, names=col_names, skiprows=1, usecols=list(range(len(col_names))))
 	t_df["filename"] = os.path.basename(args.input).replace('.xlsx', '')
+	t_df['unique_sample_ID'] = t_df['unique_sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
+
+	# Strip leading and trailing whitespaces
+	df_obj2 = t_df.select_dtypes(['object'])
+	t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
+
 	# Save donor info
 	donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains("NPSAD", na=False)]
 	# Temporarily add an empty column for SubID
 	t_df["SubID"]=""
+	
 	# Retain multiplexed sample info
 	t_df = t_df.loc[t_df["unique_sample_ID"].str.contains("NPSAD", na=False)]
-	# if not t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
+
+	
 	# For those samples that weren't present in the ouput already
 	t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
 	if not t_df.empty:
 		op_df = pd.concat([op_df, t_df])
 	# For those samples that were present in the output
 	t_df_present = t_df[t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
+	
 	# If the previous df is a subset of the output i.e. these samples were exactly the same previously
 	# at the level specified at beginning of this script
 	df1=op_df.loc[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
@@ -124,7 +145,7 @@ else:
 	if df1.merge(df2).shape != df1.shape:
 		op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"])].index, inplace=True)
 		op_df = pd.concat([op_df, t_df_present])
-		with open(args.files_tracker, 'w') as fout:
+		with open(args.files_tracker, 'a') as fout:
 			fout.write("The file {} has been updated. The following samples inside this file were updated:".format(args.input))
 			for sample in df2["unique_sample_ID"]:
 				fout.write("\t\t{}".format(sample))
@@ -133,21 +154,16 @@ else:
 
 
 conv_df = pd.read_excel(args.converter, usecols=list(range(15)))
-# conv_df.rename({'xxx':'Set_number'}, axis=1, inplace=True)
+conv_df['Sample_ID'] = conv_df['Sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
+# Strip leading and trailing whitespaces
+df_obj = conv_df.select_dtypes(['object'])
+conv_df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
-# n_df = op_df.loc[op_df["unique_sample_ID"].str.contains("NPSAD", na=False)]
-# n_df = n_df.drop_duplicates(ignore_index=True)
-# n_df = n_df.reset_index(drop=True)
 
 op_df['SubID'] = get_subid(op_df['Set_number'], donor_info, conv_df)
 
 op_df['hashtag'] = op_df['hashtag'].apply(lambda x: re.sub('_', ',', x))
 op_df['ab_barcode'] = op_df['ab_barcode'].apply(lambda x: re.sub('_', ',', x))
-# n_df = n_df.merge(conv_df, on='Set_number')
-
-# n_df2 = n_df.drop(list(range(152, 156))+list(range(192, 196)))
-# n_df2 = n_df2.reset_index(drop=True)
 
 
-# n_df2.to_csv(args.output, sep='\t', index=False)
 op_df.to_csv(args.output, sep='\t', index=False)
