@@ -154,13 +154,13 @@ def produce_targets(conf_f) -> "list":
         # print("Wrong inputs to produce_targets function!!")
         return []
 
-    if not check_log_version(conf_f=conf_f):
-        return final_target_list
-    else:
-        final_target_list.append(check_log_version(conf_f=conf_f))
-        return final_target_list
+    # Implementation is now through a separate script
+    # if not check_log_version(conf_f=conf_f):
+    #     return final_target_list
+    # else:
+    #     final_target_list.append(check_log_version(conf_f=conf_f))
+    #     return final_target_list
         
-    final_target_list.append(check_log_version(conf_f=conf_f))
 
     # Fail-safe return statement
     return final_target_list
