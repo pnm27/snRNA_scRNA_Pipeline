@@ -47,7 +47,7 @@ rule filt_chr_bams:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
+        temp(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}")
 
     params:
         temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam"
