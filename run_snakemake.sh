@@ -7,8 +7,8 @@
 #BSUB -R span[hosts=1]
 #BSUB -R rusage[mem=1000]
 #BSUB -W 48:00
-#BSUB -oo /sc/arion/projects/psychAD/snakemake_pipeline/Snakemake.stdout
-#BSUB -eo /sc/arion/projects/psychAD/snakemake_pipeline/Snakemake.stderr
+#BSUB -oo /sc/arion/projects/psychAD/pnm/Snakemake.stdout
+#BSUB -eo /sc/arion/projects/psychAD/pnm/Snakemake.stderr
 #BSUB -L /bin/bash
 
 

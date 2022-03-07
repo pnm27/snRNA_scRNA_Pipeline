@@ -62,6 +62,7 @@ rule filt_chr_bams:
 
     shell:
         """
+        ml samtools
         set -x
         samtools view {input} 1 -bho {output}
         """
