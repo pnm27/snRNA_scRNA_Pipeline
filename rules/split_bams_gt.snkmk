@@ -54,10 +54,10 @@ rule filt_chr_bams:
 
     group: "split_bams"
 
-    threads: 4
+    threads: 1
 
     resources:
-        mem_mb=5000,
+        mem_mb=1000,
         time_min=300
 
     shell:
