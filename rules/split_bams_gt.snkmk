@@ -44,15 +44,12 @@ rule create_inp_splitBams:
 
 rule bamsort_by_CB:
     input:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}",
-        f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
 
     params:
-        temp_pref=f"{config['split_bams_pipeline']['sort_temp_dir']}temp/{{num}}_{{id1}}",
-        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bc/{{num}}_{{id1}}_bc.txt",
         temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam"
 
     group: "split_bams"
@@ -66,13 +63,10 @@ rule bamsort_by_CB:
     shell:
         """
         set -x
-        mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
-        t_bam={params.temp_bam}
-        mkdir -p ${t_bam%$(basename ${t_bam})}
-        ml samtools
-        cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
-        samtools view -D CB:{params.temp_bc} {input[0]} -bho ${t_bam}
+        mkdir -p {config[split_bams_pipeline][short_temp_dir]}
+        samtools view chr1 {input} -bho {params.temp_bam}
         samtools sort -@ 20 -t CB -T {params.temp_pref} {params.temp_bam} | samtools view -h - | grep -E "^@|CB:Z:[ATGCN]+" | samtools view -b - > {output}
+        rm {params.temp_bam}
         """
 
 

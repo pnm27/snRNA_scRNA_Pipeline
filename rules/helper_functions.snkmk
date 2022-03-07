@@ -29,3 +29,8 @@ def check_log_version(conf_f) -> "list":
         return log_file
 
     return []
+
+
+
+
+# For splitting bams
