@@ -77,7 +77,7 @@ rule split_bams:
     params:
         # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
-        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct_bam_split2']}",
+        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['new_temp_dir']}{config['fold_struct_bam_split2']}",
         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}",
         n_donors=get_donors
 
