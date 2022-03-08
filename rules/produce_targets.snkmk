@@ -73,16 +73,6 @@ def targets_SplitBams(conf_f) -> "list":
 
 
 
-# For genotyping only
-def targets_SplitBams(conf_f) -> "list":
-    inp_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
-    fs_sB = conf_f['fold_struct_bam_split1']
-    target_list = targets_all(conf_f=conf_f, PICARD=False)
-    target_list.append(f"{inp_dir}{fs_sB}.txt")
-    return target_list
-
-
-
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 

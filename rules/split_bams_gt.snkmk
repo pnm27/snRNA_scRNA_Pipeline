@@ -25,7 +25,7 @@ rule create_inp_splitBams:
     threads: 1
 
     resources:
-        mem_mb=1000,
+        mem_mb=allocate_mem_CIS,
         time_min=10
 
     shell:
@@ -55,7 +55,7 @@ rule filt_chr_bams:
     threads: 1
 
     resources:
-        mem_mb=300,
+        mem_mb=allocate_mem_FCB,
         time_min=40
 
     shell:
@@ -84,7 +84,7 @@ rule split_bams:
     threads: 1
 
     resources:
-        mem_mb=150,
+        mem_mb=allocate_mem_SB,
         time_min=10
 
     output:

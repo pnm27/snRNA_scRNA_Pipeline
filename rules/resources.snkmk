@@ -67,6 +67,18 @@ def allocate_mem_US(wildcards, attempt):
    return 250*attempt+250
 
 
+def allocate_mem_CIS(wildcards, attempt):
+   return 500*attempt+500
+
+
+def allocate_mem_FCB(wildcards, attempt):
+   return 150*attempt+150
+
+
+def allocate_mem_SB(wildcards, attempt):
+   return 75*attempt+75
+
+
 # Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
 # CAREFULL about exceeding time limits
 def allocate_time_PGCB(wildcards, attempt):
