@@ -93,7 +93,7 @@ rule split_bams:
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
         bam_files=0
-        proc_donors=[d if not os.path.isfile(os.path.join(params.split_bams_dir, f"{d}.bam")) for d in hash_file.iloc[:, 0].unique() ]
+        proc_donors=[d for d in hash_file.iloc[:, 0].unique() if not os.path.isfile(os.path.join(params.split_bams_dir, f"{d}.bam"))]
         # If proc_donors is empty don't run
         if proc_donors:
             for donor in proc_donors:
