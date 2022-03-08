@@ -10,5 +10,8 @@
 set -x 
 ml samtools
 
+# For some reason, awk wouln't work
+touch ${3}${1}.txt
+
 awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > ${3}${1}.txt
 samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
