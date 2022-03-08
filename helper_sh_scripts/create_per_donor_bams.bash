@@ -12,6 +12,7 @@ ml samtools
 set -x 
 
 # For some reason, awk wouln't work
+if [ ! -d "${3}" ]; then mkdir -p ${3}; fi
 touch ${3}${1}.txt
 
 awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > ${3}${1}.txt
