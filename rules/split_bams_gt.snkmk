@@ -21,9 +21,8 @@ rule create_inp_splitBams:
     params:
         overwrite=config['split_bams_pipeline']['overwrite']
 
-    group: "split_bams"
 
-    threads: 2
+    threads: 1
 
     resources:
         mem_mb=1000,
@@ -52,7 +51,6 @@ rule filt_chr_bams:
     params:
         temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam"
 
-    group: "split_bams"
 
     threads: 1
 
@@ -82,7 +80,6 @@ rule split_bams:
         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}",
         n_donors=get_donors
 
-    group: "split_bams"
 
     threads: 1
 
@@ -100,6 +97,6 @@ rule split_bams:
                 set -x
     			j="NPSAD_donor_$(uuidgen)" # jobID-per-donor
         		bsub -J NPSAD-spl_bam_${{j}} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=1000] -W 5:00 -oo /sc/arion/projects/psychAD/pnm/new_split_bam_${{j}}.stdout -eo /sc/arion/projects/psychAD/pnm/new_split_bam_${{j}}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}" 
-                echo "Processed donor {i}" >> {output}
+                echo "Submitted script for donor {i}" >> {output}
                 sleep 60
             """, i=donor)

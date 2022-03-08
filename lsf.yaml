@@ -49,6 +49,15 @@ vireoSNP:
 # split_bams:
 #   - "-q "
 
+create_inp_splitBams:
+  - "-q premium"
+
+filt_chr_bams:
+  - "-q premium"
+
+split_bams:
+  - "-q premium"
+
 update_stats:
   - "-q express"
 

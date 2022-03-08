@@ -10,5 +10,5 @@
 set -x 
 ml samtools
 
-awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > "${3}${1}.txt"
-samtools view -D CB:"${3}${1}.txt" ${5} -bho "${4}${1}.bam"
+awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > ${3}${1}.txt
+samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
