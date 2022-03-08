@@ -7,8 +7,9 @@
 # ${4} is the output dir (with sample name as the parent dir)
 # ${5} is the multiplexed bam file
 
-set -x 
 ml samtools
+
+set -x 
 
 # For some reason, awk wouln't work
 touch ${3}${1}.txt

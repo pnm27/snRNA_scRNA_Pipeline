@@ -71,47 +71,48 @@ rule bamsort_by_CB:
         mkdir -p ${t_bam%$(basename ${t_bam})}
         ml samtools
         cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
-        samtools view -D CB:{params.temp_bc} {input[0]} -bho {output}
+        samtools view -D CB:{params.temp_bc} {input[0]} -bho ${t_bam}
+        samtools sort -@ 20 -t CB -T {params.temp_pref} {params.temp_bam} | samtools view -h - | grep -E "^@|CB:Z:[ATGCN]+" | samtools view -b - > {output}
         """
 
 
-# rule split_bams:
-#     input:
-#         sort_bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}",
-#         barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
+rule split_bams:
+    input:
+        sort_bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}",
+        barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
 
-#     priority: 7
+    priority: 7
 
-#     params:
-#         split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
-#         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
-#         temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct_bam_split2']}",
-#         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}",
-#         n_donors=get_donors
+    params:
+        split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
+        # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
+        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['bams_per_barcode_dir']}{config['fold_struct_bam_split2']}",
+        split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}",
+        n_donors=get_donors
 
-#     group: "split_bams"
+    group: "split_bams"
 
-#     threads: 1
+    threads: 1
 
-#     resources:
-#         mem_mb=30000
+    resources:
+        mem_mb=30000
 
-#     output:
-#         f"{config['split_bams_pipeline']['split_bams_proxy_dir']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+    output:
+        f"{config['split_bams_pipeline']['split_bams_proxy_dir']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
 
-#     shell:
-#         """
-#         read -r -a donor <<< {params.n_donors}
-#         for i in "${donor[@]}"
-#         do
-#         	{
-# 				jobid="NPSAD_donor_$(uuidgen)" # per-donor
-# 				bsub -J NPSAD-new_split_bam -P acc_CommonMind -q premium -n 1 -R span[hosts=1] -R rusage[mem=1000] \
-# 				-W 48:00 -oo /sc/arion/projects/psychAD/pnm/new_split_bam.stdout -eo /sc/arion/projects/psychAD/pnm/new_split_bam.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams ${i} \
-# 				{input.barcodes_vs_donor}" 
-#         	}
-#         done
-#         bash {input[0]} &> {output}
-#         bash helper_sh_scripts/create_bams_per_donor.sh {input.barcodes_vs_donor} {params.split_bams_dir} {params.temp_bam_per_cell_dir} {params.split_at} >> {output} 2>&1
-#         sleep 60
-#         """
+    shell:
+        """
+        read -r -a donor <<< {params.n_donors}
+        for i in "${donor[@]}"
+        do
+        	{
+				jobid="NPSAD_donor_$(uuidgen)" # per-donor
+				bsub -J NPSAD-new_split_bam -P acc_CommonMind -q premium -n 1 -R span[hosts=1] -R rusage[mem=1000] \
+				-W 48:00 -oo /sc/arion/projects/psychAD/pnm/new_split_bam.stdout -eo /sc/arion/projects/psychAD/pnm/new_split_bam.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams ${i} \
+				{input.barcodes_vs_donor}" 
+        	}
+        done
+        bash {input[0]} &> {output}
+        bash helper_sh_scripts/create_bams_per_donor.sh {input.barcodes_vs_donor} {params.split_bams_dir} {params.temp_bam_per_cell_dir} {params.split_at} >> {output} 2>&1
+        sleep 60
+        """
