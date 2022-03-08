@@ -96,7 +96,12 @@ rule split_bams:
             shell("""
                 set -x
     			j="NPSAD_donor_$(uuidgen)" # jobID-per-donor
-        		bsub -J NPSAD-spl_bam_${{j}} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W 00:10 -oo /sc/arion/projects/psychAD/pnm/new_split_bam_${{j}}.stdout -eo /sc/arion/projects/psychAD/pnm/new_split_bam_${{j}}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}" 
+                if [ ! -f "{params.split_bams_dir}{i}.bam" ]
+                then
+            		bsub -J NPSAD-spl_bam_${{j}} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W 00:10 -oo /sc/arion/projects/psychAD/pnm/logs_per_donor/new_split_bam_${{j}}.stdout -eo /sc/arion/projects/psychAD/pnm/logs_per_donor/new_split_bam_${{j}}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}" 
+                else
+                    echo "Skipped donor {i} for the bam file {input.short_bam}" >> {output}
+                fi
                 echo "Submitted script for donor {i}" >> {output}
                 sleep 60
             """, i=donor)
