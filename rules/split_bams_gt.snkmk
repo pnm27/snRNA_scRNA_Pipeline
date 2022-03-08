@@ -93,9 +93,11 @@ rule split_bams:
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
         bam_files=0
-        for donor in hash_file.iloc[:, 0].unique():
-            bam_files+=1
-            if not os.path.isfile(os.path.join(params.split_bams_dir, f"{donor}.bam")):
+        proc_donors=[d if not os.path.isfile(os.path.join(params.split_bams_dir, f"{d}.bam")) for d in hash_file.iloc[:, 0].unique()]
+        # If proc_donors is empty don't run
+        if proc_donors:
+            for donor in proc_donors:
+                bam_files+=1
                 shell("""
                     set -x
         			j="NPSAD_donor_$(uuidgen)" # jobID-per-donor
@@ -103,5 +105,7 @@ rule split_bams:
                     echo "Submitted script for donor {i}" >> {output}
                     sleep 10
                 """, i=donor)
-
-        print(f"Number of bam files expected at the completion of all the scripts {bam_files}")
+            print(f"Number of 'new' bam files expected at the completion of all the scripts for the bam file {input.short_bam} is {bam_files}")
+        else:
+            print(f"Skipped bam file {input.short_bam} as all the donor files were already present in the given output_folder {params.split_bams_dir}")
+        
