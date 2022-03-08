@@ -56,8 +56,8 @@ rule filt_chr_bams:
     threads: 1
 
     resources:
-        mem_mb=1000,
-        time_min=300
+        mem_mb=300,
+        time_min=40
 
     shell:
         """
