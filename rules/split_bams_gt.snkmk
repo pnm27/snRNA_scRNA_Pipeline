@@ -92,7 +92,9 @@ rule split_bams:
 
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
+        bam_files=0
         for donor in hash_file.iloc[:, 0].unique():
+            bam_files+=1
             if not os.path.isfile(os.path.join(params.split_bams_dir, f"{donor}.bam")):
                 shell("""
                     set -x
@@ -101,3 +103,5 @@ rule split_bams:
                     echo "Submitted script for donor {i}" >> {output}
                     sleep 10
                 """, i=donor)
+
+        print(f"Number of bam files expected at the completion of all the scripts {bam_files}")
