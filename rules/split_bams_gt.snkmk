@@ -56,7 +56,7 @@ rule filt_chr_bams:
 
     resources:
         mem_mb=allocate_mem_FCB,
-        time_min=40
+        time_min=allocate_time_FCB
 
     shell:
         """
