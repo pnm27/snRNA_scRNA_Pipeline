@@ -142,4 +142,4 @@ def allocate_time_US(wildcards, attempt):
 
 
 def allocate_time_FCB(wildcards, attempt):
-   return 150*attempt+150
+   return 20*attempt+20
