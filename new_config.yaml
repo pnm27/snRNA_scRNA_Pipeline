@@ -177,6 +177,7 @@ split_bams_pipeline:
   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
   split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
   split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/
+  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
 
