@@ -18,6 +18,6 @@ if [ ! -d "${4}" ]; then mkdir -p ${4}; fi
 awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > ${3}${1}.txt
 samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
 sleep 30
-samtools index "${4}${1}.bam" &> /dev/null && rm "${4}${1}.bam" && exit 0 || exit 1
+samtools index "${4}${1}.bam" &> /dev/null && rm "${4}${1}.bam.bai" && exit 0 || exit 1
 
 
