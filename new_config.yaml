@@ -181,6 +181,7 @@ split_bams_pipeline:
   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
   per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/
   split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
 
