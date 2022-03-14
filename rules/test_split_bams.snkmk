@@ -41,7 +41,7 @@ rule create_inp_splitBams:
         """
 
 
-rule bamsort_by_CB:
+rule bamfilt_by_CB:
     input:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}",
         f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
