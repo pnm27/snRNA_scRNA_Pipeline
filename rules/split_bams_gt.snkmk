@@ -78,18 +78,18 @@ rule split_bams:
         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
         temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['new_temp_dir']}{config['fold_struct_bam_split2']}",
         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
-        per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir']
+        per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir2']
         # n_donors=get_donors
 
 
     threads: 1
 
     resources:
-        mem_mb=allocate_mem_SB,
+        mem_mb=allocate_mem_SB
         time_min=10
 
     output:
-        f"{config['split_bams_pipeline']['split_bams_proxy_dir']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+        f"{config['split_bams_pipeline']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
 
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
@@ -109,6 +109,7 @@ rule split_bams:
                     echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output}
                     sleep 10
                 """, i=donor, j=jname)
+
             with open(output[0], "a") as fout:
                 fout.write(f"Number of 'new' bam files expected at the completion of all the scripts for the bam file {input.short_bam} is {len(job_name_l)}")
 

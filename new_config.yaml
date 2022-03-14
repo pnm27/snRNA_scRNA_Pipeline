@@ -164,7 +164,7 @@ phe_demux_pipeline:
 
 # split bams pipeline------------------------------------------------------
 split_bams_pipeline:
-  inp_split_bams_dir:  /sc/arion/projects/psychAD/inp_split_filt_bams/
+  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams/
   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams/
   split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/
   split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs/
@@ -174,10 +174,13 @@ split_bams_pipeline:
   new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d/
   overwrite: yes
   sort_cb_bam: _Aligned.sortedByCB.out.bam
+  filt_bam: _filt.bam
   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
   split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
   split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/
   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
 
