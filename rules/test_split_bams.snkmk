@@ -50,8 +50,8 @@ rule bamsort_by_CB:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
 
     params:
-        temp_pref=f"{config['split_bams_pipeline']['sort_temp_dir']}temp/{{num}}_{{id1}}",
-        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bc/{{num}}_{{id1}}_bc.txt"
+        # temp_pref=f"{config['split_bams_pipeline']['sort_temp_dir']}temp/{{num}}_{{id1}}",
+        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}{{num}}_{{id1}}_bc.txt"
         # temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam"
 
 
