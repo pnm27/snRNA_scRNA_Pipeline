@@ -39,7 +39,7 @@ include: "rules/picard_metrics.snkmk"
 # include: "rules/split_fastqs.snkmk"
 # include: "rules/split_fastqs_2.snkmk"
 include: "rules/STARsolo.snkmk"
-include: "rules/test_split_bams.snkmk"
+include: "rules/split_bams.snkmk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"
 
