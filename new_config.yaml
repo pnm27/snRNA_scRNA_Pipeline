@@ -170,7 +170,7 @@ split_bams_pipeline:
   split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs/
   reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
   temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp/
-  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/
+  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/temp_bc/
   new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d/
   overwrite: yes
   sort_cb_bam: _Aligned.sortedByCB.out.bam
@@ -184,6 +184,8 @@ split_bams_pipeline:
   new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
+  time_per_donor: "01:30"
+  short_bam: _chr1.bam
 
 
 # RNA velocity pipeline------------------------------------------------------

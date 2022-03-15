@@ -78,7 +78,8 @@ rule split_bams:
         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
         temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['new_temp_dir2']}{config['fold_struct_bam_split2']}",
         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
-        per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir2']
+        per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir2'],
+        time_limit_per_donor=config['split_bams_pipeline']['time_per_donor']
         # n_donors=get_donors
 
 
@@ -104,7 +105,7 @@ rule split_bams:
                 jname=f"NPSAD_{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
                 job_name_l.append(jname)
                 shell("""
-            		jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W 00:20 -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}")
+            		jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}")
                     jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                     echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output}
                     sleep 10
