@@ -116,7 +116,7 @@ rule split_bams:
 
     resources:
         mem_mb=allocate_mem_SB,
-        time_min=10
+        time_min=200
 
     output:
         f"{config['split_bams_pipeline']['split_bams_proxy_dir']}{config['fold_struct_bam_split1']}.txt",  # Proxy to the output
