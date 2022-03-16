@@ -2,8 +2,10 @@
 # Select pipeline module
 last_step: STARsolo_kb_solo
 
+
 # Limit processing to the files present in
 select_fastqs: /sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt
+
 
 # Fastqs info, R1 and R2 suffix assumed to be the same for both cDNA and HTO
 HTO_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
@@ -11,12 +13,17 @@ cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 R1_suffix: .R1.fastq.gz
 R2_suffix: .R2.fastq.gz
 
+
 # Wet lab Info file which contains all details like sample name; set name(if applicable); donor names, HTOs, and HTO_barcodes(if applicable)
 # ; etc.
 wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
 gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
 whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
 genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
+reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
+chr_prefix: null
+mito: MT
+
 
 # ENCLOSE WILDCARDS IN {}
 # HERE, 'id1' IS THE WILDCARD.
@@ -32,6 +39,7 @@ fold_struct_filt_bc: "filt_bc_vireo_{num}_Sample_{id1}-cDNA"
 # Folder structures for split bams pipeline
 fold_struct_bam_split1: "{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
 fold_struct_bam_split2: "{id1}-cDNA/" # Used for per-barcode and per-donor bam files
+
 
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
@@ -67,6 +75,7 @@ STAR_solo_pipeline:
   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
   genefull_summary: _Solo.out/GeneFull/Summary.csv
 
+
 # PICARD pipeline--------------------------------------------------------------
 picard_pipeline:
   # PICARD GcBias Metrics
@@ -75,11 +84,13 @@ picard_pipeline:
   gc_bias_metrics: _gc_bias_metrics.txt
   gc_summary_metrics: _summary_metrics.txt
 
+
   # PICARD RNAseq Metrics
   flat_ref: /sc/arion/projects/psychAD/ref_GRCh38/refFlat_wo_chr.txt
   strand: NONE
   # Optional params
   rnaseq_metrics: _rnaseq_metrics.txt
+
 
 # Bustools-kallisto pipeline---------------------------------------------------
 kb_pipeline:
@@ -107,6 +118,7 @@ kb_pipeline:
   bus_count_genes: output.genes.txt
   bus_count_mtx: output.mtx
 
+
 # Demultiplexing pipeline----------------------------------------------------
 demux_pipeline:
   h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
@@ -127,6 +139,7 @@ demux_pipeline:
   calico_solo_h5ad: _STARsolo_out.h5ad
   final_count_matrix_h5ad: _STARsolo_out.h5ad
   demultiplex_info: _STARsolo_info.tsv
+
 
 # cellSNP and vireoSNP pipeline----------------------------------------------
 phe_demux_pipeline:
@@ -172,6 +185,7 @@ split_bams_pipeline:
   temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp/
   sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/temp_bc/
   new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d/
+  filt_mito_bam_dir: /sc/arion/projects/psychAD/pnm/temp_/
   overwrite: yes
   sort_cb_bam: _Aligned.sortedByCB.out.bam
   filt_bam: _filt.bam
@@ -186,6 +200,7 @@ split_bams_pipeline:
   bc_per_donor: 800
   time_per_donor: "01:30"
   short_bam: _chr1.bam
+  bad_reads_file: _bad_reads_stats.txt
 
 
 # RNA velocity pipeline------------------------------------------------------

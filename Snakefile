@@ -11,9 +11,9 @@ from snakemake.utils import min_version
 min_version("6.4.0")
 
 
-
 configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
+
 
 #Parse wildcards from the file specified in config.yaml
 round_num=[] # wildcard 'num'
