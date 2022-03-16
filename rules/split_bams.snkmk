@@ -1,11 +1,11 @@
-def get_chr_pref:
+def get_chr_pref(wildcards):
     if config['chr_prefix'] != None:
         return ''
     else:
         return config['chr_prefix']
 
 
-def get_mito:
+def get_mito(wildcards):
     if config['chr_prefix'] != None and config['mito'].startswith(config['chr_prefix']):
         return config['mito']
     else:
