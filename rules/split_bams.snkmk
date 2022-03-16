@@ -90,7 +90,7 @@ rule create_bed:
 
     shell:
         """
-        if [ ! -f "{output}" ] ; then awk -v pref="^{params.chr_prefix}[0-9XY]*\t" ' $0 ~ pref {{printf("%s\t0\t%s\n",$1,$2);}}' {input} > {output};fi
+        if [ ! -f "{output}" ] ; then awk -v pref="^{params.chr_prefix}[0-9XY]*\\t" "" $0 ~ pref {{printf("%s\\t0\\t%s\\n",\$1,\$2);}}"" {input} > {output};fi
         sleep 10
         """
 
