@@ -6,7 +6,7 @@ def get_chr_pref(wildcards):
 
 
 def get_mito(wildcards):
-    if config['chr_prefix'] != None and config['mito'].startswith(config['chr_prefix']):
+    if config['chr_prefix'] == None or config['mito'].startswith(config['chr_prefix']):
         return config['mito']
     else:
         return config['chr_prefix'] + config['mito'] 
