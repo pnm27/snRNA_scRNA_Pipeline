@@ -19,6 +19,8 @@ samtools view -D CB:${3}${1}.txt ${5} -bho "${3}${1}.bam"
 sleep 20
 samtools index "${3}${1}.bam" &> /dev/null
 sleep 20
+mito_reads=$(samtools view -c "${3}${1}.bam" "${8}")
+echo "Number of mito reads for the donor ${1}: ${mito_reads}"
 samtools view -L "${7}" -o "${4}${1}.bam" "${3}${1}.bam"
 sleep 20
-samtools index "${4}${1}.bam" &> /dev/null && rm "${3}${1}.bam" "${3}${1}.bam.bai" "${4}${1}.bam.bai" && exit 0 || exit 1
+samtools index "${4}${1}.bam" &> /dev/null && rm "${3}${1}.bam" "${3}${1}.bam.bai" "${4}${1}.bam.bai" && (echo -n "Number of reads after filtering mito reads for the donor ${1}: " ; samtools view -c "${4}${1}.bam") && exit 0 || exit 1

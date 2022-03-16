@@ -44,7 +44,6 @@ fold_struct_bam_split2: "{id1}-cDNA/" # Used for per-barcode and per-donor bam f
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 
-# inp_bams: No
 
 # BAM processing pipeline----------------------------------------------------
 STAR_solo_pipeline:
@@ -200,7 +199,7 @@ split_bams_pipeline:
   bc_per_donor: 800
   time_per_donor: "01:30"
   short_bam: _chr1.bam
-  bad_reads_file: _bad_reads_stats.txt
+  mito_reads_file: _mito_reads_stats.txt
 
 
 # RNA velocity pipeline------------------------------------------------------
