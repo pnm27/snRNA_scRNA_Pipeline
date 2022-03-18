@@ -144,7 +144,7 @@ rule split_bams:
                 job_name_l.append(jname)
                 shell("""
                     if [ ! -d "{params.per_donor_log_dir}" ]; then mkdir -p {params.per_donor_log_dir}; fi
-                    jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.filt_bam} {output[1]} {input[0]} {params.chr_mito}")
+                    jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.filt_bam} {output[1]} {input[0]} {params.chr_mito} {output[1]}")
                     jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                     echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output[0]}
                     sleep 10
