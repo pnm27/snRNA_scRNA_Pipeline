@@ -140,8 +140,11 @@ rule split_bams:
             sleep 20
         """)
 
-        # If proc_donors is empty don't run
+        # If proc_donors is not empty then run
         if proc_donors:
+            with open(output[0], "a") as fout:
+                fout.write("Going to process donor(s): {}".format(','.join(proc_donors)))
+
             for donor in proc_donors:
                 jname=f"NPSAD_{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
                 job_name_l.append(jname)
