@@ -132,8 +132,11 @@ rule split_bams:
             op={output[1]}
             if [ ! -d "${{op%$(basename ${{op}})}}" ]; then mkdir -p ${{op%$(basename ${{op}})}}; fi
             if [ ! -d "{params.temp_bam_per_cell_dir}" ]; then mkdir -p {params.temp_bam_per_cell_dir}; fi
-            echo -n "Number of Mitochondrial reads after retaining only mapped reads for pooled sample is: " > {output[1]} && samtools view -c {input.filt_bam} {params.chr_mito} >> {output[1]}
-            samtools view -L {input[0]} -o {params.temp_bam} {input.filt_bam}
+            if [ ! -f "{output[1]}" ] || ! grep -E -q "Number of Mitochondrial reads after retaining only mapped reads for pooled sample is: [0-9]+" "${output[1]}"
+            then
+                echo -n "Number of Mitochondrial reads after retaining only mapped reads for pooled sample is: " > {output[1]} && samtools view -c {input.filt_bam} {params.chr_mito} >> {output[1]}
+            fi
+            if [ ! -f "{params.temp_bam}" ]; then samtools view -L {input[0]} -o {params.temp_bam} {input.filt_bam}; fi
             sleep 20
         """)
 
@@ -144,7 +147,7 @@ rule split_bams:
                 job_name_l.append(jname)
                 shell("""
                     if [ ! -d "{params.per_donor_log_dir}" ]; then mkdir -p {params.per_donor_log_dir}; fi
-                    jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.filt_bam} {output[1]} {input[0]} {params.chr_mito} {output[1]}")
+                    jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.filt_bam} {output[1]} {input[0]} {params.chr_mito}")
                     jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                     echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output[0]}
                     sleep 10
