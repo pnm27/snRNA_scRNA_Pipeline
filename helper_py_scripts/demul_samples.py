@@ -115,7 +115,11 @@ def ret_htos_calico_solo(bcs, df_shan):
             else:
                 barc_l.append(bc)
                 hash_n.append(hto_n)
-                ret_samp.append(subid_l[hto_l.index(hto_n)])
+                try:
+                    ret_samp.append(subid_l[hto_l.index(hto_n)])
+                except:
+                    ret_samp.append(hto_n)
+
 
     
     ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
