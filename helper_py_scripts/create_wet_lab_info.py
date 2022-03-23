@@ -41,7 +41,7 @@ parser = argparse.ArgumentParser(description="Demultiplex sample based on hahsol
 
 parser.add_argument('input', help="(List of) input file(s). Assumed to be in xlsx format.", nargs='+')
 parser.add_argument('-o', '--output', help="Output file name. Default: output.csv (in the current working dir).", default="output.csv")
-parser.add_argument('-c', '--converter', help="File hash created by Jaro (links 'set' and ''). Expected with 'tsv' extension. Default: output.tsv (in the current working dir).", default="output.csv")
+parser.add_argument('-c', '--converter', help="File hash created by Jaro (links 'set' and ''). Expected with 'tsv' extension. Default: output.tsv (in the current working dir).", default="converter.xlsx")
 parser.add_argument('-l', '--files_tracker', help="This file retains info about the processed xlsx file(s). Expected with 'txt' extension, will overwrite the previous file. Default: files_tracker.txt (in the current working dir).", default="files_tracker.txt")
 parser.add_argument('--columns', nargs=5, help="List of column names RESPECTIVELY to sample_ID (as present in the spreadsheets), \
     HTO numbers, SubIDs, and set number.", metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID', 'Set_number'), default=['unique_sample_ID', 'hto', 'hto_barcode', 'SubID', 'Set_number'])
