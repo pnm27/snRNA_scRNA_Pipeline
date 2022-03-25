@@ -5,10 +5,10 @@ def targets_STARsolo(conf_f) -> "list":
     bai_suff=conf_f['STAR_solo_pipeline']['bai']
     gf_mat=conf_f['STAR_solo_pipeline']['genefull_matrix']
     gf_features=conf_f['STAR_solo_pipeline']['genefull_features']
-    gf_barcodes=conf_f['STAR_solo_pipeline']['genefull_barcodes']
+    barcodes_stats=conf_f['STAR_solo_pipeline']['barcodes_stats']
     folder_st=conf_f['fold_struct']
 
-    target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{gf_barcodes}"]
+    target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{barcodes_stats}"]
     return target_list
 
 
