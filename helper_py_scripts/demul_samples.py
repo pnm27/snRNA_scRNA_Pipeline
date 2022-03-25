@@ -71,6 +71,9 @@ preparer_rep=batch.split('_')[2]
 replicate=preparer_rep[1]
 preparer=preparer_rep[0]
 
+# batch for wet lab file 
+samp=batch
+
 # Parameters for filtering
 max_mito=args.max_mito
 min_genes=args.min_genes
@@ -87,7 +90,7 @@ t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
 # Shan's new csv file
 df = read_files_ext(args.wet_lab_file)
-df = df.loc[df[cols[0]] == batch]
+df = df.loc[df[cols[0]] == samp]
 
 
 def ret_htos_calico_solo(bcs, df_shan):
