@@ -62,15 +62,15 @@ STAR_solo_pipeline:
   STAR_log_final: _Log.final.out
   barcodes_stats: _Solo.out/Barcodes.stats
   gene_features: _Solo.out/Gene/Features.stats
-  gene_lun_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
-  gene_lun_features: _Solo.out/Gene/filtered/features.tsv.gz
+  gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
+  gene_features: _Solo.out/Gene/filtered/features.tsv.gz
   gene_lun_matrix: _Solo.out/Gene/filtered/matrix.mtx.gz
   gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
   gene_summary: _Solo.out/Gene/Summary.csv
   genefull_features: _Solo.out/GeneFull/Features.stats
-  genefull_lun_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
-  genefull_lun_features: _Solo.out/GeneFull/filtered/features.tsv.gz
-  genefull_lun_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
+  genefull_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
+  genefull_features: _Solo.out/GeneFull/filtered/features.tsv.gz
+  genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
   genefull_summary: _Solo.out/GeneFull/Summary.csv
 
