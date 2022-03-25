@@ -12,6 +12,20 @@ import datetime
 import functools
  
 
+
+def read_files_ext(fname) -> "pd.DataFrame" :
+    if not os.path.isfile(fname):
+        raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
+
+    if fname.endswith('.csv'):
+        return pd.read_csv(args.wet_lab_file)
+    elif fname.endswith('.tsv'):
+        return pd.read_csv(args.wet_lab_file, sep='\t')
+    else:
+        raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
+
+
+
  
 sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
 sc.settings.autosave = True
@@ -26,18 +40,19 @@ parser = argparse.ArgumentParser(description="Demultiplex sample based on hahsol
 parser.add_argument('hashsolo_out', help="Path to cached output of hashsolo(h5ad)")
 parser.add_argument('matrix_file', help="Path to matrix.mtx.gz")
 parser.add_argument('count_matrix', help="Path to store the final count matrix(h5ad)")
-parser.add_argument('demux_info', help="Path to store demultiplexing info(text file)")
-parser.add_argument('gene_info_file', help="Path to file that contains gene names and ids for annotation")
-parser.add_argument('wet_lab_file', help="Path to file that contains HTO info for each set")
+parser.add_argument('demux_info', help="Path to store demultiplexing info (tab-separated txt file)")
+parser.add_argument('gene_info_file', help="Path to file that contains gene names and ids for annotation (tab-separated txt file)")
+parser.add_argument('wet_lab_file', help="Path to file that contains HTO info for each set (either csv or tsv file)")
 
 
 # Optional parameters
 parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
 parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
 parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
-parser.add_argument('--columns', nargs=4, help="List of column names RESPECTIVELY to sample_ID (as present in the spreadsheets), \
-    HTO numbers and Donors/SubIDs.", metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID'), default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'])
-parser.add_argument('-s', '--sample_name', help="Name of the sample. Check whether this name coincides with that in this script as well as the one in wet_lab_file")
+parser.add_argument('--columns', nargs=4, help="List of column names RESPECTIVELY to sample_ID (as present in the spreadsheets - identifies pooled samples), \
+    HTO numbers, it's associated barcodes, and Donors/SubIDs (contains each multiplexed donors).", metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID'),
+     default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'])
+parser.add_argument('-s', '--sample_name', help="Name of the sample. Check whether this name coincides with that in this script as well as the one in the wet_lab_file")
 
 
 args = parser.parse_args()
@@ -47,10 +62,10 @@ args = parser.parse_args()
 starsolo_hashsolo_out = args.hashsolo_out
 starsolo_mat = args.matrix_file[:-13]
 cols=args.columns
-batch=args.sample_name.replace('-', '_')+'_cDNA'
+
 
 # Batch and round info
-# batch=re.search('/Sample_(NPSAD-.*)/NPSAD', starsolo_mat).group(1)
+batch=args.sample_name.split('-')
 r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
 preparer_rep=batch.split('_')[2]
 replicate=preparer_rep[1]
@@ -71,8 +86,7 @@ t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
 
 # Shan's new csv file
-df = pd.read_csv(args.wet_lab_file, sep='\t')
-# df = df.loc[df["cDNA_ID"] == batch]
+df = read_files_ext(args.wet_lab_file)
 df = df.loc[df[cols[0]] == batch]
 
 

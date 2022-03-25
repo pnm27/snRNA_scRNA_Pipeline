@@ -54,6 +54,7 @@ rule demux_samples_calico_solo_STARsolo:
 
     shell:
         """
+        samp={params.sample_name}
         python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
         -s {params.sample_name}
         sleep 100
