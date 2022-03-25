@@ -16,7 +16,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
     '''
     # This is to check the log file produced after each attempt for the error value
-    file_p_temp = f"{config['fold_struct']}".format(num=wildcards.num, id1=wildcards.id1)
+    file_p_temp = f"{config['fold_struct']}".format(id1=wildcards.id1)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STAR_solo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
@@ -45,8 +45,8 @@ def get_limitsjdbval_coll(wildcards, resources):
    # This is to check the parameters file, else block WILL execute after the for block as the for block as no break in it (need revision)
    # Use try except block to catch file issues
     else:
-        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], num=wildcards.num, id1=wildcards.id1)):
-            with open("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], num=wildcards.num, id1=wildcards.id1)) as fin:
+        if os.path.isfile("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)):
+            with open("{}Sample_{id1}-cDNA.txt".format(config['STAR_solo_pipeline']['star_params_dir'], id1=wildcards.id1)) as fin:
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     temp_nsj = int(re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1))
