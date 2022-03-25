@@ -65,7 +65,7 @@ cols=args.columns
 
 
 # Batch and round info
-batch=args.sample_name.split('-')
+batch=args.sample_name.replace('-', '_')+'_cDNA'
 r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
 preparer_rep=batch.split('_')[2]
 replicate=preparer_rep[1]
