@@ -95,7 +95,7 @@ rule STARsolo_sort:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}",
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}",
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}",
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_raw_matrix']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_matrix']}"
 
     log:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
