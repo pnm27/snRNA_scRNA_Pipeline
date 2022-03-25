@@ -3,9 +3,9 @@ def targets_STARsolo(conf_f) -> "list":
 
     inp_pref=conf_f['STAR_solo_pipeline']['bams_dir']
     bai_suff=conf_f['STAR_solo_pipeline']['bai']
-    gf_mat=conf_f['STAR_solo_pipeline']['genefull_lun_matrix']
-    gf_features=conf_f['STAR_solo_pipeline']['genefull_lun_features']
-    gf_barcodes=conf_f['STAR_solo_pipeline']['genefull_lun_barcodes']
+    gf_mat=conf_f['STAR_solo_pipeline']['genefull_matrix']
+    gf_features=conf_f['STAR_solo_pipeline']['genefull_features']
+    gf_barcodes=conf_f['STAR_solo_pipeline']['genefull_barcodes']
     folder_st=conf_f['fold_struct']
 
     target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{gf_barcodes}"]
