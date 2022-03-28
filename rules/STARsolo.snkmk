@@ -51,7 +51,7 @@ def get_limitsjdbval_coll(wildcards, resources):
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     temp_nsj = int(re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1))
                     temp_sj_coll = int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))
-                    ins_nsj = max(temp_nsj, temp_sj_collap, ins_nsj, sj_collap)
+                    ins_nsj = max(temp_nsj, temp_sj_coll, ins_nsj, sj_collap)
                     sj_collap = ins_nsj
 
 
