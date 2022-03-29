@@ -102,8 +102,8 @@ rule STARsolo_sort:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
    
     resources:
-        mem_mb=15000,
-        time_min=1440,
+        mem_mb=allocate_mem_SS,
+        time_min=allocate_time_SS,
         attempt=lambda wildcards, attempt: attempt
 
     threads: 6

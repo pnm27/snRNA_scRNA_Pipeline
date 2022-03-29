@@ -1,4 +1,8 @@
 # Mem allocation per thread (here thread is core/tasks), everything is in MB
+def allocate_mem_SS(wildcards, attempt):
+    return 15000*attempt+1000*(attempt-1)
+
+
 def allocate_mem_PGCB(wildcards, attempt):
     return 2500*attempt+2500
 
@@ -81,6 +85,10 @@ def allocate_mem_SB(wildcards, attempt):
 
 # Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
 # CAREFULL about exceeding time limits
+def allocate_time_SS(wildcards, attempt):
+    return 1440
+
+
 def allocate_time_PGCB(wildcards, attempt):
     return 60*attempt+60
 
