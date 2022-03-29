@@ -123,8 +123,8 @@ rule STARsolo_sort:
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}
         else 
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}_{resources.attempt}
-               cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params}
+               cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || (rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params})
         fi
-        samtools index {config[STAR_solo_pipeline][bams_dir]}{config[fold_struct]}{config[STAR_solo_pipeline][bam]}
+        samtools index {output[0]}
         """
         )
