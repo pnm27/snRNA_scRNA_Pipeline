@@ -24,7 +24,6 @@ def read_files_ext(fname) -> pd.DataFrame :
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
-
  
 def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     sub = wet_lab_df[col_val]
@@ -46,6 +45,27 @@ def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     else:
         raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
+
+# Assumes similar construct like the HTOs
+def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
+    sub = wet_lab_df[col_val]
+    test_len = len(sub)
+    # No command-line params and inference that all HTOs are present in one row separated by ","
+    if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
+        return sub.split(',')
+    # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
+    elif hs == None and test_len == 1 and len(sub.split()) > 1:
+        return sub.split(',')
+    elif hs == None and test_len > 1:
+        return sub.tolist()
+    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
+        return sub.split(hto_sep)
+    elif hs != None and test_len > 1:
+        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {f_name}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
+    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
+        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete donor ids in the wet lab file {f_name}")
+    else:
+        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
 
 
@@ -126,7 +146,7 @@ def ret_htos_calico_solo(bcs, df_s):
     # List of htos from the wet lab spreadsheet
     hto_l = parse_HTO(df_s, cols[1], args.wet_lab_file, samp, args.hto_sep)
     # List of subIDs from the wet lab spreadsheet
-    subid_l = df_s[cols[3]].values[0].split(',')
+    subid_l = parse_subids(df_s, cols[1], args.wet_lab_file, samp, args.hto_sep)
 
     # List of barcodes
     barc_l = []
