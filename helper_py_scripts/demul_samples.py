@@ -16,7 +16,6 @@ import functools
 def read_files_ext(fname) -> pd.DataFrame :
     if not os.path.isfile(fname):
         raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
-
     if fname.endswith('.csv'):
         return pd.read_csv(fname)
     elif fname.endswith('.tsv'):
@@ -39,7 +38,9 @@ def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] > 1:
         return wet_lab_df[col_val].split(hto_sep)
     elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] == 1:
-        raise ValueError("Either the given separator is wrong or the sample {} has incomplete HTO values in the wet lab file {}")
+        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete HTO values in the wet lab file {f_name}")
+    else:
+        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
 
 
