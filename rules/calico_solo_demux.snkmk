@@ -61,7 +61,7 @@ rule demux_samples_calico_solo_STARsolo:
         -s {params.sample_name}
         else
             python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
-        -s {params.sample_name} --hto_seq {params.hto_sep}
+        -s {params.sample_name} --hto_sep {params.hto_sep}
         fi
         sleep 100
         """
