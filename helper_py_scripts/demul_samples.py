@@ -121,12 +121,12 @@ else:
     df = df.loc[df[cols[0]] == samp]
 
 
-def ret_htos_calico_solo(bcs, df_shan):
+def ret_htos_calico_solo(bcs, df_s):
 
     # List of htos from the wet lab spreadsheet
     hto_l = parse_HTO(df_s, cols[1], args.wet_lab_file, samp, args.hto_sep)
     # List of subIDs from the wet lab spreadsheet
-    subid_l = df_shan[cols[3]].values[0].split(',')
+    subid_l = df_s[cols[3]].values[0].split(',')
 
     # List of barcodes
     barc_l = []
