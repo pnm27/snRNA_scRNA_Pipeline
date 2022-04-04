@@ -68,7 +68,7 @@ rule STARsolo_sort:
         R1=f"{config['cDNA_fastqs_dir']}{config['fold_struct']}{config['R1_suffix']}",
         R2=f"{config['cDNA_fastqs_dir']}{config['fold_struct']}{config['R2_suffix']}"
 
-    priority: 10
+    # priority: 10
 
     params:
         gtf=config['gtf_file'],

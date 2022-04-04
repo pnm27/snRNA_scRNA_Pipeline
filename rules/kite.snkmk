@@ -3,7 +3,7 @@ rule create_FB:
         R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
         R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
@@ -28,7 +28,7 @@ rule create_mismatch_fasta:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}",
@@ -58,7 +58,7 @@ rule build_kallisto_index:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}"
@@ -82,7 +82,7 @@ rule run_kallisto:
         R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
         R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}",
@@ -110,7 +110,7 @@ rule run_bustools_correct:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
@@ -133,7 +133,7 @@ rule run_bustools_sort:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}"
@@ -158,7 +158,7 @@ rule run_bustools_count:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}",
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
@@ -185,7 +185,7 @@ rule create_h5ad_bustools:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
 
-    priority: 10
+    # priority: 10
 
     output:
         f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"

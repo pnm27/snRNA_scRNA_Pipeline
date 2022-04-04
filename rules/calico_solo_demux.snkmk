@@ -3,7 +3,7 @@ rule run_calico_solo:
         f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}",
         starsolo_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_matrix']}" #get_STARsolo_mat
 
-    priority: 8
+    # priority: 8
    
     output:
         f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
@@ -32,7 +32,7 @@ rule demux_samples_calico_solo_STARsolo:
         f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}",
         starsolo_out=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_matrix']}"
 
-    priority: 8
+    # priority: 8
 
     output:
         f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
