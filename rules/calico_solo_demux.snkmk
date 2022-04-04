@@ -45,7 +45,8 @@ rule demux_samples_calico_solo_STARsolo:
         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
         cols=config['demux_pipeline']['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
-        sample_name="{id1}"
+        sample_name="{id1}",
+        hto_sep=config['demux_pipeline']['hto_sep']
 
     
     resources:
@@ -55,8 +56,13 @@ rule demux_samples_calico_solo_STARsolo:
     shell:
         """
         samp={params.sample_name}
-        python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
+        if [[ "{params.hto_sep}" == "None" ]]; then
+            python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
         -s {params.sample_name}
+        else
+            python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
+        -s {params.sample_name} --hto_seq {params.hto_sep}
+        fi
         sleep 100
         """
 

@@ -122,6 +122,7 @@ kb_pipeline:
 demux_pipeline:
   h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
   calico_solo_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/solo/
+  hto_sep: null
   columns_to_pick:
   - set_ID
   - hto
