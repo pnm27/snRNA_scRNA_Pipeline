@@ -27,17 +27,21 @@ def read_files_ext(fname) -> pd.DataFrame :
 
  
 def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
+    sub = wet_lab_df[col_val]
+    test_len = len(sub)
     # No command-line params and inference that all HTOs are present in one row separated by ","
-    if hs == None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(',').values[0] > 1:
-        return wet_lab_df[col_val].split(',')
+    if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
+        return sub.split(',')
     # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
-    elif hs == None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].split():
-        return wet_lab_df[col_val].split(',')
-    elif hs == None and len(wet_lab_df[col_val]) > 1:
-        return wet_lab_df[col_val].tolist()
-    elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] > 1:
-        return wet_lab_df[col_val].split(hto_sep)
-    elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] == 1:
+    elif hs == None and test_len == 1 and len(sub.split()) > 1:
+        return sub.split(',')
+    elif hs == None and test_len > 1:
+        return sub.tolist()
+    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
+        return sub.split(hto_sep)
+    elif hs != None and test_len > 1:
+        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {f_name}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
+    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
         raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete HTO values in the wet lab file {f_name}")
     else:
         raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
@@ -111,7 +115,10 @@ t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
 # Shan's new csv file
 df = read_files_ext(args.wet_lab_file)
-df = df.loc[df[cols[0]] == samp]
+if df.loc[df[cols[0]] == samp].empty:
+    raise ValueError(f"Check dtypes!\nSample (variable name 'var', data type {type(samp)}, with value {samp} ) couldn't be subset from the wet lab file.\nData types for the wet lab file:\n{df.dtypes}")
+else:
+    df = df.loc[df[cols[0]] == samp]
 
 
 def ret_htos_calico_solo(bcs, df_shan):
