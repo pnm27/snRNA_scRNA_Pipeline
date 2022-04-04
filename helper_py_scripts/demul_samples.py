@@ -61,11 +61,11 @@ def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
         return sub.split(hto_sep)
     elif hs != None and test_len > 1:
-        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {f_name}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
+        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {fname}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
-        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete donor ids in the wet lab file {f_name}")
+        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete donor ids in the wet lab file {fname}")
     else:
-        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
+        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {fname}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
 
 
