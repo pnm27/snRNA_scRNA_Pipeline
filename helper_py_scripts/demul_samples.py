@@ -283,7 +283,7 @@ prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index
 od = ord_dict(sorted(prop_dict.items()))
 a = ""
 for k, v in od.items():
-    b = k + ": " + str(v) + ", "
+    b = str(k) + ": " + str(v) + ", "
     a += b
 
 solo_run_info.append(( 'After demultiplexing #cells_cs', a[:-1] ))
