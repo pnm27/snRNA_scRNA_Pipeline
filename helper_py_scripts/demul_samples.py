@@ -294,6 +294,9 @@ print(f"Saving All info as a tsv file and also the h5ad files: {ct}")
 solo_run_df = pd.DataFrame(solo_run_info, columns=['Observations', 'Vals'])
 solo_run_df.to_csv(args.demux_info, sep = "\t", index=False)
 
+# If Subject IDs aren't 'string' then convert them
+adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
+
 adata.write(args.count_matrix)
 
 ct = datetime.datetime.now()
