@@ -75,7 +75,7 @@ parser.add_argument('--columns', nargs=4, help="List of column names RESPECTIVEL
     HTO numbers, it's associated barcodes, and Donors/SubIDs (contains each multiplexed donors).", metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID'),
      default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'])
 parser.add_argument('-s', '--sample_name', help="Name of the sample. Check whether this name coincides with that in this script as well as the one in the wet_lab_file")
-parser.add_argument('-h', '--hto_sep', help="If, per each sample in the wet lab file, HTOs are all present in one row separated by some SEP then specify it here. Default: ',' or ' ' ")
+parser.add_argument('--hto_sep', help="If, per each sample in the wet lab file, HTOs are all present in one row separated by some SEP then specify it here. Default: ',' or ' ' ")
 
 
 args = parser.parse_args()
