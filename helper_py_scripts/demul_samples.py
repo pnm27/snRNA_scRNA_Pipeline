@@ -13,20 +13,37 @@ import functools
  
 
 
-def read_files_ext(fname) -> "pd.DataFrame" :
+def read_files_ext(fname) -> pd.DataFrame :
     if not os.path.isfile(fname):
         raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
 
     if fname.endswith('.csv'):
-        return pd.read_csv(args.wet_lab_file)
+        return pd.read_csv(fname)
     elif fname.endswith('.tsv'):
-        return pd.read_csv(args.wet_lab_file, sep='\t')
+        return pd.read_csv(fname, sep='\t')
     else:
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
 
  
+def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
+    # No command-line params and inference that all HTOs are present in one row separated by ","
+    if hs == None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(',').values[0] > 1:
+        return wet_lab_df[col_val].split(',')
+    # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
+    elif hs == None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].split():
+        return wet_lab_df[col_val].split(',')
+    elif hs == None and len(wet_lab_df[col_val]) > 1:
+        return wet_lab_df[col_val].tolist()
+    elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] > 1:
+        return wet_lab_df[col_val].split(hto_sep)
+    elif hs != None and len(wet_lab_df[col_val]) == 1 and wet_lab_df[col_val].str.count(hs).values[0] == 1:
+        raise ValueError("Either the given separator is wrong or the sample {} has incomplete HTO values in the wet lab file {}")
+
+
+
+
 sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
 sc.settings.autosave = True
 sc.settings.autoshow = False
@@ -53,6 +70,7 @@ parser.add_argument('--columns', nargs=4, help="List of column names RESPECTIVEL
     HTO numbers, it's associated barcodes, and Donors/SubIDs (contains each multiplexed donors).", metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID'),
      default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'])
 parser.add_argument('-s', '--sample_name', help="Name of the sample. Check whether this name coincides with that in this script as well as the one in the wet_lab_file")
+parser.add_argument('-h', '--hto_sep', help="If, per each sample in the wet lab file, HTOs are all present in one row separated by some SEP then specify it here. Default: ',' or ' ' ")
 
 
 args = parser.parse_args()
@@ -64,8 +82,10 @@ starsolo_mat = args.matrix_file[:-13]
 cols=args.columns
 
 
-# Batch and round info
+# Batch info 
 batch=args.sample_name.replace('-', '_')+'_cDNA'
+
+# Prepare for Extra Information
 r_num=int(os.path.basename(args.count_matrix).split('_')[0].replace('round', ''))
 preparer_rep=batch.split('_')[2]
 replicate=preparer_rep[1]
@@ -96,8 +116,7 @@ df = df.loc[df[cols[0]] == samp]
 def ret_htos_calico_solo(bcs, df_shan):
 
     # List of htos from the wet lab spreadsheet
-    hto_l = df_shan[cols[1]].values[0].replace('HTO#', '').split(',')
-    hto_l = [ 'HTO' + str(h) for h in hto_l ]
+    hto_l = parse_HTO(df_s, cols[1], args.wet_lab_file, samp, args.hto_sep)
     # List of subIDs from the wet lab spreadsheet
     subid_l = df_shan[cols[3]].values[0].split(',')
 
