@@ -23,7 +23,7 @@ done < ${INPUT_FILE}
 echo "STARTING the script ${0} at:"
 date
 # Restrict glob expansion
-python3 /sc/arion/projects/psychAD/pnm/helper_py_scripts/update_logs.py -m ${MAP_FILE} -o ${OUTPUT_FILE} -b ${BAM_DIR} -p ${PICARD_DIR} -d ${DEMUL_DIR} "${samp_list}" \
+python3 ../helper_py_scripts/update_logs.py -m ${MAP_FILE} -o ${OUTPUT_FILE} -b ${BAM_DIR} -p ${PICARD_DIR} -d ${DEMUL_DIR} "${samp_list}" \
  --bam_struct "${BAM_STRUCT}" --pc_struct "${PICARD_STRUCT}" --dem_struct "${DEMUX_STRUCT}" --ss_l --pc_gc --pc_rs --ss_g_f --ss_gf_f --ss_g_s --ss_gf_s --ss_bc --dem_info
 
  echo "FINISHED the script at:"
