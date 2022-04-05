@@ -15,9 +15,9 @@ import errno, argparse
 def get_filename(loc_dir, file_struct, fn, suffix):
     try:
         if file_struct.endswith('/'):
-            return glob2.glob(os.path.join(loc_dir, file_struct, f"{fn}{suffix}"))[0]
+            return glob2.glob(os.path.join(loc_dir, file_struct, f"{fn}*{suffix}"))[0]
         else:
-            return glob2.glob(os.path.join(loc_dir, f"{file_struct}{fn}{suffix}"))[0]
+            return glob2.glob(os.path.join(loc_dir, f"{file_struct}*{fn}*{suffix}"))[0]
     except:
         return ""
 
@@ -69,44 +69,66 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
         if prog != "LAB" and sub_prog not in no_progs:
             if sub_prog == "REG":
                 temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
-                temp_df["vals"] = temp_df.vals.str.strip()
-                temp_df["cols"] = temp_df.cols.str.strip()
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value.replace(" ","/"))
 
             elif sub_prog == "GC":
                 temp_df = pd.read_csv(all_files_dict["PICARD_GC"], sep='\t', skiprows=6)
-                add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
+                try:
+                    add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
                
             elif sub_prog == "RNASEQMETRIC":
                 temp_df = pd.read_csv(all_files_dict["PICARD_RNASeq"], sep='\t', nrows=1, skiprows=6)
-                add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
+                try:
+                    add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
 
             elif sub_prog == "GENE_FEATURE":
                 temp_df = get_df(all_files_dict["Gene_Features"]) 
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
 
             elif sub_prog == "GENE_SUMM":
                 temp_df = pd.read_csv(all_files_dict["Gene_Summary"], names=['cols', 'vals'])
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
 
             elif sub_prog == "GENEFULL_FEATURE":
                 temp_df = get_df(all_files_dict["GeneFull_Features"])
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
 
             elif sub_prog == "GENEFULL_SUMM":
                 temp_df = pd.read_csv(all_files_dict["GeneFull_Summary"], names=['cols', 'vals'])
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
 
             elif sub_prog == "BARCODE_STATS":
                 temp_df = get_df(all_files_dict["Barcodes_stats"])
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
+                try:
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
                 new_row.append(add_value)
            
             elif sub_prog == "DEMUX":
