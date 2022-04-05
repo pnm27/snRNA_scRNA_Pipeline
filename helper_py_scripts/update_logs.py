@@ -50,6 +50,8 @@ def calc_ratio(numer, denom):
 def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
    
     new_row = []
+    # Extra Annotations through kwargs
+    # Reproduce the sequence of how the new_columns were set
     new_row.append(kwargs["round_num"])
     new_row.append(kwargs["sample"])
     new_row.append(kwargs["set_num"])
@@ -137,7 +139,7 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     return new_row
 
 
-# Extra columns (annotations) to add
+# Extra columns (annotations) to add (This sequence is maintained everywhere)
 new_cols_to_add = [['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], ['REP', 'LAB', 'BATCH']]
 
 # Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
@@ -306,6 +308,7 @@ if __name__ == "__main__":
 
            
         if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any()) :
+            # Add a kwargs style input for extra annotations
             row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, round_num=r_num, sample=sample, prep=preparer, rep=replicate, set_num=set_val))
 
         print(f"Finished adding {sample} to the file")
