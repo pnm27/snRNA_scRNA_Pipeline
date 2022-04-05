@@ -13,12 +13,10 @@ import errno, argparse
 # This function returns the filename if it exists
 # otherwise an empty string
 def get_filename(loc_dir, file_struct, fn, suffix):
-
     try:
         if file_struct.endswith('/'):
             return glob2.glob(os.path.join(loc_dir, file_struct, f"{fn}{suffix}"))[0]
         else:
-            # print(os.path.join(loc_dir, f"{file_struct}{fn}{suffix}"))
             return glob2.glob(os.path.join(loc_dir, f"{file_struct}{fn}{suffix}"))[0]
     except:
         return ""
@@ -124,7 +122,7 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
                    new_row.append(add_value)
 
                 else:
-                     new_row.append(add_value)        
+                     new_row.append(add_value)         
 
             else:
                 raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
@@ -149,8 +147,6 @@ def get_latest_extra_columns():
 
 # Run this only when executed through Snakemake
 if __name__ == "__main__":
-
-
     # Parse arguments
     parser = argparse.ArgumentParser(description="Compile all the files to combine all stats. NOTE: For all optional files (including all folder structures), if parameter is present but no value is \
         provided then values will be used as described by the defaults in respective help message. Folder structures for STARsolo output and PICARD is assumed to be the same, by default. \
@@ -158,7 +154,7 @@ if __name__ == "__main__":
 
     parser.add_argument('samples', nargs='+', help="List of samples. This will be the prefix(es) for all the name(s) of the output file(s)")
 
-
+    
     # Optional parameters
     parser.add_argument('-m', '--map_file', help="Mapping file that contains info on the headers in the output. DEFAULT: <current working directory>/Final_out_MAP_2.tsv", 
         default=os.path.join(os.getcwd()+"Final_out_MAP_2.tsv"))
@@ -172,10 +168,6 @@ if __name__ == "__main__":
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
     parser.add_argument('--dem_struct', help="Regex to identify demultiplex info containing file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>\"", default=os.path.join(os.getcwd(), "<sample>"))
-    # parser.add_argument('--ss_fold_struct', dest='ssfs', nargs='?', help="Folder structure for the bam files produced by STARsolo. If no value provided, then the strucutre is assmued to be \
-    #     <cwd>/<samples>/ for all samples. DEFAULT: \"current working dir, _Log.final.out\"", default='default')
-    # parser.add_argument('--pc_fold_struct', dest='pcfs', nargs='?', help="Folder structure for the bam files produced by STARsolo. If no value provided, then the strucutre is assmued to be \
-    #     <cwd>/<samples>/ for all samples. DEFAULT: \"current working dir, _Log.final.out\"", default='default')
     parser.add_argument('--ss_l', nargs='?', help="Suffix for the output (if not the same as the default one). \
         DEFAULT: \"_Log.final.out\"", const="_Log.final.out", default=None)
     parser.add_argument('--pc_gc', nargs='?',  help="Suffix for the output (if not the same as the default one). \
@@ -198,8 +190,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-
-    # print(args)
 
     # Parse directory values
     bam_dir = args.bam_dir
@@ -229,10 +219,6 @@ if __name__ == "__main__":
             continue
 
 
-
-
-
-
     out=args.output_file
     map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
     cl = pd.DataFrame(new_cols_to_add, columns=list(map_names.columns.values)[1:-1])
@@ -253,6 +239,7 @@ if __name__ == "__main__":
 
     # If file doesn't exist create one else open as pandas dataframe
     try:
+        #if os.path.isfile(snakemake.output[0]) :
         combo_log = pd.read_csv(out, sep = "\t", header=[0, 1, 2])
 
         # Catch older files that may have lesser columns than expected
@@ -292,8 +279,13 @@ if __name__ == "__main__":
         pc_rs_file = get_filename(pic_dir, pc_st, sample, args.pc_rs) if args.pc_rs != None else ""
         dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info) if args.dem_info != None else ""
 
+
         files_dict = {"STAR_final": ss_log_final, "PICARD_GC": pc_gc_file, "PICARD_RNASeq": pc_rs_file, "Gene_Features": ss_gene_features, "GeneFull_Features": ss_genefull_features, 
                       "Gene_Summary": ss_gene_summary, "GeneFull_Summary": ss_genefull_summary, "Barcodes_stats": ss_bc_stats, "Demultiplex_stats": dem_file}
+
+
+
+        # print(f"The file dict is {files_dict}")
 
 
         # Check for each sample in the list if it has all required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
