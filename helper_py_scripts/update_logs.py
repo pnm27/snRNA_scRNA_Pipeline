@@ -137,6 +137,7 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     return new_row
 
 
+# Extra columns (annotations) to add
 new_cols_to_add = [['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], ['REP', 'LAB', 'BATCH']]
 
 # Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
@@ -296,7 +297,7 @@ if __name__ == "__main__":
                 samp_excl_progs.append(k)
 
 
-        # extract additional info per sample
+        # Example for Adding additional info per sample
         r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
         preparer = sample.split('-')[2][0]
         replicate = sample.split('-')[2][1]
