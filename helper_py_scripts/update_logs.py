@@ -69,6 +69,8 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
         if prog != "LAB" and sub_prog not in no_progs:
             if sub_prog == "REG":
                 temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
+                temp_df["vals"] = temp_df.vals.str.strip()
+                temp_df["cols"] = temp_df.cols.str.strip()
                 try:
                     add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
                 except:
@@ -161,7 +163,7 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     return new_row
 
 
-# Extra columns (annotations) to add (This sequence is maintained everywhere)
+# Extra columns (annotations) to add (This sequence should be maintained everywhere)
 new_cols_to_add = [['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], ['REP', 'LAB', 'BATCH']]
 
 # Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
@@ -334,7 +336,7 @@ if __name__ == "__main__":
             # Add a kwargs style input for extra annotations
             row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, round_num=r_num, sample=sample_name, prep=preparer, rep=replicate, set_num=set_val))
 
-        print(f"Finished adding {sample} to the file")
+        print(f"Finished adding {sample_name} to the file")
 
 
     temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
@@ -344,12 +346,12 @@ if __name__ == "__main__":
     try:
         combo_log["STARsolo", "DEMUX", "DOUBLET_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
     except:
-        print("Doublet ratio for: {}".format(sample))
+        print("Doublet ratio for: {}".format(sample_name))
 
     try:
         combo_log["STARsolo", "DEMUX", "NEGATIVE_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
     except:
-        print("Negative ratio for: {}".format(sample))
+        print("Negative ratio for: {}".format(sample_name))
 
 
     combo_log.to_csv(out, sep = "\t", index=False)
