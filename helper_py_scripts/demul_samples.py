@@ -279,7 +279,7 @@ solo_run_info.append(('Negative #cells_cs', hto_tags_cs[2]))
 
 # Remaining cells after demultiplexing (for each demux method)
 rem_cells_cs = adata.obs.SubID_cs.value_counts()
-prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index != "Negative")]
+prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index != "Negative") & (rem_cells_cs.index != "Not Present")]
 od = ord_dict(sorted(prop_dict.items()))
 a = ""
 for k, v in od.items():
