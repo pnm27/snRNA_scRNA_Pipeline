@@ -274,10 +274,10 @@ for p, d in donors_dict.items():
 
 		for op_f in output_files:
 			if op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" not in op_f:
-				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, f"{p}_{op_f}.h5ad"))
 			elif op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" in op_f:
 				new_name=op_f.replace('_unknown_donor', '_ud_')
-				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, f"{p}_{op_f}.h5ad"))
 
 		del adata, adatas
 		print("Processed incomplete Set: {}".format(p))
@@ -306,10 +306,10 @@ for p, d in donors_dict.items():
 
 		for op_f in output_files:
 			if op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" not in op_f:
-				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, f"{p}_{op_f}.h5ad"))
 			elif op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" in op_f:
 				new_name=op_f.replace('_unknown_donor', '_ud_')
-				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, f"{p}_{op_f}.h5ad"))
 
 		del adata, old_adata
 		print(f"Processed incomplete Set: {p}")
