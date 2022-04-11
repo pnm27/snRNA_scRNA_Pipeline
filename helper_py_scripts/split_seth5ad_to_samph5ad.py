@@ -175,10 +175,10 @@ if args.log_file != None and args.wet_lab_file != None:
 	use_log=True
 elif args.log_file == None and args.wet_lab_file == None:
 	raise ValueError("Neither compiled log file nor wet_lab_file was provided. Please provide one of them!")
-elif args.log_file == None and args.wet_lab_file != None and args.cols != None:
+elif args.log_file != None and args.wet_lab_file == None and args.cols != None:
 	use_log=True
 	pass
-elif args.log_file != None and args.wet_lab_file == None and args.cols != None:
+elif args.log_file == None and args.wet_lab_file != None and args.cols != None:
 	pass
 else:
 	raise ValueError("Given arguments are either insuficient or incomplete! Check the help!")

@@ -21,7 +21,7 @@ if [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --log_file ${LOG_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
+	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} "${SAMPLE_NAME_COL}" --log_file ${LOG_FILE} --cols "${DONOR_COLUMN}" --multiheader ${MULTIPLE_HEADER} \
 	--donor_sep ${DONOR_SEP}
 	echo "FINISHED the script at:"
 	date
@@ -30,7 +30,7 @@ elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --log_file ${LOG_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER}
+	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} "${SAMPLE_NAME_COL}" --log_file ${LOG_FILE} --cols "${DONOR_COLUMN}" --multiheader ${MULTIPLE_HEADER}
 	echo "FINISHED the script at:"
 	date
 
@@ -39,7 +39,7 @@ elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
+	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} "${SAMPLE_NAME_COL}" --wet_lab_file ${WET_LAB_FILE} --cols "${DONOR_COLUMN}" --multiheader ${MULTIPLE_HEADER} \
 	--donor_sep ${DONOR_SEP}
 	echo "FINISHED the script at:"
 	date
@@ -48,7 +48,7 @@ elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} 
+	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} "${SAMPLE_NAME_COL}" --wet_lab_file ${WET_LAB_FILE} --cols "${DONOR_COLUMN}" --multiheader ${MULTIPLE_HEADER} 
 	echo "FINISHED the script at:"
 	date
 
