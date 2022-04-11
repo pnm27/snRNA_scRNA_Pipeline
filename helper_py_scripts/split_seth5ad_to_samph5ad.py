@@ -247,7 +247,7 @@ donors_dict = get_donors(df, args.sample_name_column, args.cols, args.donor_sep,
 for p, d in donors_dict.items():
 	# If reps are present specify how each rep differs like:
 	# all_files = glob2.glob(os.path.join(count_matrix_dir, "*_Sample-{}*_STARsolo_out.h5ad".format(setid)))\
-	all_files = glob2.glob(os.path.join(count_matrix_dir, f"*{p}*.h5ad"))
+	all_files = glob2.glob(os.path.join(count_matrix_dir, f"*{p}*/*.h5ad"))
 
 	all_donors = all([ os.path.isfile(os.path.join(out_dir, f"{p}_{a}.h5ad")) for a in d]) if isinstance(d, list) else os.path.isfile(os.path.join(out_dir, f"{p}_{d}.h5ad"))
 
