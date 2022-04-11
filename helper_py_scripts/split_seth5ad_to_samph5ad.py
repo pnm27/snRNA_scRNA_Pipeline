@@ -64,6 +64,7 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log) -> dict:
 					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
 				else:
 					key_name = pool
+					
 				dd[key_name] = list(map(str.strip, temp_val))
 
 		elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
@@ -90,16 +91,18 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log) -> dict:
 
 	else: # A multiheader input file
 		if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
-			for pool in inp_df[tuple(col_val1.split())].unique():
-				temp_val = inp_df.loc[inp_df[tuple(col_val1.split())] == pool, tuple(col_val2.split())].tolist()
+			for pool in inp_df[tuple(col_val1.split(","))].unique():
+				temp_val = inp_df.loc[inp_df[tuple(col_val1.split(","))] == pool, tuple(col_val2.split(","))].tolist()
 				if sn_f != None:
 					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
 				else:
 					key_name = pool
 
+				dd[key_name] = list(map(str.strip, temp_val))
+
 		elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
 			for pool in inp_df[tuple(col_val1.split())]:
-				temp_val = inp_df.loc[inp_df[tuple(col_val1.split())] == pool, tuple(col_val2.split())].values[0]
+				temp_val = inp_df.loc[inp_df[tuple(col_val1.split(","))] == pool, tuple(col_val2.split(","))].values[0]
 				if sn_f != None:
 					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
 				else:
@@ -132,20 +135,20 @@ NOTE: Make sure the files are in the format (using the default value for this ar
 ,if no optional argument \"sample_name_format\" is present otherwise <sample_name> is the value after formatting
 """, default=os.path.join(os.getcwd(), "final_count_matrix/solo/"))
 parser.add_argument('out_dir', help="The output directory for the donor-specific h5ad files. DEFAULT: \"<current_working_dir>/02_h5ad-by-donor/\"", default=os.path.join(os.getcwd(), "02_h5ad-by-donor/"))
-parser.add_argument('sample_name_column', help="""\
+parser.add_argument('sample_name_column', nargs='+', help="""\
 Column header that contains sample/pool names in the input file (wet_lab_file or compiled log file). For multi/heirarchial headers specify the complete header as a single
-string separating each level by space.
+string separating each level by comma.
 """)
 
 
 # Optional parameters
 parser.add_argument('-l', '--log_file', nargs='?', help="Compiled log file produced by update_logs.py script.", const=os.path.join(os.getcwd()+"All_logs.tsv"), default=None)
 parser.add_argument('-c', '--cols', nargs='?', help="""\
-Column header that contains # of cells per donor for each pool. For multi/heirarchial headers (by default) specify the complete header as a single string separating each leve by space.
+Column header that contains # of cells per donor for each pool. For multi/heirarchial headers (by default) specify the complete header as a single string separating each leve by comma.
 DEFAULT:
   1) without any command-line value: \"STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS\"
   2) without the argument: \"donor_names\"
-  """, const="STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS", default="donor_names")
+  """, const="STARsolo, DEMUX, N_CELLS_AFTER_DEMUX_CS", default="donor_names")
 parser.add_argument('--wet_lab_file', nargs='?', help="Path to file that contains HTO info for each set (either csv or tsv file)", const=os.path.join(os.getcwd()+ "metadata.csv"), default=None)
 parser.add_argument('--multiheader', type=int, help="""
 If the input file has heirarchial column headers specify last header line (assumed to be from the first line). EXAMPLE: If headers are present from first line to the third, 3.

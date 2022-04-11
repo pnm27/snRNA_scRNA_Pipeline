@@ -5,10 +5,10 @@
 
 FINAL_COUNT_MATRIX_DIR="/sc/arion/projects/CommonMind/pnm/choroid_plexus/final_count_matrix/solo/"
 OUTPUT_DIR="/sc/arion/projects/CommonMind/single-cell-neurogenomics/choroid-plexus/02_h5ad-by-donor/"
-SAMPLE_NAME_COL="LAB SAMPLE SAMPLE"
+SAMPLE_NAME_COL="LAB,SAMPLE,SAMPLE"
 LOG_FILE="/sc/arion/projects/CommonMind/pnm/choroid_plexus/All_logs.tsv"
 WET_LAB_FILE=""
-DONOR_COLUMN="STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS"
+DONOR_COLUMN="STARsolo,DEMUX,N_CELLS_AFTER_DEMUX_CS"
 MULTIPLE_HEADER="3"
 DONOR_SEP=","
 
