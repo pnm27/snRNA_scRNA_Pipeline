@@ -154,11 +154,11 @@ DEFAULT: 1 (single level header)
 # parser.add_argument('--col_wl_file', nargs='?', help="Column header that contains # of cells per donor for each pool in the wet lab file. For multi/heirarchial headers specify the complete header as a single \
 # 	string separating each leve by space. DEFAULT: \"donor\"", const="donor", default=None)
 parser.add_argument('--donor_sep', help="If, per each sample in the input file, donors are all present in one row separated by some SEP then specify it here. Default: ' ' ", default=' ')
-parser.add_argument('--sample_name_format', help="""\
-Format/extract (regex with single group extracting the required name) for naming per donor h5ad files. Example: Files will be named as \"<out_dir>/<sample_name_format>_<donor_name>.h5ad\".
-DEFAULT: whole value present in the column specified.
-""", default=None)
-parser.add_argument('--samp_name_fmt_grp', type=int, help="If multiple groups are present in the \"sample_name_format\" argument then specify the number of the group. DEFAULT: No grouping", default=0)
+# parser.add_argument('--sample_name_format', help="""\
+# Format/extract (regex with single group extracting the required name) for naming per donor h5ad files. Example: Files will be named as \"<out_dir>/<sample_name_format>_<donor_name>.h5ad\".
+# DEFAULT: whole value present in the column specified.
+# """, default=None)
+# parser.add_argument('--samp_name_fmt_grp', type=int, help="If multiple groups are present in the \"sample_name_format\" argument then specify the number of the group. DEFAULT: No grouping", default=0)
 
 
 args = parser.parse_args()
@@ -188,8 +188,12 @@ else:
 df = read_files_ext(args.log_file.strip(), args.multiheader) if use_log else read_files_ext(args.wet_lab_file.strip(), args.multiheader)
 count_matrix_dir = args.count_matrix_dir
 out_dir = args.out_dir
-sn_fmt = re.compile(args.sample_name_format) if args.sample_name_format != None else None
-sn_fmt_grps = args.samp_name_fmt_grp if sn_fmt != None else None
+pool_regex = "-([0-9]+-[A-Za-z0-9]+)+"  # If don't want to extract then set to None
+group_n = 1 # The group number to extract from regex in previous line
+
+# Formatting pool/sample names
+sn_fmt = re.compile(pool_regex) if pool_regex != None else None
+sn_fmt_grps = group_n if sn_fmt != None else None
 
 
 # If needed, process the input file

@@ -11,23 +11,13 @@ WET_LAB_FILE=""
 DONOR_COLUMN="STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS"
 MULTIPLE_HEADER="3"
 DONOR_SEP=","
-SAMPLE_NAME_FMT="-([0-9]+-[A-Za-z0-9]+)+"
-SAMPLE_NAME_GROUPS="1"
+
 
 # IF output_dir doesn't exist, create it
 if [ ! -d ${OUTPUT_DIR} ]; then mkdir -p ${OUTPUT_DIR}; fi
 
 
-if [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
-then
-	echo "STARTING to split the pooled h5ads at:"
-	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --log_file ${LOG_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
-	--donor_sep ${DONOR_SEP} --sample_name_format ${SAMPLE_NAME_FMT} --samp_name_grp ${SAMPLE_NAME_GROUPS}
-	echo "FINISHED the script at:"
-	date
-
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
+if [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -36,16 +26,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
-then
-	echo "STARTING to split the pooled h5ads at:"
-	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --log_file ${LOG_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
-	--sample_name_format ${SAMPLE_NAME_FMT} --samp_name_grp ${SAMPLE_NAME_GROUPS}
-	echo "FINISHED the script at:"
-	date
-
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
+elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -53,16 +34,8 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
-then
-	echo "STARTING to split the pooled h5ads at:"
-	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
-	--donor_sep ${DONOR_SEP} --sample_name_format ${SAMPLE_NAME_FMT} --samp_name_grp ${SAMPLE_NAME_GROUPS}
-	echo "FINISHED the script at:"
-	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -71,22 +44,14 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} \
-	--sample_name_format ${SAMPLE_NAME_FMT} --samp_name_grp ${SAMPLE_NAME_GROUPS}
+	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER} 
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
-then
-	echo "STARTING to split the pooled h5ads at:"
-	date
-	python3 ../helper_py_scripts/split_seth5ad_to_samph5ad.py ${FINAL_COUNT_MATRIX_DIR} ${OUTPUT_DIR} ${SAMPLE_NAME_COL} --wet_lab_file ${WET_LAB_FILE} --cols ${DONOR_COLUMN} --multiheader ${MULTIPLE_HEADER}
-	echo "FINISHED the script at:"
-	date
 else
 	echo "None of the conditions required to execute the splitting of the pooled h5ad files is satisfied!"
 
