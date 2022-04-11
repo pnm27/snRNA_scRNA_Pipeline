@@ -280,7 +280,7 @@ for p, d in donors_dict.items():
 				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
 
 		del adata, adatas
-		print("Processed incomplete Set: {}".format(setid))
+		print("Processed incomplete Set: {}".format(p))
 
 	elif all_files and all_donors: # Check when everything is unchanged i.e. all input files are present and all per-donor h5ad files are present too
 		samples = sorted(all_files)
