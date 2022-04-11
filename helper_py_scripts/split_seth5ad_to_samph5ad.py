@@ -135,7 +135,7 @@ NOTE: Make sure the files are in the format (using the default value for this ar
 ,if no optional argument \"sample_name_format\" is present otherwise <sample_name> is the value after formatting
 """, default=os.path.join(os.getcwd(), "final_count_matrix/solo/"))
 parser.add_argument('out_dir', help="The output directory for the donor-specific h5ad files. DEFAULT: \"<current_working_dir>/02_h5ad-by-donor/\"", default=os.path.join(os.getcwd(), "02_h5ad-by-donor/"))
-parser.add_argument('sample_name_column', nargs='+', help="""\
+parser.add_argument('sample_name_column', help="""\
 Column header that contains sample/pool names in the input file (wet_lab_file or compiled log file). For multi/heirarchial headers specify the complete header as a single
 string separating each level by comma.
 """)
@@ -212,11 +212,11 @@ sn_fmt_grps = group_n if sn_fmt != None else None
 if len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) == args.multiheader: # Levels of columns should be same
 	pass
 elif len(args.sample_name_column.strip().split(",")) != args.multiheader and len(args.cols.strip().split(",")) == args.multiheader: # Expected Heirarchial column headers but invalid sample name columns' header
-	raise ValueError(f"From the argument \"multiheader\" expected {args.multiheader} columns but third positional argument (sample_name column) is different: {len(args.sample_name_column.strip().split(','))}!")
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but third positional argument (sample_name column) is different: {len(args.sample_name_column.strip().split(','))}!")
 elif len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) != args.multiheader: # Expected Heirarchial column headers but invalid donor name columns' header
-	raise ValueError(f"From the argument \"multiheader\" expected {args.multiheader} columns but the argument \"cols\" has different levels: {len(args.cols.strip().split(','))}!")
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the argument \'cols\' has different levels: {len(args.cols.strip().split(','))}!")
 else: # Expected Heirarchial column headers but invalid donor name columns' header
-	raise ValueError(f"The argument \"multiheader\" has a value {args.multiheader} but the third positional argument (sample_name column) and argument \"cols\" have different levels: \
+	raise ValueError(f"The argument \'multiheader\' has a value {args.multiheader} but the third positional argument (sample_name column) and argument \'cols\' have different levels: \
 		{len(args.sample_name_column.strip().split(','))} and {len(args.cols.strip().split(','))}, respectively!")
 
 
@@ -236,7 +236,7 @@ else:
 # Check if sample_formatting returns a value or not, if present
 if sn_fmt != None and args.multiheader > 1:
 	assert all(df[tuple(args.sample_name_column.strip().split(","))].apply(lambda x: sn_fmt.search(x).group(sn_fmt_grps)) != None), "Sample name formatting seems to not return any value! Check the arguments \
-	\"sample_name_format\", \"sample_name_column\" and \"samp_name_fmt_grp\""
+	\'sample_name_format\', \'sample_name_column\' and \'samp_name_fmt_grp\'"
 
 
 # Get donors as dict (with sample_names as keys)
