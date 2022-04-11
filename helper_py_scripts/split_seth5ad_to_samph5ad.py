@@ -198,11 +198,11 @@ sn_fmt_grps = group_n if sn_fmt != None else None
 
 # If needed, process the input file
 # Remove duplicated lines from the wet lab spreadsheet(remove HTO sets and replicate sets i.e. retain sets like A1-cDNA, C1-cDNA, S1-cDNA, etc)
-df = df.loc[:, ['unique_sample_ID', 'SubID']]
-df = df[df['unique_sample_ID'].str.endswith('cDNA')]
-df.reset_index(inplace=True, drop=True)
-df['set_ID'] = df['unique_sample_ID'].map(lambda x: x[:-6].replace('_', '-'))
-df.drop_duplicates(subset=['set_ID'], ignore_index=True, inplace=True)
+# df = df.loc[:, ['unique_sample_ID', 'SubID']]
+# df = df[df['unique_sample_ID'].str.endswith('cDNA')]
+# df.reset_index(inplace=True, drop=True)
+# df['set_ID'] = df['unique_sample_ID'].map(lambda x: x[:-6].replace('_', '-'))
+# df.drop_duplicates(subset=['set_ID'], ignore_index=True, inplace=True)
 
 
 # Check heirarchy levels for columns
