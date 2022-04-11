@@ -4,7 +4,7 @@
 
 
 FINAL_COUNT_MATRIX_DIR="/sc/arion/projects/CommonMind/pnm/choroid_plexus/final_count_matrix/solo/"
-OUTPUT_DIR="/sc/arion/projects/CommonMind/single-cell-neurogenomics/choroid-plexus/02_h5ad-by-donor"
+OUTPUT_DIR="/sc/arion/projects/CommonMind/single-cell-neurogenomics/choroid-plexus/02_h5ad-by-donor/"
 SAMPLE_NAME_COL="LAB SAMPLE SAMPLE"
 LOG_FILE="/sc/arion/projects/CommonMind/pnm/choroid_plexus/All_logs.tsv"
 WET_LAB_FILE=""
@@ -13,6 +13,9 @@ MULTIPLE_HEADER="3"
 DONOR_SEP=","
 SAMPLE_NAME_FMT="-([0-9]+-[A-Za-z0-9]+)+"
 SAMPLE_NAME_GROUPS="1"
+
+# IF output_dir doesn't exist, create it
+if [ ! -d ${OUTPUT_DIR} ]; then mkdir -p ${OUTPUT_DIR}; fi
 
 
 if [ -z ${WET_LAB_FILE} ] && [ ! -z $ {LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
