@@ -53,7 +53,7 @@ def read_files_ext(fname, lev) -> pd.DataFrame :
 
 
 
-def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g) -> dict:
+def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log) -> dict:
 	dd={}
 	if mh == 1: # Not a multiheader input file
 		if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
@@ -73,6 +73,11 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g) -> dict:
 				else:
 					key_name = pool
 
+				# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+				if is_log:
+					temp_val = [ v.split(':')[0] for v in temp_val ]
+
+				dd[key_name] = list(map(str.strip, temp_val))
 		# elif ds == 'norm':
 		# 	for sep in [' ', ',']
 		# 		for pool in inp_df[col_val1]:
@@ -98,6 +103,12 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g) -> dict:
 					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
 				else:
 					key_name = pool
+
+				# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+				if is_log:
+					temp_val = [ v.split(':')[0] for v in temp_val ]
+					
+				dd[key_name] = list(map(str.strip, temp_val))
 
 		else:
 			raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} (expecting length 1)")
@@ -222,9 +233,10 @@ if sn_fmt != None and args.multiheader > 1:
 
 
 # Get donors as dict (with sample_names as keys)
-donors_dict = get_donors(df, args.sample_name_column, args.cols, args.donor_sep, args.multiheader, sn_fmt, sn_fmt_grps)
+donors_dict = get_donors(df, args.sample_name_column, args.cols, args.donor_sep, args.multiheader, sn_fmt, sn_fmt_grps, use_log)
 
 
+# Donor names are according to the annotation present in the "obs" column of the respective 'pooled' anndata (final count matrix)
 for p, d in donors_dict.items():
 	# If reps are present specify how each rep differs like:
 	# all_files = glob2.glob(os.path.join(count_matrix_dir, "*_Sample-{}*_STARsolo_out.h5ad".format(setid)))\
@@ -255,22 +267,22 @@ for p, d in donors_dict.items():
 
 		for op_f in output_files:
 			if op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" not in op_f:
-				adata[adata.obs['SubID_cs'] == op_f].write("{}{}_{}.h5ad".format(out_dir, setid, op_f))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
 			elif op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" in op_f:
 				new_name=op_f.replace('_unknown_donor', '_ud_')
-				adata[adata.obs['SubID_cs'] == op_f].write("{}{}_{}.h5ad".format(out_dir, setid, new_name))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
 
 		del adata, adatas
 		print("Processed incomplete Set: {}".format(setid))
 
-	elif all_files and all_donors:
+	elif all_files and all_donors: # Check when everything is unchanged i.e. all input files are present and all per-donor h5ad files are present too
 		samples = sorted(all_files)
 		adatas = [ad.read(sample) for sample in samples] # create anndata array
 
 		adata = ad.concat(adatas[:], index_unique='-', join='outer') # it will add a 'batch' variable with keys as its value and will outer join on the 'genes'
 		output_files = adata.obs['SubID_cs'].unique()
 
-		file_list = [ os.path.join(out_dir, "{}_{}.h5ad".format(setid, s)) for s in sub.split(',')]
+		file_list = [ os.path.join(out_dir, f"{p}_{donor}.h5ad") for donor in output_files if donor not in ['Doublet', 'Negative', 'Not Present']]
 
 		old_adatas = [ad.read(f) for f in file_list] # create anndata array for the older per-donor h5ads
 		old_adata = ad.concat(old_adatas[:], index_unique='-', join='outer') # it will add a 'batch' variable with keys as its value and will outer join on the 'genes'
@@ -278,7 +290,7 @@ for p, d in donors_dict.items():
 		del adatas, old_adatas
 		gc.collect()
 		if check_same(adata, ann_d2 = old_adata):
-			print("Previously, completely processed set: {}".format(setid))
+			print(f"Previously, completely processed set: {p}")
 			del adata, old_adata
 			gc.collect()
 			continue
@@ -287,16 +299,16 @@ for p, d in donors_dict.items():
 
 		for op_f in output_files:
 			if op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" not in op_f:
-				adata[adata.obs['SubID_cs'] == op_f].write("{}{}_{}.h5ad".format(out_dir, setid, op_f))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
 			elif op_f not in ['Doublet', 'Negative', 'Not Present'] and "_unknown_donor" in op_f:
 				new_name=op_f.replace('_unknown_donor', '_ud_')
-				adata[adata.obs['SubID_cs'] == op_f].write("{}{}_{}.h5ad".format(out_dir, setid, new_name))
+				adata[adata.obs['SubID_cs'] == op_f].write(os.path.join(out_dir, "{p}_{op_f}.h5ad"))
 
 		del adata, old_adata
-		print("Processed incomplete Set: {}".format(setid))
+		print(f"Processed incomplete Set: {p}")
 
 	else:
-		print("Something looks wrong. PLease check either set number {} or donors {}".format(setid, sub))
+		print("Something looks wrong. PLease check either set number {} or donors {}".format(p, d))
 		
 	gc.collect()
 
