@@ -40,6 +40,7 @@ def check_same(ann_d, files_l = None, ann_d2 = None) -> "boolean":
 def read_files_ext(fname, lev) -> pd.DataFrame :
 	if not os.path.isfile(fname):
 		raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
+
 	if fname.endswith('.csv'):
 		return pd.read_csv(fname, header=list(range(lev)))
 	elif fname.endswith('.tsv'):
@@ -47,8 +48,8 @@ def read_files_ext(fname, lev) -> pd.DataFrame :
 	elif fname.endswith('.txt'):
 		warnings.warn("Guessing either space-sep or tab-sep can result in an undesired layout of the file")
 		return pd.read_csv(fname, sep=r'\s', engine='python', header=list(range(lev)))
-    else:
-        raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
+	else:
+		raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
 
