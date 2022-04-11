@@ -38,15 +38,15 @@ def check_same(ann_d, files_l = None, ann_d2 = None) -> "boolean":
 
 # Read tsv, csv, txt (space-separated and tab-separated)
 def read_files_ext(fname, lev) -> pd.DataFrame :
-    if not os.path.isfile(fname):
-        raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
-    if fname.endswith('.csv'):
-        return pd.read_csv(fname, header=list(range(lev)))
-    elif fname.endswith('.tsv'):
-        return pd.read_csv(fname, sep='\t', header=list(range(lev)))
-    elif fname.endswith('.txt'):
-    	warnings.warn("Guessing either space-sep or tab-sep can result in an undesired layout of the file")
-        return pd.read_csv(fname, sep=r'\s', engine='python', header=list(range(lev)))
+	if not os.path.isfile(fname):
+		raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
+	if fname.endswith('.csv'):
+		return pd.read_csv(fname, header=list(range(lev)))
+	elif fname.endswith('.tsv'):
+		return pd.read_csv(fname, sep='\t', header=list(range(lev)))
+	elif fname.endswith('.txt'):
+		warnings.warn("Guessing either space-sep or tab-sep can result in an undesired layout of the file")
+		return pd.read_csv(fname, sep=r'\s', engine='python', header=list(range(lev)))
     else:
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
@@ -107,7 +107,7 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log) -> dict:
 				# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
 				if is_log:
 					temp_val = [ v.split(':')[0] for v in temp_val ]
-					
+
 				dd[key_name] = list(map(str.strip, temp_val))
 
 		else:
@@ -130,8 +130,7 @@ NOTE: Make sure the files are in the format (using the default value for this ar
 \"<current_working_dir>/final_count_matrix/solo/*<sample_name>*.h5ad\", where <sample_name> is the value in the column specified by the 3rd positional argument of this script
 ,if no optional argument \"sample_name_format\" is present otherwise <sample_name> is the value after formatting
 """, default=os.path.join(os.getcwd(), "final_count_matrix/solo/"))
-parser.add_argument('out_dir', help="The output directory for the donor-specific h5ad files. DEFAULT: \"<current_working_dir>/02_h5ad-by-donor/\"", 
-	default=os.path.join(os.getcwd(), "02_h5ad-by-donor/"))
+parser.add_argument('out_dir', help="The output directory for the donor-specific h5ad files. DEFAULT: \"<current_working_dir>/02_h5ad-by-donor/\"", default=os.path.join(os.getcwd(), "02_h5ad-by-donor/"))
 parser.add_argument('sample_name_column', help="""\
 Column header that contains sample/pool names in the input file (wet_lab_file or compiled log file). For multi/heirarchial headers specify the complete header as a single
 string separating each level by space.
