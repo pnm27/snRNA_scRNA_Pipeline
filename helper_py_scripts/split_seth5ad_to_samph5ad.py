@@ -150,7 +150,7 @@ parser.add_argument('--wet_lab_file', nargs='?', help="Path to file that contain
 parser.add_argument('--multiheader', type=int, help="""
 If the input file has heirarchial column headers specify last header line (assumed to be from the first line). EXAMPLE: If headers are present from first line to the third, 3.
 DEFAULT: 1 (single level header)
-""", defualt=1)
+""", default=1)
 # parser.add_argument('--col_wl_file', nargs='?', help="Column header that contains # of cells per donor for each pool in the wet lab file. For multi/heirarchial headers specify the complete header as a single \
 # 	string separating each leve by space. DEFAULT: \"donor\"", const="donor", default=None)
 parser.add_argument('--donor_sep', help="If, per each sample in the input file, donors are all present in one row separated by some SEP then specify it here. Default: ' ' ", default=' ')
