@@ -140,7 +140,7 @@ string separating each level by space.
 
 # Optional parameters
 parser.add_argument('-l', '--log_file', nargs='?', help="Compiled log file produced by update_logs.py script.", const=os.path.join(os.getcwd()+"All_logs.tsv"), default=None)
-parser.add_argument('-c', '--cols', help="""\
+parser.add_argument('-c', '--cols', nargs='?', help="""\
 Column header that contains # of cells per donor for each pool. For multi/heirarchial headers (by default) specify the complete header as a single string separating each leve by space.
 DEFAULT:
   1) without any command-line value: \"STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS\"
