@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/sh
 # Runs a python script
 # Load necessary Modules
 
