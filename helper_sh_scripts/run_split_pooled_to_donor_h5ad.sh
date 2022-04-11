@@ -18,7 +18,7 @@ SAMPLE_NAME_GROUPS="1"
 if [ ! -d ${OUTPUT_DIR} ]; then mkdir -p ${OUTPUT_DIR}; fi
 
 
-if [ -z ${WET_LAB_FILE} ] && [ ! -z $ {LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
+if [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -27,7 +27,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z $ {LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
+elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -36,7 +36,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z $ {LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
+elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -45,7 +45,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ -z ${WET_LAB_FILE} ] && [ ! -z $ {LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
+elif [ -z ${WET_LAB_FILE} ] && [ ! -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -53,7 +53,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z $ {LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -62,7 +62,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z $ {LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -71,7 +71,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z $ {LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ ! -z ${SAMPLE_NAME_FMT} ] && [ ! -z ${SAMPLE_NAME_GROUPS} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
@@ -80,7 +80,7 @@ then
 	echo "FINISHED the script at:"
 	date
 
-elif [ ! -z ${WET_LAB_FILE} ] && [ -z $ {LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
+elif [ ! -z ${WET_LAB_FILE} ] && [ -z ${LOG_FILE} ] && [ -z ${SAMPLE_NAME_FMT} ] && [ -z ${DONOR_SEP} ]
 then
 	echo "STARTING to split the pooled h5ads at:"
 	date
