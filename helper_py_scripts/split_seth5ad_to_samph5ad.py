@@ -167,7 +167,7 @@ def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log, batch=Non
 					dd[key_name] = list(map(str.strip, temp_val))
 
 			if len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
-				for pool in inp_df[tuple(list(map(str.strip, batch.split(","))))].unqiue():
+				for pool in inp_df[tuple(list(map(str.strip, batch.split(","))))].unique():
 					temp_val = inp_df.loc[inp_df[tuple(list(map(str.strip, batch.split(","))))] == pool, tuple(list(map(str.strip, col_val2.split(","))))].str.cat(sep=ds)
 					try: # if sn_f != None:
 						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
