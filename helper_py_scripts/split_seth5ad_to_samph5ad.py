@@ -53,69 +53,144 @@ def read_files_ext(fname, lev) -> pd.DataFrame :
 
 
 
-
-def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log) -> dict:
+# 'batch' var is to identify if a consolidation of reps is needed to obtain comprehensive per-donors that include both reps
+def get_donors(inp_df, col_val1, col_val2, ds, mh, sn_f, sn_g, is_log, batch=None) -> dict:
 	dd={}
 	if mh == 1: # Not a multiheader input file
-		if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
-			for pool in inp_df[col_val1].unique():
-				temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].tolist()
-				if sn_f != None:
-					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
-				else:
-					key_name = pool
+		if batch == None:
+			if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
+				for pool in inp_df[col_val1].unique():
+					temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].tolist()
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
 
-				dd[key_name] = list(map(str.strip, temp_val))
+					dd[key_name] = list(map(str.strip, temp_val))
 
-		elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
-			for pool in inp_df[col_val1]:
-				temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
-				if sn_f != None:
-					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
-				else:
-					key_name = pool
+			elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
+				for pool in inp_df[col_val1]:
+					temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
 
-				# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
-				if is_log:
-					temp_val = [ str(v.split(':')[0]) for v in temp_val.split(ds) ]
+					# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+					if is_log:
+						temp_val = [ str(v.split(':')[0]) for v in temp_val.split(ds) ]
 
-				dd[key_name] = list(map(str.strip, temp_val))
-		# elif ds == 'norm':
-		# 	for sep in [' ', ',']
-		# 		for pool in inp_df[col_val1]:
-		# 			temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
-		# 			dd[pool] = temp_val.split(ds)
+					dd[key_name] = list(map(str.strip, temp_val))
+			# elif ds == 'norm':
+			# 	for sep in [' ', ',']
+			# 		for pool in inp_df[col_val1]:
+			# 			temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
+			# 			dd[pool] = temp_val.split(ds)
 
-		else:
-			raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} ( expecting length 1)")
+			else:
+				raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} ( expecting length 1)")
+		else: # If 'batch' variable has a value
+			if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
+				for pool in inp_df[batch].unique():
+					temp_val = inp_df.loc[inp_df[batch] == pool, col_val2].unique().tolist()
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
+
+					dd[key_name] = list(map(str.strip, temp_val))
+
+			if len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
+				for pool in inp_df[batch].unqiue():
+					temp_val = inp_df.loc[inp_df[batch] == pool, col_val2].str.cat(sep=ds)
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
+
+					# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+					if is_log:
+						temp_val = set([ str(v.split(':')[0]) for v in temp_val.split(ds) ])
+						temp_val = list(temp_val)
+					else:
+						temp_val = set(temp_val)
+						temp_val = list(temp_val)
+
+					dd[key_name] = list(map(str.strip, temp_val))
+			# elif ds == 'norm':
+			# 	for sep in [' ', ',']
+			# 		for pool in inp_df[col_val1]:
+			# 			temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
+			# 			dd[pool] = temp_val.split(ds)
+
+			else:
+				raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} ( expecting length 1)")			
 
 	else: # A multiheader input file
-		if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
-			for pool in inp_df[tuple(col_val1.split(","))].unique():
-				temp_val = inp_df.loc[inp_df[tuple(col_val1.split(","))] == pool, tuple(col_val2.split(","))].tolist()
-				if sn_f != None:
-					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
-				else:
-					key_name = pool
+		if batch == None:
+			if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
+				for pool in inp_df[tuple(list(map(str.strip, col_val1.split(","))))].unique():
+					temp_val = inp_df.loc[inp_df[tuple(list(map(str.strip, col_val1.split(","))))] == pool, tuple(list(map(str.strip, col_val2.split(","))))].tolist()
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
 
-				dd[key_name] = list(map(str.strip, temp_val))
+					dd[key_name] = list(map(str.strip, temp_val))
 
-		elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
-			for pool in inp_df[tuple(col_val1.split(","))]:
-				temp_val = inp_df.loc[inp_df[tuple(col_val1.split(","))] == pool, tuple(col_val2.split(","))].values[0]
-				if sn_f != None:
-					key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
-				else:
-					key_name = pool
+			elif len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
+				for pool in inp_df[tuple(list(map(str.strip, col_val1.split(","))))]:
+					temp_val = inp_df.loc[inp_df[tuple(list(map(str.strip, col_val1.split(","))))] == pool, tuple(list(map(str.strip, col_val2.split(","))))].values[0]
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
 
-				# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
-				if is_log:
-					temp_val = [ str(v.split(':')[0]) for v in temp_val.split(ds) ]
+					# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+					if is_log:
+						temp_val = [ str(v.split(':')[0]) for v in temp_val.split(ds) ]
 
-				dd[key_name] = list(map(str.strip, temp_val))
+					dd[key_name] = list(map(str.strip, temp_val))
 
-		else:
-			raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} (expecting length 1)")
+			else:
+				raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} (expecting length 1)")
+
+		else: # If 'batch' variable has a value
+			if ds == None: # Multiple lines exists for same pool value i.e. each donor of each pool is present in a unique row
+				for pool in inp_df[tuple(list(map(str.strip, batch.split(","))))].unique():
+					temp_val = inp_df.loc[inp_df[tuple(list(map(str.strip, batch.split(","))))] == pool, tuple(list(map(str.strip, col_val2.split(","))))].unique().tolist()
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
+
+					dd[key_name] = list(map(str.strip, temp_val))
+
+			if len(ds) == 1: # One row (representing a pool/sample) contains all donor names separated by a SEP (ds)
+				for pool in inp_df[tuple(list(map(str.strip, batch.split(","))))].unqiue():
+					temp_val = inp_df.loc[inp_df[tuple(list(map(str.strip, batch.split(","))))] == pool, tuple(list(map(str.strip, col_val2.split(","))))].str.cat(sep=ds)
+					try: # if sn_f != None:
+						key_name = sn_f.search(pool).group(sn_g) if sn_f.search(pool).group(sn_g) != None else pool
+					except: # else:
+						key_name = pool
+
+					# If the input file is the compiled log_file then donors are present as <donor_name>:<# of cell>
+					if is_log:
+						temp_val = set([ str(v.split(':')[0]) for v in temp_val.split(ds) ])
+						temp_val = list(temp_val)
+					else:
+						temp_val = set(temp_val)
+						temp_val = list(temp_val)
+
+					dd[key_name] = list(map(str.strip, temp_val))
+			# elif ds == 'norm':
+			# 	for sep in [' ', ',']
+			# 		for pool in inp_df[col_val1]:
+			# 			temp_val = inp_df.loc[inp_df[col_val1] == pool, col_val2].values[0]
+			# 			dd[pool] = temp_val.split(ds)
+
+			else:
+				raise ValueError(f"Check the given \"donor_sep\" argument! Separator has length {len(ds)} ( expecting length 1)")
 
 	return dd
 
@@ -144,9 +219,9 @@ string separating each level by comma.
 # Optional parameters
 parser.add_argument('-l', '--log_file', nargs='?', help="Compiled log file produced by update_logs.py script.", const=os.path.join(os.getcwd()+"All_logs.tsv"), default=None)
 parser.add_argument('-c', '--cols', nargs='?', help="""\
-Column header that contains # of cells per donor for each pool. For multi/heirarchial headers (by default) specify the complete header as a single string separating each leve by comma.
+Column header that contains # of cells per donor for each pool. For multi/heirarchial headers (by default) specify the complete header as a single string separating each level by comma.
 DEFAULT:
-  1) without any command-line value: \"STARsolo DEMUX N_CELLS_AFTER_DEMUX_CS\"
+  1) without any command-line value: \"STARsolo, DEMUX, N_CELLS_AFTER_DEMUX_CS\"
   2) without the argument: \"donor_names\"
   """, const="STARsolo, DEMUX, N_CELLS_AFTER_DEMUX_CS", default="donor_names")
 parser.add_argument('--wet_lab_file', nargs='?', help="Path to file that contains HTO info for each set (either csv or tsv file)", const=os.path.join(os.getcwd()+ "metadata.csv"), default=None)
@@ -157,6 +232,13 @@ DEFAULT: 1 (single level header)
 # parser.add_argument('--col_wl_file', nargs='?', help="Column header that contains # of cells per donor for each pool in the wet lab file. For multi/heirarchial headers specify the complete header as a single \
 # 	string separating each leve by space. DEFAULT: \"donor\"", const="donor", default=None)
 parser.add_argument('--donor_sep', help="If, per each sample in the input file, donors are all present in one row separated by some SEP then specify it here. Default: ' ' ", default=' ')
+parser.add_argument('-b', '--batch_col', nargs='?', help="""\
+If reps aren't unique in the input file then specify a column header that unqiuely tags a pool and not its replicates. 
+For multi/heirarchial headers (by default) specify the complete header as a single string separating each level by comma.
+DEFAULT:
+  1) without any command-line value: \"LAB, BATCH, SET\"
+  2) without the argument: \"batch\"
+  """, const="LAB, BATCH, SET", default="batch")
 # parser.add_argument('--sample_name_format', help="""\
 # Format/extract (regex with single group extracting the required name) for naming per donor h5ad files. Example: Files will be named as \"<out_dir>/<sample_name_format>_<donor_name>.h5ad\".
 # DEFAULT: whole value present in the column specified.
@@ -195,6 +277,7 @@ pool_regex = "-([0-9]+-[A-Za-z0-9]+)+"  # If don't want to extract then set to N
 group_n = 1 # The group number to extract from regex in previous line
 
 # Formatting pool/sample names
+# If 'batch' argument is provided then this is applied to the values present in that column
 sn_fmt = re.compile(pool_regex) if pool_regex != None else None
 sn_fmt_grps = group_n if sn_fmt != None else None
 
@@ -209,15 +292,32 @@ sn_fmt_grps = group_n if sn_fmt != None else None
 
 
 # Check heirarchy levels for columns
-if len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) == args.multiheader: # Levels of columns should be same
+if len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) == args.multiheader and len(args.batch_col.strip().split(",")) == args.multiheader: # Levels of columns should be same
 	pass
-elif len(args.sample_name_column.strip().split(",")) != args.multiheader and len(args.cols.strip().split(",")) == args.multiheader: # Expected Heirarchial column headers but invalid sample name columns' header
+
+elif len(args.sample_name_column.strip().split(",")) != args.multiheader and len(args.cols.strip().split(",")) == args.multiheader and len(args.batch_col.strip().split(",")) == args.multiheader: 
 	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but third positional argument (sample_name column) is different: {len(args.sample_name_column.strip().split(','))}!")
-elif len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) != args.multiheader: # Expected Heirarchial column headers but invalid donor name columns' header
+
+elif len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) != args.multiheader and len(args.batch_col.strip().split(",")) == args.multiheader: 
 	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the argument \'cols\' has different levels: {len(args.cols.strip().split(','))}!")
-else: # Expected Heirarchial column headers but invalid donor name columns' header
-	raise ValueError(f"The argument \'multiheader\' has a value {args.multiheader} but the third positional argument (sample_name column) and argument \'cols\' have different levels: \
-		{len(args.sample_name_column.strip().split(','))} and {len(args.cols.strip().split(','))}, respectively!")
+
+elif len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) == args.multiheader and len(args.batch_col.strip().split(",")) != args.multiheader: 
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the argument \'batch_col\' has different levels: {len(args.batch_col.strip().split(','))}!")
+
+elif len(args.sample_name_column.strip().split(",")) != args.multiheader and len(args.cols.strip().split(",")) != args.multiheader and len(args.batch_col.strip().split(",")) == args.multiheader: 
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the third positional argument (sample_name column) and the argument \'cols\' are different: {len(args.sample_name_column.strip().split(','))} \
+		and {len(args.cols.strip().split(','))}, respectively!")
+
+elif len(args.sample_name_column.strip().split(",")) == args.multiheader and len(args.cols.strip().split(",")) != args.multiheader and len(args.batch_col.strip().split(",")) != args.multiheader: 
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the arguments \'cols\' and \'batch_col\' have different levels: {len(args.cols.strip().split(','))} \
+		and {len(args.batch_col.strip().split(','))}, respectively!")
+
+elif len(args.sample_name_column.strip().split(",")) != args.multiheader and len(args.cols.strip().split(",")) == args.multiheader and len(args.batch_col.strip().split(",")) != args.multiheader: 
+	raise ValueError(f"From the argument \'multiheader\' expected {args.multiheader} columns but the third positional argument (sample_name column) and the argument \'batch_col\' have different levels: \
+		{len(args.sample_name_column.strip().split(','))} and {len(args.batch_col.strip().split(','))}, respectively!")
+else: 
+	raise ValueError(f"The argument \'multiheader\' has a value {args.multiheader} but the third positional argument (sample_name column), the arguments \'cols\' and \'batch_col\' have different levels: \
+		{len(args.sample_name_column.strip().split(','))}, {len(args.cols.strip().split(','))} and {len(args.batch_col.strip().split(','))}, respectively!")
 
 
 
@@ -227,10 +327,12 @@ if args.multiheader > 1:
 	assert tuple(args.sample_name_column.strip().split(",")) in df.columns, "Sample_name column is absent in the provided input file! Check heirarchy order or individual headers"
 	assert all(~df.duplicated(subset=tuple(args.sample_name_column.strip().split(",")))), "Sample_name_column contains a duplicated pool/sample value!"
 	assert tuple(args.cols.strip().split(",")) in df.columns, "Donor column is absent in the provided input file! Check heirarchy order or individual headers"
+	assert tuple(args.batch_col.strip().split(",")) in df.columns, "Batch column is absent in the provided input file! Check heirarchy order or individual headers"
 else:
 	assert args.sample_name_column.strip() in df.columns, "Sample_name column is absent in the provided input file!"
 	assert all(~df.duplicated(subset=args.sample_name_column.strip().split())), "Sample_name_column contains a duplicated pool/sample value!"
-	assert args.cols.strip() in df.columns, "Donor column is absent in the provided input file!"	
+	assert args.cols.strip() in df.columns, "Donor column is absent in the provided input file!"
+	assert args.batch_col.strip() in df.columns, "Batch column is absent in the provided input file!"
 
 
 # Check if sample_formatting returns a value or not, if present
@@ -240,8 +342,8 @@ if sn_fmt != None and args.multiheader > 1:
 
 
 # Get donors as dict (with sample_names as keys)
-donors_dict = get_donors(df, args.sample_name_column, args.cols, args.donor_sep, args.multiheader, sn_fmt, sn_fmt_grps, use_log)
-
+donors_dict = get_donors(df, args.sample_name_column, args.cols, args.donor_sep, args.multiheader, sn_fmt, sn_fmt_grps, use_log, batch=args.batch_col)
+	
 
 # Donor names are according to the annotation present in the "obs" column of the respective 'pooled' anndata (final count matrix)
 for p, d in donors_dict.items():
