@@ -43,4 +43,4 @@ do
 done
 
 # If the log file is still of size '0' then no problems occurred!
-if [ ! -s "${LOG_FILE}" ]; then echo "All went well!" >>> "${LOG_FILE}"; fi
+if [ ! -s "${LOG_FILE}" ]; then echo "All went well!" >> "${LOG_FILE}"; fi
