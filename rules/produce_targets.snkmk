@@ -101,7 +101,7 @@ def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 # Add wildcards info here in the 'expand' function
 def produce_targets(conf_f) -> "list":
 
-    target_step = conf_f['last_step']
+    target_step = conf_f['last_step'].lower()
     folder_st_bam=conf_f['fold_struct']
     folder_st=conf_f['fold_struct_demux']
 
@@ -111,43 +111,54 @@ def produce_targets(conf_f) -> "list":
 
         final_target_list = [expand(f"{target}", id1=sample_name) for target in target_files]
 
-    elif target_step == "STARsolo_kb_solo":
+    elif target_step == "starsolo_kb_solo":
         target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-    elif target_step == "STARsolo":
+    elif target_step == "starsolo":
         target_files = targets_STARsolo(conf_f=conf_f)
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
         
-    elif target_step == "STARsolo_PICARD":
+    elif target_step == "starsolo_picard":
         target_list = targets_PICARD(conf_f=conf_f, progs='all')
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-    elif target_step == "STARsolo_rnaseqmet":
+    elif target_step == "starsolo_rnaseqmet":
         target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-    elif target_step == "STARsolo_gcbiasmet":
+    elif target_step == "starsolo_gcbiasmet":
         target_list = targets_PICARD(conf_f=conf_f, progs='GC')
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-    elif target_step == "STARsolo_cellSNP":
+    elif target_step == "starsolo_cellsnp":
         target_files = targets_cellSNP(conf_f=conf_f)
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]    
 
-    elif target_step == "STARsolo_split_bams":
+    elif target_step == "starsolo_split_bams":
         target_files = targets_SplitBams(conf_f=conf_f)
 
         final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "starsolo_rnaseqmet_kb_solo":
+        target_files = targets_all(conf_f=conf_f, progs='RNAseq')
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "starsolo_gcbiasmet_kb_solo":
+        target_files = targets_all(conf_f=conf_f, progs='GC')
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
         
     # Not yet implemented
-    elif target_step == "STARsolo_gt_demux":
+    elif target_step == "starsolo_gt_demux":
         pass        
 
     else:
