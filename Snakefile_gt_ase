@@ -7,15 +7,9 @@ from snakemake.utils import validate
 from itertools import repeat
 
 
-module main_workflow:
-	# If not in the same dir as this workflow define the working directory relative to currewnt working dir
-    # workdir:
-        # "../path/to/otherworkflow"
-    # By default it will search for all the snakefile's default names (for order sequence check snakemake's documentation) in the dir specified by the "workdir"
-    snakefile:
-        "Snakefile"
-    configfile:
-        "new_config.yaml"
+
+rule all:
+
 
 
 

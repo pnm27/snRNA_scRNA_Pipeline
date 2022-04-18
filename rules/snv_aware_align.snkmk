@@ -1,0 +1,28 @@
+rule bamfilt_by_CB:
+    input:
+        pooled_bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+
+    output:
+        temp(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}")
+        
+
+    params:
+        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}{{num}}_{{id1}}_bc.txt"
+
+
+    threads: 1
+
+    resources:
+        mem_mb=250,
+        time_min=300
+
+    shell:
+        """
+        mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
+        ml samtools
+        cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
+        samtools view -q 255 -D CB:{params.temp_bc} {input[0]} -bho {output}
+        samtools index {output}
+        rm {params.temp_bc}
+        sleep 10
+        """

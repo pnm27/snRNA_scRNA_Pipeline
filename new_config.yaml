@@ -54,7 +54,7 @@ STAR_solo_pipeline:
   umi_len: 12
   soloType: CB_UMI_Simple
   solo_cell_filter: EmptyDrops_CR
-  SAM_attr: NH HI AS nM NM MD CB UB CR UR GX GN sS sQ sM
+  SAM_attr: NH HI AS nM NM MD CB UB CR UR CY UY GX GN sS sQ sM
   features: Gene GeneFull SJ Velocyto
   # Optional params
   bai: _Aligned.sortedByCoord.out.bam.bai
