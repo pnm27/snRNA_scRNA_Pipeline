@@ -22,11 +22,13 @@ parser = argparse.ArgumentParser(description="Create h5ad output after running c
 parser.add_argument('bustools_out', help="Path to cached output of bustools kite pipeline(h5ad)")
 parser.add_argument('matrix_file', help="Path to matrix.mtx.gz")
 parser.add_argument('output_file', help="Path to store output file(h5ad)")
+parser.add_argument('gene_info_file', help="Path to file that contains gene names and ids for annotation (tab-separated txt file)")
 
 # Optional parameters
 parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
 parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
 parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
+parser.add_argument('--mito_prefix', help="How mitochondrial genes can be identified from the gene_info_file. e.g. mito genes have prefix \'MT-\' (DEFAULT)", default='MT-')
 
 
 args = parser.parse_args()
@@ -38,7 +40,7 @@ min_genes = args.min_genes
 min_cells = args.min_cells
 
 
-t2g = pd.read_csv("/sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt", skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
+t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
 t2g.index = t2g.gene_id
 t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
@@ -56,7 +58,7 @@ adata.obs_names = adata.obs_names.to_series().map(lambda x: re.sub('-.*', '', x)
 sc.pp.filter_cells(adata, min_genes=min_genes)
 sc.pp.filter_genes(adata, min_cells=min_cells)
 # Filter data wrt mito content
-adata.var["mito"] = adata.var_names.str.startswith('MT-')
+adata.var["mito"] = adata.var_names.str.startswith(args.mito_prefix)
 sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
 adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
 

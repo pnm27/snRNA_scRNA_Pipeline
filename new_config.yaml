@@ -136,6 +136,7 @@ demux_pipeline:
   max_mito_percentage: 5
   min_genes_per_cell: 1000
   min_cells_per_gene: 10
+  mito_prefix: MT-
   calico_solo_h5ad: _STARsolo_out.h5ad
   final_count_matrix_h5ad: _STARsolo_out.h5ad
   demultiplex_info: _STARsolo_info.tsv
