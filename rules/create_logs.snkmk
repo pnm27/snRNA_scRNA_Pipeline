@@ -1,13 +1,13 @@
 # Add wildcards info here in the 'expand' function
 def stats_produce_inp(wildcards):
-    STAR_log=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['STAR_log_final']}", id1=sample_name)
-    SS_G_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_features']}", id1=sample_name)
-    SS_GF_Feat=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_features']}", id1=sample_name)
-    SS_G_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['gene_summary']}", id1=sample_name)
-    SS_GF_Summ=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['genefull_summary']}", id1=sample_name)
-    SS_Barcodes=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['barcodes_stats']}", id1=sample_name)
-    PICARD_GC=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}", id1=sample_name)
-    PICARD_RNAseq=expand(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}", id1=sample_name)
+    STAR_log=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}", id1=sample_name)
+    SS_G_Feat=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}", id1=sample_name)
+    SS_GF_Feat=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}", id1=sample_name)
+    SS_G_Summ=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}", id1=sample_name)
+    SS_GF_Summ=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}", id1=sample_name)
+    SS_Barcodes=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}", id1=sample_name)
+    PICARD_GC=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}", id1=sample_name)
+    PICARD_RNAseq=expand(f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}", id1=sample_name)
     Demultiplex_info=expand(f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}", id1=sample_name)
 
     if config['last_step'] == "all":
@@ -45,11 +45,11 @@ def stats_produce_inp(wildcards):
 def stats_produce_params(wildcards, input):
 
     # Files for update log files
-    log_dict = {'STAR_log':[config['STAR_solo_pipeline']['STAR_log_final'], '--ss_l'], 'PICARD_GC':[config['picard_pipeline']['gc_summary_metrics'], '--pc_gc'],
+    log_dict = {'STAR_log':[config['STARsolo_pipeline']['STAR_log_final'], '--ss_l'], 'PICARD_GC':[config['picard_pipeline']['gc_summary_metrics'], '--pc_gc'],
                 'PICARD_RNAseq':[config['picard_pipeline']['rnaseq_metrics'], '--pc_rs'],
-                'SS_G_Feat':[config['STAR_solo_pipeline']['gene_features'], '--ss_g_f'], 'SS_GF_Feat':[config['STAR_solo_pipeline']['genefull_features'], '--ss_gf_f'],
-                'SS_G_Summ':[config['STAR_solo_pipeline']['gene_summary'], '--ss_g_s'], 'SS_GF_Summ':[config['STAR_solo_pipeline']['genefull_summary'], '--ss_gf_s'],
-                'SS_Barcodes':[config['STAR_solo_pipeline']['barcodes_stats'], '--ss_bc'], 'Demultiplex_info':[config['demux_pipeline']['demultiplex_info'], '--dem_info']}
+                'SS_G_Feat':[config['STARsolo_pipeline']['gene_features'], '--ss_g_f'], 'SS_GF_Feat':[config['STARsolo_pipeline']['genefull_features'], '--ss_gf_f'],
+                'SS_G_Summ':[config['STARsolo_pipeline']['gene_summary'], '--ss_g_s'], 'SS_GF_Summ':[config['STARsolo_pipeline']['genefull_summary'], '--ss_gf_s'],
+                'SS_Barcodes':[config['STARsolo_pipeline']['barcodes_stats'], '--ss_bc'], 'Demultiplex_info':[config['demux_pipeline']['demultiplex_info'], '--dem_info']}
 
     cons_param = ""
     for i in range(len(input)):

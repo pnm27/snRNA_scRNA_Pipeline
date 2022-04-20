@@ -5,10 +5,21 @@ import pandas as pd
 from helper_py_scripts import update_logs
 from snakemake.utils import validate
 from itertools import repeat
+from snakemake.utils import min_version
 
 
+min_version("6.4.0")
+
+
+configfile: "new_config.yaml"
+
+DONORS, = glob_wildcards(f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}.bam")
 
 rule all:
+    input:
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}", donors=DONORS),
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}", donors=DONORS)
+
 
 
 

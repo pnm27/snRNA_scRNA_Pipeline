@@ -32,10 +32,10 @@ rule create_inp_splitBams:
 
 rule bamsort_by_CB:
     input:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
 
     params:
         temp_pref=f"{config['split_bams_pipeline']['sort_temp_dir']}{{num}}_{{id1}}"
@@ -60,7 +60,7 @@ rule bamsort_by_CB:
 # This is much more efficient in the long run
 rule prep_split_bams:
     input:
-        bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
+        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sort_cb_bam']}"
 
     priority: 7
 
@@ -77,7 +77,7 @@ rule prep_split_bams:
 
     output:
         f"{config['split_bams_pipeline']['split_bams_script_dir']}{config['fold_struct_bam_split1']}.sh", # This is the shell script which will split the bams (practically, sam)
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
         f"{config['split_bams_pipeline']['reads_v_barcodes_dir']}{config['fold_struct_bam_split1']}.txt" # This is the 'txt' files containing barcode and reads associated with it
 
     shell:
@@ -90,7 +90,7 @@ rule prep_split_bams:
 rule split_bams:
     input:
         f"{config['split_bams_pipeline']['split_bams_script_dir']}{config['fold_struct_bam_split1']}.sh",
-        sam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
+        sam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['sam']}",
         barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
 
     priority: 7

@@ -1,12 +1,12 @@
 rule Picard_GC_bias_metrics:
     input:
-        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     # priority: 9
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_bias_metrics']}",
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_bias_metrics']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}"
 
     params:
         output_pref=lambda wildcards, output: output[0].replace(f"{config['picard_pipeline']['gc_bias_metrics']}", '_'),
@@ -31,12 +31,12 @@ rule Picard_GC_bias_metrics:
 
 rule Picard_RNAseq_metrics:
     input:
-        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     # priority: 9
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}"
 
     params:
         flat_ref=config['picard_pipeline']['flat_ref'],

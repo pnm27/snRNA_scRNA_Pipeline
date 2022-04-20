@@ -62,7 +62,7 @@ rule cellSNP:
     input:
         # bc=get_filt_barcodes,
         bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
-        bams=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     group: "phenotype-demux"
 

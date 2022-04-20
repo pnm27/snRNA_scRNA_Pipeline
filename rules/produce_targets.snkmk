@@ -1,11 +1,11 @@
 # Run STARsolo_sort, index_bams and filter_GeneFull_STARsolo
 def targets_STARsolo(conf_f) -> "list":
 
-    inp_pref=conf_f['STAR_solo_pipeline']['bams_dir']
-    bai_suff=conf_f['STAR_solo_pipeline']['bai']
-    gf_mat=conf_f['STAR_solo_pipeline']['genefull_matrix']
-    gf_features=conf_f['STAR_solo_pipeline']['genefull_features']
-    barcodes_stats=conf_f['STAR_solo_pipeline']['barcodes_stats']
+    inp_pref=conf_f['STARsolo_pipeline']['bams_dir']
+    bai_suff=conf_f['STARsolo_pipeline']['bai']
+    gf_mat=conf_f['STARsolo_pipeline']['genefull_matrix']
+    gf_features=conf_f['STARsolo_pipeline']['genefull_features']
+    barcodes_stats=conf_f['STARsolo_pipeline']['barcodes_stats']
     folder_st=conf_f['fold_struct']
 
     target_list = [f"{inp_pref}{folder_st}{bai_suff}", f"{inp_pref}{folder_st}{gf_mat}", f"{inp_pref}{folder_st}{gf_features}", f"{inp_pref}{folder_st}{barcodes_stats}"]
@@ -15,7 +15,7 @@ def targets_STARsolo(conf_f) -> "list":
 
 def targets_PICARD(conf_f, progs='all') -> "list":
     
-    inp_pref = conf_f['STAR_solo_pipeline']['bams_dir']
+    inp_pref = conf_f['STARsolo_pipeline']['bams_dir']
     rna_seq_suff = conf_f['picard_pipeline']['rnaseq_metrics']
     gc_met_suff = conf_f['picard_pipeline']['gc_bias_metrics']
     gc_summ_suff = conf_f['picard_pipeline']['gc_summary_metrics']

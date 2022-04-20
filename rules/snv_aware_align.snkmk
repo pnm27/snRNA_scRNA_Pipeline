@@ -1,28 +1,92 @@
-rule bamfilt_by_CB:
+def get_vcf_id(wildcards):
+    df = pd.read_csv(config['STARsolo_snv_aware']['vcf_id_donor_id_hash'])
+    return df.loc[df[config['STARsolo_snv_aware']['hash_columns'][0]] == wildcards.donors, config['STARsolo_snv_aware']['hash_columns'][1]].values[0]
+
+
+rule create_per_donor_vcf:
     input:
-        pooled_bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
-
-    output:
-        temp(f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}")
-        
-
+        pooled_vcf=config['STARsolo_snv_aware']['genotypes_vcf'],
+        vcf_id=get_vcf_id
     params:
-        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}{{num}}_{{id1}}_bc.txt"
-
-
-    threads: 1
-
-    resources:
-        mem_mb=250,
-        time_min=300
-
+        vcf_gzipped=lambda wildcards, input: input.sample_vcf.endswith('.gz') or input.sample_vcf.endswith('.gzip')
+    output:
+        temp(f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}")
     shell:
         """
-        mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
-        ml samtools
-        cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
-        samtools view -q 255 -D CB:{params.temp_bc} {input[0]} -bho {output}
-        samtools index {output}
-        rm {params.temp_bc}
-        sleep 10
+        ml bcftools
+        if [[ "{params.vcf_gzipped}" == "True" ]]; then
+            bcftools view -s {input.vcf_id} {input.pooled_vcf} -Oz > {output}
+        else
+            bcftools view -O z -o {input.pooled_vcf}".gz" {input.pooled_vcf}
+            bcftools view -s {input.vcf_id} {input.pooled_vcf}".gz" -Oz > {output}
+        fi
+
         """
+
+
+
+rule STARsolo_sort:
+    input:
+        pooled_bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['bam']}",
+        sample_vcf=f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}"
+
+    # priority: 10
+
+    params:
+        gtf=config['gtf_file'],
+        genome_dir=config['STARsolo_snv_aware']['genome_dir'],
+        overhang=config['STARsolo_snv_aware']['sjdboverhang'],
+        chemistry=config['STARsolo_snv_aware']['soloType'], # For STARsolo
+        whitelist=config['whitelist'], # V3 whitelist
+        UMI_length=config['STARsolo_snv_aware']['umi_len'], # V3 
+        SAM_attr=config['STARsolo_snv_aware']['SAM_attr'],
+        features=config['STARsolo_snv_aware']['features'],
+        # save_params=f"{config['STARsolo_snv_aware']['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
+        star_def_log_out=f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}_Log.out",
+        solo_cell_filter=config['STARsolo_snv_aware']['solo_cell_filter'],
+        out_pref=f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}_",
+        # count_matrix_dir=lambda wildcards, output: output[8][:-13],
+        vcf_gzipped=lambda wildcards, input: input.sample_vcf.endswith('.gz') or input.sample_vcf.endswith('.gzip')
+
+
+    output:
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}",
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}"
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['STAR_log_final']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_features']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_summary']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['gene_features']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['gene_summary']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['barcodes_stats']}",
+        # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_matrix']}"
+
+    log:
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}_STARsolo_log.txt"
+   
+    resources:
+        mem_mb=allocate_mem_SS,
+        time_min=allocate_time_SS,
+        attempt=lambda wildcards, attempt: attempt
+
+    threads: 6
+
+    run:
+        shell(
+        """
+        ml {config[STAR_version]}
+        ml samtools
+        echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
+        if [ ! -d {config[STARsolo_snv_aware][star_params_dir]} ]; then mkdir -p {config[STARsolo_snv_aware][star_params_dir]}; fi
+        if [[ "{params.vcf_gzipped}" == "True" ]]; then
+            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
+            --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
+            --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile <(zcat {input.sample_vcf} | sed -r 's/chr([A-Za-z0-9]+)/\1/g') \
+            --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
+        else
+            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
+            --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
+            --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile {input.sample_vcf} --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
+        fi
+        samtools index {output[0]}
+        """
+        )
