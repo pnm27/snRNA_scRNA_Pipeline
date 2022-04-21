@@ -227,8 +227,8 @@ STARsolo_snv_aware:
     - SubID
     - SNParray_ID
   # Optional params
-  bai: _Aligned.sortedByCoord.out.bam.bai
-  bam: _Aligned.sortedByCoord.out.bam
+  bai: .bam.bai
+  bam: .bam
   STAR_log_final: _Log.final.out
   barcodes_stats: _Solo.out/Barcodes.stats
   gene_features: _Solo.out/Gene/Features.stats

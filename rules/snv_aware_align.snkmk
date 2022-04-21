@@ -64,8 +64,8 @@ rule STARsolo_sort:
         f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}_STARsolo_log.txt"
    
     resources:
-        mem_mb=allocate_mem_SS,
-        time_min=allocate_time_SS,
+        mem_mb=allocate_mem_SSSA,
+        time_min=allocate_time_SSSA,
         attempt=lambda wildcards, attempt: attempt
 
     threads: 6

@@ -83,6 +83,10 @@ def allocate_mem_SB(wildcards, attempt):
    return 75*attempt+75
 
 
+def allocate_mem_SSSA(wildcards, attempt):
+    return 5000+1000*(attempt-1)
+
+
 # Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
 # CAREFULL about exceeding time limits
 def allocate_time_SS(wildcards, attempt):
@@ -151,3 +155,8 @@ def allocate_time_US(wildcards, attempt):
 
 def allocate_time_FCB(wildcards, attempt):
    return 20*attempt+20
+
+
+def allocate_time_SSSA(wildcards, attempt):
+    return 60
+

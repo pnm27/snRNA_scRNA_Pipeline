@@ -13,12 +13,14 @@ min_version("6.4.0")
 
 configfile: "new_config.yaml"
 
-DONORS, = glob_wildcards(f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}.bam")
+NUM, ID1, DONORS = glob_wildcards(f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}.bam")
+
+include: "rules/snv_aware_align.snkmk"
 
 rule all:
     input:
-        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}", donors=DONORS),
-        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}", donors=DONORS)
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}", num=NUM, id1=ID1, donors=DONORS),
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}", num=NUM, id1=ID1, donors=DONORS)
 
 
 
