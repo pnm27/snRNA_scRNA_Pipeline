@@ -61,3 +61,8 @@ split_bams:
 update_stats:
   - "-q express"
 
+create_per_donor_vcf:
+  - "-q express"
+  
+STARsolo_SNV_aware_sort:
+  - "-q express"
