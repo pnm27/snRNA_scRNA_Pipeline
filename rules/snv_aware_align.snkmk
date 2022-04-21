@@ -5,27 +5,28 @@ def get_vcf_id(wildcards):
 
 rule create_per_donor_vcf:
     input:
-        pooled_vcf=config['STARsolo_snv_aware']['genotypes_vcf'],
-        vcf_id=get_vcf_id
+        pooled_vcf=config['STARsolo_snv_aware']['genotypes_vcf']
+        
     params:
-        vcf_gzipped=lambda wildcards, input: input.sample_vcf.endswith('.gz') or input.sample_vcf.endswith('.gzip')
+        vcf_id=get_vcf_id,
+        vcf_gzipped=lambda wildcards, input: input.pooled_vcf.endswith('.gz') or input.pooled_vcf.endswith('.gzip')
     output:
         temp(f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}")
     shell:
         """
         ml bcftools
         if [[ "{params.vcf_gzipped}" == "True" ]]; then
-            bcftools view -s {input.vcf_id} {input.pooled_vcf} -Oz > {output}
+            bcftools view -s {params.vcf_id} {input.pooled_vcf} -Oz > {output}
         else
             bcftools view -O z -o {input.pooled_vcf}".gz" {input.pooled_vcf}
-            bcftools view -s {input.vcf_id} {input.pooled_vcf}".gz" -Oz > {output}
+            bcftools view -s {params.vcf_id} {input.pooled_vcf}".gz" -Oz > {output}
         fi
 
         """
 
 
 
-rule STARsolo_sort:
+rule STARsolo_SNV_aware_sort:
     input:
         pooled_bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['bam']}",
         sample_vcf=f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}"

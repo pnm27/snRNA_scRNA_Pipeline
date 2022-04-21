@@ -16,6 +16,7 @@ configfile: "new_config.yaml"
 NUM, ID1, DONORS = glob_wildcards(f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}.bam")
 
 include: "rules/snv_aware_align.snkmk"
+include: "rules/resources.snkmk"
 
 rule all:
     input:
