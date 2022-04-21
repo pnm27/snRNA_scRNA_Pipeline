@@ -10,16 +10,23 @@ rule create_per_donor_vcf:
     params:
         vcf_id=get_vcf_id,
         vcf_gzipped=lambda wildcards, input: input.pooled_vcf.endswith('.gz') or input.pooled_vcf.endswith('.gzip')
+
     output:
         temp(f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}")
+
+    resources:
+        mem_mb=allocate_mem_CPDV,
+        time_min=allocate_time_CPDV,
+        attempt=lambda wildcards, attempt: attempt
+
     shell:
         """
         ml bcftools
         if [[ "{params.vcf_gzipped}" == "True" ]]; then
-            bcftools view -s {params.vcf_id} {input.pooled_vcf} -Oz > {output}
+            bcftools view --threads 12 -s {params.vcf_id} {input.pooled_vcf} -Oz > {output}
         else
-            bcftools view -O z -o {input.pooled_vcf}".gz" {input.pooled_vcf}
-            bcftools view -s {params.vcf_id} {input.pooled_vcf}".gz" -Oz > {output}
+            bcftools view --threads 12 -O z -o {input.pooled_vcf}".gz" {input.pooled_vcf}
+            bcftools view --threads 12 -s {params.vcf_id} {input.pooled_vcf}".gz" -Oz > {output}
         fi
 
         """
