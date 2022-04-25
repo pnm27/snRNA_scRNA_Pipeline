@@ -48,6 +48,7 @@ fold_struct_snv_aware: "{id1}-cDNA/"
 
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
+STAR_snv_aware_version: star/2.7.9a
 
 
 # BAM processing pipeline----------------------------------------------------
@@ -227,8 +228,8 @@ STARsolo_snv_aware:
     - SubID
     - SNParray_ID
   # Optional params
-  bai: .bam.bai
-  bam: .bam
+  bai: _Aligned.sortedByCoord.out.bam.bai
+  bam: _Aligned.sortedByCoord.out.bam
   STAR_log_final: _Log.final.out
   barcodes_stats: _Solo.out/Barcodes.stats
   gene_features: _Solo.out/Gene/Features.stats
