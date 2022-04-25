@@ -50,14 +50,14 @@ rule STARsolo_SNV_aware_sort:
         SAM_attr=config['STARsolo_snv_aware']['SAM_attr'],
         features=config['STARsolo_snv_aware']['features'],
         solo_cell_filter=config['STARsolo_snv_aware']['solo_cell_filter'],
-        out_pref=f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}_",
+        out_pref=f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}_",
         # count_matrix_dir=lambda wildcards, output: output[8][:-13],
         vcf_gzipped=lambda wildcards, input: input.sample_vcf.endswith('.gz') or input.sample_vcf.endswith('.gzip')
 
 
     output:
-        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}",
-        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}"
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}{config['STARsolo_snv_aware']['bam']}",
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{{donors}}{config['STARsolo_snv_aware']['bai']}"
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['STAR_log_final']}",
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_features']}",
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_summary']}",

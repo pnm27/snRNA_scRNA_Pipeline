@@ -20,8 +20,8 @@ include: "rules/snv_aware_align.snkmk"
 
 rule all:
     input:
-        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bam']}", num=NUM, id1=ID1, donors=DONORS),
-        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{config['STARsolo_snv_aware']['bai']}", num=NUM, id1=ID1, donors=DONORS)
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}{config['STARsolo_snv_aware']['bam']}", num=NUM, id1=ID1, donors=DONORS),
+        expand(f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}{config['STARsolo_snv_aware']['bai']}", num=NUM, id1=ID1, donors=DONORS)
 
 
 
