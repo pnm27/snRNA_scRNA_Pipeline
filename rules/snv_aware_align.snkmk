@@ -57,7 +57,7 @@ rule STARsolo_SNV_aware_sort:
 
     output:
         f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}{config['STARsolo_snv_aware']['bam']}",
-        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}{{donors}}{config['STARsolo_snv_aware']['bai']}"
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}{config['STARsolo_snv_aware']['bai']}"
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['STAR_log_final']}",
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_features']}",
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_summary']}",
@@ -67,7 +67,7 @@ rule STARsolo_SNV_aware_sort:
         # f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['genefull_matrix']}"
 
     log:
-        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}_STARsolo_log.txt"
+        f"{config['STARsolo_snv_aware']['bams_dir']}{config['fold_struct_snv_aware']}{{donors}}/{{donors}}_STARsolo_log.txt"
    
     resources:
         mem_mb=allocate_mem_SSSA,
