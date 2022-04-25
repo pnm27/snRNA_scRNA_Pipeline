@@ -84,7 +84,7 @@ rule STARsolo_SNV_aware_sort:
         if [[ "{params.vcf_gzipped}" == "True" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
             --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
-            --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile <(zcat {input.sample_vcf} | sed -r 's/chr([A-Za-z0-9]+)/\1/g') \
+            --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile <(zcat {input.sample_vcf} | sed -r 's/chr([A-Za-z0-9]+)/\\1/g') \
             --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
