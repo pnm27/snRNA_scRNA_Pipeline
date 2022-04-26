@@ -66,3 +66,6 @@ create_per_donor_vcf:
   
 STARsolo_SNV_aware_sort:
   - "-q express"
+
+shuf_donor_bam:
+  - "-q express"

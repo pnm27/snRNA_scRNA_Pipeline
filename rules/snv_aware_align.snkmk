@@ -33,9 +33,28 @@ rule create_per_donor_vcf:
 
 
 
+rule shuf_donor_bam:
+    input:
+        donor_bam=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}.bam"
+
+    output:
+        temp(f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}_shuff.bam")
+
+    resources:
+        mem_mb=allocate_mem_SDB,
+        time_min=allocate_time_SDB
+
+    shell:
+        """
+        ml samtools
+        samtools collate -@ 12 -o {output} {input}
+        """
+
+
+
 rule STARsolo_SNV_aware_sort:
     input:
-        pooled_bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_snv_aware']['bam']}",
+        shuff_donor_bam=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}{{donors}}_shuff.bam",
         sample_vcf=f"{config['STARsolo_snv_aware']['temp_genotypes_vcf_dir']}{config['fold_struct_vcf']}{{donors}}{config['STARsolo_snv_aware']['vcf_suffix']}"
 
     # priority: 10
@@ -82,12 +101,12 @@ rule STARsolo_SNV_aware_sort:
         ml {config[STAR_snv_aware_version]}
         ml samtools
         if [[ "{params.vcf_gzipped}" == "True" ]]; then
-            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
+            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.shuff_donor_bam} --readFilesType SAM SE \
             --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile <(zcat {input.sample_vcf} | sed -E -r 's/chr([A-Za-z0-9]+)/\\1/g') \
             --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
         else
-            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.pooled_bam} --readFilesType SAM SE \
+            STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --twopassMode Basic --readFilesCommand samtools view --readFilesIn {input.shuff_donor_bam} --readFilesType SAM SE \
             --soloType {params.chemistry} --soloUMIlen {params.UMI_length} --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --outSAMtype BAM SortedByCoordinate --runThreadN 12 --soloInputSAMattrBarcodeSeq CR UR --readFilesSAMattrKeep None --waspOutputMode SAMtag --varVCFfile {input.sample_vcf} --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
         fi
