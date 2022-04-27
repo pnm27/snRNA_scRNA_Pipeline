@@ -84,7 +84,7 @@ def allocate_mem_SB(wildcards, attempt):
 
 
 def allocate_mem_SSSA(wildcards, attempt):
-    return 5000+1000*(attempt-1)
+    return 6000+1000*(attempt-1)
 
 
 def allocate_mem_CPDV(wildcards, attempt):
@@ -92,7 +92,7 @@ def allocate_mem_CPDV(wildcards, attempt):
 
 
 def allocate_mem_SDB(wildcards, attempt):
-    return 1000
+    return 2500
 
 
 

@@ -44,6 +44,8 @@ rule shuf_donor_bam:
         mem_mb=allocate_mem_SDB,
         time_min=allocate_time_SDB
 
+    threads: 4
+
     shell:
         """
         ml samtools
