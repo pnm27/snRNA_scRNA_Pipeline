@@ -63,13 +63,14 @@ def targets_cellSNP(conf_f) -> "list":
     return target_list
 
 
-# To split bams
-def targets_SplitBams(conf_f) -> "list":
-    inp_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
-    fs_sB = conf_f['fold_struct_bam_split1']
-    target_list = targets_all(conf_f=conf_f, PICARD=False)
-    target_list.append(f"{inp_dir}{fs_sB}.txt")
-    return target_list
+
+def targets_gt_demux(conf_f) -> str:
+    out_dir = conf_f['phe_demux_pipeline']['vireosnp_dir']
+    fs_phe = conf_f['fold_struct_phe_demux']
+    suff = conf_f['phe_demux_pipeline']['donors_vcf']
+    
+    return f"{out_dir}{fs_phe}{suff}"
+
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
@@ -158,7 +159,9 @@ def produce_targets(conf_f) -> "list":
         
     # Not yet implemented
     elif target_step == "starsolo_gt_demux":
-        pass        
+        target_files = targets_gt_demux(conf_f=conf_f)
+
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]      
 
     else:
         # print("Wrong inputs to produce_targets function!!")

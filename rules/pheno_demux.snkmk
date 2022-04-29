@@ -44,7 +44,7 @@ rule create_inp_cellSNP:
         mem_mb=allocate_mem_CICS,
         time_min=allocate_time_CICS
 
-    group: "phenotype-demux"
+    # group: "phenotype-demux"
 
     output:
         f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
@@ -77,7 +77,7 @@ rule cellSNP:
         bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
         bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
-    group: "phenotype-demux"
+    # group: "phenotype-demux"
 
     output:
         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
@@ -120,11 +120,11 @@ rule vireoSNP:
         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"
   
     output:
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_vcf']}",
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_vcf']}"
         #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
 
-    group: "phenotype-demux"
+    # group: "phenotype-demux"
 
     params:
         donor_info=get_donors
