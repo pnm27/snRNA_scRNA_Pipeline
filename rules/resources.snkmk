@@ -158,6 +158,14 @@ def allocate_time_GIH(wildcards, attempt):
    return 3500*attempt+3500 # Not finalised yet
 
 
+def allocate_time_cS(wildcards, attempt):
+   return 600+120*(attempt-1)
+
+
+def allocate_time_vS(wildcards, attempt):
+   return 40+10*(attempt-1)
+
+
 def allocate_time_US(wildcards, attempt):
    return 15*attempt+15
 

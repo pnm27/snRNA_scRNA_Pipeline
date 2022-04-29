@@ -157,9 +157,11 @@ phe_demux_pipeline:
   genotype_info: /sc/arion/projects/psychAD/pnm/VA_BR_Clinical_combo_matched_CMC_AMPAD_10082020.csv
   meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
   genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
+  vcf_info: /sc/arion/projects/psychAD/pnm/pool_info.tsv
   vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP/
   filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf/
   donor_genotype: GT
+  split_compiled_vcf: False
   # Optional params
   demux_col: SubID_cs
   barcode_len: 16
@@ -180,6 +182,15 @@ phe_demux_pipeline:
   - SubID
   - Orig_VCF_ID
   - Samples
+  vcf_info_columns:
+  - SetNumber
+  - Gt_count
+  - pool_vcf
+  - pool_vcf_gencode
+  - pool_vcf_gencode_maf_25pct
+  wet_lab_file_cols:
+  - Set_number
+  - unique_sample_ID
 
 
 # split bams pipeline------------------------------------------------------

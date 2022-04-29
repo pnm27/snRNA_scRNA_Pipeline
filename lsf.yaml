@@ -38,12 +38,7 @@ run_calico_solo:
 demux_samples_calico_solo_STARsolo:
   - "-q express"
 
-cellSNP:
-  - "-q premium"
-  - "-W 06:00"
-
 vireoSNP:
-  - "-W 00:50"
   - "-q express"
 
 # split_bams:
