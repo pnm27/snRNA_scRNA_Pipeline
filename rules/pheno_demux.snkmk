@@ -51,7 +51,7 @@ rule create_inp_cellSNP:
 
     shell:
         """
-        python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+        python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c "{params.col_name}" -e "{params.na}" -d "{params.doub}" -n "{params.neg}" -b {params.bc_len}
         sleep 100
         """
 
