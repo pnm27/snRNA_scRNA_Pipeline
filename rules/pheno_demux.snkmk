@@ -127,7 +127,7 @@ rule vireoSNP:
     # group: "phenotype-demux"
 
     params:
-        donor_info=get_donors
+        donor_info=get_donors,
         geno_tag=config['phe_demux_pipeline']['donor_genotype'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_vcf']}", '')
 
