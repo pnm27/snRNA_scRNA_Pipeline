@@ -102,16 +102,16 @@ rule cellSNP:
 
 
 # If one wants to split a compiled vcf into per-pool vcf
-if config['phe_demux_pipeline']['split_compiled_vcf']:
-    rule split_compiled_vcf:
-        input:
+# if config['phe_demux_pipeline']['split_compiled_vcf']:
+#     rule split_compiled_vcf:
+#         input:
 
-        output:
+#         output:
 
-        shell:
-            """
+#         shell:
+#             """
 
-            """
+#             """
 
 
 
