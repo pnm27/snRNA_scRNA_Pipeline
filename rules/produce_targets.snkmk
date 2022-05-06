@@ -73,6 +73,15 @@ def targets_gt_demux(conf_f) -> list:
 
 
 
+def targets_gt_demux2(conf_f) -> list:
+    out_dir = conf_f['phe_demux_pipeline']['vireosnp_dir']
+    fs_phe = conf_f['fold_struct_phe_demux']
+    
+    
+    return [f"{out_dir}{fs_phe}" ]
+
+
+
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 
@@ -161,7 +170,19 @@ def produce_targets(conf_f) -> "list":
     elif target_step == "starsolo_gt_demux":
         target_files = targets_gt_demux(conf_f=conf_f)
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]      
+        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+
+    elif target_step == "starsolo_gt_demux_multi_vcf":
+        target_files = targets_gt_demux2(conf_f=conf_f)
+        suff = conf_f['phe_demux_pipeline']['donors_vcf']
+        # If multiple vcfs per sample needs to be run
+        # temp_list= [expand(f"{target}", zip, num=round_num, id1=sample_name) for target in target_files][0] # Multiple wildcards example
+        temp_list= [expand(f"{target}", id1=sample_name) for target in target_files][0]
+        final_target_list=[expand(f"{t}{{vcf_type}}/{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+
+        # Single vcf out of a set of multiple vcfs
+        # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", zip, num=round_num, id1=sample_name) for target in target_files] # Multiple wildcards example
+        # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", id1=sample_name) for target in target_files]
 
     else:
         # print("Wrong inputs to produce_targets function!!")

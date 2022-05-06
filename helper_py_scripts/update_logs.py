@@ -13,13 +13,23 @@ import errno, argparse
 # This function returns the filename if it exists
 # otherwise an empty string
 def get_filename(loc_dir, file_struct, fn, suffix):
-    try:
-        if file_struct.endswith('/'):
+    if file_struct.endswith('/'):
+        try:
             return glob2.glob(os.path.join(loc_dir, file_struct, f"{fn}*{suffix}"))[0]
-        else:
+        except:
+            return ""
+    elif file_struct == "":
+        try:
+            return glob2.glob(os.path.join(loc_dir, f"{fn}*{suffix}"))[0]
+        except:
+            return ""
+    else:
+        if glob2.glob(os.path.join(loc_dir, f"{file_struct}*{suffix}")):
+            return glob2.glob(os.path.join(loc_dir, f"{file_struct}*{suffix}"))[0]
+        elif glob2.glob(os.path.join(loc_dir, f"{file_struct}*{fn}*{suffix}")):
             return glob2.glob(os.path.join(loc_dir, f"{file_struct}*{fn}*{suffix}"))[0]
-    except:
-        return ""
+        else:
+            return ""
 
 
 
@@ -195,23 +205,23 @@ if __name__ == "__main__":
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
     parser.add_argument('--dem_struct', help="Regex to identify demultiplex info containing file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>\"", default=os.path.join(os.getcwd(), "<sample>"))
-    parser.add_argument('--ss_l', nargs='?', help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_l', nargs='?', help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Log.final.out\"", const="_Log.final.out", default=None)
-    parser.add_argument('--pc_gc', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--pc_gc', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_summary_metrics.txt\"", const="_summary_metrics.txt", default=None)
-    parser.add_argument('--pc_rs', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--pc_rs', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_rnaseq_metrics.txt\"", const="_rnaseq_metrics.txt", default=None)
-    parser.add_argument('--ss_g_f', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_g_f', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Solo.out/Gene/Features.stats\"", const="_Solo.out/Gene/Features.stats", default=None)
-    parser.add_argument('--ss_gf_f', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_gf_f', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Solo.out/GeneFull/Features.stats\"", const="_Solo.out/GeneFull/Features.stats", default=None)
-    parser.add_argument('--ss_g_s', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_g_s', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Solo.out/Gene/Summary.csv\"", const="_Solo.out/Gene/Summary.csv", default=None)
-    parser.add_argument('--ss_gf_s', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_gf_s', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Solo.out/GeneFull/Summary.csv\"", const="_Solo.out/GeneFull/Summary.csv", default=None)
-    parser.add_argument('--ss_bc', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--ss_bc', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Solo.out/Barcodes.stats\"", const="_Solo.out/Barcodes.stats", default=None)
-    parser.add_argument('--dem_info', nargs='?',  help="Suffix for the output (if not the same as the default one). \
+    parser.add_argument('--dem_info', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_STARsolo_info.tsv\"", const="_STARsolo_info.tsv", default=None)
 
 
@@ -306,13 +316,23 @@ if __name__ == "__main__":
         pc_rs_file = get_filename(pic_dir, pc_st, sample, args.pc_rs) if args.pc_rs != None else ""
         dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info) if args.dem_info != None else ""
 
+        # Example for Adding additional info per sample
+        sample_name=sample
+        r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
+        preparer = sample.split('-')[2][0]
+        replicate = sample.split('-')[2][1]
+        set_val = sample[:-6]
+
+        
+        # Test if at least one of the input files exists
+        test_f_exists=[ss_log_final == "", ss_gene_summary == "", ss_genefull_summary == "", ss_gene_features == "", ss_genefull_features == "", ss_bc_stats == "",
+            pc_gc_file == "", pc_rs_file == "", dem_file == ""]
+        if all(test_f_exists):
+            raise ValueError(f"All files for the sample {sample} are empty or not to be found! Please check the directories and usage of this script for more info.")
+
 
         files_dict = {"STAR_final": ss_log_final, "PICARD_GC": pc_gc_file, "PICARD_RNASeq": pc_rs_file, "Gene_Features": ss_gene_features, "GeneFull_Features": ss_genefull_features, 
                       "Gene_Summary": ss_gene_summary, "GeneFull_Summary": ss_genefull_summary, "Barcodes_stats": ss_bc_stats, "Demultiplex_stats": dem_file}
-
-
-
-        # print(f"The file dict is {files_dict}")
 
 
         # Check for each sample in the list if it has all required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
@@ -321,14 +341,6 @@ if __name__ == "__main__":
         for k, v in per_samp_check.items():
             if k not in samp_excl_progs and v == "":
                 samp_excl_progs.append(k)
-
-
-        # Example for Adding additional info per sample
-        sample_name=sample
-        r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
-        preparer = sample.split('-')[2][0]
-        replicate = sample.split('-')[2][1]
-        set_val = sample[:-6]
 
 
            
@@ -343,15 +355,31 @@ if __name__ == "__main__":
     combo_log = pd.concat([combo_log, temp_df], ignore_index=True)
 
 
-    try:
-        combo_log["STARsolo", "DEMUX", "DOUBLET_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-    except:
-        print("Doublet ratio for: {}".format(sample_name))
+    # If the demux file is not used for compilation then skip these steps
+    if args.dem_info != None:
+        try:
+            # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+        except:
+            print("Can't calculate Doublet ratio! Check output file for more info!")
 
-    try:
-        combo_log["STARsolo", "DEMUX", "NEGATIVE_PCT"] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-    except:
-        print("Negative ratio for: {}".format(sample_name))
+        try:
+            # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX", "N_NEGATIVE_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+        except:
+            print("Can't calculate Negative ratio! Check output file for more info!")
+
+        try:
+            combo_log[("STARsolo", "DEMUX", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX", "N_DOUBLET_CELLS_CS")].astype(int).values
+                        -combo_log[("STARsolo", "DEMUX", "N_NEGATIVE_CELLS_CS")].astype(int).values)
+
+        except:
+            print("Can't calculate percentage of cells retained for demultiplexing")
+
+        try:
+            combo_log[("STARsolo", "DEMUX", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
+        except:
+            print("Can't calculate percentage of cells retained for demultiplexing")
 
 
     combo_log.to_csv(out, sep = "\t", index=False)

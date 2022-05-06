@@ -38,7 +38,7 @@ run_calico_solo:
 demux_samples_calico_solo_STARsolo:
   - "-q express"
 
-vireoSNP:
+cellSNP:
   - "-q express"
 
 # split_bams:
