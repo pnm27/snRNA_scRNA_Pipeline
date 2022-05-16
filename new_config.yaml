@@ -191,6 +191,10 @@ phe_demux_pipeline:
   wet_lab_file_cols:
   - Set_number
   - unique_sample_ID
+  vireo_donors: donor_ids.tsv
+  vireo_donor_file_cols:
+  - cell
+  - donor_id
 
 
 # split bams pipeline------------------------------------------------------
