@@ -10,7 +10,7 @@ BEGIN {
 NR==1 {
 	print "CHR", "POS", "REF", "ALT", "AD_total", "DP_total", "AD_1", "DP_1", "AD_2", "DP_2", "AD_3", "DP_3", "AD_4", "DP_4", "AD_5", "DP_5", "AD_6", "DP_6"
 }
-NR>38 { 
+$0 !~ /^#/ { 
 	l=""
 	ad_id=0
 	dp_id=0

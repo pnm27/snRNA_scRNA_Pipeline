@@ -30,20 +30,20 @@ def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     test_len = len(sub)
     # No command-line params and inference that all HTOs are present in one row separated by ","
     if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
-        return sub.split(',')
+        return sub.values[0].split(',')
     # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
     elif hs == None and test_len == 1 and len(sub.split()) > 1:
-        return sub.split(',')
+        return sub.values[0].split(',')
     elif hs == None and test_len > 1:
         return sub.tolist()
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
-        return sub.split(hto_sep)
+        return sub.values[0].split(hs)
     elif hs != None and test_len > 1:
-        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {f_name}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
+        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {fname}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
-        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete HTO values in the wet lab file {f_name}")
+        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete HTO values in the wet lab file {fname}")
     else:
-        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {f_name}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
+        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {fname}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
 
 # Assumes similar construct like the HTOs
@@ -52,14 +52,14 @@ def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
     test_len = len(sub)
     # No command-line params and inference that all HTOs are present in one row separated by ","
     if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
-        return sub.split(',')
+        return sub.values[0].split(',')
     # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
     elif hs == None and test_len == 1 and len(sub.split()) > 1:
-        return sub.split(',')
+        return sub.values[0].split(',')
     elif hs == None and test_len > 1:
         return sub.tolist()
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
-        return sub.split(hto_sep)
+        return sub.values[0].split(hs)
     elif hs != None and test_len > 1:
         raise ValueError(f"After subsetting sample {s_name} from the wet lab file {fname}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
     elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
@@ -133,13 +133,14 @@ t2g.index = t2g.gene_id
 t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
 
 
-# Shan's new csv file
+# Wet Lab file
 df = read_files_ext(args.wet_lab_file)
 if df.loc[df[cols[0]] == samp].empty:
     raise ValueError(f"Check dtypes!\nSample (variable name 'var', data type {type(samp)}, with value {samp} ) couldn't be subset from the wet lab file.\nData types for the wet lab file:\n{df.dtypes}")
 else:
     df = df.loc[df[cols[0]] == samp]
 
+# Filter wet lab file's columns, if needed
 
 def ret_htos_calico_solo(bcs, df_s):
 

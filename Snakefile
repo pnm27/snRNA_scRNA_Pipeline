@@ -19,6 +19,9 @@ configfile: "new_config.yaml"
 round_num=[] # wildcard 'num'
 sample_name=[] # wildcard 'id1'
 
+# For multiruns of cellSNP and vireoSNP
+# VCF_TYPE=config['phe_demux_pipeline']['vcf_info_columns'][2:]
+
 
 # Limitting Step for the run of Snakemake, creating wildcards
 with open(config['select_fastqs']) as fq:
@@ -42,6 +45,7 @@ include: "rules/calico_solo_demux.snkmk"
 include: "rules/split_bams.snkmk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"
+# include: "rules/pheno_demux2.snkmk"
 
 
 rule all:
