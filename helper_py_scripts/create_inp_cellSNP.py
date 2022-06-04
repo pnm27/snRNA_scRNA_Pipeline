@@ -53,7 +53,7 @@ cells=adata.n_obs
 
 # Santiy check for the arguments
 if not args.keep_all_cells:
-    if extra_val not None and extra_val != "None":
+    if extra_val is not None and extra_val != "None":
         if extra_val.lower() not in adata.obs[args.column].str.lower():
             raise ValueError("The word(s) provided to the argument 'extra' is not found in the given column (argument 'column')")
         else:
@@ -61,7 +61,7 @@ if not args.keep_all_cells:
     else:
         extra_val_ser=pd.Series(repeat(True, cells))
 
-    if args.doublet.lower() not None and args.doublet.lower() != "None":
+    if args.doublet.lower() is not None and args.doublet.lower() != "None":
         if args.doublet.lower() not in adata.obs[args.column].str.lower():
             raise ValueError("The word(s) provided to the argument 'doublet' is not found in the given column (argument 'column')")
         else:
@@ -69,7 +69,7 @@ if not args.keep_all_cells:
     else:
         doublet_ser=pd.Series(repeat(True, cells))
 
-    if args.negative.lower() not None and args.negative.lower() != "None":
+    if args.negative.lower() is not None and args.negative.lower() != "None":
         if args.negative.lower() not in adata.obs[args.column].str.lower():
             raise ValueError("The word(s) provided to the argument 'negative' is not found in the given column (argument 'column')")
         else:

@@ -44,7 +44,7 @@ rule create_mismatch_fasta:
 
     shell: 
         """
-        if [[ "{params.headers}" == "yes" ]]; then
+        if [[ "{params.headers}" == "yes" ]] || [[ "{params.headers}" == "True" ]]; then
             python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
 
         else
