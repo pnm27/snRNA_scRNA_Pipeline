@@ -165,6 +165,7 @@ phe_demux_pipeline:
   # Optional params
   demux_col: SubID_cs
   barcode_len: 16
+  include_all_cells: yes
   doublet: Doublet
   negative: Negative
   na: Not Present

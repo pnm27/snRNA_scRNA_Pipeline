@@ -51,6 +51,7 @@ rule create_inp_cellSNP:
     params:
         col_name=config['phe_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
         bc_len=config['phe_demux_pipeline']['barcode_len'], # Barcode length
+        keep_all_cells=config['phe_demux_pipeline']['include_all_cells']
         doub=config['phe_demux_pipeline']['doublet'], # Doublets classified as
         neg=config['phe_demux_pipeline']['negative'], # Negatives classified as
         na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
@@ -66,7 +67,10 @@ rule create_inp_cellSNP:
 
     shell:
         """
-        python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+        if [[ "{params.keep_all_cells" == "yes" ]]; then
+            python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -b {params.bc_len} --keep_all_cells
+        else
+            python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
         sleep 100
         """
 
@@ -91,7 +95,8 @@ rule cellSNP:
         # bc=get_filt_barcodes,
         bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
         bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        ref_snps=multi_vcfs
+        ref_snps=multi_vcfs,
+        genome_1k_ref=config['phe_demux_pipeline']['genome_1k_ref']
 
     # group: "phenotype-demux"
 
@@ -106,7 +111,9 @@ rule cellSNP:
         processors=config['phe_demux_pipeline']['n_proc'],
         min_maf=config['phe_demux_pipeline']['min_maf'],
         min_ct=config['phe_demux_pipeline']['min_aggr_count'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", '')
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", ''),
+        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}",
+        threads=config['phe_demux_pipeline']['bcftools_thread']
 
     threads: 1
 
@@ -114,64 +121,96 @@ rule cellSNP:
         mem_mb=allocate_mem_cS,
         time_min=allocate_time_cS
 
-    shell: "cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {input.ref_snps} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip"
-
-
-# If one wants to split a compiled vcf into per-pool vcf
-# if config['phe_demux_pipeline']['split_compiled_vcf']:
-#     rule split_compiled_vcf:
-#         input:
-
-#         output:
-
-#         shell:
-#             """
-
-#             """
-
-
-rule filter_cellSNP:
-    input:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}",
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}",
-        bed_file=config['phe_demux_pipeline']['top_genes_cs_filt_bed']
-
-    output:
-        temp(f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"),
-        f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}"
-
-    params:
-        threads=config['phe_demux_pipeline']['bcftools_thread'],
-        temp_vcf_gz_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}",
-        temp_vcf_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}".replace('.gz', ''),
-        temp_vcf_gz_file2=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp2_cellsnp_base']}"
-
-    threads: 1
-
-    resources:
-        mem_mb=allocate_mem_FCS,
-        time_min=allocate_time_FCS
-
     shell:
         """
-        ml bcftools
-        if [ ! -f "{input[0]}.csi" ]; then bcftools index {input[0]}; fi
-        bcftools view --threads {params.threads} -Oz -o {output[0]} -R {input.bed_file} {input[0]}
-        zcat {input[0]} | grep "^#" | grep -E "fileformat|INFO.*AD|INFO.*DP|INFO.*OTH|contig" | cat - <(zcat {input[0]} | tail -n +2) > {params.temp_vcf_file}
-        bcftools view -Oz -o {params.temp_vcf_gz_file} {params.temp_vcf_file}
-        bcftools index {params.temp_vcf_gz_file}
-        bcftools view --threads {params.threads} -Oz -o {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file}
-        zcat {params.temp_vcf_gz_file2} | sed "2,33d" | gzip > {output[1]}
-        rm {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file} {params.temp_vcf_file}
+        ml bcftools/1.15.1
+        bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} {input.ref_snps} {input.genome_1k_ref}
+        cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         """
+        
+
+
+
+# rule filter_cellSNP:
+#     input:
+#         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}",
+#         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}",
+#         bed_file=config['phe_demux_pipeline']['top_genes_cs_filt_bed']
+
+#     output:
+#         temp(f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"),
+#         f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}"
+
+#     params:
+#         threads=config['phe_demux_pipeline']['bcftools_thread'],
+#         temp_vcf_gz_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}",
+#         temp_vcf_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}".replace('.gz', ''),
+#         temp_vcf_gz_file2=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp2_cellsnp_base']}"
+
+#     threads: 1
+
+#     resources:
+#         mem_mb=allocate_mem_FCS,
+#         time_min=allocate_time_FCS
+
+#     shell:
+#         """
+#         ml bcftools
+#         if [ ! -f "{input[0]}.csi" ]; then bcftools index {input[0]}; fi
+#         bcftools view --threads {params.threads} -Oz -o {output[0]} -R {input.bed_file} {input[0]}
+#         zcat {input[0]} | grep "^#" | grep -E "fileformat|INFO.*AD|INFO.*DP|INFO.*OTH|contig" | cat - <(zcat {input[1]} | tail -n +2) > {params.temp_vcf_file}
+#         bcftools view -Oz -o {params.temp_vcf_gz_file} {params.temp_vcf_file}
+#         bcftools index {params.temp_vcf_gz_file}
+#         bcftools view --threads {params.threads} -Oz -o {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file}
+#         zcat {params.temp_vcf_gz_file2} | sed "2,33d" | gzip > {output[1]}
+#         rm {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file} {params.temp_vcf_file}
+#         """
+
+
+# rule filter_cellSNP:
+#     input:
+#         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}",
+#         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}"
+
+#     output:
+#         temp(f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"),
+#         f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}"
+
+#     params:
+#         threads=config['phe_demux_pipeline']['bcftools_thread'],
+#         temp_vcf_gz_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}",
+#         temp_vcf_file=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp_cellsnp_base']}".replace('.gz', ''),
+#         temp_vcf_gz_file2=f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['temp2_cellsnp_base']}"
+
+#     threads: 1
+
+#     resources:
+#         mem_mb=allocate_mem_FCS,
+#         time_min=allocate_time_FCS
+
+#     shell:
+#         """
+#         ml bcftools
+#         if [ ! -f "{input[0]}.csi" ]; then bcftools index {input[0]}; fi
+#         bcftools view --threads {params.threads} -Oz -o {output[0]} -R {input.bed_file} {input[0]}
+#         zcat {input[0]} | grep "^#" | grep -E "fileformat|INFO.*AD|INFO.*DP|INFO.*OTH|contig" | cat - <(zcat {input[1]} | tail -n +2) > {params.temp_vcf_file}
+#         bcftools view -Oz -o {params.temp_vcf_gz_file} {params.temp_vcf_file}
+#         bcftools index {params.temp_vcf_gz_file}
+#         bcftools view --threads {params.threads} -Oz -o {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file}
+#         zcat {params.temp_vcf_gz_file2} | sed "2,33d" | gzip > {output[1]}
+#         rm {params.temp_vcf_gz_file2} {params.temp_vcf_gz_file} {params.temp_vcf_file}
+#         """
+
+
+
 
 
 
 
 rule vireoSNP:
     input:
-        # f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
-        f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
+        # f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
   
     output:
         f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}"
