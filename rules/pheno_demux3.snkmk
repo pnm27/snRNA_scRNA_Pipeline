@@ -51,7 +51,7 @@ rule create_inp_cellSNP:
     params:
         col_name=config['phe_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
         bc_len=config['phe_demux_pipeline']['barcode_len'], # Barcode length
-        keep_all_cells=config['phe_demux_pipeline']['include_all_cells']
+        keep_all_cells=config['phe_demux_pipeline']['include_all_cells'],
         doub=config['phe_demux_pipeline']['doublet'], # Doublets classified as
         neg=config['phe_demux_pipeline']['negative'], # Negatives classified as
         na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
