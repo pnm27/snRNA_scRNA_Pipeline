@@ -15,24 +15,8 @@ configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
 
 
-#Parse wildcards from the file specified in config.yaml
-round_num=[] # wildcard 'num'
-sample_name=[] # wildcard 'id1'
-
-# For multiruns of cellSNP and vireoSNP
-# VCF_TYPE=config['phe_demux_pipeline']['vcf_info_columns'][2:]
-
-
-# Limitting Step for the run of Snakemake, creating wildcards
-with open(config['select_fastqs']) as fq:
-    for line in fq:
-        line_sp = line.split('/')
-        round_num.append(line_sp[0])
-        sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
-
-
-
-include: "rules/produce_targets.snkmk"
+include: "rules/input_processing.snkmk" # Process input files to create lists for wildcards
+include: "rules/produce_targets.snkmk" # Produce target files for the pipeline using previously created lists for wildcards for the input files
 include: "rules/helper_functions.snkmk"
 include: "rules/resources.snkmk"
 include: "rules/STARsolo.snkmk"
