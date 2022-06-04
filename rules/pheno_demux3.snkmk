@@ -71,6 +71,7 @@ rule create_inp_cellSNP:
             python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -b {params.bc_len} --keep_all_cells
         else
             python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+        fi
         sleep 100
         """
 
