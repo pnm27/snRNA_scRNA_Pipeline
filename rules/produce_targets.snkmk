@@ -109,95 +109,96 @@ def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 
 # Add wildcards info here in the 'expand' function
 def produce_targets(conf_f) -> "list":
+    # conf_f['last_step'] is expected to be None if yaml file is provided for the config['select_fastqs']
+    if conf_f['last_step'] is not None:
+        target_step = conf_f['last_step'].lower()
+        folder_st_bam = conf_f['fold_struct']
+        folder_st = conf_f['fold_struct_demux']
 
-    target_step = conf_f['last_step'].lower()
-    folder_st_bam = conf_f['fold_struct']
-    folder_st = conf_f['fold_struct_demux']
 
+        if target_step == "all":
+            target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
 
-    if target_step == "all":
-        target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
+            final_target_list = [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list = [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_kb_solo":
+            target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
 
-    elif target_step == "starsolo_kb_solo":
-        target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo":
+            target_files = targets_STARsolo(conf_f=conf_f)
 
-    elif target_step == "starsolo":
-        target_files = targets_STARsolo(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+            
+        elif target_step == "starsolo_picard":
+            target_list = targets_PICARD(conf_f=conf_f, progs='all')
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
-        
-    elif target_step == "starsolo_picard":
-        target_list = targets_PICARD(conf_f=conf_f, progs='all')
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_rnaseqmet":
+            target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
 
-    elif target_step == "starsolo_rnaseqmet":
-        target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_gcbiasmet":
+            target_list = targets_PICARD(conf_f=conf_f, progs='GC')
 
-    elif target_step == "starsolo_gcbiasmet":
-        target_list = targets_PICARD(conf_f=conf_f, progs='GC')
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_cellsnp":
+            target_files = targets_cellSNP(conf_f=conf_f)
 
-    elif target_step == "starsolo_cellsnp":
-        target_files = targets_cellSNP(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]    
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]    
+        elif target_step == "starsolo_split_bams":
+            target_files = targets_SplitBams(conf_f=conf_f)
 
-    elif target_step == "starsolo_split_bams":
-        target_files = targets_SplitBams(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_rnaseqmet_kb_solo":
+            target_files = targets_all(conf_f=conf_f, progs='RNAseq')
 
-    elif target_step == "starsolo_rnaseqmet_kb_solo":
-        target_files = targets_all(conf_f=conf_f, progs='RNAseq')
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_gcbiasmet_kb_solo":
+            target_files = targets_all(conf_f=conf_f, progs='GC')
 
-    elif target_step == "starsolo_gcbiasmet_kb_solo":
-        target_files = targets_all(conf_f=conf_f, progs='GC')
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+            
+        # Not yet implemented
+        elif target_step == "starsolo_gt_demux":
+            target_files = targets_gt_demux(conf_f=conf_f)
 
-        
-    # Not yet implemented
-    elif target_step == "starsolo_gt_demux":
-        target_files = targets_gt_demux(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
 
-        final_target_list= [expand(f"{target}", id1=sample_name) for target in target_files]
+        elif target_step == "starsolo_gt_demux_multi_vcf":
+            target_files = targets_gt_demux2(conf_f=conf_f)
+            suff = conf_f['phe_demux_pipeline']['donors_vcf']
+            # If multiple vcfs per sample needs to be run
+            # temp_list= [expand(f"{target}", zip, num=round_num, id1=sample_name) for target in target_files][0] # Multiple wildcards example
+            temp_list= [expand(f"{target}", id1=sample_name) for target in target_files][0]
+            final_target_list=[expand(f"{t}{{vcf_type}}/{suff}", vcf_type=VCF_TYPE) for t in temp_list]
 
-    elif target_step == "starsolo_gt_demux_multi_vcf":
-        target_files = targets_gt_demux2(conf_f=conf_f)
-        suff = conf_f['phe_demux_pipeline']['donors_vcf']
-        # If multiple vcfs per sample needs to be run
-        # temp_list= [expand(f"{target}", zip, num=round_num, id1=sample_name) for target in target_files][0] # Multiple wildcards example
-        temp_list= [expand(f"{target}", id1=sample_name) for target in target_files][0]
-        final_target_list=[expand(f"{t}{{vcf_type}}/{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+            # Single vcf out of a set of multiple vcfs
+            # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", zip, num=round_num, id1=sample_name) for target in target_files] # Multiple wildcards example
+            # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", id1=sample_name) for target in target_files]
 
-        # Single vcf out of a set of multiple vcfs
-        # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", zip, num=round_num, id1=sample_name) for target in target_files] # Multiple wildcards example
-        # final_target_list= [expand(f"{target}{VCF_TYPE}/{suff}", id1=sample_name) for target in target_files]
+        else:
+            # print("Wrong inputs to produce_targets function!!")
+            return []
 
-    else:
-        # print("Wrong inputs to produce_targets function!!")
-        return []
+        # Implementation is now through a separate script
+        # if not check_log_version(conf_f=conf_f):
+        #     return final_target_list
+        # else:
+        #     final_target_list.append(check_log_version(conf_f=conf_f))
+        #     return final_target_list
+            
 
-    # Implementation is now through a separate script
-    # if not check_log_version(conf_f=conf_f):
-    #     return final_target_list
-    # else:
-    #     final_target_list.append(check_log_version(conf_f=conf_f))
-    #     return final_target_list
-        
-
-    # Fail-safe return statement
-    return final_target_list
+        # Fail-safe return statement
+        return final_target_list
 
 
 

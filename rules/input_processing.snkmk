@@ -13,6 +13,23 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
 
 # If the input is yaml file then validate it and process it
 elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
+
+    # Parse the yaml file
+    with open(workflow.source_path("../resources/presets.yaml")) as fout:
+        sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
+
+    module_list = []
+    files_list=[] # List of list
+    wildcards_list=[] # List of list
+
+    # Check if the yaml file has list of inputs or regex patterns
+    for k, v in sample_dict.keys():
+        module_list.append(k)
+
+        
+
+
+
     pass
 
 # If the input is a dir containing all the fastqs

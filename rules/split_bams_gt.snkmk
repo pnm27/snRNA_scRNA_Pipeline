@@ -5,7 +5,29 @@
 # 	return ' '.join(hash_file.iloc[:, 0].unique().tolist())
 
 
+def subset_to_chr(wildcards):
+    if config['chr_prefix'] == None or config['split_bams_pipeline_phe_demux']['subset_chr'].startswith(config['chr_prefix']):
+        return config['split_bams_pipeline_phe_demux']['subset_chr']
+    else:
+        return config['chr_prefix'] + config['split_bams_pipeline_phe_demux']['subset_chr'] 
 
+
+def get_hash_file(wildcards):
+    # Not updated for multi_modules
+    if conf_f['last_step'] is not None and config['last_step'].lower().endswith('_solo') or config['last_step'].lower() == 'all':
+        return f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
+    # Create hash from vireo_SNPs output
+    # If donor names aren't the same then use a converter file to do so
+    # The output file should have headers (the same as when calico_solo's output when run through the rule create_inp_splitBams)
+    elif conf_f['last_step'] is not None config['last_step'].lower() == "starsolo_gt_demux":
+
+
+
+def get_bam_to_split(wildcards):
+    if config['split_bams_pipeline_phe_demux']['subset_chr'] is None:
+        return f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+    else:
+        return f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
 
 
 
@@ -41,15 +63,32 @@ rule create_inp_splitBams:
         """
 
 
+
+rule create_inp_splitBams_phe_demux:
+    input:
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}"
+
+    output:
+        f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{{vcf_type}}_bc_hash.txt"
+
+    params:
+        conv_df=config['split_bams_pipeline_phe_demux']['gt_conv']
+
+    script: "helper_py_scripts/create_inp_splitBam_phe_demux.py"
+
+
+
+
 rule filt_chr_bams:
     input:
         f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
+        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
 
     params:
-        temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam"
+        temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam",
+        sub_chr=get_chr_pref
 
 
     threads: 1
@@ -62,24 +101,24 @@ rule filt_chr_bams:
         """
         ml samtools
         set -x
-        samtools view {input} 1 -bho {output}
+        samtools view {input} {params.sub_chr} -bho {output}
         """
 
 
 rule split_bams:
     input:
-        short_bam=f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}",
-        barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
+        short_bam=get_bam_to_split,
+        barcodes_vs_donor=get_hash_file
 
     priority: 7
 
     params:
         # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
-        temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['new_temp_dir2']}{config['fold_struct_bam_split2']}",
-        split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
-        per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir2'],
-        time_limit_per_donor=config['split_bams_pipeline']['time_per_donor']
+        temp_bam_per_cell_dir=f"{config['split_bams_pipeline_phe_demux']['new_temp_dir2']}{config['fold_struct_bam_split2']}",
+        split_bams_dir=f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
+        per_donor_log_dir=config['split_bams_pipeline_phe_demux']['per_donor_split_log_dir2'],
+        time_limit_per_donor=config['split_bams_pipeline_phe_demux']['time_per_donor']
         # n_donors=get_donors
 
 
@@ -90,14 +129,14 @@ rule split_bams:
         time_min=10
 
     output:
-        f"{config['split_bams_pipeline']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
 
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
         # bam_files=0
         proc_donors=[d for d in hash_file.iloc[:, 0].unique() if not os.path.isfile(os.path.join(params.split_bams_dir, f"{d}.bam"))]
         job_name_l=[]
-        samp_num=('-'.join(os.path.basename(input.short_bam).replace('_chr1.bam', '').split('-')[1:3]))
+        samp_num=('-'.join(os.path.basename(input.short_bam).replace('_chr1.bam', '').split('-')[1:3])) # generalize the name
         # If proc_donors is empty don't run
         if proc_donors:
             for donor in proc_donors:
