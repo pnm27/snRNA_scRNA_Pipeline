@@ -18,10 +18,7 @@ localrules: create_bed
 
 rule create_inp_splitBams:
     input:
-        if config['last_step'].lower() == "starsolo_gt_demux":
-
-        elif config['last_step'].lower().endswith('_solo') or config['last_step'].lower() == 'all':
-            f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
 
     priority: 7
 

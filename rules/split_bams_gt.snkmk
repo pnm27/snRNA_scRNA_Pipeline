@@ -14,13 +14,13 @@ def subset_to_chr(wildcards):
 
 def get_hash_file(wildcards):
     # Not updated for multi_modules
-    if conf_f['last_step'] is not None and config['last_step'].lower().endswith('_solo') or config['last_step'].lower() == 'all':
+    if conf_f['last_step'] is not None and '_solo' in config['last_step'].lower() or config['last_step'].lower() == 'all':
         return f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
     # Create hash from vireo_SNPs output
     # If donor names aren't the same then use a converter file to do so
     # The output file should have headers (the same as when calico_solo's output when run through the rule create_inp_splitBams)
-    elif conf_f['last_step'] is not None config['last_step'].lower() == "starsolo_gt_demux":
-
+    elif conf_f['last_step'] is not None and config['last_step'].lower() == "starsolo_gt_demux": # change this soon
+        return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{{vcf_type}}_bc_hash.txt"
 
 
 def get_bam_to_split(wildcards):
