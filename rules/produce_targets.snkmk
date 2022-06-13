@@ -206,7 +206,6 @@ def produce_targets(conf_f) -> "list":
             else:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
-            f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}_{{vcf_type}}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
 
         else:
             # print("Wrong inputs to produce_targets function!!")
