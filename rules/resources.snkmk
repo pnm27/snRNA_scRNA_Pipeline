@@ -55,6 +55,10 @@ def allocate_mem_CICS(wildcards, attempt):
     return 2000+500*(attempt-1)
 
 
+def allocate_mem_CISPD(wildcards, attempt):
+    return 500+500*(attempt-1)
+
+
 def allocate_mem_GIH(wildcards, attempt):
     return 3500*attempt+3500 # Not finalised yet
 
@@ -80,6 +84,9 @@ def allocate_mem_vS(wildcards, attempt):
     else:
         return 22000+500*(attempt-1)
 
+
+def allocate_mem_AOTFCM(wildcards, attempt):
+    return 2000+500*(attempt-1)
 
 def allocate_mem_US(wildcards, attempt):
     return 250*attempt+250
@@ -192,6 +199,10 @@ def allocate_time_vS(wildcards, attempt):
         return 180+40*(attempt-1)
     else:
         return 180+60*(attempt-1)
+
+
+def allocate_time_AOTFCM(wildcards, attempt):
+    return 15+10*(attempt-1)
 
 
 def allocate_time_US(wildcards, attempt):

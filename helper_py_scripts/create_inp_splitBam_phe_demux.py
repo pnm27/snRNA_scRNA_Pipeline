@@ -17,8 +17,10 @@ def save_df(df, suff, op):
 
 
 vir_class = pd.read_csv(snakemake.input[0], sep='\t', usecols=["cell", "donor_id"])
-vir_class = vir_class[(vir_class["donor_id"] != "doublet") & (vir_class["donor_id"] != "unassigned")].reset_index(drop=True, inplace=True)
+vir_class = vir_class[(vir_class["donor_id"] != "doublet") & (vir_class["donor_id"] != "unassigned")]
+vir_class.reset_index(drop=True, inplace=True)
 # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+vir_class["donor_id"] = vir_class["donor_id"].apply(lambda x: '_'.join(x.split('_')[1:]) if not x.startswith('donor') else x)
 
 # For converting genotype IDs to Subject IDs-------------------------------
 conv_df = pd.read_csv(snakemake.params['conv_df'])

@@ -14,20 +14,29 @@ def subset_to_chr(wildcards):
 
 def get_hash_file(wildcards):
     # Not updated for multi_modules
-    if conf_f['last_step'] is not None and '_solo' in config['last_step'].lower() or config['last_step'].lower() == 'all':
+    if config['last_step'] is not None and config['last_step'].lower() == "starsolo_split_bams":
         return f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
     # Create hash from vireo_SNPs output
     # If donor names aren't the same then use a converter file to do so
     # The output file should have headers (the same as when calico_solo's output when run through the rule create_inp_splitBams)
-    elif conf_f['last_step'] is not None and config['last_step'].lower() == "starsolo_gt_demux": # change this soon
-        return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{{vcf_type}}_bc_hash.txt"
+    elif config['last_step'] is not None and config['last_step'].lower() == "starsolo_split_bams_phe_demux": # change this soon
+        return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{wildcards.vcf_type}_bc_hash.txt"
+    else:
+        raise ValueError("Something is wrong with the expected input for the rule split_bams")
 
 
 def get_bam_to_split(wildcards):
     if config['split_bams_pipeline_phe_demux']['subset_chr'] is None:
-        return f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
     else:
-        return f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
+        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
+
+
+def get_mito(wildcards):
+    if config['chr_prefix'] == None or config['mito'].startswith(config['chr_prefix']):
+        return config['mito']
+    else:
+        return config['chr_prefix'] + config['mito'] 
 
 
 
@@ -53,10 +62,10 @@ rule create_inp_splitBams:
     shell:
         """
         if [ "{params.overwrite}" == True ]; then
-            python3 helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
+            python3 ../helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
 
         else
-            python3 helper_py_scripts/create_inp_splitBam.py {input} {output}
+            python3 ../helper_py_scripts/create_inp_splitBam.py {input} {output}
 
         fi
         sleep 60
@@ -74,21 +83,27 @@ rule create_inp_splitBams_phe_demux:
     params:
         conv_df=config['split_bams_pipeline_phe_demux']['gt_conv']
 
-    script: "helper_py_scripts/create_inp_splitBam_phe_demux.py"
+    threads: 1
+
+    resources:
+        mem_mb=allocate_mem_CISPD,
+        time_min=10
+
+    script: "../helper_py_scripts/create_inp_splitBam_phe_demux.py"
 
 
 
 
 rule filt_chr_bams:
     input:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['STAR_solo_pipeline']['bam']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     output:
-        f"{config['STAR_solo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
 
     params:
         temp_bam=f"{config['split_bams_pipeline']['sort_temp_dir']}temp_bam/{{num}}_{{id1}}.bam",
-        sub_chr=get_chr_pref
+        sub_chr=subset_to_chr
 
 
     threads: 1
@@ -125,11 +140,11 @@ rule split_bams:
     threads: 1
 
     resources:
-        mem_mb=allocate_mem_SB
+        mem_mb=allocate_mem_SB,
         time_min=10
 
     output:
-        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}_{{vcf_type}}.txt"  # Proxy to the output
 
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
@@ -137,6 +152,15 @@ rule split_bams:
         proc_donors=[d for d in hash_file.iloc[:, 0].unique() if not os.path.isfile(os.path.join(params.split_bams_dir, f"{d}.bam"))]
         job_name_l=[]
         samp_num=('-'.join(os.path.basename(input.short_bam).replace('_chr1.bam', '').split('-')[1:3])) # generalize the name
+        if not os.path.exists(params.temp_bam_per_cell_dir):
+            os.makedirs(params.temp_bam_per_cell_dir)
+
+        if not os.path.exists(params.split_bams_dir):
+            os.makedirs(params.split_bams_dir)
+
+        if not os.path.exists(params.per_donor_log_dir):
+            os.makedirs(params.per_donor_log_dir)
+
         # If proc_donors is empty don't run
         if proc_donors:
             for donor in proc_donors:
@@ -144,7 +168,8 @@ rule split_bams:
                 jname=f"NPSAD_{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
                 job_name_l.append(jname)
                 shell("""
-            		jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}")
+                    pwd
+            		jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams_gt.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.short_bam}")
                     jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                     echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output}
                     sleep 10
