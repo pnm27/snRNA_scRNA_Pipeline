@@ -30,23 +30,23 @@ def set_don_ids(x) -> str:
         return '_'.join(x.split('_')[1:])
 
 
-def get_don_ids(x, t_df) -> pd.DataFrame:
+def get_don_ids(x, t_df) -> str:
     try:
         return t_df.loc[t_df["primary_genotype"] == x, "SubID"].values[0]
     except:
         return x
 
 
-def ret_subj_ids(ser, t_df):
-    headers = ["donor_id", "prob_max", "prob_doublet"]
-    ret_df_l = [headers]
+def ret_subj_ids(ser, t_df) -> pd.DataFrame:
+    headers = ["Subj_ID", "prob_max", "prob_doublet"]
+    ret_df_l = []
     for x in ser:
         try:
-            ret_df_l.append(t_df.loc[t_df["cell"].str.strip() == x.strip(), headers].to_list())
+            ret_df_l.append(t_df.loc[t_df["cell"].str.strip() == x.strip(), headers].values.flatten().tolist())
         except:
             ret_df_l.append(["Not Present", "NA", "NA"])
 
-    return pd.DataFrame(ret_df_l)
+    return pd.DataFrame(ret_df_l, columns=headers)
 
 
 
@@ -73,17 +73,23 @@ args = parser.parse_args()
 ann = ad.read(args.h5ad_file)
 vir_class = read_files_ext(args.donors_file)
 conv_df = pd.read_csv(args.converter_file)
+op = args.output_file
+
+# Create necessary folders
+if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
+    os.makedirs(op.replace(os.path.basename(op), ''))
+
 
 # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
 vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
-conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unqiue()), ["SubID", "primary_genotype"]]
+conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unique()), ["SubID", "primary_genotype"]]
 vir_class['Subj_ID'] = vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
 del vir_class['donor_id']
 
 # get_df = adata.obs_names.to_series().apply(ret_subj_ids, args=(vir_class,))
-get_df = ret_subj_ids(adata.obs_names.to_list(), vir_class)
-ann.obs['SubID_vS'] = get_df["donor_id"]
-ann.obs['max_prob'] = get_df["prob_max"]
-ann.obs['doublet_prob'] = get_df["prob_doublet"]
+get_df = ret_subj_ids(ann.obs_names.to_list(), vir_class)
+ann.obs['SubID_vS'] = get_df["Subj_ID"].to_list()
+ann.obs['max_prob'] = get_df["prob_max"].to_list()
+ann.obs['doublet_prob'] = get_df["prob_doublet"].to_list()
 
-ann.write(args.output_file)
+ann.write(op)

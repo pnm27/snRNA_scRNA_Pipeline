@@ -79,7 +79,6 @@ sc.logging.print_version_and_date()
 #Parse Command-Line arguments
 parser = argparse.ArgumentParser(description="Demultiplex sample based on hahsolo produced output")
 
-parser.add_argument('hashsolo_out', help="Path to cached output of hashsolo(h5ad)")
 parser.add_argument('matrix_file', help="Path to matrix.mtx.gz")
 parser.add_argument('count_matrix', help="Path to store the final count matrix(h5ad)")
 parser.add_argument('demux_info', help="Path to store demultiplexing info (tab-separated txt file)")
@@ -88,6 +87,8 @@ parser.add_argument('wet_lab_file', help="Path to file that contains HTO info fo
 
 
 # Optional parameters
+parser.add_argument('--calico_solo', dest='hashsolo_out', help="Path to cached output of hashsolo(h5ad)")
+parser.add_argument('--vireo_out', help="Path to cached output of hashsolo(h5ad)")
 parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
 parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
 parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
@@ -105,7 +106,11 @@ args = parser.parse_args()
 starsolo_hashsolo_out = args.hashsolo_out
 starsolo_mat = args.matrix_file[:-13]
 cols=args.columns
+op = args.count_matrix
 
+# Create necessary folders
+if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
+    os.makedirs(op.replace(os.path.basename(op), ''))
 
 # Batch info 
 batch=args.sample_name.replace('-', '_')+'_cDNA'
@@ -298,7 +303,7 @@ solo_run_df.to_csv(args.demux_info, sep = "\t", index=False)
 # If Subject IDs aren't 'string' then convert them
 adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
 
-adata.write(args.count_matrix)
+adata.write(op)
 
 ct = datetime.datetime.now()
 print(f"Finished: Processing Sample {batch} at: {ct}")

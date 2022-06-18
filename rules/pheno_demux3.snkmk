@@ -214,7 +214,7 @@ rule vireoSNP:
         # f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
   
     output:
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}", # Subject to removal
+        # f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}", # Subject to removal
         f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}"
         #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
@@ -235,10 +235,72 @@ rule vireoSNP:
     shell:
         """
         if [ "{params.donor_info[donor]}" -eq "6" ]; then
-            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot -p 20 --forceLearnGT
+            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot --forceLearnGT
         else
-            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot -p 20
+            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot
         fi
         sleep 180
         """
 
+
+# Merge this as one from calico_solo
+# rule demux_samples_calico_solo_STARsolo:
+#     input:
+#         f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}",
+#         starsolo_out=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
+
+#     # priority: 8
+
+#     output:
+#         f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
+#         f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}"
+
+#     params:
+#         mito=config['demux_pipeline']['max_mito_percentage'],  # Max mitochodrial genes content per cell
+#         min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
+#         min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+#         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
+#         cols=config['demux_pipeline']['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+#         genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
+#         sample_name="{id1}",
+#         hto_sep=config['demux_pipeline']['hto_sep']
+
+    
+#     resources:
+#         mem_mb=allocate_mem_DXP,
+#         time_min=allocate_time_DXP
+
+#     shell:
+#         """
+#         samp={params.sample_name}
+#         if [[ "{params.hto_sep}" == "None" ]]; then
+#             python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
+#         -s {params.sample_name}
+#         else
+#             python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
+#         -s {params.sample_name} --hto_sep {params.hto_sep}
+#         fi
+#         sleep 100
+#         """
+
+
+# Temporarily add this rule. Figure an elegant way to do this!
+# The ideal one will be where the rule includes both at the same time or either according to the chosen modules
+rule add_obs_to_final_count_matrix:
+    input:
+        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}",
+        config['split_bams_pipeline_phe_demux']['gt_conv']
+
+    output:
+        f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}_{{vcf_type}}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
+
+    resources:
+        mem_mb=allocate_mem_AOTFCM,
+        time_min=allocate_time_AOTFCM
+
+    shell:
+        """
+        python3 helper_py_scripts/demul_samples_ext_vS.py {input[0]} {input[1]} {input[2]} {output}
+        sleep 100
+        """
