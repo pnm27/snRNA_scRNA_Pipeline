@@ -64,3 +64,7 @@ STARsolo_SNV_aware_sort:
 
 shuf_donor_bam:
   - "-q express"
+
+add_obs_to_final_count_matrix:
+  - "-q express"
+  
