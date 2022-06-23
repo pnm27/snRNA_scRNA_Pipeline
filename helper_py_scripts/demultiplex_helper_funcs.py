@@ -1,3 +1,9 @@
+#!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
+
+import scanpy as sc, pandas as pd, numpy as np
+
+
+
 # Basic helper functions-------------------------------------------------------------------------------------------
 def auto_read(fname) -> pd.DataFrame :
     if not os.path.isfile(fname):
