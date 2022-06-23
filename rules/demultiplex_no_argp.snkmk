@@ -74,8 +74,4 @@ if ADD_VIREO or ADD_SOLO:
             mem_mb=allocate_mem_AOTFCM,
             time_min=allocate_time_AOTFCM
 
-        shell:
-            """
-            python3 helper_py_scripts/demul_samples_no_argp.py{input[0]} {input[1]} {input[2]} {output}
-            sleep 100
-        """
+        script: "helper_py_scripts/demul_samples_no_argp.py"
