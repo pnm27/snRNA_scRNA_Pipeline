@@ -53,7 +53,7 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
             mem_mb=allocate_mem_DXP,
             time_min=allocate_time_DXP
 
-        script: "helper_py_scripts/demul_samples_no_argp.py"
+        script: "../helper_py_scripts/demul_samples_no_argp.py"
 
 
 
@@ -74,4 +74,4 @@ if ADD_VIREO or ADD_SOLO:
             mem_mb=allocate_mem_AOTFCM,
             time_min=allocate_time_AOTFCM
 
-        script: "helper_py_scripts/demul_samples_no_argp.py"
+        script: "../helper_py_scripts/demul_samples_no_argp.py"
