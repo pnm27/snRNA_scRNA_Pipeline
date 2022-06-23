@@ -33,7 +33,7 @@ def get_inputs_add_demux(wildcards):
 if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
     rule demux_samples_calico_solo_STARsolo:
         input:
-            **get_inputs_demux()
+            unpack(get_inputs_demux)
 
         output:
             f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
@@ -65,7 +65,7 @@ if ADD_VIREO or ADD_SOLO:
     # To add results of
     rule add_obs_to_final_count_matrix:
         input:
-            **get_inputs_add_demux()
+            unpack(get_inputs_add_demux)
 
         output:
             f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_phe_demux2']}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
