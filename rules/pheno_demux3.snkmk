@@ -102,8 +102,8 @@ rule cellSNP:
     # group: "phenotype-demux"
 
     output:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_cells']}",
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_base']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_base']}"
 
     params:
         # ref_snps=config['phe_demux_pipeline']['ref_snps'],
@@ -113,7 +113,7 @@ rule cellSNP:
         min_maf=config['phe_demux_pipeline']['min_maf'],
         min_ct=config['phe_demux_pipeline']['min_aggr_count'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", ''),
-        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}",
+        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}"[:-1], # remove trailing forward slash
         threads=config['phe_demux_pipeline']['bcftools_thread']
 
     threads: 1
@@ -128,16 +128,16 @@ rule cellSNP:
         bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} {input.ref_snps} {input.genome_1k_ref}
         cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         """
-        
+
 
 rule vireoSNP:
     input:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_cells']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"
         # f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
   
     output:
         # f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}", # Subject to removal
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['donors_classification']}"
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
         #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
 

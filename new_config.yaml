@@ -34,8 +34,11 @@ fold_struct: "{id1}-cDNA/{id1}-cDNA"
 fold_struct_kb: "{id1}-HTO/"
 # Folder structure for demux through the kallisto-bustools pipeline
 fold_struct_demux: "{id1}-HTO/{id1}-HTO"
-# Folder structure for demux through the cellSNP-vireoSNP pipeline
-fold_struct_phe_demux: "{id1}/"
+# Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
+fold_struct_phe_demux: "{num}/Sample_{id1}-cDNA/{vcf_type}/"
+# Folder structure for adding phe demux when calico_solo run exists ('vcf_type' wildcard for multi-vcfs input)
+fold_struct_phe_demux2: "{num}_Sample-{id1}-cDNA_{vcf_type}"
+# Folder structure to get cells for cellSNP from
 fold_struct_filt_bc: "filt_bc_vireo_{num}_Sample_{id1}-cDNA"
 # Folder structures for split bams pipeline
 fold_struct_bam_split1: "{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script

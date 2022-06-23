@@ -38,7 +38,7 @@ else:
 
 
 # Create a dict of wildcards
-wc_d={'id1':sample_name, 'num':sample_name}
+wc_d={'id1':sample_name, 'num':round_num}
 
 # For multiruns of cellSNP and vireoSNP
 # VCF_TYPE=config['phe_demux_pipeline']['vcf_info_columns'][2:]
