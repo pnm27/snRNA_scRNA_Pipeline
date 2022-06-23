@@ -18,6 +18,9 @@ configfile: "new_config.yaml"
 ONLY_SOLO = False
 ONLY_VIREO = False
 BOTH_DEMUX = False # Not eyt implemented the rule
+ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
+ADD_VIREO = True # When a demultiplex run with calico_solo has been done, modify it later
+
 
 include: "rules/input_processing.snkmk"
 include: "rules/produce_targets.snkmk"
@@ -30,6 +33,8 @@ include: "rules/calico_solo_demux.snkmk"
 # include: "rules/pheno_demux.snkmk" # GOD knows why
 # include: "rules/split_fastqs.snkmk" # outdated
 # include: "rules/split_fastqs_2.snkmk" # outdated
+include: "rules/pheno_demux3.snkmk"
+include: "rules/demultiplex_no_argp.snkmk"
 include: "rules/split_bams.snkmk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"

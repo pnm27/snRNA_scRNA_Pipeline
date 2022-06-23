@@ -102,8 +102,8 @@ rule cellSNP:
     # group: "phenotype-demux"
 
     output:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}",
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_base']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_cells']}",
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_base']}"
 
     params:
         # ref_snps=config['phe_demux_pipeline']['ref_snps'],
@@ -113,7 +113,7 @@ rule cellSNP:
         min_maf=config['phe_demux_pipeline']['min_maf'],
         min_ct=config['phe_demux_pipeline']['min_aggr_count'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", ''),
-        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}",
+        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}",
         threads=config['phe_demux_pipeline']['bcftools_thread']
 
     threads: 1
@@ -210,12 +210,12 @@ rule cellSNP:
 
 rule vireoSNP:
     input:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
+        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['cellsnp_cells']}"
         # f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
   
     output:
         # f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}", # Subject to removal
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}"
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['donors_classification']}"
         #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
 
@@ -289,11 +289,11 @@ rule vireoSNP:
 rule add_obs_to_final_count_matrix:
     input:
         f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}",
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}/{config['phe_demux_pipeline']['donors_classification']}",
         config['split_bams_pipeline_phe_demux']['gt_conv']
 
     output:
-        f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}_{{vcf_type}}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
+        f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_phe_demux2']}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
 
     resources:
         mem_mb=allocate_mem_AOTFCM,

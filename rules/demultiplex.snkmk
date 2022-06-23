@@ -1,9 +1,16 @@
 def get_inputs_demux(wildcards):
     ret_dict={}
-    if ONLY_SOLO:
+    if ONLY_SOLO and not config['redo_demux']:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
-    elif ONLY_VIREO:
+    elif ONLY_SOLO and config['redo_demux']:
+        ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
+        ret_dict['prev_count_mtx'] = f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+    elif ONLY_VIREO and not config['redo_demux']:
         ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
+    elif ONLY_VIREO and config['redo_demux']:
+        ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
+        ret_dict['prev_count_mtx'] = f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+
     elif BOTH_DEMUX:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
         ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
@@ -30,7 +37,7 @@ rule demux_samples_calico_solo_STARsolo:
         min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
         min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-        cols=config['demux_pipeline']['columns_to_pick'],  # Which columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+        cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
         sample_name="{id1}",
         hto_sep=config['demux_pipeline']['hto_sep']
@@ -46,15 +53,45 @@ rule demux_samples_calico_solo_STARsolo:
             """
             samp={params.sample_name}
             if [[ "{params.hto_sep}" == "None" ]]; then
-                python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
-            -s {params.sample_name}
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --calico_solo {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name}
             else
-                python3 helper_py_scripts/demul_samples.py {input[0]} {input[1]} {output[0]} {output[1]} {params.genes_info} {params.samples_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --columns {params.cols} \
-            -s {params.sample_name} --hto_sep {params.hto_sep}
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --calico_solo {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name} --hto_sep {params.hto_sep}
             fi
             sleep 100
             """
             )
+        elif ONLY_VIREO:
+            shell(
+            """
+            samp={params.sample_name}
+            if [[ "{params.hto_sep}" == "None" ]]; then
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --vireo_out {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name}
+            else
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --vireo_out {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name} --hto_sep {params.hto_sep}
+            fi
+            sleep 100
+            """
+            )
+        elif BOTH_DEMUX:
+            shell(
+            """
+            samp={params.sample_name}
+            if [[ "{params.hto_sep}" == "None" ]]; then
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --calico_solo {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name}
+            else
+                python3 helper_py_scripts/demul_samples.py {input.starsolo_out} {output[0]} {output[1]} {params.genes_info} {params.samples_info} --calico_solo {input.calico_solo_out} -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                --columns {params.cols} -s {params.sample_name} --hto_sep {params.hto_sep}
+            fi
+            sleep 100
+            """
+            )
+        else:
+            raise ValueError("All global variables (that change according to the demultiplexing method used in the piepline) are all unset!")
 
 
 

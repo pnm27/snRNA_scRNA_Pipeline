@@ -3,6 +3,7 @@
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
 import glob2, os, re, argparse
+from time import sleep
 
  
 
@@ -93,3 +94,4 @@ ann.obs['max_prob'] = get_df["prob_max"].to_list()
 ann.obs['doublet_prob'] = get_df["prob_doublet"].to_list()
 
 ann.write(op)
+sleep(60)
