@@ -1,15 +1,9 @@
 def get_inputs_demux(wildcards):
     ret_dict={'starsolo_out': f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"}
-    if ONLY_SOLO and not config['redo_demux']:
+    if ONLY_SOLO:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
-    elif ONLY_SOLO and config['redo_demux']:
-        ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
-        ret_dict['prev_count_mtx'] = f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
-    elif ONLY_VIREO and not config['redo_demux']:
+    elif ONLY_VIREO:
         ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
-    elif ONLY_VIREO and config['redo_demux']:
-        ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
-        ret_dict['prev_count_mtx'] = f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
 
     elif BOTH_DEMUX:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
@@ -36,7 +30,7 @@ def get_inputs_add_demux(wildcards):
 
 
 
-if not config['redo_demux'] and (ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX):
+if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
     rule demux_samples_calico_solo_STARsolo:
         input:
             **get_inputs_demux()
@@ -62,8 +56,9 @@ if not config['redo_demux'] and (ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX):
         script: "helper_py_scripts/demul_samples_no_argp.py"
 
 
+
 # To do the 'ADD_SOLO' part
-elif config['redo_demux'] and (ADD_VIREO or ADD_SOLO):
+if ADD_VIREO or ADD_SOLO:
 
 
     # If a previous run of the pipeline has produced final_count_matrix using solo
