@@ -125,56 +125,54 @@ def produce_targets(conf_f) -> "list":
         if target_step == "all":
             target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
             ONLY_SOLO = True
-            final_target_list = [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list = [expand(f"{target}", zip, **wc_d) for target in target_files] # if multiple wildcards are present then either 'zip' or 'product' (default)
 
         elif target_step == "starsolo_kb_solo":
             target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
             ONLY_SOLO = True
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo":
             target_files = targets_STARsolo(conf_f=conf_f)
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
             
         elif target_step == "starsolo_picard":
             target_list = targets_PICARD(conf_f=conf_f, progs='all')
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_rnaseqmet":
             target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_gcbiasmet":
             target_list = targets_PICARD(conf_f=conf_f, progs='GC')
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_cellsnp":
             target_files = targets_cellSNP(conf_f=conf_f)
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]    
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]    
 
         elif target_step == "starsolo_split_bams":
             target_files = targets_SplitBams(conf_f=conf_f)
 
-            final_target_list= [expand(f"{target}", **wc_d) for target in target_files]
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_split_bams_phe_demux":
             target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
-            final_target_list= [expand(f"{target}{suff}", **wc_d) for target in target_files][0] # Single wildcard
+            final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_split_bams_phe_demux_multi_vcf":
             target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
-            # If multiple vcfs per sample needs to be run
-            # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
-            final_target_list=[expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+            # If multiple vcfs per sample needs to be run or not
             if isinstance(VCF_TYPE, list):
                 
                 # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
@@ -210,7 +208,8 @@ def produce_targets(conf_f) -> "list":
         elif target_step == "starsolo_gt_demux_multi_vcf":
             target_files = targets_gt_demux2(conf_f=conf_f)
             suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
-            ONLY_VIREO = True
+            # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
+
             # If multiple vcfs per sample needs to be run
             if isinstance(VCF_TYPE, list):
                 

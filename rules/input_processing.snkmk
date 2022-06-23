@@ -29,12 +29,10 @@ elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswi
         
 
 
-
-    pass
-
 # If the input is a dir containing all the fastqs
 elif os.path.isdir(config['select_fastqs']):
-
+    pass
+    
 else:
     raise ValueError("Unrecognized input file! Can't go ahead with the pipeline!")
 
