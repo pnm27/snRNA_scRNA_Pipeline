@@ -32,13 +32,13 @@ elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswi
 # If the input is a dir containing all the fastqs
 elif os.path.isdir(config['select_fastqs']):
     pass
-    
+
 else:
     raise ValueError("Unrecognized input file! Can't go ahead with the pipeline!")
 
 
 # Create a dict of wildcards
-wc_d={'id1':sample_name}
+wc_d={'id1':sample_name, 'num':sample_name}
 
 # For multiruns of cellSNP and vireoSNP
 # VCF_TYPE=config['phe_demux_pipeline']['vcf_info_columns'][2:]
