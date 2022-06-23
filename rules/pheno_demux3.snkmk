@@ -146,7 +146,7 @@ rule vireoSNP:
     params:
         donor_info=get_donors,
         geno_tag=config['phe_demux_pipeline']['donor_genotype'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_vcf']}", '')
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", '')
 
     threads: 5
 
@@ -156,10 +156,5 @@ rule vireoSNP:
         
     shell:
         """
-        if [ "{params.donor_info[donor]}" -eq "6" ]; then
-            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot --forceLearnGT
-        else
-            vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot
-        fi
-        sleep 180
+        vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot
         """

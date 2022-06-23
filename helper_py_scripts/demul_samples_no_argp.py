@@ -12,65 +12,11 @@ from collections import defaultdict, OrderedDict as ord_dict
 import datetime
 import functools
 from time import sleep
- 
+from demultiplex_helper_funcs import parse_HTO, parse_subids, auto_read
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 
-# Basic helper functions-------------------------------------------------------------------------------------------
-def read_files_ext(fname) -> pd.DataFrame :
-    if not os.path.isfile(fname):
-        raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
-    if fname.endswith('.csv'):
-        return pd.read_csv(fname)
-    elif fname.endswith('.tsv'):
-        return pd.read_csv(fname, sep='\t')
-    else:
-        raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
-
-
-# Simplify these 'parse' functions
-def parse_HTO(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
-    sub = wet_lab_df[col_val]
-    test_len = len(sub)
-    # No command-line params and inference that all HTOs are present in one row separated by ","
-    if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
-        return sub.values[0].split(',')
-    # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
-    elif hs == None and test_len == 1 and len(sub.split()) > 1:
-        return sub.values[0].split(',')
-    elif hs == None and test_len > 1:
-        return sub.tolist()
-    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
-        return sub.values[0].split(hs)
-    elif hs != None and test_len > 1:
-        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {fname}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
-    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
-        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete HTO values in the wet lab file {fname}")
-    else:
-        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {fname}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
-
-
-# Assumes similar construct like the HTOs
-def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
-    sub = wet_lab_df[col_val]
-    test_len = len(sub)
-    # No command-line params and inference that all HTOs are present in one row separated by ","
-    if hs == None and test_len == 1 and sub.str.count(',').values[0] > 1:
-        return sub.values[0].split(',')
-    # No command-line params and inference that all HTOs are present in one row separated by whitespaces    
-    elif hs == None and test_len == 1 and len(sub.split()) > 1:
-        return sub.values[0].split(',')
-    elif hs == None and test_len > 1:
-        return sub.tolist()
-    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] > 1:
-        return sub.values[0].split(hs)
-    elif hs != None and test_len > 1:
-        raise ValueError(f"After subsetting sample {s_name} from the wet lab file {fname}, there are multiple rows ({test_len}) of HTOs for this sample while a separator value is also provided.")
-    elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
-        raise ValueError(f"Either the given separator {hs} is wrong or the sample {s_name} has incomplete donor ids in the wet lab file {fname}")
-    else:
-        raise ValueError(f"Something is wrong with the given input(s):\n\twet lab file: {fname}\n\tsample: {s_name}\n\tHTO-separator: {hs}")
 
 
 def redo_test(inp_key, rem_last_n_chars=0) -> Union[str, None]:
@@ -84,78 +30,79 @@ def redo_test(inp_key, rem_last_n_chars=0) -> Union[str, None]:
         return None
 
 
+
 # For calico_solo------------------------------------------------------------------------
 def ret_htos_calico_solo(bcs, df_s):
 
-            # List of htos from the wet lab spreadsheet
-            hto_l = parse_HTO(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
-            # List of subIDs from the wet lab spreadsheet
-            subid_l = parse_subids(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
+    # List of htos from the wet lab spreadsheet
+    hto_l = parse_HTO(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
+    # List of subIDs from the wet lab spreadsheet
+    subid_l = parse_subids(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
 
-            # List of barcodes
-            barc_l = []
-            # SubID from Shan's csv file
-            ret_samp = []
-            # List of HTOs as HTO1, HTO2, etc
-            hash_n = []
-            # Doublets' count
-            doublet_n = 0
-            # Negatives' count
-            negative_n = 0
+    # List of barcodes
+    barc_l = []
+    # SubID from Shan's csv file
+    ret_samp = []
+    # List of HTOs as HTO1, HTO2, etc
+    hash_n = []
+    # Doublets' count
+    doublet_n = 0
+    # Negatives' count
+    negative_n = 0
 
-            for bc in bcs:
-                if bc in dem_cs.obs_names:
-                    hto_n = dem_cs.obs[dem_cs.obs_names == bc].Classification.values[0]
-                    
-                   #samp_n.append(df_shan[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag" == hto_n]), "sample_ID"].values[0])
-                    if hto_n == 'Doublet':
-                        barc_l.append(bc)
-                        hash_n.append(hto_n)
-                        ret_samp.append(hto_n)
-                        doublet_n += 1
-
-                    elif hto_n == 'Negative':
-                        barc_l.append(bc)
-                        hash_n.append(hto_n)
-                        ret_samp.append(hto_n)
-                        negative_n += 1
-
-                    else:
-                        barc_l.append(bc)
-                        hash_n.append(hto_n)
-                        try:
-                            ret_samp.append(subid_l[hto_l.index(hto_n)])
-                        except:
-                            ret_samp.append(hto_n)
-
-
+    for bc in bcs:
+        if bc in dem_cs.obs_names:
+            hto_n = dem_cs.obs[dem_cs.obs_names == bc].Classification.values[0]
             
-            ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
+           #samp_n.append(df_shan[(df_shan["cDNA_ID"] == b) & (df_shan["hashtag" == hto_n]), "sample_ID"].values[0])
+            if hto_n == 'Doublet':
+                barc_l.append(bc)
+                hash_n.append(hto_n)
+                ret_samp.append(hto_n)
+                doublet_n += 1
 
-            return [ser_s, doublet_n, negative_n] #zip(barc_l, samp_n)
-
-
-
-        def ret_samp_names(y, df_info):
-            #print(len(y), len(bc))
-            if y in df_info.index:
-                return df_info.loc[df_info.index == y, 'Sample'].values[0]
-            
-            else:
-                return "Not Present"
-
-
-
-        def ret_hto_number(y, df_info):
-            #print(len(y), len(bc))
-            if y in df_info.index:
-                return df_info.loc[df_info.index == y, 'HTO'].values[0]
+            elif hto_n == 'Negative':
+                barc_l.append(bc)
+                hash_n.append(hto_n)
+                ret_samp.append(hto_n)
+                negative_n += 1
 
             else:
-                return "Not Present"
+                barc_l.append(bc)
+                hash_n.append(hto_n)
+                try:
+                    ret_samp.append(subid_l[hto_l.index(hto_n)])
+                except:
+                    ret_samp.append(hto_n)
 
 
-# For adding vireoSNP classfication
+    
+    ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
+
+    return [ser_s, doublet_n, negative_n] #zip(barc_l, samp_n)
+
+
+
+def ret_samp_names(y, df_info):
+    #print(len(y), len(bc))
+    if y in df_info.index:
+        return df_info.loc[df_info.index == y, 'Sample'].values[0]
+    
+    else:
+        return "Not Present"
+
+
+
+def ret_hto_number(y, df_info):
+    #print(len(y), len(bc))
+    if y in df_info.index:
+        return df_info.loc[df_info.index == y, 'HTO'].values[0]
+
+    else:
+        return "Not Present"
+
+
+# For adding vireoSNP classfication----------------------------------------------------------
 def set_don_ids(x) -> str:
     if x == 'doublet':
         return 'Doublet'
@@ -184,7 +131,6 @@ def ret_subj_ids(ser, t_df) -> pd.DataFrame:
             ret_df_l.append(["Not Present", "NA", "NA"])
 
     return pd.DataFrame(ret_df_l, columns=headers)
-
 
 
 
@@ -273,7 +219,7 @@ if redo is None:
 
 
     # Wet Lab file, Filter wet lab file's columns, if needed
-    df = read_files_ext(snakemake.params.samples_info)
+    df = auto_read(snakemake.params.samples_info)
     if df.loc[df[cols[0]] == samp].empty:
         raise ValueError(f"Check dtypes!\nSample (variable name 'var', data type {type(samp)}, with value {samp} ) couldn't be subset from the wet lab file.\nData types for the wet lab file:\n{df.dtypes}")
     else:
@@ -319,7 +265,7 @@ if redo is None:
     solo_run_info.append(( 'cells with low mito percent', adata.n_obs))
     print(adata)
 
-    # Conditional execution dependent on demultiplexing methods selected
+    # For demultiplexing using both methods simultaneously
     if calico_demux is not None and vireo_demux is not None:
         pass # to do
 
@@ -456,7 +402,7 @@ elif redo is not None:
 
     if add_vireo is not None:
         # Storing parsed inputs        
-        vir_class = read_files_ext(args.donors_file)
+        vir_class = auto_read(args.donors_file)
         conv_df = pd.read_csv(args.converter_file)
 
         # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
