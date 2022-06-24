@@ -1,6 +1,6 @@
 #!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
 
-import scanpy as sc, pandas as pd, numpy as np
+import pandas as pd, numpy as np
 
 
 
