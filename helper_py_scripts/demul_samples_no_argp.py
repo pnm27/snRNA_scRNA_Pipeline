@@ -289,7 +289,7 @@ if redo is None:
             b = str(k) + ": " + str(v) + ", "
             a += b
 
-        solo_run_info.append(( 'After demultiplexing #cells_cs', a[:-1] ))
+        solo_run_info.append(( 'After demultiplexing #cells_cs', a.strip()[:-1] ))
 
 
         ct = datetime.datetime.now()
@@ -346,7 +346,7 @@ if redo is None:
             b = str(k) + ": " + str(v) + ", "
             a += b
 
-        solo_run_info.append(( 'After demultiplexing #cells_cs', a[:-1] ))
+        solo_run_info.append(( 'After demultiplexing #cells_cs', a.strip()[:-1] ))
 
 
         ct = datetime.datetime.now()

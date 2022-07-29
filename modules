@@ -1,0 +1,23 @@
+STARsolo (ss)
+PICARD - all metrics (p) *
+PICARD GCBias (pgcb) *
+PICARD RNASeq (prs) *
+kallisto-bustools (kb) *
+kallisto-bustools-calico_solo (cs) *
+cellSNP-vireoSNP - single vcf (v) *
+cellSNP-vireoSNP - multiple vcfs (v_m) *
+add_vireo - add vireo results to calico_solo h5ad (av)
+add_calico - add calico solo results to vireo h5ad (acs)
+split pooled bams using final count matrix produced by calico_solo (split_cs)
+split pooled bams using final count matrix produced by vireo - single vcf (split_v)
+split pooled bams using final count matrix produced by vireo - single vcf (split_v_m)
+
+Pre-selected modules
+ss + p + cs + v_s (all)
+ss + one of pgcb/prs + cs + v_s (all-prs/pgcb) # Not implemented
+ss + cs + v_s (all-p)
+
+
+
+
+* - optional

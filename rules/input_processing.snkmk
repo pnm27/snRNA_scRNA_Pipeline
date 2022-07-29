@@ -1,5 +1,8 @@
-# Limitting Step for the run of Snakemake, creating wildcards
+import yaml
+from snakemake.utils import validate
 
+
+# Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
 if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
     #Lists that will contain wildcards
@@ -13,20 +16,26 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
 
 # If the input is yaml file then validate it and process it
 elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
+    # validate(config, "config.schema.json"
+    # File exists or not
+    if not os.path.isfile(config['select_fastqs']):
+        raise OSError("The provided file doesn't exists! Check the path.")
 
     # Parse the yaml file
-    with open(workflow.source_path("../resources/presets.yaml")) as fout:
+    with open(config['select_fastqs']) as fout:
         sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
-    module_list = []
+    sample_set_names = []
     files_list=[] # List of list
     wildcards_list=[] # List of list
+    modules_list=[] # List of list
 
     # Check if the yaml file has list of inputs or regex patterns
     for k, v in sample_dict.keys():
-        module_list.append(k)
+        sample_set_names.append(k)
+        files_list.append(v)
 
-        
+    
 
 
 # If the input is a dir containing all the fastqs

@@ -20,12 +20,14 @@ vir_class = pd.read_csv(snakemake.input[0], sep='\t', usecols=["cell", "donor_id
 vir_class = vir_class[(vir_class["donor_id"] != "doublet") & (vir_class["donor_id"] != "unassigned")]
 vir_class.reset_index(drop=True, inplace=True)
 # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
-vir_class["donor_id"] = vir_class["donor_id"].apply(lambda x: '_'.join(x.split('_')[1:]) if not x.startswith('donor') else x)
+
+# Project-specific filtering of donor_ids for conversion
+vir_class["donor_id"] = vir_class["donor_id"].apply(lambda x: '_'.join(x.split('_')[1:]) if x.startswith('0_') else x)
 
 # For converting genotype IDs to Subject IDs-------------------------------
 conv_df = pd.read_csv(snakemake.params['conv_df'])
-conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id']), ["SubID", "primary_genotype"]]
-vir_class['Subj_ID'] = vir_class['donor_id'].apply(lambda x: conv_df.loc[conv_df["primary_genotype"] == x, "SubID"].values[0] if not x.startswith('donor') else x)
+conv_df = conv_df.loc[conv_df['primary_genotype2'].isin(vir_class['donor_id']), ["SubID", "primary_genotype2"]]
+vir_class['Subj_ID'] = vir_class['donor_id'].apply(lambda x: conv_df.loc[conv_df["primary_genotype2"] == x, "SubID"].values[0] if not x.startswith('donor') else x)
 del vir_class['donor_id']
 vir_class.rename(columns={"cell":"barcodes"}, inplace=True, errors="raise")
 # -------------------------------------------------------------------------

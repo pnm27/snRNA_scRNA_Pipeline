@@ -7,7 +7,7 @@
 # ${4} is the output dir (with sample name as the parent dir)
 # ${5} is the multiplexed bam file
 
-ml samtools
+ml samtools/1.15.1
 
 # For some reason, awk wouln't work
 if [ ! -d "${3}" ]; then mkdir -p ${3}; fi

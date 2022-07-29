@@ -1,6 +1,6 @@
 # Mem allocation per thread (here thread is core/tasks), everything is in MB
 def allocate_mem_SS(wildcards, attempt):
-    return 15000+1000*(attempt-1)
+    return 25000+1000*(attempt-1)
 
 
 def allocate_mem_PGCB(wildcards, attempt):
@@ -44,7 +44,7 @@ def allocate_mem_CHB(wildcards, attempt):
 
 
 def allocate_mem_RCS(wildcards, attempt):
-    return 2500*attempt+2500
+    return 4500*attempt+2500
 
 
 def allocate_mem_DXP(wildcards, attempt):
