@@ -6,6 +6,11 @@ from snakemake.utils import validate
 # If the input is a text file containing the folder structure to the fastqs
 if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
     #Lists that will contain wildcards
+
+    # Value of last_step should be regulated by the json schema
+    assert isinstance(conf_f['last_step'], str), "'select_fastqs' in new_config.yaml is not a yaml file. Hence, value in last_step should be one of the modules!"
+
+
     round_num=[] # wildcard 'num'
     sample_name=[] # wildcard 'id1'
     with open(config['select_fastqs']) as fq:
@@ -15,17 +20,22 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
             sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
 
 # If the input is yaml file then validate it and process it
-elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
-    # validate(config, "config.schema.json"
-    # File exists or not
-    if not os.path.isfile(config['select_fastqs']):
-        raise OSError("The provided file doesn't exists! Check the path.")
+elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
+    # validate(config, "config.schema.json")
 
-    # Parse the yaml file
+    # Value of last_step should be regulated by the json schema
+    if not isinstance(conf_f['last_step'], str) or not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
+        raise ValueError("Value in last_step should be one of the modules or a yaml file containing acceptable module names!")
+
+    # File exists or not
+    # if not os.path.isfile(config['select_fastqs']):
+    #     raise OSError("The provided file doesn't exists! Check the path.")
+
+    # Parse the samples containing yaml file
     with open(config['select_fastqs']) as fout:
         sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
-    sample_set_names = []
+    sample_set_names = [] # contains the keys that categorizes multiple modules (same names should be present in the modules_yaml file)
     files_list=[] # List of list
     wildcards_list=[] # List of list
     modules_list=[] # List of list
@@ -34,6 +44,9 @@ elif config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswi
     for k, v in sample_dict.keys():
         sample_set_names.append(k)
         files_list.append(v)
+
+    # How to parse the values of wildcards
+
 
     
 

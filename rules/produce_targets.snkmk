@@ -170,22 +170,45 @@ def produce_targets(conf_f) -> "list":
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_split_bams_phe_demux_multi_vcf":
+            # Add final steps for split_bams
             target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
             # If multiple vcfs per sample needs to be run or not
             if isinstance(VCF_TYPE, list):
                 
-                temp_list= [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
+                temp_list = [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
                 # temp_list= [expand(f"{target}", **wc_d) for target in target_files][0] # Single wildcard
-                final_target_list=[expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+                final_target_list = [expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
 
             # Single vcf out of a set of multiple vcfs
             elif isinstance(VCF_TYPE, str):
                 
-                final_target_list= [expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for target in target_files] # Multiple wildcards example
+                final_target_list = [expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for target in target_files] # Multiple wildcards example
                 # final_target_list= [expand(f"{target}_{VCF_TYPE}{suff}", **wc_d) for target in target_files] # Single wildcard
             else:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
+
+            # Add final steps for gt_demux
+            target_files = targets_gt_demux2(conf_f=conf_f)
+            suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
+            # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
+
+            # If multiple vcfs per sample needs to be run
+            if isinstance(VCF_TYPE, list):
+                
+                temp_list = [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
+                # temp_list= [expand(f"{target}", **wc_d) for target in target_files][0] # Single wildcard
+                final_target_list2 = [expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+
+            # Single vcf out of a set of multiple vcfs
+            elif isinstance(VCF_TYPE, str):
+                
+                final_target_list2 = [expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for target in target_files] # Multiple wildcards example
+                # final_target_list= [expand(f"{target}_{VCF_TYPE}{suff}", **wc_d) for target in target_files] # Single wildcard
+            else:
+                raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
+
+            final_target_list.extend(final_target_list2)
 
 
         elif target_step == "starsolo_rnaseqmet_kb_solo":
