@@ -1,5 +1,9 @@
-import yaml
+import os, yaml
 from snakemake.utils import validate
+
+
+def isfolder_struct(x):
+    return os.path.isdir('/'.join(x.split('/')[:-1]))
 
 
 # Limitting Step for the run of Snakemake, creating wildcards
@@ -19,9 +23,16 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
             round_num.append(line_sp[0])
             sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
 
+
+    # Create a dict of wildcards
+    wc_d={'id1':sample_name, 'num':round_num}
+
 # If the input is yaml file then validate it and process it
 elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
-    # validate(config, "config.schema.json")
+    # Validating config['select_fastqs']
+    # with open(config['select_fastqs']) as fout:
+    #     samples_df = pd.json_normalize(yaml.load(fout, Loader=yaml.SafeLoader))
+    # validate(samples_df, "samples.schema.json")
 
     # Value of last_step should be regulated by the json schema
     if not isinstance(conf_f['last_step'], str) or not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
@@ -35,20 +46,53 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     with open(config['select_fastqs']) as fout:
         sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
-    sample_set_names = [] # contains the keys that categorizes multiple modules (same names should be present in the modules_yaml file)
+    # contains the keys that categorizes multiple
+    # modules (same names should be present in the modules_yaml file)
+    sample_set_names = [] 
     files_list=[] # List of list
     wildcards_list=[] # List of list
     modules_list=[] # List of list
 
-    # Check if the yaml file has list of inputs or regex patterns
+    # Yaml file can't be a mix of dirs and folder structures
+    # Need refinement (with this code it will be checking each set of 
+    # samples but we need a code which checks ALL samples present in 
+    # ALL separate sets to be similar)
     for k, v in sample_dict.keys():
+        if all(list(map(os.path.isdir, v))):
+            continue
+        elif all(list(map(os.path.isdir, v))):
+            continue
+        else:
+            raise ValueError("Expected either all folder stuctures for the samples or a dir containing the fastqs but neither was provided")
+
+
+    # Check if the yaml file has list of file names (or folder structure
+    # for each sample) or list of dirs each containing samples that 
+    # need separate modules.
+    # Similar to previous 'for loop' needs refinement
+    for k, vals in sample_dict.keys():
         sample_set_names.append(k)
-        files_list.append(v)
-
-    # How to parse the values of wildcards
+        files_list.append(vals)
 
 
-    
+    # Set multi_mod on if there are more than 1 set in the sample yaml
+    # file
+    if len(sample_set_names) > 1:
+        MULTI_MODULES=True
+    else:
+        MULTI_MODULES=False
+
+
+    # How to parse the values of wildcards (also separate wildcards 
+    # for each module)
+
+
+
+    # Create a dict of wildcards
+    # For multi_modules create list of dict of wildcards (or dict of 
+    # wildcards dicts with the same values use to differentiate each 
+    # multi_module set as key)
+    wc_d={'id1':sample_name, 'num':round_num}
 
 
 # If the input is a dir containing all the fastqs
@@ -58,9 +102,6 @@ elif os.path.isdir(config['select_fastqs']):
 else:
     raise ValueError("Unrecognized input file! Can't go ahead with the pipeline!")
 
-
-# Create a dict of wildcards
-wc_d={'id1':sample_name, 'num':round_num}
 
 # For multiruns of cellSNP and vireoSNP
 # VCF_TYPE=config['phe_demux_pipeline']['vcf_info_columns'][2:]
