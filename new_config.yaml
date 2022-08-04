@@ -80,6 +80,7 @@ STARsolo_pipeline:
   genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
   genefull_summary: _Solo.out/GeneFull/Summary.csv
+  extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150"
 
 
 # PICARD pipeline--------------------------------------------------------------
