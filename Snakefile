@@ -31,11 +31,11 @@ configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
 
 # Set few global variables (DON'T CHANGE!)
-# ONLY_SOLO = False
-# ONLY_VIREO = False
-# BOTH_DEMUX = False # Not eyt implemented the rule
-# ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
-# ADD_VIREO = True # When a demultiplex run with calico_solo has been done, modify it later
+ONLY_SOLO = False
+ONLY_VIREO = False
+BOTH_DEMUX = False # Not eyt implemented the rule
+ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
+ADD_VIREO = False # When a demultiplex run with calico_solo has been done, modify it later
 
 
 include: "rules/input_processing.snkmk"
@@ -67,7 +67,7 @@ def get_all_inputs(conf_f, mm):
         with open(config['last_step']) as fout:
             modules_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
-        for k, v in modules_dict:
+        for k, v in modules_dict.items():
             temp_l.extend(produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k]))
 
         return temp_l
