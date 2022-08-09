@@ -138,17 +138,17 @@ def produce_targets(conf_f, last_step, wc_d) -> "list":
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
             
         elif target_step == "starsolo_picard":
-            target_list = targets_PICARD(conf_f=conf_f, progs='all')
+            target_files = targets_PICARD(conf_f=conf_f, progs='all')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_rnaseqmet":
-            target_list = targets_PICARD(conf_f=conf_f, progs='RNAseq')
+            target_files = targets_PICARD(conf_f=conf_f, progs='RNAseq')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_gcbiasmet":
-            target_list = targets_PICARD(conf_f=conf_f, progs='GC')
+            target_files = targets_PICARD(conf_f=conf_f, progs='GC')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
