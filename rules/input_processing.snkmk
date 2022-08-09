@@ -35,7 +35,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # validate(samples_df, "samples.schema.json")
 
     # Value of last_step should be regulated by the json schema
-    if not isinstance(conf_f['last_step'], str) or not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
+    if not isinstance(config['last_step'], str) or not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
         raise ValueError("Value in last_step should be one of the modules or a yaml file containing acceptable module names!")
 
     # File exists or not
