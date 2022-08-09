@@ -9,6 +9,7 @@ select_fastqs: /sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt
 redo_demux: no
 
 # Fastqs info, R1 and R2 suffix assumed to be the same for both cDNA and HTO
+# Need to update this for multi_modules
 HTO_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 R1_suffix: .R1.fastq.gz
@@ -27,6 +28,7 @@ mito: MT
 # ENCLOSE WILDCARDS IN {}
 # HERE, 'id1' IS THE WILDCARD.
 # Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
+# Need to update this for multi_modules
 fold_struct: "{id1}-cDNA/{id1}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
 fold_struct_kb: "{id1}-HTO/"
@@ -53,9 +55,9 @@ STAR_snv_aware_version: star/2.7.9a
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
-  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
-  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  
-  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/ # Need to update this for multi_modules
+  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  # Need to update this for multi_modules
+  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/ # Need to update this for multi_modules
   sjdboverhang: 89
   umi_len: 12
   soloType: CB_UMI_Simple

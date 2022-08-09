@@ -2,8 +2,8 @@ import os, yaml
 from snakemake.utils import validate
 
 
-def isfolder_struct(x):
-    return os.path.isdir('/'.join(x.split('/')[:-1]))
+def isfolder_struct(base_dir, x):
+    return os.path.isdir('/'.join(base_dir, x.split('/')[:-1]))
 
 
 # Limitting Step for the run of Snakemake, creating wildcards
@@ -57,8 +57,9 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # Need refinement (with this code it will be checking each set of 
     # samples but we need a code which checks ALL samples present in 
     # ALL separate sets to be similar)
+    # Checking with respect to fastq folders
     for k, v in sample_dict.items():
-        if all(list(map(os.path.isdir, v))):
+        if all([ isfolder_struct(config['cDNA_fastqs_dir'], x) for x in v ]):
             continue
         elif all(list(map(os.path.isdir, v))):
             continue
