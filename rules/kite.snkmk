@@ -1,8 +1,37 @@
+import glob2, re
+
+
+def get_r1_hto_fastqs(wildcards):
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    r1_files = sorted(glob2.glob("{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix'])))
+    return ','.join(r1_files)
+
+
+def get_r2_hto_fastqs(wildcards):
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    r2_files = sorted(glob2.glob("{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R2_suffix'])))
+    return ','.join(r2_files)
+
+
+def get_hto_fastqs_kalisto(wildcards):
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    r1_files = sorted(glob2.glob("{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix'])))
+    r2_files = map(lambda x: x.replace(config['R1_suffix'], config['R2_suffix']), r1_files)
+    f=[]
+    for x, y in zip(r1_files, r2_files):
+        f.extend([x, y])
+
+
+    return ','.join(f)
+
+
+
+
 rule create_FB:
     input:
-        R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
-        R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
-
+        R1=get_r1_hto_fastqs,
+        R2=get_r2_hto_fastqs
+        
     # priority: 10
 
     output:
@@ -79,8 +108,8 @@ rule build_kallisto_index:
 rule run_kallisto:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}",
-        R1="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R1_suffix']),
-        R2="{parent_dir}{fs}{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=config['fold_struct'].replace('-cDNA', '-HTO'), suff=config['R2_suffix'])
+        R1=get_r1_hto_fastqs,
+        R2=get_r2_hto_fastqs
 
     # priority: 10
 

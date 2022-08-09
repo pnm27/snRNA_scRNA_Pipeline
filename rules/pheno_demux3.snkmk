@@ -133,12 +133,9 @@ rule cellSNP:
 rule vireoSNP:
     input:
         f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"
-        # f"{config['phe_demux_pipeline']['temp_cellsnp_filt_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['cellsnp_cells']}"
-  
+        
     output:
-        # f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_vcf']}", # Subject to removal
         f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
-        #f"{config['filt_vcf_dir']}{config['fold_struct_kb']}{config['filt_vcf']}"
 
 
     # group: "phenotype-demux"
@@ -154,7 +151,4 @@ rule vireoSNP:
         mem_mb=allocate_mem_vS,
         time_min=allocate_time_vS
         
-    shell:
-        """
-        vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot
-        """
+    shell: "vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100"
