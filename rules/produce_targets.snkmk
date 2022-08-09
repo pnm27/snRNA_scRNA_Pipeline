@@ -114,7 +114,7 @@ def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 
 
 # Add wildcards info here in the 'expand' function
-def produce_targets(conf_f, last_step) -> "list":
+def produce_targets(conf_f, last_step, wc_d) -> "list":
     # conf_f['last_step'] is expected to be None if yaml file is provided for the config['select_fastqs']
     if last_step is not None:
         target_step = last_step.lower()

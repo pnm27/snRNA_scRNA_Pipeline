@@ -67,13 +67,13 @@ def get_all_inputs(conf_f, mm):
         with open(config['last_step']) as fout:
             modules_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
-        for v in sample_set_names:
-            temp_l.extend(produce_targets(conf_f=conf_f, last_step=modules_dict[v]))
+        for k, v in modules_dict:
+            temp_l.extend(produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k]))
 
         return temp_l
 
     elif not mm and not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
-        return produce_targets(conf_f=conf_f, last_step=config['last_step'])
+        return produce_targets(conf_f=conf_f, last_step=config['last_step'], wc_d=wildcards_list[k])
 
     # When a yaml file for modules is given but with only one module ( only for practical use when checking a part of multi_module setup)
     elif not mm and (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
@@ -81,7 +81,7 @@ def get_all_inputs(conf_f, mm):
             modules_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
         for k,v in modules_dict.items():
-            return produce_targets(conf_f=conf_f, last_step=modules_dict[v])
+            return produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k])
 
 
 rule all:

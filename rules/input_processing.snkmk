@@ -49,9 +49,8 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # contains the keys that categorizes multiple
     # modules (same names should be present in the modules_yaml file)
     sample_set_names = [] 
-    files_list=[] # List of list
-    wildcards_list=[] # List of list
-    modules_list=[] # List of list
+    files_list = [] # List of list
+    modules_list = [] # List of list
 
     # Yaml file can't be a mix of dirs and folder structures
     # Need refinement (with this code it will be checking each set of 
@@ -79,13 +78,29 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # Set multi_mod on if there are more than 1 set in the sample yaml
     # file
     if len(sample_set_names) > 1:
-        MULTI_MODULES=True
+        MULTI_MODULES = True
     else:
-        MULTI_MODULES=False
+        MULTI_MODULES = False
 
 
+    wildcards_list = dict.from_keys(sample_dict.keys()) # dict of list
     # How to parse the values of wildcards (also separate wildcards 
     # for each module)
+    for k, f_l in sample_dict.items():
+        samp_type = [] # wildcard 'samp_type'
+        proj_type = [] # wildcard 'proj'
+        sample_name = [] # wildcard 'samp_name'
+        for f in f_l:
+            line_sp = line.split('/')
+            samp_type.append(line_sp[0].strip())
+            proj_type.append(line_sp[1].strip())
+            if k == 'multip_samples':
+                sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
+
+        if k == 'multip_samples':
+            wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
+        else:
+            wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type}
 
 
 
@@ -93,7 +108,6 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # For multi_modules create list of dict of wildcards (or dict of 
     # wildcards dicts with the same values use to differentiate each 
     # multi_module set as key)
-    wc_d={'id1':sample_name, 'num':round_num}
 
 
 # If the input is a dir containing all the fastqs
