@@ -3,7 +3,7 @@ from snakemake.utils import validate
 
 
 def isfolder_struct(base_dir, x):
-    return os.path.isdir('/'.join(base_dir, x.split('/')[:-1]))
+    return os.path.isdir(os.path.join(base_dir, '/'.join(x.split('/')[:-1])))
 
 
 # Limitting Step for the run of Snakemake, creating wildcards
