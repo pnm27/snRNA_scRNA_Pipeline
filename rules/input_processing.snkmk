@@ -83,7 +83,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
         MULTI_MODULES = False
 
 
-    wildcards_list = dict.from_keys(sample_dict.keys()) # dict of list
+    wildcards_list = dict.fromkeys(sample_dict.keys()) # dict of list
     # How to parse the values of wildcards (also separate wildcards 
     # for each module)
     for k, f_l in sample_dict.items():
