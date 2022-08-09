@@ -91,7 +91,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
         proj_type = [] # wildcard 'proj'
         sample_name = [] # wildcard 'samp_name'
         for f in f_l:
-            line_sp = line.split('/')
+            line_sp = f.split('/')
             samp_type.append(line_sp[0].strip())
             proj_type.append(line_sp[1].strip())
             if k == 'multip_samples':
