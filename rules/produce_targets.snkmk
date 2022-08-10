@@ -83,7 +83,7 @@ def targets_gt_demux2(conf_f, folder_st) -> list:
     return [f"{out_dir}{fs_phe}" ]
 
 
-def targets_SplitBams(conf_f, folder_st=fs) -> list:
+def targets_SplitBams(conf_f, folder_st) -> list:
     out_dir = conf_f['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']
     op = folder_st['fold_struct_bam_split1']
     
