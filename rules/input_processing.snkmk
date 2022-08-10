@@ -52,10 +52,6 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     files_list = [] # List of list
     modules_list = [] # List of list
 
-    # Load folder_structures yaml file
-    with open(config['folder_structures']) as fout:
-            fold_structs_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
 
     # Yaml file can't be a mix of dirs and folder structures
     # Need refinement (with this code it will be checking each set of 
@@ -63,7 +59,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
     # ALL separate sets to be similar)
     # Checking with respect to fastq folders
     for k, v in sample_dict.items():
-        if all([ isfolder_struct(fold_structs_dict[k]['cDNA_fastqs_dir'], x) for x in v ]):
+        if all([ isfolder_struct(config['cDNA_fastqs_dir'], x) for x in v ]):
             continue
         elif all(list(map(os.path.isdir, v))):
             continue
