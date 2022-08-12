@@ -29,9 +29,9 @@ mito: MT
 # HERE, 'id1' IS THE WILDCARD.
 # Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
 # Need to update this for multi_modules
-fold_struct: "{id1}-cDNA/{id1}-cDNA"
+fold_struct: "{num}/Sample_{id1}-cDNA/{id1}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
-fold_struct_kb: "{id1}-HTO/"
+fold_struct_kb: "{num}/Sample_{id1}-HTO/"
 # Folder structure for demux through the kallisto-bustools pipeline
 fold_struct_demux: "{id1}-HTO/{id1}-HTO"
 # Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
@@ -41,12 +41,12 @@ fold_struct_phe_demux2: "{num}_Sample-{id1}-cDNA_{vcf_type}"
 # Folder structure to get cells for cellSNP from
 fold_struct_filt_bc: "filt_bc_vireo_{num}_Sample_{id1}-cDNA"
 # Folder structures for split bams pipeline
-fold_struct_bam_split1: "{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
-fold_struct_bam_split2: "{id1}-cDNA/" # Used for per-barcode and per-donor bam files
+fold_struct_bam_split1: "{num}_Sample-{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
+fold_struct_bam_split2: "{num}/Sample_{id1}-cDNA/" # Used for per-barcode and per-donor bam files
 # Folder structure for per-donor vcf files for STARsolo SNV-Aware pipeline
-fold_struct_vcf: "{id1}-cDNA/"
+fold_struct_vcf: "{num}_{id1}-cDNA/"
 # Folder structure for per-donor SNV-aware STARsolo bams
-fold_struct_snv_aware: "{id1}-cDNA/"
+fold_struct_snv_aware: "{num}_{id1}-cDNA/"
 
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
@@ -55,9 +55,9 @@ STAR_snv_aware_version: star/2.7.9a
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
-  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/ # Need to update this for multi_modules
-  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  # Need to update this for multi_modules
-  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/ # Need to update this for multi_modules
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
+  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o
+  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
   sjdboverhang: 89
   umi_len: 12
   soloType: CB_UMI_Simple

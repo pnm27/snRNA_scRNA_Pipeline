@@ -76,13 +76,6 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
         files_list.append(vals)
 
 
-    # Set multi_mod on if there are more than 1 set in the sample yaml
-    # file
-    if len(sample_set_names) > 1:
-        MULTI_MODULES = True
-    else:
-        MULTI_MODULES = False
-
 
     wildcards_list = dict.fromkeys(sample_dict.keys()) # dict of list
     # How to parse the values of wildcards (also separate wildcards 
@@ -95,14 +88,15 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
             line_sp = f.split('/')
             samp_type.append(line_sp[0].strip())
             proj_type.append(line_sp[1].strip())
-            if k == 'multip_samples':
-                sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
+            # if k == 'multip_samples':
+            sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
 
-        if k == 'multip_samples':
-            wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
-        else:
-            wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type}
+        wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
 
+        # if k == 'multip_samples':
+        #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
+        # else:
+        #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type}
 
 
     # Create a dict of wildcards
