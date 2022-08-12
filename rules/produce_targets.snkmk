@@ -2,34 +2,34 @@ import pandas as pd
 
 
 # Run STARsolo_sort, index_bams and filter_GeneFull_STARsolo
-def targets_STARsolo(conf_f, folder_st) -> "list":
+def targets_STARsolo(conf_f) -> "list":
 
     inp_pref = conf_f['STARsolo_pipeline']['bams_dir']
     bai_suff = conf_f['STARsolo_pipeline']['bai']
     gf_mat = conf_f['STARsolo_pipeline']['genefull_matrix']
     gf_features = conf_f['STARsolo_pipeline']['genefull_features']
     barcodes_stats = conf_f['STARsolo_pipeline']['barcodes_stats']
-    f_st = folder_st['fold_struct']
+    f_st = conf_f['fold_struct']
 
     target_list = [f"{inp_pref}{f_st}{bai_suff}", f"{inp_pref}{f_st}{gf_mat}", f"{inp_pref}{f_st}{gf_features}", f"{inp_pref}{f_st}{barcodes_stats}"]
     return target_list
 
 
 
-def targets_PICARD(conf_f, folder_st, progs='all') -> "list":
+def targets_PICARD(conf_f, progs='all') -> "list":
     
     inp_pref = conf_f['STARsolo_pipeline']['bams_dir']
     rna_seq_suff = conf_f['picard_pipeline']['rnaseq_metrics']
     gc_met_suff = conf_f['picard_pipeline']['gc_bias_metrics']
     gc_summ_suff = conf_f['picard_pipeline']['gc_summary_metrics']
-    f_st=folder_st['fold_struct']
+    f_st=conf_f['fold_struct']
     # bai_suff = conf_f['bai']
     # gf_mat = conf_f['genefull_lun_matrix']
     # gf_features = conf_f['genefull_lun_features']
     # gf_barcodes = conf_f['genefull_lun_barcodes']
 
     files_dict = {'RNAseq':rna_seq_suff, 'GC':[gc_met_suff, gc_summ_suff]}
-    target_list = targets_STARsolo(conf_f=conf_f, folder_st=folder_st)
+    target_list = targets_STARsolo(conf_f=conf_f)
     if progs == 'all':
        # Run both PICARD programs
         for k, val in files_dict.items():
@@ -56,9 +56,9 @@ def targets_PICARD(conf_f, folder_st, progs='all') -> "list":
 
 
 # Temporary function, will change to targets_phe_demux
-def targets_cellSNP(conf_f, folder_st) -> "list":
+def targets_cellSNP(conf_f) -> "list":
     out_dir = conf_f['phe_demux_pipeline']['cellsnp_dir']
-    fs_phe = folder_st['fold_struct_phe_demux']
+    fs_phe = conf_f['fold_struct_phe_demux']
     cells_suff = conf_f['phe_demux_pipeline']['cellsnp_cells']
     base_suff = conf_f['phe_demux_pipeline']['cellsnp_base']
 
@@ -67,46 +67,46 @@ def targets_cellSNP(conf_f, folder_st) -> "list":
 
 
 
-def targets_gt_demux(conf_f, folder_st) -> list:
+def targets_gt_demux(conf_f) -> list:
     out_dir = conf_f['phe_demux_pipeline']['vireosnp_dir']
-    fs_phe = folder_st['fold_struct_phe_demux']
+    fs_phe = conf_f['fold_struct_phe_demux']
     suff = conf_f['phe_demux_pipeline']['donors_vcf']
     
     return [f"{out_dir}{fs_phe}{suff}"]
 
 
 # For multi-vcf_inputs
-def targets_gt_demux2(conf_f, folder_st) -> list:
+def targets_gt_demux2(conf_f) -> list:
     out_dir = conf_f['phe_demux_pipeline']['final_count_matrix_dir']
-    fs_phe = folder_st['fold_struct_demux']
+    fs_phe = conf_f['fold_struct_demux']
     
     return [f"{out_dir}{fs_phe}" ]
 
 
-def targets_SplitBams(conf_f, folder_st) -> list:
+def targets_SplitBams(conf_f) -> list:
     out_dir = conf_f['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']
-    op = folder_st['fold_struct_bam_split1']
+    op = conf_f['fold_struct_bam_split1']
     
     return [f"{out_dir}{op}" ]
 
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
-def targets_all(conf_f, folder_st, PICARD=True, progs='all') -> "list":
+def targets_all(conf_f, PICARD=True, progs='all') -> "list":
 
     demuxed_mat_dir = conf_f['demux_pipeline']['final_count_matrix_dir']
     demuxed_info_dir = conf_f['demux_pipeline']['demultiplex_info_dir']    
     demux_mat_suff = conf_f['demux_pipeline']['final_count_matrix_h5ad']
     demux_info_suff = conf_f['demux_pipeline']['demultiplex_info']
-    f_st_bam = folder_st['fold_struct']
-    f_st = folder_st['fold_struct_demux']
+    f_st_bam = conf_f['fold_struct']
+    f_st = conf_f['fold_struct_demux']
 
     # STARsolo* + PICARD (any) progs
     if PICARD and (progs == 'all' or progs == 'RNAseq' or progs == 'GC'):
-        target_list = targets_PICARD(conf_f=conf_f, folder_st=folder_st, progs=progs)
+        target_list = targets_PICARD(conf_f=conf_f, progs=progs)
 
     else: # For any wrong values to progs or progs == None or just PICARD == False or everything else, run STARsolo*
-        target_list = targets_STARsolo(conf_f=conf_f, folder_st=folder_st)
+        target_list = targets_STARsolo(conf_f=conf_f)
 
 
     # kb pipeline
@@ -117,7 +117,7 @@ def targets_all(conf_f, folder_st, PICARD=True, progs='all') -> "list":
 
 
 # Add wildcards info here in the 'expand' function
-def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict, fs: dict) -> "list":
+def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> "list":
     # conf_f['last_step'] is expected to be None if yaml file is provided for the config['select_fastqs']
     if last_step is not None:
         target_step = last_step.lower()
@@ -126,47 +126,47 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict, fs: dict) 
 
         # 'all' is only for the modules: STARsolo, PICARD (both) and calico_solo demux
         if target_step == "all":
-            target_files = targets_all(conf_f=conf_f, folder_st=fs, PICARD=True, progs=target_step)
+            target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
             ONLY_SOLO = True
             final_target_list = [expand(f"{target}", zip, **wc_d) for target in target_files] # if multiple wildcards are present then either 'zip' or 'product' (default)
 
         elif target_step == "starsolo_kb_solo":
-            target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None, folder_st=fs)
+            target_files = targets_all(conf_f=conf_f, PICARD=False, progs=None)
             ONLY_SOLO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo":
-            target_files = targets_STARsolo(conf_f=conf_f, folder_st=fs)
+            target_files = targets_STARsolo(conf_f=conf_f)
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
             
         elif target_step == "starsolo_picard":
-            target_files = targets_PICARD(conf_f=conf_f, folder_st=fs, progs='all')
+            target_files = targets_PICARD(conf_f=conf_f, progs='all')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_rnaseqmet":
-            target_files = targets_PICARD(conf_f=conf_f, folder_st=fs, progs='RNAseq')
+            target_files = targets_PICARD(conf_f=conf_f, progs='RNAseq')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_gcbiasmet":
-            target_files = targets_PICARD(conf_f=conf_f, folder_st=fs, progs='GC')
+            target_files = targets_PICARD(conf_f=conf_f, progs='GC')
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_cellsnp":
-            target_files = targets_cellSNP(conf_f=conf_f, folder_st=fs)
+            target_files = targets_cellSNP(conf_f=conf_f)
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]    
 
         elif target_step == "starsolo_split_bams":
-            target_files = targets_SplitBams(conf_f=conf_f, folder_st=fs)
+            target_files = targets_SplitBams(conf_f=conf_f)
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_split_bams_phe_demux":
-            target_files = targets_SplitBams(conf_f=conf_f, folder_st=fs)
+            target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
             final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
@@ -174,7 +174,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict, fs: dict) 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_split_bams_phe_demux_multi_vcf":
             # Add final steps for split_bams
-            target_files = targets_SplitBams(conf_f=conf_f, folder_st=fs)
+            target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
             # If multiple vcfs per sample needs to be run or not
             if isinstance(VCF_TYPE, list):
@@ -192,7 +192,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict, fs: dict) 
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
             # Add final steps for gt_demux
-            target_files = targets_gt_demux2(conf_f=conf_f, folder_st=fs)
+            target_files = targets_gt_demux2(conf_f=conf_f)
             suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
@@ -215,24 +215,24 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict, fs: dict) 
 
 
         elif target_step == "starsolo_rnaseqmet_kb_solo":
-            target_files = targets_all(conf_f=conf_f, folder_st=fs, progs='RNAseq')
+            target_files = targets_all(conf_f=conf_f, progs='RNAseq')
             ONLY_SOLO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_gcbiasmet_kb_solo":
-            target_files = targets_all(conf_f=conf_f, folder_st=fs, progs='GC')
+            target_files = targets_all(conf_f=conf_f, progs='GC')
             ONLY_SOLO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
             
         elif target_step == "starsolo_gt_demux":
-            target_files = targets_gt_demux(conf_f=conf_f, folder_st=fs)
+            target_files = targets_gt_demux(conf_f=conf_f)
             ONLY_VIREO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_gt_demux_multi_vcf":
-            target_files = targets_gt_demux2(conf_f=conf_f, folder_st=fs)
+            target_files = targets_gt_demux2(conf_f=conf_f)
             suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 

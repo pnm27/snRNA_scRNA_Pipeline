@@ -96,6 +96,12 @@ def get_all_inputs(conf_f, mm):
             return produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k], fs=fold_structs_dict[k])
 
 
+
+wildcard_constraints:
+    f_s: "[A-Za-z]+(?=/)?"
+
+
+
 rule all:
     input:
         get_all_inputs(conf_f=config, mm=MULTI_MODULES)

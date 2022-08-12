@@ -95,7 +95,7 @@ rule STARsolo_sort:
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
         SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
         features=config['STARsolo_pipeline']['features'],
-        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
+        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{f_s}}{{samp_name}}-cDNA.txt",  # wildcards
         star_def_log_out=f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}_Log.out",
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
         out_pref=f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}_",
