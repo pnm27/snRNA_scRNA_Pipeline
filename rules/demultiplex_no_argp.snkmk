@@ -14,6 +14,7 @@ def get_inputs_demux(wildcards):
     return ret_dict
 
 
+
 def get_inputs_add_demux(wildcards):
     ret_dict={'prev_count_mtx': f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"}
     if ADD_SOLO:
@@ -56,11 +57,8 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
         script: "../helper_py_scripts/demul_samples_no_argp.py"
 
 
-
 # To do the 'ADD_SOLO' part
 if ADD_VIREO or ADD_SOLO:
-
-
     # If a previous run of the pipeline has produced final_count_matrix using solo
     # To add results of
     rule add_obs_to_final_count_matrix:

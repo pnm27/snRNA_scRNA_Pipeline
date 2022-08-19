@@ -2,15 +2,15 @@ import glob2, re
 
 
 def get_r1_fastqs(wildcards):
-    temp_fold=f"{{f_s}}".format(id1=wildcards.id1)
+    temp_fold="{config['fold_struct']}".format(id1=wildcards.id1) # Add wildcards
     r1_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R1_suffix']}"))
-    return ','.join(r1_files)
+    return r1_files
 
 
 def get_r2_fastqs(wildcards):
-    temp_fold=f"{{f_s}}".format(id1=wildcards.id1)
+    temp_fold="{config['fold_struct']}".format(id1=wildcards.id1)
     r2_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R2_suffix']}"))
-    return ','.join(r2_files)
+    return r2_files
 
 
 # To check if the last digit of the line in the error log of STARsolo is a number
@@ -31,7 +31,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
     '''
     # This is to check the log file produced after each attempt for the error value
-    file_p_temp = f"{{f_s}}".format(id1=wildcards.id1)
+    file_p_temp = "{config['fold_struct']}".format(id1=wildcards.id1)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
@@ -95,35 +95,27 @@ rule STARsolo_sort:
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
         SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
         features=config['STARsolo_pipeline']['features'],
-        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}Sample_{{id1}}-cDNA.txt",  # wildcards
-        star_def_log_out=f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}_Log.out",
+        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{id1}}-cDNA.txt",  # wildcards
+        star_def_log_out=lambda wildcards, output: output[2],
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
-        out_pref=f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}_",
+        out_pref=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], '_'),
         count_matrix_dir=lambda wildcards, output: output[8][:-13]
 
 
     output:
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
-        # f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['bam']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['bai']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['STAR_log_final']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['genefull_features']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['genefull_summary']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['gene_features']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['gene_summary']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['barcodes_stats']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}{config['STARsolo_pipeline']['genefull_matrix']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
+
 
     log:
-        f"{config['STARsolo_pipeline']['bams_dir']}{{f_s}}_STARsolo_log.txt"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
    
     resources:
         mem_mb=allocate_mem_SS,
@@ -133,22 +125,25 @@ rule STARsolo_sort:
     threads: 6
 
     run:
+        r1 = ','.join(input.R1)
+        r2 = ','.join(input.R2)
         shell(
         """
         ml {config[STAR_version]}
         ml samtools
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
-        if [[ {config[extra_params]} == "None" ]]; then
+        if [[ {config[STARsolo_pipeline][extra_params]} == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
-            --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
+            --twopassMode Basic --readFilesCommand zcat --readFilesIn {r2} {r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
-            --twopassMode Basic --readFilesCommand zcat --readFilesIn {input.R2} {input.R1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
+            --twopassMode Basic --readFilesCommand zcat --readFilesIn {r2} {r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
-            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} {config[extra_params]} &> {log}_{resources.attempt}
+            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} \
+            {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
         gzip {params.count_matrix_dir}*
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
@@ -157,8 +152,8 @@ rule STARsolo_sort:
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}
         else 
                tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}_{resources.attempt}
-               cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} || (rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params})
+               cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} \
+               || (rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params})
         fi
         samtools index {output[0]}
-        """
-        )
+        """, r1=r1, r2=r2)

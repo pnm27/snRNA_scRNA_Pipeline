@@ -167,7 +167,8 @@ if redo is None:
 
     cols = snakemake.params.cols #args.columns
 
-    # Batch info 
+    # Batch info
+    # This is the values that will be stoed in the final h5ad file
     batch=snakemake.params.sample_name.replace('-', '_')+'_cDNA'
 
     # Prepare for Extra Information
