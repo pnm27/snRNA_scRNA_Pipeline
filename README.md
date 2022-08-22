@@ -49,8 +49,9 @@ This pipeline depends on a yaml config file (new_config.yaml), which has all rel
 
 ## Selectable Modules
 The following combinations of programs can be run, where starsolo represents STARsolo, rnaseqmet and gcbiasmet refer to PICARD's CollectRnaSeqMetrics and CollectGcBiasMetrics, respectively while picard represents inclusion of both programs, kb_solo refers to using kallisto, bustools and calico_solo for demultiplexing, gt_demux refers to using cellSNP and vireoSNP for genotype based demultiplexing, split_bams_kb_solo refers to splitting pooled/multiplexed bams
+
 <ul>
-<li> all (STARsolo + PICARD's RNAseq metrics + GCBias metrics + kallisto-bustools-calico solo demultiplexing)</li>
+<li> all</li>
 <li> starsolo</li>
 <li> starsolo_rnaseqmet</li>
 <li> starsolo_gcbiasmet</li>
@@ -58,16 +59,18 @@ The following combinations of programs can be run, where starsolo represents STA
 <li> starsolo_picard</li>
 <li> starsolo_gt_demux</li>
 <li> starsolo_split_bams</li>
-starsolo_split_bams_gt_demux
-starsolo_split_bams_gt_demux_multi_vcf
-starsolo_gt_demux_multi_vcf
-cellsnp
+<li> starsolo_split_bams_gt_demux</li>
+<li> starsolo_split_bams_gt_demux_multi_vcf</li>
+<li> starsolo_gt_demux_multi_vcf</li>
+<li> starsolo_cellsnp</li>
 </ul>
+
+NOTE: These module names are case-insensitive!
 
 ### Module Specifications
 <dl>
-	<dt>Whole Pipeline</dt>
-	<dd>This module includes alignment through STARsolo and PICARD's both programs (GcBiasMetrics and RnaSeqMetrics)</dd>
+	<dt>All</dt>
+	<dd>This module includes alignment through STARsolo and PICARD's both programs (GcBiasMetrics and RnaSeqMetrics) along with calico solo demultiplexing through kallisto bustools output</dd>
 	<dt>STARsolo</dt>
 	<dd>Only alignemnt through STARsolo.</dd>
 	<dt>STARsolo_rnaseqmet</dt>
@@ -87,8 +90,6 @@ cellsnp
 This pipeline divides each module into its self-contained individual workflows. These are:
 
 <dl>
-	<dt> helper_functions.snkmk </dt>
-	<dd> </dd>
 	<dt> resources.snkmk </dt>
 	<dd> </dd>
 	<dt> calico_solo_demux.snkmk </dt>
@@ -114,6 +115,6 @@ This pipeline divides each module into its self-contained individual workflows. 
 	<dt> demultiplex_no_argp.snkmk </dt>
 	<dd> </dd>
 
+<sup id="#ft1">*</sup> Consolidating into one
 </dl>
 
-<hr></hr>

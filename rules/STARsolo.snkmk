@@ -111,7 +111,8 @@ rule STARsolo_sort:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}",
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}"
 
 
     log:
@@ -145,7 +146,12 @@ rule STARsolo_sort:
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} \
             {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
-        gzip {params.count_matrix_dir}*
+        files=( {output[3]} {output[8]} {output[9]} )
+        for i in ${{files[@]}}; do
+        {
+            [ ! -f ${{i}} ] && gzip ${{i%".gz"}}
+        }
+        done
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
         if [ ! -f "{params.save_params}" ]; then 
