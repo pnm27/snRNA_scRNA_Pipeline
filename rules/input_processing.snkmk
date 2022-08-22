@@ -111,7 +111,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
             raise ValueError("Expected either all folder stuctures for the samples or a dir containing the fastqs but neither was provided")
 
     elif isinstance(sample_dict, str):
-
+        pass
 
     # Check if the yaml file has list of file names (or folder structure
     # for each sample) or list of dirs each containing samples that 
