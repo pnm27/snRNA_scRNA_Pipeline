@@ -96,7 +96,7 @@ rule STARsolo_sort:
         SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
         features=config['STARsolo_pipeline']['features'],
         save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{id1}}-cDNA.txt",  # wildcards
-        star_def_log_out=lambda wildcards, output: output[2],
+        star_def_log_out=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], "_Log.out"),
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
         out_pref=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], '_'),
         count_matrix_dir=lambda wildcards, output: output[8][:-13]

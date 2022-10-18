@@ -37,7 +37,7 @@ def ret_htos_calico_solo(bcs, df_s):
     # List of htos from the wet lab spreadsheet
     hto_l = parse_HTO(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
     # List of subIDs from the wet lab spreadsheet
-    subid_l = parse_subids(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
+    subid_l = parse_subids(df_s, cols[3], snakemake.params.samples_info, samp, snakemake.params.hto_sep)
 
     # List of barcodes
     barc_l = []
@@ -145,13 +145,13 @@ sc.logging.print_version_and_date()
 redo = redo_test('prev_count_mtx')
 
 # If 'redoing' demultiplexing then whether vireo output is to be added or calico_solo output is to be added to an existing final count matrix file
-add_calico = redo_test('hashsolo_out') if redo is not None else None
+add_calico = redo_test('calico_solo_out') if redo is not None else None
 add_vireo = redo_test('vireo_out') if redo is not None else None
 
 
 # If creating "new" final count matrix then selecting both or one
 starsolo_mat = redo_test('starsolo_out', 13) if redo is None else None #args.matrix_file[:-13]
-calico_demux = redo_test('hashsolo_out') if redo is None else None
+calico_demux = redo_test('calico_solo_out') if redo is None else None
 vireo_demux = redo_test('vireoSNP_out') if redo is None else None
 
 # Store output_file and Create necessary folders

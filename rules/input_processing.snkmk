@@ -27,9 +27,13 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
     # During this process cDNA and HTO files are expected to be segregated by a dir called 'cDNA' or 'HTO' and not containing
     # these as suffixes in the filename
     # If a dir is provided then it is expected to contain wildcards ({}) that need to extracted
-    elif len(all_file_lines) == 1:
+    elif len(all_file_lines) == 1 and all_file_lines[0].find('{') != -1:
         FOLD_STRUCT = False
         FASTQ_DIR = True
+
+    # If a dir is provided and it doesn't conatin any wildcards ({}) that need to extracted
+    # then fastq filenames are assumed to be in the format:
+    # 
 
     # Parsing samples containing file to get wildcards
     if FOLD_STRUCT and not FASTQ_DIR:
@@ -54,6 +58,7 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
 
 
 # If the input is yaml file then validate it and process it
+# The example in here is for more than one wildcards
 elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
     # Validating config['select_fastqs']
     # with open(config['select_fastqs']) as fout:
@@ -75,9 +80,9 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
 
     # contains the keys that categorizes multiple
     # modules (same names should be present in the modules_yaml file)
-    sample_set_names = [] 
-    files_list = [] # List of list
-    modules_list = [] # List of list
+    # sample_set_names = [] 
+    # files_list = [] # List of list
+    # modules_list = [] # List of list
 
 
     # Yaml file can't be a mix of dirs and folder structures
@@ -102,7 +107,7 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
 
         # cDNA fastqs dir and HTO fastqs dir need to be none when providing fastq dir and inferring wildcards from there
         # During this process cDNA and HTO files are expected to be segregated by a dir called 'cDNA' or 'HTO' and not containing
-        # these as suffixes in the filename
+        # these as suffixes in the filename.
         elif os.path.isdir(sample_dict[0]):
             FOLD_STRUCT = False
             FASTQ_DIR = True
@@ -110,36 +115,41 @@ elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswit
         else:
             raise ValueError("Expected either all folder stuctures for the samples or a dir containing the fastqs but neither was provided")
 
+    # If a string is provided, it is expected to be a folder structure with wildcards to extracted
     elif isinstance(sample_dict, str):
-        pass
+        samp_type, proj_type, sample_name = glob_wildcards(sample_dict) # Make sure there are same number of wildcards on LHS and RHS
+
+    else:
+        raise ValueError("Unexpected Type of input in samples containing yaml file!")
 
     # Check if the yaml file has list of file names (or folder structure
     # for each sample) or list of dirs each containing samples that 
     # need separate modules.
     # Similar to previous 'for loop' needs refinement
-    for k, vals in sample_dict.items():
-        sample_set_names.append(k)
-        files_list.append(vals)
+    # for k, vals in sample_dict.items():
+    #     sample_set_names.append(k)
+    #     files_list.append(vals)
 
 
     wildcards_list = dict.fromkeys(sample_dict.keys()) # dict of list
-    # How to parse the values of wildcards (also separate wildcards 
-    # for each module)
-    for k, f_l in sample_dict.items():
-        samp_type = [] # wildcard 'samp_type'
-        proj_type = [] # wildcard 'proj'
-        sample_name = [] # wildcard 'samp_name'
-        for f in f_l:
-            line_sp = f.split('/')
-            samp_type.append(line_sp[0].strip())
-            proj_type.append(line_sp[1].strip())
-            sample_name.append(line_sp[2].strip())
+    if FOLD_STRUCT and not FASTQ_DIR:
+        # How to parse the values of wildcards (also separate wildcards 
+        # for each module)
+        for k, f_l in sample_dict.items():
+            samp_type = [] # wildcard 'samp_type'
+            proj_type = [] # wildcard 'proj'
+            sample_name = [] # wildcard 'samp_name'
+            for f in f_l:
+                line_sp = f.split('/')
+                samp_type.append(line_sp[0].strip())
+                proj_type.append(line_sp[1].strip())
+                sample_name.append(line_sp[2].strip())
 
-        wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
-        # if k == 'multip_samples':
-        #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
-        # else:
-        #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type}
+            wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
+            # if k == 'multip_samples':
+            #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type, 'samp_name':sample_name }
+            # else:
+            #     wildcards_list[k] = {'samp_type':samp_type, 'proj':proj_type}
 
     # Create a dict of wildcards
     # For multi_modules create list of dict of wildcards (or dict of 
