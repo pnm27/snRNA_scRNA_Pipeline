@@ -2,42 +2,92 @@
 # Provided a file that contains multiple vcfs per each sample
 # present as config['phe_demux_pipeline']['vcf_info']
 
-def read_files_ext(fname) -> pd.DataFrame :
+from distutils.command.config import config
+from struct import unpack
+from typing import Union # Need verion > 3.5
+import numpy as np, pandas as pd
+
+assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
+
+
+def read_files_ext(fname, h: Union[None, list]=None) -> pd.DataFrame :
     if not os.path.isfile(fname):
         raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
-    if fname.endswith('.csv'):
+
+    if fname.endswith('.csv') and h is None:
         return pd.read_csv(fname)
-    elif fname.endswith('.tsv'):
+    elif fname.endswith('.csv') and h is not None:
+        return pd.read_csv(fname, names=h)
+    elif fname.endswith('.tsv') and h is None:
         return pd.read_csv(fname, sep='\t')
+    elif fname.endswith('.tsv') and h is not None:
+        return pd.read_csv(fname, sep='\t', names=h)
     else:
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
+
+
+
+def get_vir_inputs(wildcards):
+    ret_dict = {'cellsnp_input': f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"}
+    if config['phe_demux_pipeline']['donors_per_pool_file'] is not None:
+        try:
+            # If all pools have same expected number of donors and value is, therefore, an int
+            int(config['phe_demux_pipeline']['donors_per_pool_file'])
+        except:
+            ret_dict['donor_info'] = config['phe_demux_pipeline']['donors_per_pool_file']
+
+    return ret_dict
+
 
 
 def get_donors(wildcards, input):
     # temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=config['hash_columns'])
     # donors = ','.join(temp_df.loc[temp_df[config['hash_columns'][2]] == wildcards.id1[:-6], config['hash_columns'][1]].to_list())
     # Dictionary containing keys 'donor' - number of donors and 'vcf' - a vcf file or a list of vcf files using which we want to run
-    vals=dict.fromkeys(['donor', 'vcf'])
+    vals=dict.fromkeys(['vcf'])
     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
     wet_lab_df = read_files_ext(config['wet_lab_info'])
-    samp=wildcards.id1.replace('-', '_')+'_cDNA'
-    cols1=config['phe_demux_pipeline']['vcf_info_columns']
-    cols2=config['phe_demux_pipeline']['wet_lab_file_cols']
-    set_num=wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
-    vals['donor'] = temp_df.loc[temp_df[cols1[0]] == set_num, cols1[1]].values[0]
-    vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
+    samp = wildcards.id1.replace('-', '_')+'_cDNA'
+    cols1 = config['phe_demux_pipeline']['vcf_info_columns']
+    cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+    set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
+    try:
+        vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
+    except:
+        vals['vcf'] = np.nan
 
     return vals
+
+
+
+def ret_dons(wildcards, input) -> Union[None, int]:
+    if config['phe_demux_pipeline']['donors_per_pool_file'] is None:
+        return None
+    elif 'donor_info' in input:
+        temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
+        if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
+            return int(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0])
+        # If vcfs per pool have exact same number of donors as expected
+        else:
+            return None
+    # when all pools have same no. of expected donors and they are either 
+    # less or more than available donors in each vcf
+    else:
+        try:
+            return int(config['phe_demux_pipeline']['donors_per_pool_file'])
+        except:
+            raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
+
 
 
 def multi_vcfs(wildcards):
     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
     wet_lab_df = read_files_ext(config['wet_lab_info'])
-    samp=wildcards.id1.replace('-', '_')+'_cDNA'
-    cols1=config['phe_demux_pipeline']['vcf_info_columns']
-    cols2=config['phe_demux_pipeline']['wet_lab_file_cols']
-    set_num=wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
-    col=wildcards.vcf_type
+    samp = wildcards.id1.replace('-', '_')+'_cDNA'
+    cols1 = config['phe_demux_pipeline']['vcf_info_columns']
+    cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+    set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
+    col = wildcards.vcf_type
 
     return temp_df.loc[temp_df[cols1[0]] == set_num, col].values[0]
 
@@ -132,18 +182,18 @@ rule cellSNP:
 
 rule vireoSNP:
     input:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"
+        unpack(get_vir_inputs)
         
     output:
         f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
-
 
     # group: "phenotype-demux"
 
     params:
         donor_info=get_donors,
         geno_tag=config['phe_demux_pipeline']['donor_genotype'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", '')
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", ''),
+        n_donors=ret_dons
 
     threads: 5
 
@@ -151,4 +201,19 @@ rule vireoSNP:
         mem_mb=allocate_mem_vS,
         time_min=allocate_time_vS
         
-    shell: "vireo -c {input} -d {params.donor_info[vcf]} -N 6 -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100"
+    run:
+        # If vcf is provided
+        if not np.isnan(params.donor_info['vcf']):
+            if 'donor_info' in input and isinstance(params.n_donors, int):
+                shell("""
+                vireo -c {input} -d {params.donor_info[vcf]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+                """)
+            elif 'donor_info' in input and params.n_donors is None:
+                shell("""
+                vireo -c {input} -d {params.donor_info[vcf]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+                """)
+            
+        else:
+            shell("""
+            vireo -c {input} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+            """)

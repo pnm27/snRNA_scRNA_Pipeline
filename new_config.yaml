@@ -185,6 +185,7 @@ phe_demux_pipeline:
   min_aggr_count: 20
   min_maf: 0.1
   n_proc: 20
+  donors_per_pool_file: /sc/arion/work/prashf01/choroid_plexus_new_pipeline/vireo_info.csv # values: null, file containing # donors per pool
   donors_vcf: GT_donors.vireo.vcf.gz
   donors_classification: donor_ids.tsv
   filt_vcf: filt.vcf.gz
