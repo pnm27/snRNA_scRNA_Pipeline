@@ -57,54 +57,9 @@ include: "rules/split_bams.snkmk"
 # include: "rules/pheno_demux2.snkmk"
 
 
-def get_all_inputs(conf_f, mm):
-    if mm and (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
-        # Validating config['last_step']
-        # with open(config['last_step']) as fout:
-        #     modules_df = pd.json_normalize(yaml.load(fout, Loader=yaml.SafeLoader))
-        # validate(modules_df, "modules.schema.json")
-        temp_l=[]
-        with open(config['last_step']) as fout:
-            modules_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-        # Load folder_structures yaml file
-        with open(config['folder_structures']) as fout:
-            fold_structs_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-        for k, v in modules_dict.items():
-            temp_l.extend(produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k], fs=fold_structs_dict[k]))
-
-        return temp_l
-
-    elif not mm and not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
-        # Load folder_structures yaml file
-        with open(config['folder_structures']) as fout:
-            fold_structs_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-        return produce_targets(conf_f=conf_f, last_step=config['last_step'], wc_d=wildcards_list[k], fs=fold_structs_dict[k])
-
-    # When a yaml file for modules is given but with only one module ( only for practical use when checking a part of multi_module setup)
-    elif not mm and (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
-        with open(config['last_step']) as fout:
-            modules_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-        # Load folder_structures yaml file
-        with open(config['folder_structures']) as fout:
-            fold_structs_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-        for k,v in modules_dict.items():
-            return produce_targets(conf_f=conf_f, last_step=v, wc_d=wildcards_list[k], fs=fold_structs_dict[k])
-
-
-
-wildcard_constraints:
-    f_s: "[A-Za-z]+(?=/)?"
-
-
-
 rule all:
     input:
-        get_all_inputs(conf_f=config, mm=MULTI_MODULES)
+        get_all_inputs(conf_f=config)
         
 
 
