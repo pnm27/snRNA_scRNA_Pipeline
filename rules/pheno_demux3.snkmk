@@ -1,8 +1,6 @@
 # This rule will create multiple runs of cellSNP and vireoSNP for each sample
 # Provided a file that contains multiple vcfs per each sample
 # present as config['phe_demux_pipeline']['vcf_info']
-
-from distutils.command.config import config
 from struct import unpack
 from typing import Union # Need verion > 3.5
 import numpy as np, pandas as pd
@@ -127,17 +125,17 @@ rule create_inp_cellSNP:
 
 
 # Not yet finished implementing
-rule get_id_hash:
-    input:
+# rule get_id_hash:
+#     input:
 
 
-    output:
-        config['phe_demux_pipeline']['meta_data_geno_samp']
+#     output:
+#         config['phe_demux_pipeline']['meta_data_geno_samp']
 
-    shell:
-        """
-        sleep 100
-        """
+#     shell:
+#         """
+#         sleep 100
+#         """
 
 
 # UMI tag is turned on. Therefore, PCR duplicates are included
