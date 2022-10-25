@@ -2,72 +2,37 @@ import os, yaml
 from snakemake.utils import validate
 
 
-def isfolder_struct(base_dir, x):
-    return os.path.isdir(os.path.join(base_dir, '/'.join(x.split('/')[:-1])))
-
-
 # Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
 if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
 
     #Lists that will contain wildcards
-    # Value of last_step should be regulated by the json schema
-    assert isinstance(conf_f['last_step'], str), "'select_fastqs' in new_config.yaml is not a yaml file. Hence, value in last_step should be one of the modules!"
-    
-    with open(config['select_fastqs']) as fq:
-        all_file_lines=fq.readlines()
-
+    round_num=[] # wildcard 'num'
     sample_name=[] # wildcard 'id1'
-    # If there are more than one line in the file then it's assumed to have
-    if (len(all_file_lines) > 1) or (len(all_file_lines) == 1 and isfolder_struct(config['cDNA_fastqs_dir'], all_file_lines[0])):
-        FOLD_STRUCT = True
-        FASTQ_DIR = False
-
-    # cDNA fastqs dir and HTO fastqs dir values aren't considered when providing fastq dir and inferring wildcards from there
-    # During this process cDNA and HTO files are expected to be segregated by a dir called 'cDNA' or 'HTO' and not containing
-    # these as suffixes in the filename
-    # If a dir is provided then it is expected to contain wildcards ({}) that need to extracted
-    elif len(all_file_lines) == 1 and all_file_lines[0].find('{') != -1:
-        FOLD_STRUCT = False
-        FASTQ_DIR = True
-
-    # If a dir is provided and it doesn't conatin any wildcards ({}) that need to extracted
-    # then fastq filenames are assumed to be in the format:
-    # 
-
-    # Parsing samples containing file to get wildcards
-    if FOLD_STRUCT and not FASTQ_DIR:
-        for line in all_file_lines:
-                line_sp = line.split('/')
-                # round_num.append(line_sp[0])
-                sample_name.append(line_sp[2].strip())
-
-
-    # Use Snakemake's glob_wildcards to resolve wildcards
-    elif not FOLD_STRUCT and FASTQ_DIR:
-        sample_name, = glob_wildcards(all_file_lines[0]) # Make sure there are same number of wildcards on LHS and RHS
-
-    elif (FOLD_STRUCT and FASTQ_DIR) or (not FOLD_STRUCT and not FASTQ_DIR):
-        raise ValueError("Unexpected conditions in the rule input_processing!")
-
-    else:
-        raise ValueError("This should never execute!")
+    # for eg. round5/Sample_xxxxx-cDNA/xxxxx-cDNA
+    # round_num = round5
+    # sample_name = xxxxx
+    with open(config['select_fastqs']) as fq:
+        for line in fq:
+            line_sp = line.split('/')
+            round_num.append(line_sp[0])
+            sample_name.append(line_sp[2].strip().replace('-cDNA', ''))
 
     # Create a dict of wildcards
-    wildcards_list={'id1':sample_name}
+    wildcards_list={'num':round_num, 'id1':sample_name}
 
 
 # If the input is yaml file then validate it and process it
 # The example in here is for more than one wildcards
-elif os.path.isfile(config['select_fastqs']) and config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml'):
+elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml')):
     # Validating config['select_fastqs']
     # with open(config['select_fastqs']) as fout:
     #     samples_df = pd.json_normalize(yaml.load(fout, Loader=yaml.SafeLoader))
     # validate(samples_df, "samples.schema.json")
 
     # Value of last_step should be regulated by the json schema
-    if not isinstance(config['last_step'], str) or not (config['last_step'].endswith('.yaml') or config['last_step'].endswith('.yml')):
-        raise ValueError("Value in last_step should be one of the modules or a yaml file containing acceptable module names!")
+    if not isinstance(config['last_step'], str) and not (config['last_step'].endswith('.yaml') and not config['last_step'].endswith('.yml')):
+        raise ValueError("Value in last_step should be one of the modules names!")
 
 
     # File exists or not
