@@ -59,7 +59,7 @@ include: "rules/split_bams.snkmk"
 
 rule all:
     input:
-        produce_targets(conf_f=config)
+        produce_targets(conf_f=config, wc_d=wildcards_list)
         
 
 
