@@ -59,7 +59,7 @@ include: "rules/split_bams.snkmk"
 
 rule all:
     input:
-        get_all_inputs(conf_f=config)
+        produce_targets(conf_f=config)
         
 
 

@@ -1,7 +1,6 @@
 # This rule will create multiple runs of cellSNP and vireoSNP for each sample
 # Provided a file that contains multiple vcfs per each sample
 # present as config['phe_demux_pipeline']['vcf_info']
-from struct import unpack
 from typing import Union # Need verion > 3.5
 import numpy as np, pandas as pd
 
