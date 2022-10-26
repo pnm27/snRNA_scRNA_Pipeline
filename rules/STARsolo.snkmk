@@ -1,14 +1,14 @@
-import glob2, re
+import os, glob2, re
 
 
 def get_r1_fastqs(wildcards):
-    temp_fold="{config['fold_struct']}".format(id1=wildcards.id1) # Add wildcards
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1) # Add wildcards
     r1_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R1_suffix']}"))
     return r1_files
 
 
 def get_r2_fastqs(wildcards):
-    temp_fold="{config['fold_struct']}".format(id1=wildcards.id1)
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1)
     r2_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R2_suffix']}"))
     return r2_files
 
