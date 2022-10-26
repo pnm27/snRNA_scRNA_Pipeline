@@ -20,7 +20,7 @@ def get_hash_file(wildcards):
     # If donor names aren't the same then use a converter file to do so
     # The output file should have headers (the same as when calico_solo's output when run through the rule create_inp_splitBams)
     elif config['last_step'] is not None and config['last_step'].lower() == "starsolo_split_bams_phe_demux": # change this soon
-        return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{wildcards.vcf_type}_bc_hash.txt"
+        return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
     else:
         raise ValueError("Something is wrong with the expected input for the rule split_bams")
 
@@ -75,10 +75,10 @@ rule create_inp_splitBams:
 
 rule create_inp_splitBams_phe_demux:
     input:
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{{vcf_type}}/{config['phe_demux_pipeline']['donors_classification']}"
+        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
 
     output:
-        f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_{{vcf_type}}_bc_hash.txt"
+        f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
 
     params:
         conv_df=config['split_bams_pipeline_phe_demux']['gt_conv']
@@ -144,7 +144,7 @@ rule split_bams:
         time_min=10
 
     output:
-        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}_{{vcf_type}}.txt"  # Proxy to the output
+        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
 
     run:
         hash_file=pd.read_csv(input.barcodes_vs_donor, sep='\t')
