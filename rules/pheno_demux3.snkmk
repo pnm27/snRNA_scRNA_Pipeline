@@ -37,21 +37,27 @@ def get_vir_inputs(wildcards):
 
 
 
-def get_donors(wildcards, input):
+def get_donors(wildcards, input): # REFINE THIS
     # temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=config['hash_columns'])
     # donors = ','.join(temp_df.loc[temp_df[config['hash_columns'][2]] == wildcards.id1[:-6], config['hash_columns'][1]].to_list())
     # Dictionary containing keys 'donor' - number of donors and 'vcf' - a vcf file or a list of vcf files using which we want to run
     vals=dict.fromkeys(['vcf'])
-    temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
-    wet_lab_df = read_files_ext(config['wet_lab_info'])
-    samp = wildcards.id1.replace('-', '_')+'_cDNA'
-    cols1 = config['phe_demux_pipeline']['vcf_info_columns']
-    cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
-    set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
-    try:
-        vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
-    except:
-        vals['vcf'] = np.nan
+    if config['last_step'].lower().endswith('multi_vcf'):
+        temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
+        wet_lab_df = read_files_ext(config['wet_lab_info'])
+        samp = wildcards.id1.replace('-', '_')+'_cDNA'
+        cols1 = config['phe_demux_pipeline']['vcf_info_columns']
+        cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+        set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
+        # This function to be modified for:
+        # 1) if the input is a text file with each pool having its own vcf
+        # 2) When the pipeline is to be run for multi-vcf inputs
+        try:
+            vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
+        except:
+            vals['vcf'] = np.nan
+    elif 'donor_info' in input:
+        vals['vcf'] = input['donor_info']
 
     return vals
 
