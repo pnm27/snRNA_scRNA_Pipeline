@@ -19,7 +19,7 @@ def get_hash_file(wildcards):
     # Create hash from vireo_SNPs output
     # If donor names aren't the same then use a converter file to do so
     # The output file should have headers (the same as when calico_solo's output when run through the rule create_inp_splitBams)
-    elif config['last_step'] is not None and config['last_step'].lower() == "starsolo_split_bams_phe_demux": # change this soon
+    elif config['last_step'] is not None and config['last_step'].lower() == "starsolo_split_bams_gt_demux": # change this soon
         return f"{config['split_bams_pipeline_phe_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
     else:
         raise ValueError("Something is wrong with the expected input for the rule split_bams")
