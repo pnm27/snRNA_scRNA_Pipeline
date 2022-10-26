@@ -64,23 +64,29 @@ def allocate_mem_GIH(wildcards, attempt):
 
 
 def allocate_mem_cS(wildcards, attempt):
-    if wildcards.vcf_type.endswith('_max50k'):
-        return 200+80*(attempt-1)
-    elif wildcards.vcf_type.endswith('25pct'):
-        return 800+100*(attempt-1)
-    elif wildcards.vcf_type.endswith('gencode'):
-        return 1300+200*(attempt-1)
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 200+80*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 800+100*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 1300+200*(attempt-1)
+        else:
+            return 1500+200*(attempt-1)
     else:
         return 1500+200*(attempt-1)
 
 
 def allocate_mem_vS(wildcards, attempt):
-    if wildcards.vcf_type.endswith('_max50k'):
-        return 3000+100*(attempt-1)
-    elif wildcards.vcf_type.endswith('25pct'):
-        return 5000+400*(attempt-1)
-    elif wildcards.vcf_type.endswith('gencode'):
-        return 10000+600*(attempt-1)
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 3000+100*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 5000+400*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 10000+600*(attempt-1)
+        else:
+            return 22000+500*(attempt-1)
     else:
         return 22000+500*(attempt-1)
 
@@ -180,23 +186,29 @@ def allocate_time_GIH(wildcards, attempt):
 
 
 def allocate_time_cS(wildcards, attempt):
-    if wildcards.vcf_type.endswith('_max50k'):
-        return 30+20*(attempt-1)
-    elif wildcards.vcf_type.endswith('25pct'):
-        return 70+20*(attempt-1)
-    elif wildcards.vcf_type.endswith('gencode'):
-        return 180+40*(attempt-1)
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 30+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 70+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 180+40*(attempt-1)
+        else:
+            return 240+60*(attempt-1)
     else:
         return 240+60*(attempt-1)
 
 
 def allocate_time_vS(wildcards, attempt):
-    if wildcards.vcf_type.endswith('_max50k'):
-        return 10+5*(attempt-1)
-    elif wildcards.vcf_type.endswith('25pct'):
-        return 70+20*(attempt-1)
-    elif wildcards.vcf_type.endswith('gencode'):
-        return 180+40*(attempt-1)
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 10+5*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 70+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 180+40*(attempt-1)
+        else:
+            return 180+60*(attempt-1)
     else:
         return 180+60*(attempt-1)
 
