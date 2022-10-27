@@ -169,7 +169,7 @@ rule cellSNP:
         filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}"[:-1], # remove trailing forward slash
         threads=config['phe_demux_pipeline']['bcftools_thread']
 
-    threads: 1
+    threads: 8
 
     resources:
         mem_mb=allocate_mem_cS,
@@ -198,7 +198,7 @@ rule vireoSNP:
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", ''),
         n_donors=ret_dons
 
-    threads: 5
+    threads: 7
 
     resources:
         mem_mb=allocate_mem_vS,
