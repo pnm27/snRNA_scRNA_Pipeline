@@ -68,8 +68,13 @@ def ret_dons(wildcards, input) -> Union[None, int]:
         return None
     elif isinstance(input['donor_info'], object):
         temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
-        if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
+        # if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
+        # If either values aren't present or if they can't be cast as int
+        # it means that the has the expected number of donors (returns None)
+        try:
             return int(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0])
+        except:
+            return None
         # If vcfs per pool have exact same number of donors as expected
         else:
             return None
