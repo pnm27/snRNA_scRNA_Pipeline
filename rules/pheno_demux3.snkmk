@@ -66,7 +66,7 @@ def get_donors(wildcards, input): # REFINE THIS
 def ret_dons(wildcards, input) -> Union[None, int]:
     if config['phe_demux_pipeline']['donors_per_pool_file'] is None:
         return None
-    elif 'donor_info' in input:
+    elif isinstance(input['donor_info'], object):
         temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
         if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
             return int(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0])
