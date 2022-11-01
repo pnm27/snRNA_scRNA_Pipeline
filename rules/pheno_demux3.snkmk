@@ -270,16 +270,17 @@ rule vireoSNP:
         
     run:
         # If vcf is provided
-        if isinstance(input['donor_info'], object) and isinstance(params.n_donors, int):
-            shell("""
-            vireo -c {input[cellsnp_input]} -d {input[donor_info]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-            """)
-        elif isinstance(input['donor_info'], object) and params.n_donors is None:
-            shell("""
-            vireo -c {input[cellsnp_input]} -d {input[donor_info]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-            """)
+        try:
+            if isinstance(input['donor_info'], object) and isinstance(params.n_donors, int):
+                shell("""
+                vireo -c {input[cellsnp_input]} -d {input[donor_info]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+                """)
+            elif isinstance(input['donor_info'], object) and params.n_donors is None:
+                shell("""
+                vireo -c {input[cellsnp_input]} -d {input[donor_info]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+                """)
             
-        else:
+        except:
             shell("""
             vireo -c {input[cellsnp_input]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
             """)
