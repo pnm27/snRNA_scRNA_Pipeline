@@ -153,6 +153,7 @@ demux_pipeline:
 phe_demux_pipeline:
   cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/cellSNP/
   inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/inp_for_cellsnp/
+  cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
   # donor_id_diff: yes
   # ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
   # genotype_info: /sc/arion/projects/psychAD/pnm/VA_BR_Clinical_combo_matched_CMC_AMPAD_10082020.csv
@@ -183,7 +184,7 @@ phe_demux_pipeline:
   min_aggr_count: 20
   min_maf: 0.1
   n_proc: 20
-  donors_per_pool_file: /sc/arion/work/prashf01/choroid_plexus_new_pipeline/vireo_info.csv # values: null, file containing # donors per pool
+  donors_per_pool_file: null # values: null, vcf.gz file
   donors_vcf: GT_donors.vireo.vcf.gz
   donors_classification: donor_ids.tsv
   filt_vcf: filt.vcf.gz

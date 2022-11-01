@@ -213,7 +213,7 @@ rule cellSNP:
         # bc=get_filt_barcodes,
         bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
         bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        ref_snps=config['phe_demux_pipeline']['vcf_info'], # modify this to accept either a text file containing per pool vcf or one single vcf file
+        ref_snps=config['phe_demux_pipeline']['cellsnp_ref_snps'], # modify this to accept either a text file containing per pool vcf or one single vcf file
         genome_1k_ref=config['phe_demux_pipeline']['genome_1k_ref']
 
     # group: "phenotype-demux"
