@@ -7,87 +7,146 @@ import numpy as np, pandas as pd
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 
-def read_files_ext(fname, h: Union[None, list]=None) -> pd.DataFrame :
+# def read_files_ext(fname, h: Union[None, list]=None) -> pd.DataFrame :
+def read_files_ext(fname, **kwargs) -> pd.DataFrame :    
     if not os.path.isfile(fname):
         raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
 
-    if fname.endswith('.csv') and h is None:
-        return pd.read_csv(fname)
-    elif fname.endswith('.csv') and h is not None:
-        return pd.read_csv(fname, names=h)
-    elif fname.endswith('.tsv') and h is None:
-        return pd.read_csv(fname, sep='\t')
-    elif fname.endswith('.tsv') and h is not None:
-        return pd.read_csv(fname, sep='\t', names=h)
+    # if fname.endswith('.csv') and h is None:
+    #     return pd.read_csv(fname)
+    # elif fname.endswith('.csv') and h is not None:
+    #     return pd.read_csv(fname, names=h)
+    # elif fname.endswith('.tsv') and h is None:
+    #     return pd.read_csv(fname, sep='\t')
+    # elif fname.endswith('.tsv') and h is not None:
+    #     return pd.read_csv(fname, sep='\t', names=h)
+    if fname.endswith('.csv'):
+        return pd.read_csv(fname, **kwargs)
+    elif fname.endswith('.tsv'):
+        return pd.read_csv(fname, sep='\t', **kwargs)
     else:
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
 
+def ret_cols(fname) -> int :    
+    if not os.path.isfile(fname):
+        raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
+    if fname.endswith('.csv'):
+        return pd.read_csv(fname, nrows=1, header=None).shape[1]
+    elif fname.endswith('.tsv'):
+        return pd.read_csv(fname, sep='\t', nrows=1, header=None).shape[1]
+    else:
+        raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
+
+
+
+# Consolidate this function and ret_dons
+# MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
+# MULTI_VCF
+# i.e. An input to vireo rule (config['phe_demux_pipeline']['vcf_info']) should be either:
+# 1) A three columned (no-header) file containing pool name, expected donors,
+#    and corresponding vcf file (can be multiple columns) while config['phe_demux_pipeline']['donors_per_pool_file'] should be None
+# 2) A 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
+#    and the path to a (single) vcf file (bgzf) containing all donors in config['phe_demux_pipeline']['donors_per_pool_file']
+# 3) None, if the runs are to be without any vcf files and config['phe_demux_pipeline']['donors_per_pool_file'] should be 
+#    a 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
 def get_vir_inputs(wildcards):
     ret_dict = {'cellsnp_input': f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"}
-    if config['phe_demux_pipeline']['donors_per_pool_file'] is not None:
+    # if config['phe_demux_pipeline']['vcf_info'].endswith('vcf.gz'):
+    #     ret_dict['donor_info'] = config['phe_demux_pipeline']['vcf_info']
+    # elif config['phe_demux_pipeline']['vcf_info'].endswith('vcf'):
+    #     raise IOError("Given vcf file in 'vcf_info' in config file is not BGZF formatted!")
+    # elif config['phe_demux_pipeline']['vcf_info'].endswith('txt') or config['phe_demux_pipeline']['vcf_info'].endswith('csv') \
+    #     or config['phe_demux_pipeline']['vcf_info'].endswith('tsv'):
+    col_set1 = ["pool", "n_dons", "vcf"]
+    col_set2 = ["pool", "n_dons"]
+    n_cols = ret_cols(config['phe_demux_pipeline']['vcf_info'])
+    # For condn. 1)
+    if config['phe_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
+        temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'], names=col_set1)
         try:
-            # If all pools have same expected number of donors and value is, therefore, an int
-            int(config['phe_demux_pipeline']['donors_per_pool_file'])
+            ret_dict['donor_info'] = temp_df.loc[temp_df["pool"] == wildcards.id1, "vcf"].values[0]
         except:
-            ret_dict['donor_info'] = config['phe_demux_pipeline']['donors_per_pool_file']
+            pass
+    # Run without vcf
+    elif config['phe_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
+        pass
+    # For condn. 2)
+    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
+        raise ValueError("Expecting 2-columned"\
+            " file: pool name and expected donors")
+    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
+        ret_dict['donor_info'] = config['phe_demux_pipeline']['donors_per_pool_file']
+    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
+        raise IOError("Given vcf file in 'donors_per_pool_file' in config file is not BGZF formatted!")
+    else:
+        raise IOError("Unexpected file type or value provided to 'donors_per_pool_file' in config file")
 
     return ret_dict
 
 
 
-def get_donor_info(wildcards, input): # REFINE THIS
+# def get_donor_info(wildcards, input): # OUTDATED
     # temp_df = pd.read_csv(config['meta_data_geno_samp'], skiprows=1, names=config['hash_columns'])
     # donors = ','.join(temp_df.loc[temp_df[config['hash_columns'][2]] == wildcards.id1[:-6], config['hash_columns'][1]].to_list())
     # Dictionary containing keys 'donor' - number of donors and 'vcf' - a vcf file or a list of vcf files using which we want to run
-    vals=dict.fromkeys(['vcf'])
-    if config['last_step'].lower().endswith('multi_vcf'):
-        temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
-        wet_lab_df = read_files_ext(config['wet_lab_info'])
-        samp = wildcards.id1.replace('-', '_')+'_cDNA'
-        cols1 = config['phe_demux_pipeline']['vcf_info_columns']
-        cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
-        set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
-        # This function to be modified for:
-        # 1) if the input is a text file with each pool having its own vcf
-        # 2) When the pipeline is to be run for multi-vcf inputs
-        try:
-            vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
-        except:
-            vals['vcf'] = None
-    elif 'donor_info' in input:
-        vals['vcf'] = input['donor_info']
+    # vals=dict.fromkeys(['vcf'])
+    # if config['last_step'].lower().endswith('multi_vcf'):
+    #     assert not config['phe_demux_pipeline']['vcf_info'].endswith('vcf.gz'), \
+    #         "Not expecting a single vcf file with multi_vcf module!"
+    #     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
+    #     wet_lab_df = read_files_ext(config['wet_lab_info'])
+    #     samp = wildcards.id1.replace('-', '_')+'_cDNA'
+    #     cols1 = config['phe_demux_pipeline']['vcf_info_columns']
+    #     cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+    #     set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
+    #     # This function to be modified for:
+    #     # 1) if the input is a text file with each pool having its own vcf
+    #     # 2) When the pipeline is to be run for multi-vcf inputs
+    #     try:
+    #         vals['vcf'] = temp_df.loc[temp_df[cols1[0]] == set_num, wildcards.vcf_type].values[0]
+    #     except:
+    #         vals['vcf'] = None
+    # elif 'donor_info' in input:
+    #     vals['vcf'] = input['donor_info']
 
-    return vals
+    # return vals
 
+
+
+# def ret_dons(wildcards, input) -> Union[None, int]: # DEPRACATED
+#     if config['phe_demux_pipeline']['donors_per_pool_file'] is None:
+#         return None
+#     elif isinstance(input['donor_info'], object):
+#         temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
+#         # if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
+#         # If either values aren't present or if they can't be cast as int
+#         # it means that the has the expected number of donors (returns None)
+#         try:
+#             return int(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0])
+#         except:
+#             return None
+#         # If vcfs per pool have exact same number of donors as expected
+#         else:
+#             return None
+#     # when all pools have same no. of expected donors and they are either 
+#     # less or more than available donors in each vcf
+#     else:
+#         try:
+#             return int(config['phe_demux_pipeline']['donors_per_pool_file'])
+#         except:
+#             raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
 
 
 def ret_dons(wildcards, input) -> Union[None, int]:
-    if config['phe_demux_pipeline']['donors_per_pool_file'] is None:
-        return None
-    elif isinstance(input['donor_info'], object):
-        temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
-        # if not np.isnan(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0]):
-        # If either values aren't present or if they can't be cast as int
-        # it means that the has the expected number of donors (returns None)
-        try:
-            return int(temp_df.loc[temp_df['pool'] == wildcards.id1, 'n_dons'].values[0])
-        except:
-            return None
-        # If vcfs per pool have exact same number of donors as expected
-        else:
-            return None
-    # when all pools have same no. of expected donors and they are either 
-    # less or more than available donors in each vcf
-    else:
-        try:
-            return int(config['phe_demux_pipeline']['donors_per_pool_file'])
-        except:
-            raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
+    col_set = ["pool", "n_dons"]
+    n_cols = ret_cols(config['phe_demux_pipeline']['vcf_info'])
+    temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'], names=col_set)
+    return temp_df.loc[temp_df["pool"] == wildcards.id1, "n_dons"].values[0]
 
 
-
+# Multi_module branch related function
 # def multi_vcfs(wildcards):
 #     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
 #     wet_lab_df = read_files_ext(config['wet_lab_info'])
@@ -198,7 +257,7 @@ rule vireoSNP:
     # group: "phenotype-demux"
 
     params:
-        donor_info=get_donor_info,
+        # donor_info=get_donor_info,
         geno_tag=config['phe_demux_pipeline']['donor_genotype'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", ''),
         n_donors=ret_dons
@@ -211,17 +270,16 @@ rule vireoSNP:
         
     run:
         # If vcf is provided
-        if params.donor_info['vcf'] is not None:
-            if 'donor_info' in input and isinstance(params.n_donors, int):
-                shell("""
-                vireo -c {input} -d {params.donor_info[vcf]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-                """)
-            elif 'donor_info' in input and params.n_donors is None:
-                shell("""
-                vireo -c {input} -d {params.donor_info[vcf]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-                """)
+        if isinstance(input['donor_info'], object) and isinstance(params.n_donors, int):
+            shell("""
+            vireo -c {input[cellsnp_input]} -d {input[donor_info]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+            """)
+        elif isinstance(input['donor_info'], object) and params.n_donors is None:
+            shell("""
+            vireo -c {input[cellsnp_input]} -d {input[donor_info]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+            """)
             
         else:
             shell("""
-            vireo -c {input} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+            vireo -c {input[cellsnp_input]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
             """)
