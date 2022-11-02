@@ -67,7 +67,7 @@ def targets_cellSNP(conf_f) -> list:
 def targets_gt_demux(conf_f) -> list:
     out_dir = conf_f['phe_demux_pipeline']['vireosnp_dir']
     fs_phe = conf_f['fold_struct_phe_demux']
-    suff = conf_f['phe_demux_pipeline']['donors_vcf']
+    suff = {config['phe_demux_pipeline']['donors_classification']}
     
     return [f"{out_dir}{fs_phe}{suff}"]
 
