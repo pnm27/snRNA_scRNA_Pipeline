@@ -375,14 +375,17 @@ elif redo is not None:
     if add_vireo is not None:
         # Storing parsed inputs        
         vir_class = auto_read(snakemake.input['vireoSNP_out'])
-        conv_df = pd.read_csv(snakemake.input['gt_conv'])
+        if snakemake.input['gt_conv'] is not None:
+            conv_df = pd.read_csv(snakemake.input['gt_conv'])
 
-        # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
-        vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
-        conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unique()), ["SubID", "primary_genotype"]]
-        vir_class['Subj_ID'] = vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
-        del vir_class['donor_id']
-
+            # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+            vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
+            conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unique()), ["SubID", "primary_genotype"]]
+            vir_class['Subj_ID'] = vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
+            del vir_class['donor_id']
+        else:
+            vir_class.rename(columns={"donor_id":"Subj_ID"}, inplace=True, errors="raise")
+            
         # get_df = adata.obs_names.to_series().apply(ret_subj_ids, args=(vir_class,))
         get_df = ret_subj_ids(ann.obs_names.to_list(), vir_class)
         ann.obs['SubID_vS'] = get_df["Subj_ID"].to_list()
