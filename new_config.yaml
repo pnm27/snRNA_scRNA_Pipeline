@@ -241,7 +241,7 @@ split_bams_pipeline:
 split_bams_pipeline_phe_demux:
   inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_phe_demux/
   subset_chr: 1
-  gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv
+  gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv #If no name changes are needed
   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_phe_demux/
   split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_phe_demux/
   split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_phe_demux/
