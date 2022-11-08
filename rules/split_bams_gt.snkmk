@@ -194,8 +194,7 @@ rule run_NGSCheckmate:
         ref_bed=config['split_bams_pipeline_phe_demux']['ngscheckmate_ref_bed'],
         inp_type=config['split_bams_pipeline_phe_demux']['ngs_inp_type'],
         proj_name=config['split_bams_pipeline_phe_demux']['proj_name'],
-        out_dir={config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']},
-        threads={config['split_bams_pipeline_phe_demux']['ngscheckmate_threads']}
+        out_dir={config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}
         # n_donors=get_donors
 
     threads: 5
@@ -214,6 +213,6 @@ rule run_NGSCheckmate:
         echo "REF={params.ref_fasta}" > ${{NCM_HOME}}/ncm.conf
         echo "SAMTOOLS=samtools" >> ${{NCM_HOME}}/ncm.conf
         echo "BCFTOOLS=bcftools" >> ${{NCM_HOME}}/ncm.conf
-        python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} -p {params.threads} -O {params.out_dir}
+        python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} -O {params.out_dir}
         sleep 30
         """

@@ -270,7 +270,6 @@ split_bams_pipeline_phe_demux:
   ngscheckmate_ref_bed: /sc/arion/projects/psychAD/ref_GRCh38/hglft_genome_6702d_cdce40_wo_chr.bed
   ngs_inp_type: B # either B or V or null; currently only B or V
   proj_name: psychAD
-  ngscheckmate_threads: 20
   
 
 # SNV-Aware alignment------------------------------------------------------
