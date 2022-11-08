@@ -122,6 +122,8 @@ def allocate_mem_SDB(wildcards, attempt):
     return 2500
 
 
+def allocate_mem_RN(wildcards, attempt):
+    return 20000+10000*(attempt-1)
 
 # Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
 # CAREFULL about exceeding time limits
@@ -235,3 +237,6 @@ def allocate_time_CPDV(wildcards, attempt):
 
 def allocate_time_SDB(wildcards, attempt):
     return 180
+
+def allocate_timem_RN(wildcards, attempt):
+    return 360
