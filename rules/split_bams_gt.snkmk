@@ -183,6 +183,8 @@ rule split_bams:
 # Integrate this later by adding checkpoints and also create
 # The input file required
 # Make sure this runs after each type of demux i.e. after calico_solo and after vireo
+# NGScheckmate git has issues with indentations in ncm.py
+# Open it up in an editor to correct them
 rule run_NGSCheckmate:
     params:
         # split_bams_dir=f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
