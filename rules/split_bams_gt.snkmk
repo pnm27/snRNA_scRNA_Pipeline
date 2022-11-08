@@ -184,7 +184,6 @@ rule split_bams:
 # The input file required
 # Make sure this runs after each type of demux i.e. after calico_solo and after vireo
 rule run_NGSCheckmate:
-
     params:
         # split_bams_dir=f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
         inp_file_list=config['split_bams_pipeline_phe_demux']['inp_file'],
