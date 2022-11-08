@@ -212,7 +212,6 @@ rule run_NGSCheckmate:
         echo "REF={params.ref_fasta}" > ${{NCM_HOME}}/ncm.conf
         echo "SAMTOOLS=samtools" >> ${{NCM_HOME}}/ncm.conf
         echo "BCFTOOLS=bcftools" >> ${{NCM_HOME}}/ncm.conf
-        python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} \
-            -p {params.threads} -O {params.out_dir}
+        python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} -p {params.threads} -O {params.out_dir}
         sleep 30
         """
