@@ -167,7 +167,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             suff = ".txt"
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
             final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
-            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
+            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_split_bams_gt_demux_multi_vcf":
@@ -210,7 +210,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
             final_target_list.extend(final_target_list2)
-            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
+            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
 
         elif target_step == "starsolo_rnaseqmet_kb_solo":
             target_files = targets_all(conf_f=conf_f, progs='RNAseq')

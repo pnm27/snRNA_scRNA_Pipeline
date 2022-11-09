@@ -204,7 +204,7 @@ rule run_NGSCheckmate:
         # time_min=allocate_time_RN
 
     output:
-        f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt"
+        f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt"
     shell:
         """
         ml samtools
