@@ -2,7 +2,7 @@
 
 from typing import Union # Need verion > 3.5
 import anndata as ad
-import pandas as pd
+import pandas as pd, os
 
 # assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
