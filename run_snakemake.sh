@@ -15,7 +15,5 @@
 ml anaconda3
 ml R/4.1.0
 
-source /sc/arion/work/prashf01/conda/envs/snakemake/etc/profile.d/conda.sh
-conda activate snakemake
 snakemake --profile prachu_lsf --restart-times 2 --latency-wait 10 #--batch all=1/3
 #snakemake -j 4 --restart-times 2 --latency-wait 10

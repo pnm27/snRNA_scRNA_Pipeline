@@ -4,7 +4,7 @@ from typing import Union # Need verion > 3.5
 import anndata as ad
 import pandas as pd
 
-assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
+# assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 
 ref_f=pd.read_csv("sample_to_donor_convertor_myUpdate_ver3.csv")
