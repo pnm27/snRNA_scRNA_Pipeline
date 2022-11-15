@@ -87,6 +87,13 @@ def targets_SplitBams(conf_f) -> list:
     return [f"{out_dir}{op}" ]
 
 
+def targets_resolve_swaps_gt_demux(conf_f) -> list:
+    out_dir = conf_f['finalize_demux']['out_dir']
+    fs_phe = conf_f['fold_struct_phe_demux']donor_info_swap_file
+    suff = config['phe_demux_pipeline']['donors_classification']
+    
+    return [f"{out_dir}{fs_phe}{suff}"]
+
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, PICARD=True, progs='all') -> list:
@@ -249,6 +256,10 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             else:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
+        elif target_step == "starsolo_resolve_swaps_gt_demux":
+            target_files = targets_resolve_swaps_gt_demux(conf_f=conf_f)
+            ONLY_VIREO = True
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         else:
             # print("Wrong inputs to produce_targets function!!")

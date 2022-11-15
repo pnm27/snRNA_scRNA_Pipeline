@@ -275,8 +275,12 @@ split_bams_pipeline_phe_demux:
 
 # Consolidating swaps info and redoing demultiplexing
 finalize_demux:
-  donor_info_swap_file: /sc/arion/projects/psychAD/pnm/
-  out_dir: 
+  out_dir: /sc/arion/projects/psychAD/gt_swaps_resolved_donor_h5ad/
+  donor_info_swap_file: /sc/arion/projects/psychAD/pnm/sample_to_donor_convertor_myUpdate_ver3.csv
+  donor_info_swap_file_cols:
+    - SubID
+    -  
+  
   
 
 # SNV-Aware alignment------------------------------------------------------

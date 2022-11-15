@@ -158,7 +158,8 @@ def ret_dons(wildcards, input) -> Union[None, int]:
 
 #     return temp_df.loc[temp_df[cols1[0]] == set_num, col].values[0]
 
-
+# Modify this rule's iunput to accomodate the basic filtering that 
+# is used for calico_solo's input
 rule create_inp_cellSNP:
     input:
         f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
