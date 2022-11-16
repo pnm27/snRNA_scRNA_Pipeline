@@ -12,12 +12,13 @@ def conv_type(x):
     except:
         return x
 
-def get_prop_don(x, t_df) -> str:
-    try:
-        t_df.loc[t_df.iloc[:, 1:].isin([str(x).strip()]).any(axis=1), "SubID"].values[0]
-        return x
-    except:
-        pass
+def get_prop_don(vals, t_df) -> str:
+    for x in vals:
+        try:
+            t_df.loc[t_df.iloc[:, 1:].isin([str(x).strip()]).any(axis=1), "SubID"].values[0]
+            return x
+        except:
+            continue
 # ---------------------------------------------------------------------------
 
 # NPSAD-issue specific input-------------------------------------------------
