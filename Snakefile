@@ -55,6 +55,7 @@ include: "rules/split_bams.snkmk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"
 # include: "rules/pheno_demux2.snkmk"
+include: "rules/identify_swaps.snkmk"
 
 
 rule all:
