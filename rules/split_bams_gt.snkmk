@@ -218,28 +218,28 @@ rule run_NGSCheckmate:
         """
 
 
-rule consolidate_gt_check_results:
-    input:
-        short_bam=get_bam_to_split,
-        barcodes_vs_donor=get_hash_file
+# rule consolidate_gt_check_results:
+#     input:
+#         short_bam=get_bam_to_split,
+#         barcodes_vs_donor=get_hash_file
 
-    params:
-        # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
-        # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
-        temp_bam_per_cell_dir=f"{config['split_bams_pipeline_phe_demux']['new_temp_dir2']}{config['fold_struct_bam_split2']}",
-        split_bams_dir=f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
-        per_donor_log_dir=config['split_bams_pipeline_phe_demux']['per_donor_split_log_dir2'],
-        time_limit_per_donor=config['split_bams_pipeline_phe_demux']['time_per_donor']
-        # n_donors=get_donors
+#     params:
+#         # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
+#         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
+#         temp_bam_per_cell_dir=f"{config['split_bams_pipeline_phe_demux']['new_temp_dir2']}{config['fold_struct_bam_split2']}",
+#         split_bams_dir=f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
+#         per_donor_log_dir=config['split_bams_pipeline_phe_demux']['per_donor_split_log_dir2'],
+#         time_limit_per_donor=config['split_bams_pipeline_phe_demux']['time_per_donor']
+#         # n_donors=get_donors
 
 
-    threads: 1
+#     threads: 1
 
-    resources:
-        mem_mb=allocate_mem_SB,
-        time_min=10
+#     resources:
+#         mem_mb=allocate_mem_SB,
+#         time_min=10
 
-    output:
-        f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
+#     output:
+#         f"{config['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']}{config['fold_struct_bam_split1']}.txt"  # Proxy to the output
 
-    run:
+#     run:
