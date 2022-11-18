@@ -97,7 +97,7 @@ def targets_resolve_swaps_gt_demux(conf_f) -> list:
 
 
 def targets_gt_demux_identify_swaps(conf_f) -> list:
-    out_dir = conf_f['identify_swaps']['out_dir']
+    out_dir = conf_f['identify_swaps']['mbv_out_dir']
     fs = conf_f['fold_struct_swaps_check']
     suff = conf_f['identify_swaps']['mbv_suffix']
     
