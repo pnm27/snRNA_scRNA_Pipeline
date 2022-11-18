@@ -4,6 +4,7 @@ last_step: STARsolo_kb_solo
 
 # Limit processing to the files present in
 select_fastqs: /sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt
+wildcards_select: null # null when select_fastqs is not a dir otherwise provide wildcard(s) to extract
 
 # Fastqs info, R1 and R2 suffix assumed to be the same for both cDNA and HTO
 # Need to update this for multi_modules
@@ -46,7 +47,8 @@ fold_struct_vcf: "{id1}/"
 # Folder structure for per-donor SNV-aware STARsolo bams
 fold_struct_snv_aware: "{id1}/"
 
-fold_struct_gt_demux_redo: "{donor}"
+fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
+fold_struct_swaps_check: "{id1}_{donor}"
 
 STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
@@ -129,17 +131,17 @@ kb_pipeline:
 
 # Demultiplexing pipeline----------------------------------------------------
 demux_pipeline:
-  h5ad_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cache/
-  calico_solo_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/solo/
+  h5ad_bustools_dir: /sc/arion/projects/psychAD/pnm/cache/
+  calico_solo_dir: /sc/arion/projects/psychAD/demultiplex/solo/
   hto_sep: null
   columns_to_pick:
-  - set_ID
-  - hto
-  - hto_barcode
+  - unique_sample_ID
+  - hashtag
+  - ab_barcode
   - SubID
   gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
-  final_count_matrix_dir: /sc/arion/projects/psychAD/snakemake_pipeline/final_count_matrix/solo/
-  demultiplex_info_dir: /sc/arion/projects/psychAD/snakemake_pipeline/demultiplex/info/
+  final_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/solo/
+  demultiplex_info_dir: /sc/arion/projects/psychAD/demultiplex/info/
   # Optional params
   bustools_h5ad: .h5ad
   max_mito_percentage: 5
@@ -156,14 +158,8 @@ phe_demux_pipeline:
   cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/cellSNP/
   inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/inp_for_cellsnp/
   cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
-  # donor_id_diff: yes
-  # ref_snps: /sc/arion/projects/psychAD/Single_cell_data/cellSNP_ref/CMC_SNParray_imputed_MAFp05_cellSNP_ref.vcf
-  # genotype_info: /sc/arion/projects/psychAD/pnm/VA_BR_Clinical_combo_matched_CMC_AMPAD_10082020.csv
-  # meta_data_geno_samp: /sc/arion/projects/psychAD/pnm/Hash_map_gtID_SubID.csv
-  # genotyped_vcf: /sc/arion/projects/psychAD/pnm/CMC_MSSM_NPSAD_genotyped_all.vcf.gz
   vcf_info: /sc/arion/projects/psychAD/pnm/pool_info.tsv
   vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP/
-  # filt_vcf_dir: /sc/arion/projects/psychAD/demux_gt/bcf_filt_vcf/
   filt_vcf_dir: /sc/arion/projects/psychAD/pnm/isec_reruns/ # when subsetting SNPs wrt ref SNVs (from a source like 1kGP)
   genome_1k_ref: /sc/arion/projects/psychAD/pnm/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vcf.gz
   donor_genotype: GT
@@ -227,11 +223,11 @@ split_bams_pipeline:
   filt_bam: _filt.bam
   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
   split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
-  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/
+  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/ # For gt-only
   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
-  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/
-  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/
-  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/ # For gt-only
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/ # For gt-only
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/ # For gt-only
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
   time_per_donor: "02:00"
@@ -273,14 +269,26 @@ split_bams_pipeline_phe_demux:
   ngs_inp_type: B # either B or V or null; currently only B or V
   proj_name: psychAD
 
+
+# Identifying swaps
+identify_swaps:
+  mbv_inp: vireo_outs # value can be either 'vireo_outs' or 'snakemake-type' input file
+  mbv_out_dir: /sc/arion/projects/CommonMind/pnm/choroid_plexus/qtltools_mbv/
+  ref_vcf: /sc/arion/projects/CommonMind/pnm/choroid_plexus/Microglia_Phase1and2_322ind_TopMed_r2_0p3_FixedNames_changed_names_wo_chr.vcf.gz
+  mbv_suffix: .bamstat.txt
+  mbv_extra_opt: "--filter-mapping-quality 150" # null if no extra params needed for the run
+  
+
+
 # Consolidating swaps info and redoing demultiplexing
 finalize_demux:
   out_dir: /sc/arion/projects/psychAD/gt_swaps_resolved_donor_h5ad/
-  donor_info_swap_file: /sc/arion/projects/psychAD/pnm/sample_to_donor_convertor_myUpdate_ver3.csv
+  donor_info_swap_file: /sc/arion/projects/psychAD/pnm/sample_to_donor_convertor_myUpdate_ver4.csv
   donor_info_swap_file_cols:
     - SubID
     -  
   
+
   
 
 # SNV-Aware alignment------------------------------------------------------

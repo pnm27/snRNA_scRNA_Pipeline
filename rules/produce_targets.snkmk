@@ -89,10 +89,19 @@ def targets_SplitBams(conf_f) -> list:
 
 def targets_resolve_swaps_gt_demux(conf_f) -> list:
     out_dir = conf_f['finalize_demux']['out_dir']
-    fs_phe = conf_f['fold_struct_phe_demux']donor_info_swap_file
-    suff = config['phe_demux_pipeline']['donors_classification']
+    fs = conf_f['fold_struct_gt_demux_redo']
+    dons_file = conf_f['finalize_demux']['donor_info_swap_file']
+    suff = conf_f['phe_demux_pipeline']['donors_classification']
     
-    return [f"{out_dir}{fs_phe}{suff}"]
+    return [f"{out_dir}{fs}{suff}"]
+
+
+def targets_gt_demux_identify_swaps(conf_f) -> list:
+    out_dir = conf_f['identify_swaps']['out_dir']
+    fs = conf_f['fold_struct_swaps_check']
+    suff = conf_f['identify_swaps']['mbv_suffix']
+    
+    return [f"{out_dir}{fs}{suff}"]
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
@@ -256,9 +265,12 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             else:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
+        elif target_step == "starsolo_gt_demux_identify_swaps":
+            target_files = targets_gt_demux_identify_swaps(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
+
         elif target_step == "starsolo_resolve_swaps_gt_demux":
             target_files = targets_resolve_swaps_gt_demux(conf_f=conf_f)
-            ONLY_VIREO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         else:

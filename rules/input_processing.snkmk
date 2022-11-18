@@ -122,9 +122,16 @@ elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswi
     # multi_module set as key)
 
 
-# If the input is a dir containing all the fastqs
+# If the input is a dir containing all the fastqs or files
+# Extract the required wildcards here
 elif os.path.isdir(config['select_fastqs']):
-    pass
+    assert config['wildcards_select'] is not None, "if 'select_fastqs' option in the yaml file is a dir then 'wildcards_select' can't be 'None'!"
+    # Example for one wildcard extraction
+    # IDS, = glob_wildcards(config['select_fastqs'])
+    ID1, DONORS = gob_wildcards(os.path.join(config['select_fastqs'], config['wildcards_select']))
+    
+    # Create a dict of wildcards
+    wildcards_list={'id1': ID1, 'donors': DONORS}
 
 else:
     raise ValueError("Unrecognized input file! Can't go ahead with the pipeline!")
