@@ -71,3 +71,5 @@ shuf_donor_bam:
 add_obs_to_final_count_matrix:
   - "-q express"
   
+qtltools_mbv:
+  - "-q express"
