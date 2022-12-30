@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'scRNAseq Pipeline'
+project = 'snRNAseq scRNAseq Pipeline'
 copyright = '2022, Prashant N M'
 author = 'Prashant N M'
 
