@@ -3,10 +3,10 @@
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
-[project]
-name = "snRNAseq_scRNAseq_Pipeline"
-authors = [{name = "Prashant N M"}]
-dynamic = ["version", "description"]
+# [project]
+# name = "snRNAseq_scRNAseq_Pipeline"
+# authors = [{name = "Prashant N M"}]
+# dynamic = ["version", "description"]
 
 [project.optional-dependencies]
 doc = [
