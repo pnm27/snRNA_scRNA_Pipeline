@@ -8,6 +8,7 @@ This documentation is incomplete and is under heavy development!
 ```
 
 ```{include} ../../README.md
+:relative-images:
 ```
 
 # Welcome to scRNAseq Pipeline's documentation!

@@ -8,7 +8,7 @@ The highlights of the pipeline is:
 	<li> Preserve folder structures (mirroring fastqs' folder structures) </li>
 	<li> Organize outputs from each module </li>
 	<li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
-</ul>>
+</ul>
 
 ## Requirements
 This pipeline depends on the following packages/programs:
