@@ -25,16 +25,16 @@ This pipeline depends on the following packages/programs:
 </ul>
 
 ### Packages installed through conda
-All the packages installed through anaconda3/2018.12 for Python 3.9.5 are described [here](requirements/requirements_conda.txt)
+All the packages installed through anaconda3/2018.12 for Python 3.9.5 are described (add_link and file)
 
 ### Packages installed through pip
-All the packages installed for R version 4.1.0 are described [here](requirements/requirements_pip.txt)
+All the packages installed for R version 4.1.0 are described (add_link and file)
 
 ## Overview of the pipeline
 Directed Acyclic Graph of the whole pipeline:
 ![DAG](images/Whole_pipeline.png)
 
-## Settiung up profiles
+## Setting up profiles
 The info for setting up profiles for different workload managers is mentioned [here](https://github.com/Snakemake-Profiles)
 
 ## Executing Pipeline
