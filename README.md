@@ -40,7 +40,7 @@ The info for setting up profiles for different workload managers is mentioned [h
 ## Executing Pipeline
 This pipeline can be executed by executing (in case of any workflow manager, submitting) the script called `run_snakemake.sh`
 
-```Shell
+```sh
 sh run_snakemake.sh
 ```
 
