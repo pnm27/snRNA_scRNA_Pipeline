@@ -1,7 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+""" Creates
+"""
+
 from itertools import repeat
 import pandas as pd, numpy as np, anndata as ad, scanpy as sc
-import sys, os, re, glob2, argparse
+import re
 from collections import Counter
 
 

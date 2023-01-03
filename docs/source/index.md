@@ -7,15 +7,25 @@
 This documentation is incomplete and is under heavy development!
 ```
 
+```{admonition} TODO:
+
+    1. More documentation
+    2. Combine rules split_bams and split_bams_gt
+    3. Add new Picard metrics
+    4. Include in new_config.yaml an option to select wasp mode in the rule STARsolo
+
+```
+
 ```{include} ../../README.md
 :relative-images:
 ```
 
-# Welcome to scRNAseq Pipeline's documentation!
-
 ```{toctree}
-:caption: 'Contents:'
+:caption: Contents
 :maxdepth: 2
+
+highlights
+modules
 ```
 
 # Indices and tables

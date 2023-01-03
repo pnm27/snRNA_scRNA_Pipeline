@@ -1,6 +1,6 @@
 # This rule will create multiple runs of cellSNP and vireoSNP for each sample
 # Provided a file that contains multiple vcfs per each sample
-# present as config['phe_demux_pipeline']['vcf_info']
+# present as config['gt_demux_pipeline']['vcf_info']
 from typing import Union # Need verion > 3.5
 import numpy as np, pandas as pd
 
@@ -44,41 +44,41 @@ def ret_cols(fname) -> int :
 # Consolidate this function and ret_dons
 # MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
 # MULTI_VCF
-# i.e. An input to vireo rule (config['phe_demux_pipeline']['vcf_info']) should be either:
+# i.e. An input to vireo rule (config['gt_demux_pipeline']['vcf_info']) should be either:
 # 1) A three columned (no-header) file containing pool name, expected donors,
-#    and corresponding vcf file (can be multiple columns) while config['phe_demux_pipeline']['donors_per_pool_file'] should be None
+#    and corresponding vcf file (can be multiple columns) while config['gt_demux_pipeline']['donors_per_pool_file'] should be None
 # 2) A 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
-#    and the path to a (single) vcf file (bgzf) containing all donors in config['phe_demux_pipeline']['donors_per_pool_file']
-# 3) None, if the runs are to be without any vcf files and config['phe_demux_pipeline']['donors_per_pool_file'] should be 
+#    and the path to a (single) vcf file (bgzf) containing all donors in config['gt_demux_pipeline']['donors_per_pool_file']
+# 3) None, if the runs are to be without any vcf files and config['gt_demux_pipeline']['donors_per_pool_file'] should be 
 #    a 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
 def get_vir_inputs(wildcards):
-    ret_dict = {'cellsnp_input': f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}"}
-    # if config['phe_demux_pipeline']['vcf_info'].endswith('vcf.gz'):
-    #     ret_dict['donor_info'] = config['phe_demux_pipeline']['vcf_info']
-    # elif config['phe_demux_pipeline']['vcf_info'].endswith('vcf'):
+    ret_dict = {'cellsnp_input': f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}"}
+    # if config['gt_demux_pipeline']['vcf_info'].endswith('vcf.gz'):
+    #     ret_dict['donor_info'] = config['gt_demux_pipeline']['vcf_info']
+    # elif config['gt_demux_pipeline']['vcf_info'].endswith('vcf'):
     #     raise IOError("Given vcf file in 'vcf_info' in config file is not BGZF formatted!")
-    # elif config['phe_demux_pipeline']['vcf_info'].endswith('txt') or config['phe_demux_pipeline']['vcf_info'].endswith('csv') \
-    #     or config['phe_demux_pipeline']['vcf_info'].endswith('tsv'):
+    # elif config['gt_demux_pipeline']['vcf_info'].endswith('txt') or config['gt_demux_pipeline']['vcf_info'].endswith('csv') \
+    #     or config['gt_demux_pipeline']['vcf_info'].endswith('tsv'):
     col_set1 = ["pool", "n_dons", "vcf"]
     col_set2 = ["pool", "n_dons"]
-    n_cols = ret_cols(config['phe_demux_pipeline']['vcf_info'])
+    n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
     # For condn. 1)
-    if config['phe_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
-        temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'], names=col_set1)
+    if config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
+        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
         try:
             ret_dict['donor_info'] = temp_df.loc[temp_df["pool"] == wildcards.id1, "vcf"].values[0]
         except:
             pass
     # Run without vcf
-    elif config['phe_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
+    elif config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
         pass
     # For condn. 2)
-    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
+    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
         raise ValueError("Expecting 2-columned"\
             " file: pool name and expected donors")
-    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
-        ret_dict['donor_info'] = config['phe_demux_pipeline']['donors_per_pool_file']
-    elif config['phe_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
+    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
+        ret_dict['donor_info'] = config['gt_demux_pipeline']['donors_per_pool_file']
+    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
         raise IOError("Given vcf file in 'donors_per_pool_file' in config file is not BGZF formatted!")
     else:
         raise IOError("Unexpected file type or value provided to 'donors_per_pool_file' in config file")
@@ -93,13 +93,13 @@ def get_vir_inputs(wildcards):
     # Dictionary containing keys 'donor' - number of donors and 'vcf' - a vcf file or a list of vcf files using which we want to run
     # vals=dict.fromkeys(['vcf'])
     # if config['last_step'].lower().endswith('multi_vcf'):
-    #     assert not config['phe_demux_pipeline']['vcf_info'].endswith('vcf.gz'), \
+    #     assert not config['gt_demux_pipeline']['vcf_info'].endswith('vcf.gz'), \
     #         "Not expecting a single vcf file with multi_vcf module!"
-    #     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
+    #     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
     #     wet_lab_df = read_files_ext(config['wet_lab_info'])
     #     samp = wildcards.id1.replace('-', '_')+'_cDNA'
-    #     cols1 = config['phe_demux_pipeline']['vcf_info_columns']
-    #     cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+    #     cols1 = config['gt_demux_pipeline']['vcf_info_columns']
+    #     cols2 = config['gt_demux_pipeline']['wet_lab_file_cols']
     #     set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
     #     # This function to be modified for:
     #     # 1) if the input is a text file with each pool having its own vcf
@@ -116,7 +116,7 @@ def get_vir_inputs(wildcards):
 
 
 # def ret_dons(wildcards, input) -> Union[None, int]: # DEPRACATED
-#     if config['phe_demux_pipeline']['donors_per_pool_file'] is None:
+#     if config['gt_demux_pipeline']['donors_per_pool_file'] is None:
 #         return None
 #     elif isinstance(input['donor_info'], object):
 #         temp_df = read_files_ext(input.donor_info, h=["pool", "n_dons"])
@@ -134,25 +134,25 @@ def get_vir_inputs(wildcards):
 #     # less or more than available donors in each vcf
 #     else:
 #         try:
-#             return int(config['phe_demux_pipeline']['donors_per_pool_file'])
+#             return int(config['gt_demux_pipeline']['donors_per_pool_file'])
 #         except:
 #             raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
 
 
 def ret_dons(wildcards, input) -> Union[None, int]:
     col_set = ["pool", "n_dons"]
-    n_cols = ret_cols(config['phe_demux_pipeline']['vcf_info'])
-    temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'], names=col_set)
+    n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+    temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set)
     return temp_df.loc[temp_df["pool"] == wildcards.id1, "n_dons"].values[0]
 
 
 # Multi_module branch related function
 # def multi_vcfs(wildcards):
-#     temp_df = read_files_ext(config['phe_demux_pipeline']['vcf_info'])
+#     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
 #     wet_lab_df = read_files_ext(config['wet_lab_info'])
 #     samp = wildcards.id1.replace('-', '_')+'_cDNA'
-#     cols1 = config['phe_demux_pipeline']['vcf_info_columns']
-#     cols2 = config['phe_demux_pipeline']['wet_lab_file_cols']
+#     cols1 = config['gt_demux_pipeline']['vcf_info_columns']
+#     cols2 = config['gt_demux_pipeline']['wet_lab_file_cols']
 #     set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
 #     col = wildcards.vcf_type
 
@@ -167,12 +167,12 @@ rule create_inp_cellSNP:
     priority: 8
 
     params:
-        col_name=config['phe_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
-        bc_len=config['phe_demux_pipeline']['barcode_len'], # Barcode length
-        keep_all_cells=config['phe_demux_pipeline']['include_all_cells'],
-        doub=config['phe_demux_pipeline']['doublet'], # Doublets classified as
-        neg=config['phe_demux_pipeline']['negative'], # Negatives classified as
-        na=config['phe_demux_pipeline']['na'] # Cells not present in hashsolo classified as
+        col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
+        bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length
+        keep_all_cells=config['gt_demux_pipeline']['include_all_cells'],
+        doub=config['gt_demux_pipeline']['doublet'], # Doublets classified as
+        neg=config['gt_demux_pipeline']['negative'], # Negatives classified as
+        na=config['gt_demux_pipeline']['na'] # Cells not present in hashsolo classified as
 
     resources:
         mem_mb=allocate_mem_CICS,
@@ -181,7 +181,7 @@ rule create_inp_cellSNP:
     # group: "phenotype-demux"
 
     output:
-        f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
+        f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
 
     shell:
         """
@@ -200,7 +200,7 @@ rule create_inp_cellSNP:
 
 
 #     output:
-#         config['phe_demux_pipeline']['meta_data_geno_samp']
+#         config['gt_demux_pipeline']['meta_data_geno_samp']
 
 #     shell:
 #         """
@@ -212,27 +212,27 @@ rule create_inp_cellSNP:
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        bc=f"{config['phe_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
+        bc=f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
         bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        ref_snps=config['phe_demux_pipeline']['cellsnp_ref_snps'], # modify this to accept either a text file containing per pool vcf or one single vcf file
-        genome_1k_ref=config['phe_demux_pipeline']['genome_1k_ref']
+        ref_snps=config['gt_demux_pipeline']['cellsnp_ref_snps'], # modify this to accept either a text file containing per pool vcf or one single vcf file
+        genome_1k_ref=config['gt_demux_pipeline']['genome_1k_ref']
 
     # group: "phenotype-demux"
 
     output:
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_cells']}",
-        f"{config['phe_demux_pipeline']['cellsnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['cellsnp_base']}"
+        f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}",
+        f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_base']}"
 
     params:
-        # ref_snps=config['phe_demux_pipeline']['ref_snps'],
-        umi_tag=config['phe_demux_pipeline']['umi_tag'],
-        cell_tag=config['phe_demux_pipeline']['cell_tag'],
-        processors=config['phe_demux_pipeline']['n_proc'],
-        min_maf=config['phe_demux_pipeline']['min_maf'],
-        min_ct=config['phe_demux_pipeline']['min_aggr_count'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['cellsnp_cells']}", ''),
-        filt_vcf_dir=f"{config['phe_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_phe_demux']}"[:-1], # remove trailing forward slash
-        threads=config['phe_demux_pipeline']['bcftools_thread']
+        # ref_snps=config['gt_demux_pipeline']['ref_snps'],
+        umi_tag=config['gt_demux_pipeline']['umi_tag'],
+        cell_tag=config['gt_demux_pipeline']['cell_tag'],
+        processors=config['gt_demux_pipeline']['n_proc'],
+        min_maf=config['gt_demux_pipeline']['min_maf'],
+        min_ct=config['gt_demux_pipeline']['min_aggr_count'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['cellsnp_cells']}", ''),
+        filt_vcf_dir=f"{config['gt_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_gt_demux']}"[:-1], # remove trailing forward slash
+        threads=config['gt_demux_pipeline']['bcftools_thread']
 
     threads: 8
 
@@ -253,14 +253,14 @@ rule vireoSNP:
         unpack(get_vir_inputs)
         
     output:
-        f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
+        f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
 
     # group: "phenotype-demux"
 
     params:
         # donor_info=get_donor_info,
-        geno_tag=config['phe_demux_pipeline']['donor_genotype'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['phe_demux_pipeline']['donors_classification']}", ''),
+        geno_tag=config['gt_demux_pipeline']['donor_genotype'],
+        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['donors_classification']}", ''),
         n_donors=ret_dons
 
     threads: 7

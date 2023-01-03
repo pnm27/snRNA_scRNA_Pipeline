@@ -1,7 +1,23 @@
 #!/usr/bin/env python
 
-import scanpy as sc, anndata as ad, pandas as pd, numpy as np
-import glob2, os, re, argparse
+"""Create h5ad file from a bustools output.
+
+This create takes the output after a bustools count run.
+
+Help
+------
+	$ python3 create_h5ad_from_bustools.py -h
+
+Example
+--------
+	python3 create_h5ad_from_bustools.py sample_1_bus_op/output.mtx \
+		sample_1_bus_op/output.barcodes.txt sample_1_bus_op/output.barcodes.txt \
+			 -o h5ad_files/sample_1_bus_OP.h5ad
+
+"""
+
+import scanpy as sc, pandas as pd, numpy as np
+import argparse
 
 sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
 sc.logging.print_version_and_date()

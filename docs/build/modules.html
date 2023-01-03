@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modules &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> snRNAseq scRNAseq Pipeline
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Modules</a><ul>
+<li><a class="reference internal" href="#selectable-modules">Selectable Modules</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">snRNAseq scRNAseq Pipeline</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Modules</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="modules">
+<h1>Modules<a class="headerlink" href="#modules" title="Permalink to this heading"></a></h1>
+<p>This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords.</p>
+<div class="section" id="selectable-modules">
+<h2>Selectable Modules<a class="headerlink" href="#selectable-modules" title="Permalink to this heading"></a></h2>
+<p>The following combinations of programs can be run:</p>
+<ul>
+<li> all</li>
+<li> starsolo</li>
+<li> starsolo_rnaseqmet</li>
+<li> starsolo_gcbiasmet</li>
+<li> starsolo_kb_solo</li>
+<li> starsolo_picard</li>
+<li> starsolo_gt_demux</li>
+<li> starsolo_split_bams</li>
+<li> starsolo_split_bams_gt_demux</li>
+<li> starsolo_split_bams_gt_demux_multi_vcf</li>
+<li> starsolo_gt_demux_multi_vcf</li>
+<li> starsolo_cellsnp</li>
+<li>starsolo_rnaseqmet_kb_solo</li>
+<li>starsolo_gcbiasmet_kb_solo</li>
+<li>starsolo_gt_demux_identify_swaps</li>
+<li>starsolo_resolve_swaps_gt_demux <sup><small>#</small></sup></li>
+</ul>
+<p>where <strong>starsolo</strong> represents STARsolo; <strong>rnaseqmet</strong> and <strong>gcbiasmet</strong> refer to PICARD’s CollectRnaSeqMetrics and CollectGcBiasMetrics, respectively while <strong>picard</strong> represents inclusion of both the previously-mentioned programs; <strong>kb_solo</strong> refers to using kallisto, bustools and calico_solo for demultiplexing; <strong>gt_demux</strong> refers to using cellSNP and vireoSNP for genotype based demultiplexing; <strong>split_bams</strong> refers to splitting pooled/multiplexed bams using hashsolo’s outputs while <strong>split_bams_gt_demux</strong> refers to splitting pooled/multiplexed bams using vireo’s output; <strong>identify_swaps</strong> refers to using qtltools_mbv. The option <strong>multi_vcf</strong> is to provide muiltiple runs (i.e. multiple sets of vcf inputs) for the same sample.</p>
+</div>
+</div>
+<div class="section" id="sub-snakemake-workflows">
+<h1>Sub-Snakemake workflows<a class="headerlink" href="#sub-snakemake-workflows" title="Permalink to this heading"></a></h1>
+<p>This pipeline divides each module into its self-contained individual workflows. These are:</p>
+<dl>
+	<dt> resources.snkmk </dt>
+	<dd> This snakemake sub-workflow contains memory (in MB per thread) and time requirements 
+	(in minutes) for each rule. </dd>
+	<dt> calico_solo_demux.snkmk </dt>
+	<dd> This snakemake sub-workflow contains hashsolo rule. </dd>
+	<dt> split_bams.snkmk<sup><a href="#ft1" id="ref1" >*</a></sup></dt>
+	<dd> This snakemake sub-workflow contains rules needed to split pooled bams into individual
+	bams dependent on output produced by hashsolo. </dd>
+	<dt> input_processing.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules that collects values for all the wildcards. </dd>
+	<dt> STARsolo.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for STARsolo. </dd>
+	<dt> produce_targets.snkmk </dt>
+	<dd> This snakemake sub-workflow contains the **rule all** and the needed functions. </dd>
+	<dt> snv_aware_align.snkmk <sup><a href="#ft2" id="ref2" >#</a></sup></dt>
+	<dd> This snakemake sub-workflow contains rules for </dd>
+	<dt> kite.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for the <a href="https://github.com/pachterlab/kite#kite-kallisto-indexing-and-tag-extraction">kite</a> workflow 
+	</dd>
+	<dt> picard_metrics.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for all PICARD metrics mentioned above (<a href="#gcb">GCBiasMetrics</a>
+	 and <a href="#rna">RNAseqMetrics</a>)</dd>
+	<dt> pheno_demux3.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for the cellSNP-vireoSNP pipeline. </dd>
+	<dt> split_bams_gt.snkmk<sup><a href="#ft1" id="ref1" >*</a></sup></dt>
+	<dd> This snakemake sub-workflow contains rules needed to split pooled bams into individual
+	bams dependent on output produced by vireo. </dd>
+	<dt> demultiplex_no_argp.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for demultiplexing using hashsolo and/or vireoSNP output and create a count matrix file. </dd>
+	<dt> identify_swaps.snkmk </dt>
+	<dd> This snakemake sub-workflow contains rules for identifying swaps using QTLtools-mbv. </dd>
+<p><sup id="#ft1"><small>*</small></sup><small> - Consolidating into one</small></p>
+<p><sup id="#ft2"><small>#</small></sup><small> - Not yet implemented</small></p>
+</dl>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Prashant N M.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

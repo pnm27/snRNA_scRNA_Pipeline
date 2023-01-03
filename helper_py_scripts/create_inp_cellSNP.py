@@ -1,4 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+"""Creates a list of effective barcodes for cellSNP run.
+
+This script takes a count matrix as an input and creates a list of 
+'effective' barcodes, dependent on the condition if some cells should 
+be removed or not (e.g. if already a demultiplexing tool was run with an
+h5ad column containing classifications and if some of the cells that
+have been classified as a doublet and/or negative cells have to be removed 
+then too this script can be used).
+
+Help
+-----
+    python3 create_inp_cellSNP.py -h
+"""
 
 import anndata as ad, string
 import scanpy as sc, pandas as pd, numpy as np
@@ -19,7 +33,7 @@ parser.add_argument('inp', help="Path to the cached output of the final matrix (
 
 # Optional parameters
 parser.add_argument('-c', '--column', help="Column Name containing classifications of Doublets and Negatives. Default: SubID_cs", default='SubID_cs')
-parser.add_argument('-o', '--output', help="Name of the output file")
+parser.add_argument('-o', '--output', help="Name of the output file", default="inp_for_cellSNP.txt")
 parser.add_argument('--keep_all_cells', action='store_true', help="Use this flag when you want to retain cells not classified into a donor (e.g. doublets, negatives, etc.)")
 parser.add_argument('-e', '--extra', nargs='+', help="Classficiation used when a cell is not present in the classification by hashsolo. NOTE: Accepts multi-word - space separated input. \
     If not used, use 'None'. Default: Not Present.", default=["Not", "Present"])
@@ -33,26 +47,23 @@ args = parser.parse_args()
 # Join
 extra_val=' '.join(args.extra)
 
-
-# Inform the user when the flag 'keep_all_cells' is used/turned on
-if args.keep_all_cells:
-    print("Flag 'keep_all_cells' is used. Hence, all cells will be considered!")
-
-
 try:
     adata=ad.read(args.inp)
 except:
     raise ValueError('The cached output(h5ad) of hashsolo doesn\'t exist!')
-        
+
+# Inform the user when the flag 'keep_all_cells' is used/turned on
+if args.keep_all_cells:
+    print("Flag 'keep_all_cells' is used. Hence, all cells will be considered!")
 # Check if the given column exists in the h5ad file
-if args.column.lower() not in map(str.lower, adata.obs_keys()):
-    raise ValueError("Given value for the argument 'column' doesn't exist in the given h5ad file!")
+else:
+    if args.column.lower() not in map(str.lower, adata.obs_keys()):
+        raise ValueError("Given value for the argument 'column' doesn't exist in the given h5ad file!")
 
-# No. of Cells
-cells=adata.n_obs
-
-# Santiy check for the arguments
-if not args.keep_all_cells:
+    # No. of Cells
+    cells=adata.n_obs
+    # Santiy check for the arguments
+    # if not args.keep_all_cells:
     if extra_val is not None and extra_val != "None":
         if extra_val.lower() not in adata.obs[args.column].str.lower():
             raise ValueError("The word(s) provided to the argument 'extra' is not found in the given column (argument 'column')")
@@ -79,7 +90,6 @@ if not args.keep_all_cells:
 
 
     adata=adata[ extra_val_ser & doublet_ser & negative_ser ].copy()
-
 
 
 with open(args.output, 'w') as f:

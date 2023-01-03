@@ -10,9 +10,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
 
 
 # -- Project information -----------------------------------------------------
@@ -36,11 +36,16 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    # "sphinx_mdinclude",
 ]
 
-# source_suffix = [
-#     ".md",
-# ]
+# For todo extension
+todo_include_todos = True
+source_suffix = [
+    ".rst",
+    ".md",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

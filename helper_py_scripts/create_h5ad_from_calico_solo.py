@@ -1,19 +1,35 @@
-#!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
+#!/usr/bin/env python3
 
+"""Create an h5ad file from the outputs of a hashsolo run
+
+This script runs hashsolo given an h5ad file containing hashing counts
+(usually obtained by using sofwatre like bustools count), matrix file containing
+gene counts, and a genes annotation file to produce an h5ad file.
+
+Note
+-----
+
+More often than not the hashing counts file may have lesser barcodes in them as 
+compared to the gene counts file and thus one should expect, at max, the number 
+of barcodes retained in the hasing counts file.
+
+Help
+------
+
+    python3 create_h5ad_from_calico_solo.py -h
+
+"""
 # Solo didn't run through scvi, scvi-tools nor scanpy.external
 # Only this seems to work
 from solo import hashsolo
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import glob2, os, re, argparse
-from collections import Counter
-from openpyxl import load_workbook
-from collections import defaultdict
+import re, argparse
 
 
-sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
-sc.settings.autosave = True
-sc.settings.autoshow = False
+# sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
+# sc.settings.autosave = True
+# sc.settings.autoshow = False
 sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
 sc.logging.print_version_and_date()
 

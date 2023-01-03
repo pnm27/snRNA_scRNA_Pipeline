@@ -3,11 +3,11 @@ def get_inputs_demux(wildcards):
     if ONLY_SOLO:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
     elif ONLY_VIREO:
-        ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
+        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
 
     elif BOTH_DEMUX:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
-        ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{wildcards.vcf_type}/{config['phe_demux_pipeline']['donors_classification']}"
+        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
 
@@ -21,8 +21,8 @@ def get_inputs_add_demux(wildcards):
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
 
     elif ADD_VIREO:
-        ret_dict['vireoSNP_out'] = f"{config['phe_demux_pipeline']['vireosnp_dir']}{config['fold_struct_phe_demux']}{config['phe_demux_pipeline']['donors_classification']}"
-        ret_dict['gt_conv'] = config['split_bams_pipeline_phe_demux']['gt_conv']
+        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+        ret_dict['gt_conv'] = config['split_bams_pipeline_gt_demux']['gt_conv']
 
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
@@ -66,7 +66,7 @@ if ADD_VIREO or ADD_SOLO:
             unpack(get_inputs_add_demux)
 
         output:
-            f"{config['phe_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_phe_demux2']}{config['phe_demux_pipeline']['final_count_matrix_h5ad']}"
+            f"{config['gt_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_gt_demux2']}{config['gt_demux_pipeline']['final_count_matrix_h5ad']}"
 
         resources:
             mem_mb=allocate_mem_AOTFCM,

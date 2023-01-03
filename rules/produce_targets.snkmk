@@ -52,12 +52,12 @@ def targets_PICARD(conf_f, progs='all') -> list:
 
 
 
-# Temporary function, will change to targets_phe_demux
+# Temporary function, will change to targets_gt_demux
 def targets_cellSNP(conf_f) -> list:
-    out_dir = conf_f['phe_demux_pipeline']['cellsnp_dir']
-    fs_phe = conf_f['fold_struct_phe_demux']
-    cells_suff = conf_f['phe_demux_pipeline']['cellsnp_cells']
-    base_suff = conf_f['phe_demux_pipeline']['cellsnp_base']
+    out_dir = conf_f['gt_demux_pipeline']['cellsnp_dir']
+    fs_phe = conf_f['fold_struct_gt_demux']
+    cells_suff = conf_f['gt_demux_pipeline']['cellsnp_cells']
+    base_suff = conf_f['gt_demux_pipeline']['cellsnp_base']
 
     target_list = [f"{out_dir}{fs_phe}{cells_suff}", f"{out_dir}{fs_phe}{base_suff}"]
     return target_list
@@ -65,23 +65,23 @@ def targets_cellSNP(conf_f) -> list:
 
 
 def targets_gt_demux(conf_f) -> list:
-    out_dir = conf_f['phe_demux_pipeline']['vireosnp_dir']
-    fs_phe = conf_f['fold_struct_phe_demux']
-    suff = config['phe_demux_pipeline']['donors_classification']
+    out_dir = conf_f['gt_demux_pipeline']['vireosnp_dir']
+    fs_phe = conf_f['fold_struct_gt_demux']
+    suff = config['gt_demux_pipeline']['donors_classification']
     
     return [f"{out_dir}{fs_phe}{suff}"]
 
 
 # For multi-vcf_inputs
 def targets_gt_demux2(conf_f) -> list:
-    out_dir = conf_f['phe_demux_pipeline']['final_count_matrix_dir']
+    out_dir = conf_f['gt_demux_pipeline']['final_count_matrix_dir']
     fs_phe = conf_f['fold_struct_demux']
     
     return [f"{out_dir}{fs_phe}" ]
 
 
 def targets_SplitBams(conf_f) -> list:
-    out_dir = conf_f['split_bams_pipeline_phe_demux']['split_bams_proxy_dir2']
+    out_dir = conf_f['split_bams_pipeline_gt_demux']['split_bams_proxy_dir2']
     op = conf_f['fold_struct_bam_split1']
     
     return [f"{out_dir}{op}" ]
@@ -91,7 +91,7 @@ def targets_resolve_swaps_gt_demux(conf_f) -> list:
     out_dir = conf_f['finalize_demux']['out_dir']
     fs = conf_f['fold_struct_gt_demux_redo']
     dons_file = conf_f['finalize_demux']['donor_info_swap_file']
-    suff = conf_f['phe_demux_pipeline']['donors_classification']
+    suff = conf_f['gt_demux_pipeline']['donors_classification']
     
     return [f"{out_dir}{fs}{suff}"]
 
@@ -183,7 +183,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             suff = ".txt"
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
             final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
-            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
+            final_target_list.append(f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt")
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_split_bams_gt_demux_multi_vcf":
@@ -207,7 +207,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
 
             # Add final steps for gt_demux
             target_files = targets_gt_demux2(conf_f=conf_f)
-            suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
+            suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
             # If multiple vcfs per sample needs to be run
@@ -226,7 +226,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
             final_target_list.extend(final_target_list2)
-            final_target_list.append(f"{config['split_bams_pipeline_phe_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_phe_demux']['proj_name']}_all.txt")
+            final_target_list.append(f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt")
 
         elif target_step == "starsolo_rnaseqmet_kb_solo":
             target_files = targets_all(conf_f=conf_f, progs='RNAseq')
@@ -247,7 +247,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
         # Multi_vcf inputs or when a subdir with the vcf name is needed
         elif target_step == "starsolo_gt_demux_multi_vcf":
             target_files = targets_gt_demux2(conf_f=conf_f)
-            suff = config['phe_demux_pipeline']['final_count_matrix_h5ad']
+            suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
             # If multiple vcfs per sample needs to be run

@@ -34,9 +34,9 @@ fold_struct_kb: "Sample_{id1}/"
 # Folder structure for demux through the kallisto-bustools pipeline
 fold_struct_demux: "{id1}/{id1}"
 # Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
-fold_struct_phe_demux: "Sample_{id1}/{vcf_type}/"
+fold_struct_gt_demux: "Sample_{id1}/{vcf_type}/"
 # Folder structure for adding phe demux when calico_solo run exists ('vcf_type' wildcard for multi-vcfs input)
-fold_struct_phe_demux2: "Sample-{id1}_{vcf_type}"
+fold_struct_gt_demux2: "Sample-{id1}_{vcf_type}"
 # Folder structure to get cells for cellSNP from
 fold_struct_filt_bc: "filt_bc_vireo_Sample_{id1}"
 # Folder structures for split bams pipeline
@@ -154,7 +154,7 @@ demux_pipeline:
 
 
 # cellSNP and vireoSNP pipeline----------------------------------------------
-phe_demux_pipeline:
+gt_demux_pipeline:
   cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/cellSNP/
   inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/inp_for_cellsnp/
   cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
@@ -236,27 +236,27 @@ split_bams_pipeline:
 
 
 # Split bams by vireoSNP output
-split_bams_pipeline_phe_demux:
-  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_phe_demux/
+split_bams_pipeline_gt_demux:
+  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_gt_demux/
   subset_chr: 1
   gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv #If no name changes are needed
-  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_phe_demux/
-  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_phe_demux/
-  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_phe_demux/
+  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_gt_demux/
+  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux/
+  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux/
   reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
-  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp_phe_demux/
-  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp_phe_demux/temp_bc/
-  new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d_phe_demux/
+  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp_gt_demux/
+  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp_gt_demux/temp_bc/
+  new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux/
   overwrite: yes
   sort_cb_bam: _Aligned.sortedByCB.out.bam
   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
   filt_bam: _filt.bam
-  split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_phe_demux/
-  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_phe_demux2/ # For gt-only
-  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_phe_demux/
-  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_phe_demux2/ # For gt-only
-  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_phe_demux2/ # For gt-only
-  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_phe_demux2/ # For gt-only
+  split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_gt_demux/
+  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt-only
+  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux/
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt-only
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gt-only
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt-only
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
   short_bam: _chr1.bam # Change this to be flexible
