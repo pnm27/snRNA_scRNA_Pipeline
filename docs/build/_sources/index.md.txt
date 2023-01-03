@@ -24,6 +24,7 @@ This documentation is incomplete and is under heavy development!
 :caption: Contents
 :maxdepth: 2
 
+set_up
 highlights
 modules
 config_file

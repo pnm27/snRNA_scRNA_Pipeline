@@ -25,26 +25,3 @@ This pipeline depends on the following packages/programs:
 	<li><a href="https://github.com/calico/solo#how-to-demultiplex-cell-hashing-data-using-hashsolo-cli" name="hsolo">hashsolo Info</a></li>
 	<li><a href="https://qtltools.github.io/qtltools/pages/QTLtools-mbv.1.html" name="mbv">QTLtools-mbv</a></li>
 </ul>
-
-### Packages installed through conda
-All the packages installed through anaconda3/2018.12 for Python 3.9.5 are described (add_link and file)
-
-### Packages installed through pip
-All the packages installed for R version 4.1.0 are described (add_link and file)
-
-## Overview of the pipeline
-Directed Acyclic Graph of the whole pipeline:
-![DAG](images/Whole_pipeline.png)
-
-## Setting up profiles
-The info for setting up profiles for different workload managers is mentioned [here](https://github.com/Snakemake-Profiles)
-
-## Executing Pipeline
-This pipeline can be executed by executing (in case of any workflow manager, submitting) the script called `run_snakemake.sh`
-
-```sh
-sh run_snakemake.sh
-```
-
-## Configuration for pipeline
-This pipeline depends on a yaml config file (new_config.yaml), which has all relevant options for each rule present in this pipeline. This not only streamlines the process of maintaining or modifying program specific parameters but also makes repetitive usage (can be within the project or using it over mutliple projects) of this pipeline over time very efficient.
