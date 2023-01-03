@@ -26,6 +26,7 @@ This documentation is incomplete and is under heavy development!
 
 highlights
 modules
+config_file
 ```
 
 # Indices and tables
