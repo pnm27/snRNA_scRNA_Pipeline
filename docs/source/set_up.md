@@ -13,7 +13,7 @@ All the python packages installed for python version 3.9.5 ( and with R version 
 ## Overview of the pipeline
 
 Directed Acyclic Graph of the whole pipeline:
-![DAG](images/Whole_pipeline.png)
+![DAG](../../images/Whole_pipeline.png)
 
 ## Setting up profiles
 
