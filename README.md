@@ -1,5 +1,5 @@
 # snRNA_scRNA_Pipeline Introduction
-Snakemake Pipeline with "selectable" modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.
+Snakemake Pipeline with {ref}`selectable <selectable-modules>` modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.
 
 The highlights of the pipeline are:
 <ul>

@@ -23,7 +23,7 @@ rule Picard_GC_bias_metrics:
      
     shell:
         """
-        ml picard
+        ml picard/2.22.3
         java -jar $PICARD CollectGcBiasMetrics I={input.bams} O={output[0]} CHART={params.output_pref}gc_bias_metrics.pdf SCAN_WINDOW_SIZE={params.window_size} S={output[1]} R={params.genome_fasta}
         """
       
@@ -52,6 +52,6 @@ rule Picard_RNAseq_metrics:
 
     shell:
         """
-        ml picard
+        ml picard/2.22.3
         java -jar $PICARD CollectRnaSeqMetrics I={input.bams} O={output} REF_FLAT={params.flat_ref} STRAND={params.strand}
         """

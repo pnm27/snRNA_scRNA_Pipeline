@@ -6,6 +6,7 @@
   <title>Modules &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -18,7 +19,9 @@
         <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Advanced Features" href="produce_outputs.html" />
+    <link rel="prev" title="Salient Features" href="highlights.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -36,15 +39,28 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Modules</a><ul>
-<li><a class="reference internal" href="#selectable-modules">Selectable Modules</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#selectable-modules">Selectable Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-description">Module description</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#sub-snakemake-workflows">Sub-Snakemake workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview-of-the-pipeline">Overview of the pipeline</a></li>
 </ul>
-</div>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Advanced Features</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -73,7 +89,7 @@
 <h1>Modules<a class="headerlink" href="#modules" title="Permalink to this heading"></a></h1>
 <p>This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords.</p>
 <div class="section" id="selectable-modules">
-<h2>Selectable Modules<a class="headerlink" href="#selectable-modules" title="Permalink to this heading"></a></h2>
+<span id="id1"></span><h2>Selectable Modules<a class="headerlink" href="#selectable-modules" title="Permalink to this heading"></a></h2>
 <p>The following combinations of programs can be run:</p>
 <ul>
 <li> all</li>
@@ -95,51 +111,170 @@
 </ul>
 <p>where <strong>starsolo</strong> represents STARsolo; <strong>rnaseqmet</strong> and <strong>gcbiasmet</strong> refer to PICARD’s CollectRnaSeqMetrics and CollectGcBiasMetrics, respectively while <strong>picard</strong> represents inclusion of both the previously-mentioned programs; <strong>kb_solo</strong> refers to using kallisto, bustools and calico_solo for demultiplexing; <strong>gt_demux</strong> refers to using cellSNP and vireoSNP for genotype based demultiplexing; <strong>split_bams</strong> refers to splitting pooled/multiplexed bams using hashsolo’s outputs while <strong>split_bams_gt_demux</strong> refers to splitting pooled/multiplexed bams using vireo’s output; <strong>identify_swaps</strong> refers to using qtltools_mbv. The option <strong>multi_vcf</strong> is to provide muiltiple runs (i.e. multiple sets of vcf inputs) for the same sample.</p>
 </div>
+<div class="section" id="module-description">
+<h2>Module description<a class="headerlink" href="#module-description" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default" id="module-info-table">
+<caption><span class="caption-text">Modules_info</span><a class="headerlink" href="#module-info-table" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Module Name</p></th>
+<th class="head"><p>Module Info</p></th>
+<th class="head"><p>Sub Worflows Involved</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>all</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_rnaseqmet</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_gcbiasmet</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_kb_solo</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_picard</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_gt_demux</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_split_bams</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_split_bams_gt_demux</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_split_bams_gt_demux_multi_vcf</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_gt_demux_multi_vcf</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_cellsnp</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_rnaseqmet_kb_solo</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_gcbiasmet_kb_solo</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-even"><td><p>starsolo_gt_demux_identify_swaps</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+<tr class="row-odd"><td><p>starsolo_resolve_swaps_gt_demux</p></td>
+<td><p>module_info (more desc in its own file)</p></td>
+<td><p>sub_wkfl</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div class="section" id="sub-snakemake-workflows">
 <h1>Sub-Snakemake workflows<a class="headerlink" href="#sub-snakemake-workflows" title="Permalink to this heading"></a></h1>
 <p>This pipeline divides each module into its self-contained individual workflows. These are:</p>
-<dl>
-	<dt> resources.snkmk </dt>
-	<dd> This snakemake sub-workflow contains memory (in MB per thread) and time requirements 
-	(in minutes) for each rule. </dd>
-	<dt> calico_solo_demux.snkmk </dt>
-	<dd> This snakemake sub-workflow contains hashsolo rule. </dd>
-	<dt> split_bams.snkmk<sup><a href="#ft1" id="ref1" >*</a></sup></dt>
-	<dd> This snakemake sub-workflow contains rules needed to split pooled bams into individual
-	bams dependent on output produced by hashsolo. </dd>
-	<dt> input_processing.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules that collects values for all the wildcards. </dd>
-	<dt> STARsolo.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for STARsolo. </dd>
-	<dt> produce_targets.snkmk </dt>
-	<dd> This snakemake sub-workflow contains the **rule all** and the needed functions. </dd>
-	<dt> snv_aware_align.snkmk <sup><a href="#ft2" id="ref2" >#</a></sup></dt>
-	<dd> This snakemake sub-workflow contains rules for </dd>
-	<dt> kite.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for the <a href="https://github.com/pachterlab/kite#kite-kallisto-indexing-and-tag-extraction">kite</a> workflow 
-	</dd>
-	<dt> picard_metrics.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for all PICARD metrics mentioned above (<a href="#gcb">GCBiasMetrics</a>
-	 and <a href="#rna">RNAseqMetrics</a>)</dd>
-	<dt> pheno_demux3.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for the cellSNP-vireoSNP pipeline. </dd>
-	<dt> split_bams_gt.snkmk<sup><a href="#ft1" id="ref1" >*</a></sup></dt>
-	<dd> This snakemake sub-workflow contains rules needed to split pooled bams into individual
-	bams dependent on output produced by vireo. </dd>
-	<dt> demultiplex_no_argp.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for demultiplexing using hashsolo and/or vireoSNP output and create a count matrix file. </dd>
-	<dt> identify_swaps.snkmk </dt>
-	<dd> This snakemake sub-workflow contains rules for identifying swaps using QTLtools-mbv. </dd>
-<p><sup id="#ft1"><small>*</small></sup><small> - Consolidating into one</small></p>
-<p><sup id="#ft2"><small>#</small></sup><small> - Not yet implemented</small></p>
+<table class="docutils align-default" id="sub-smk-info-table">
+<caption><span class="caption-text">Sub_Snakemake_workflows_table</span><a class="headerlink" href="#sub-smk-info-table" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name of Workflow</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>resources.snkmk</p></td>
+<td><p>It contains memory (in MB per thread) and time requirements (in minutes) for each rule.</p></td>
+</tr>
+<tr class="row-odd"><td><p>calico_solo_demux.snkmk</p></td>
+<td><p>It contains hashsolo rule.</p></td>
+</tr>
+<tr class="row-even"><td><p>split_bams.snkmk <a class="footnote-reference brackets" href="#consol" id="id2">1</a></p></td>
+<td><p>It contains rules needed to split pooled bams into individual bams dependent on output
+produced by either hashsolo or vireoSNP using custom scripts.</p></td>
+</tr>
+<tr class="row-odd"><td><p>input_processing.snkmk</p></td>
+<td><p>It contains rules that collects values for all the wildcards.</p></td>
+</tr>
+<tr class="row-even"><td><p>STARsolo.snkmk</p></td>
+<td><p>It contains rules for STARsolo.</p></td>
+</tr>
+<tr class="row-odd"><td><p>produce_targets.snkmk</p></td>
+<td><p>It contains the <strong>rule all</strong> and the needed functions.</p></td>
+</tr>
+<tr class="row-even"><td><p>snv_aware_align.snkmk <a class="footnote-reference brackets" href="#not-yet" id="id3">2</a></p></td>
+<td><p><strong>This might be removed soon</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>kite.snkmk</p></td>
+<td><p>It contains rules for the <a class="reference external" href="https://github.com/pachterlab/kite#kite-kallisto-indexing-and-tag-extraction">kite</a> workflow.</p></td>
+</tr>
+<tr class="row-even"><td><p>picard_metrics.snkmk</p></td>
+<td><p>It contains rules for all PICARD metrics (GCBiasMetrics and RNAseqMetrics).</p></td>
+</tr>
+<tr class="row-odd"><td><p>pheno_demux3.snkmk</p></td>
+<td><p>It contains rules for the cellSNP-vireoSNP pipeline.</p></td>
+</tr>
+<tr class="row-even"><td><p>split_bams_gt.snkmk <a class="footnote-reference brackets" href="#consol" id="id4">1</a></p></td>
+<td><p>It contains rules needed to split pooled bams into individual bams dependent on output produced by vireo.</p></td>
+</tr>
+<tr class="row-odd"><td><p>demultiplex_no_argp.snkmk</p></td>
+<td><p>It contains rules for demultiplexing using hashsolo and/or vireoSNP output and create a count matrix file.</p></td>
+</tr>
+<tr class="row-even"><td><p>identify_swaps.snkmk</p></td>
+<td><p>It contains rules for identifying swaps using QTLtools-mbv.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="overview-of-the-pipeline">
+<h2>Overview of the pipeline<a class="headerlink" href="#overview-of-the-pipeline" title="Permalink to this heading"></a></h2>
+<p>Directed Acyclic Graph of the whole pipeline:
+<img alt="DAG" src="_images/Whole_pipeline.png" /></p>
+<hr class="footnotes docutils" />
+<dl class="footnote brackets">
+<dt class="label" id="consol"><span class="brackets">1</span><span class="fn-backref">(<a href="#id2">1</a>,<a href="#id4">2</a>)</span></dt>
+<dd><p>Consolidating into one</p>
+</dd>
+<dt class="label" id="not-yet"><span class="brackets"><a class="fn-backref" href="#id3">2</a></span></dt>
+<dd><p>Not yet implemented</p>
+</dd>
 </dl>
+</div>
 </div>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="highlights.html" class="btn btn-neutral float-left" title="Salient Features" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="produce_outputs.html" class="btn btn-neutral float-right" title="Advanced Features" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

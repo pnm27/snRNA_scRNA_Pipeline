@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Setting up the Pipeline &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>Executing the Pipeline &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -38,24 +39,28 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Setting up the Pipeline</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Executing the Pipeline</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#installing-dependencies">Installing dependencies</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#packages-installed-through-conda">Packages installed through conda</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#packages-installed-through-pip">Packages installed through pip</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#overview-of-the-pipeline">Overview of the pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#setting-up-profiles">Setting up profiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#executing-pipeline">Executing Pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#configuration-for-pipeline">Configuration for pipeline</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config_file.html">Configuration File</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Advanced Features</a></li>
 </ul>
 
         </div>
@@ -72,7 +77,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Setting up the Pipeline</li>
+      <li class="breadcrumb-item active">Executing the Pipeline</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/set_up.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -82,8 +87,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="setting-up-the-pipeline">
-<h1>Setting up the Pipeline<a class="headerlink" href="#setting-up-the-pipeline" title="Permalink to this heading"></a></h1>
+  <div class="section" id="executing-the-pipeline">
+<h1>Executing the Pipeline<a class="headerlink" href="#executing-the-pipeline" title="Permalink to this heading"></a></h1>
 <div class="section" id="installing-dependencies">
 <h2>Installing dependencies<a class="headerlink" href="#installing-dependencies" title="Permalink to this heading"></a></h2>
 <div class="section" id="packages-installed-through-conda">
@@ -95,11 +100,6 @@
 <p>All the python packages installed for python version 3.9.5 ( and with R version 4.1.0) are described (add_link and file)</p>
 </div>
 </div>
-<div class="section" id="overview-of-the-pipeline">
-<h2>Overview of the pipeline<a class="headerlink" href="#overview-of-the-pipeline" title="Permalink to this heading"></a></h2>
-<p>Directed Acyclic Graph of the whole pipeline:
-<img alt="DAG" src="_images/Whole_pipeline.png" /></p>
-</div>
 <div class="section" id="setting-up-profiles">
 <h2>Setting up profiles<a class="headerlink" href="#setting-up-profiles" title="Permalink to this heading"></a></h2>
 <p>The info for setting up profiles for different workload managers is mentioned <a class="reference external" href="https://github.com/Snakemake-Profiles">here</a></p>
@@ -110,10 +110,6 @@
 <div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>sh run_snakemake.sh
 </pre></div>
 </div>
-</div>
-<div class="section" id="configuration-for-pipeline">
-<h2>Configuration for pipeline<a class="headerlink" href="#configuration-for-pipeline" title="Permalink to this heading"></a></h2>
-<p>This pipeline depends on a yaml config file (new_config.yaml), which has all relevant options for each rule present in this pipeline. This not only streamlines the process of maintaining or modifying program specific parameters but also makes repetitive usage (can be within the project or using it over mutliple projects) of this pipeline over time very efficient.</p>
 </div>
 </div>
 

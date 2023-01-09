@@ -12,8 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
 
+sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
 
 # -- Project information -----------------------------------------------------
 
@@ -37,6 +37,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinxarg.ext",
     # "sphinx_mdinclude",
 ]
 
@@ -46,6 +47,15 @@ source_suffix = [
     ".rst",
     ".md",
 ]
+
+# For having myst to generate anchors until ### (h3 level) headings
+myst_heading_anchors = 3
+
+# Myst extend the figure directive
+myst_enable_extensions = ["colon_fence"]
+
+# To make available sections that don't have a unique name as a hyperlink target
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -67,3 +77,9 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    'css/tables.css',
+]

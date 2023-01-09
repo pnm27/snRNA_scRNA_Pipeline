@@ -1,4 +1,4 @@
-# Setting up the Pipeline
+# Executing the Pipeline
 
 ## Installing dependencies
 
@@ -9,11 +9,6 @@ All the packages installed through anaconda3/2018.12 for Python 3.9.5 are descri
 ### Packages installed through pip
 
 All the python packages installed for python version 3.9.5 ( and with R version 4.1.0) are described (add_link and file)
-
-## Overview of the pipeline
-
-Directed Acyclic Graph of the whole pipeline:
-![DAG](../../images/Whole_pipeline.png)
 
 ## Setting up profiles
 
@@ -26,7 +21,3 @@ This pipeline can be executed by executing (in case of any workflow manager, sub
 ```sh
 sh run_snakemake.sh
 ```
-
-## Configuration for pipeline
-
-This pipeline depends on a yaml config file (new_config.yaml), which has all relevant options for each rule present in this pipeline. This not only streamlines the process of maintaining or modifying program specific parameters but also makes repetitive usage (can be within the project or using it over mutliple projects) of this pipeline over time very efficient.

@@ -6,6 +6,7 @@
   <title>snRNA_scRNA_Pipeline Introduction &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -19,7 +20,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Setting up the Pipeline" href="set_up.html" /> 
+    <link rel="next" title="Executing the Pipeline" href="set_up.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -37,13 +38,19 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="set_up.html">Setting up the Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config_file.html">Configuration File</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Advanced Features</a></li>
 </ul>
 
         </div>
@@ -76,16 +83,27 @@
 </div>
 <div class="admonition-todo admonition">
 <p class="admonition-title">TODO:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>1. More documentation
-2. Combine rules split_bams and split_bams_gt
-3. Add new Picard metrics
-4. Include in new_config.yaml an option to select wasp mode in the rule STARsolo
-</pre></div>
-</div>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Add rule-specific <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#integrated-package-management">conda envs</a> and verify them.</dt><dd><ul>
+<li><p>Conda envs can’t be used with <strong>run</strong>. Hence, appropriately modify rule using <strong>run</strong> directive to facilitate usage of conda env or make a note of it in the documentation.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Move documentation to configargparse.</p></li>
+<li><p>Write down schemas.</p></li>
+<li><p>More documentation.</p></li>
+<li><p>Combine rules split_bams and split_bams_gt.</p></li>
+<li><p>Add new Picard metrics.</p></li>
+<li><p>Include in new_config.yaml an option to select wasp mode in the rule STARsolo</p></li>
+<li><p>Search Ranking of readthedocs (using config file for this too).</p></li>
+<li><p>Might think to incorporate git submodules for repos on git that I use.</p></li>
+</ul>
 </div>
 <div class="section" id="snrna-scrna-pipeline-introduction">
 <h1>snRNA_scRNA_Pipeline Introduction<a class="headerlink" href="#snrna-scrna-pipeline-introduction" title="Permalink to this heading"></a></h1>
-<p>Snakemake Pipeline with “selectable” modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.</p>
+<p>Snakemake Pipeline with <a class="reference internal" href="modules.html#selectable-modules"><span class="std std-ref">selectable</span></a> modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.</p>
 <p>The highlights of the pipeline are:</p>
 <ul>
 	<li> Streamlined processes to modify parameters for each program through a single yaml file </li>
@@ -111,14 +129,12 @@
 	<li><a href="https://qtltools.github.io/qtltools/pages/QTLtools-mbv.1.html" name="mbv">QTLtools-mbv</a></li>
 </ul>
 <div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="set_up.html">Setting up the Pipeline</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="set_up.html#installing-dependencies">Installing dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_up.html#overview-of-the-pipeline">Overview of the pipeline</a></li>
 <li class="toctree-l2"><a class="reference internal" href="set_up.html#setting-up-profiles">Setting up profiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="set_up.html#executing-pipeline">Executing Pipeline</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_up.html#configuration-for-pipeline">Configuration for pipeline</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a><ul>
@@ -127,15 +143,36 @@
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#easy-modification-or-addition-of-rules">Easy modification or addition of rules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#one-select-running-of-popular-workflows">One-select running of popular workflows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#easy-resource-maintenance">Easy resource maintenance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="highlights.html#re-attempts-for-known-issues-errors">Re-attempts for known issues/errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="highlights.html#re-attempts-for-known-issues-or-errors">Re-attempts for known issues or errors</a></li>
 </ul>
 </li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#selectable-modules">Selectable Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-description">Module description</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
-<li class="toctree-l1"><a class="reference internal" href="config_file.html">Configuration File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#overview-of-the-pipeline">Overview of the pipeline</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Advanced Features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="produce_outputs.html#configuration-file">Configuration File</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="produce_outputs.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="produce_outputs.html#common-project-specific-parameters">Common (project-specific) parameters</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -153,7 +190,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="set_up.html" class="btn btn-neutral float-right" title="Setting up the Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="set_up.html" class="btn btn-neutral float-right" title="Executing the Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
