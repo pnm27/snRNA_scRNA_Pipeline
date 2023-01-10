@@ -40,6 +40,17 @@ def ret_cols(fname) -> int :
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
+# 
+# 
+def get_filt_barcodes(wildcards):
+    if config['gt_demux_pipeline']['get_bc_final_count_mat'] or config['gt_demux_pipeline']['get_bc_final_count_mat'].lower() == "true":
+        return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+    else:
+        pass
+
+
+
+
 
 # Consolidate this function and ret_dons
 # MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
@@ -158,11 +169,11 @@ def ret_dons(wildcards, input) -> Union[None, int]:
 
 #     return temp_df.loc[temp_df[cols1[0]] == set_num, col].values[0]
 
-# Modify this rule's iunput to accomodate the basic filtering that 
+# Modify this rule's input to accomodate the basic filtering that 
 # is used for calico_solo's input
 rule create_inp_cellSNP:
     input:
-        f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        get_filt_barcodes
 
     priority: 8
 
