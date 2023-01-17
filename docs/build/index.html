@@ -17,10 +17,12 @@
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/sphinx_highlight.js"></script>
+        <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({startOnLoad:true});</script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Executing the Pipeline" href="set_up.html" /> 
+    <link rel="next" title="Salient Features" href="highlights.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -40,8 +42,8 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
 <ul>
@@ -103,7 +105,8 @@
 </div>
 <div class="section" id="snrna-scrna-pipeline-introduction">
 <h1>snRNA_scRNA_Pipeline Introduction<a class="headerlink" href="#snrna-scrna-pipeline-introduction" title="Permalink to this heading"></a></h1>
-<p>Snakemake Pipeline with <a class="reference internal" href="modules.html#selectable-modules"><span class="std std-ref">selectable</span></a> modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.</p>
+<p>This pipeline intends to resolve
+Snakemake Pipeline with <a class="reference internal" href="modules.html#selectable-modules"><span class="std std-ref">selectable</span></a> modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.</p>
 <p>The highlights of the pipeline are:</p>
 <ul>
 	<li> Streamlined processes to modify parameters for each program through a single yaml file </li>
@@ -131,12 +134,6 @@
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="set_up.html#installing-dependencies">Installing dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_up.html#setting-up-profiles">Setting up profiles</a></li>
-<li class="toctree-l2"><a class="reference internal" href="set_up.html#executing-pipeline">Executing Pipeline</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="highlights.html">Salient Features</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#streamlined">Streamlined</a></li>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#maintaining-project-structure">Maintaining project structure</a></li>
@@ -144,6 +141,12 @@
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#one-select-running-of-popular-workflows">One-select running of popular workflows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#easy-resource-maintenance">Easy resource maintenance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="highlights.html#re-attempts-for-known-issues-or-errors">Re-attempts for known issues or errors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="set_up.html">Executing the Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="set_up.html#installing-dependencies">Installing dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set_up.html#setting-up-profiles">Setting up profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="set_up.html#executing-pipeline">Executing Pipeline</a></li>
 </ul>
 </li>
 </ul>
@@ -190,7 +193,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="set_up.html" class="btn btn-neutral float-right" title="Executing the Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="highlights.html" class="btn btn-neutral float-right" title="Salient Features" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

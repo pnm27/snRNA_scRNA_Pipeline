@@ -32,8 +32,8 @@ This documentation is incomplete and is under heavy development!
 :caption: Introduction
 :maxdepth: 2
 
-set_up
 highlights
+set_up
 ```
 
 ```{toctree}

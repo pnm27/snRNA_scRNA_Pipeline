@@ -38,6 +38,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinxarg.ext",
+    "sphinxcontrib.mermaid",
     # "sphinx_mdinclude",
 ]
 
