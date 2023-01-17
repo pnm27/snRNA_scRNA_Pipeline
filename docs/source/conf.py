@@ -39,6 +39,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinxarg.ext",
     "sphinxcontrib.mermaid",
+    "hoverxref.extension",
+    "sphinxcontrib.bibtex",
     # "sphinx_mdinclude",
 ]
 
@@ -57,6 +59,19 @@ myst_enable_extensions = ["colon_fence"]
 
 # To make available sections that don't have a unique name as a hyperlink target
 autosectionlabel_prefix_document = True
+
+# For hover tooltips
+hoverxref_roles = [
+    'term',
+]
+
+# For BibTeX
+bibtex_bibfiles = ['bibliography.bib']
+
+# For hover on BibTeX
+hoverxref_domains =[
+    'cite',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

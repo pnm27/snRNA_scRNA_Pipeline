@@ -50,6 +50,13 @@ modules
 produce_outputs
 ```
 
+```{toctree}
+:caption: Reference
+:maxdepth: 3
+
+glossary
+```
+
 # Indices and tables
 
 - {ref}`genindex`
