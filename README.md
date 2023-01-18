@@ -1,9 +1,8 @@
 # snRNA_scRNA_Pipeline Introduction
 
-This pipeline intends to make {term}`preprocessing`
+This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 
 
-
-Snakemake Pipeline with {ref}`selectable <selectable-modules>` modules for snRNA seq pre-processing. It also supports various software/pipeline for scRNA seq pre-processing.
+It also supports various software/pipeline for scRNA seq pre-processing.
 
 The highlights of the pipeline are:
 <ul>

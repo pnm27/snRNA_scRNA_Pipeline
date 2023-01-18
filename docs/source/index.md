@@ -37,6 +37,13 @@ set_up
 ```
 
 ```{toctree}
+:caption: Getting Started
+:maxdepth: 2
+
+basic_run
+```
+
+```{toctree}
 :caption: Sub Workflows
 :maxdepth: 2
 

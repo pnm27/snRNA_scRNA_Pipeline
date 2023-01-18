@@ -65,6 +65,13 @@ hoverxref_roles = [
     'term',
 ]
 
+# To hoverxref role types
+hoverxref_role_types = {
+    'hoverxref': 'tooltip',
+    'p': 'modal',
+    'term': 'tooltip'
+}
+
 # For BibTeX
 bibtex_bibfiles = ['bibliography.bib']
 
