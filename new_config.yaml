@@ -54,6 +54,8 @@ STAR_version: star/2.7.8a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.9a
 
+# If running hashsolo and vireoSNP simultaneously then store in this path
+demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/ # Can be null or a path
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
@@ -155,15 +157,15 @@ demux_pipeline:
 
 # cellSNP and vireoSNP pipeline----------------------------------------------
 gt_demux_pipeline:
-  cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/cellSNP/
-  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demux_gt/inp_for_cellsnp/
+  cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/cellSNP/
+  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/inp_for_cellsnp/
   cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
   vcf_info: /sc/arion/projects/psychAD/pnm/pool_info.tsv
-  vireosnp_dir: /sc/arion/projects/psychAD/demux_gt/vireoSNP/
+  vireosnp_dir: /sc/arion/projects/psychAD/demultiplex/vireoSNP/
   filt_vcf_dir: /sc/arion/projects/psychAD/pnm/isec_reruns/ # when subsetting SNPs wrt ref SNVs (from a source like 1kGP)
   genome_1k_ref: /sc/arion/projects/psychAD/pnm/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vcf.gz
   donor_genotype: GT
-  temp_cellsnp_filt_dir: /sc/arion/projects/psychAD/pnm/filt_cellsnp/
+  # temp_cellsnp_filt_dir: /sc/arion/projects/psychAD/pnm/filt_cellsnp/
   top_genes_cs_filt_bed: /sc/arion/projects/psychAD/pnm/top1k_genes.bed
   # split_compiled_vcf: False
   # Optional params

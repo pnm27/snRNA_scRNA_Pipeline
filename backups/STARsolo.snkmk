@@ -125,22 +125,23 @@ rule STARsolo_sort:
 
     threads: 6
 
-    shell:
+    run:
+        r1 = ','.join(input.R1)
+        r2 = ','.join(input.R2)
+        shell(
         """
         ml {config[STAR_version]}
         ml samtools
-        r1=$(echo "{input.R1}" | tr '[:blank:]' ',')
-        r2=$(echo "{input.R2}" | tr '[:blank:]' ',')
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
         if [[ {config[STARsolo_pipeline][extra_params]} == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
-            --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
+            --twopassMode Basic --readFilesCommand zcat --readFilesIn {r2} {r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
-            --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
+            --twopassMode Basic --readFilesCommand zcat --readFilesIn {r2} {r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} \
             {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
@@ -161,4 +162,4 @@ rule STARsolo_sort:
                || (rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params})
         fi
         samtools index {output[0]}
-        """
+        """, r1=r1, r2=r2)

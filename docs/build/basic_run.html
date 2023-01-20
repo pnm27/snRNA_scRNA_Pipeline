@@ -16,6 +16,7 @@
       <link rel="stylesheet" href="_static/css/micromodal.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/sphinx_rtd_theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/page_style.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -64,14 +65,14 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Setting up a basic pipeline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="#understanding-snakemake-workflows">Understanding Snakemake workflows</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Sub Workflows</span></p>
+<p class="caption" role="heading"><span class="caption-text">Understanding the Pipeline</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Advanced Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Demultiplex pooled snRNA seq datasets</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
@@ -108,6 +109,11 @@
 </div>
 <div class="section" id="understanding-snakemake-workflows">
 <h1>Understanding Snakemake workflows<a class="headerlink" href="#understanding-snakemake-workflows" title="Permalink to this heading"></a></h1>
+<p>To begin with understanding this setup, it is highly advised to go through the basic <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html">Snakemake’s tutorial</a>.</p>
+<p>To surmise the workflow setup, one should follow the bottom-top approach i.e. identify the final files (or a set of) that’s required and build the way up to the infput files. This is an example of the <a class="hxr-hoverxref hxr-tooltip reference internal" href="glossary.html#term-DAG"><span class="xref std std-term">DAG</span></a> created by Snakemake.</p>
+<p>For our example case, we require 2 sets of files from our workflow i.e the outputs created by PICARD programs - CollectGcBiasMetrics and CollectRnaSeqMetrics as they are created independent of each other. Hence, if we were to use only the outputs of one program the other output won’t be produced.</p>
+<p>To finally assimilate all these statistics (alignment statistics and read statistics) we will be runnning another script <em>run_update_logs.sh</em> (click here to know how)</p>
+<p>Firstly, create a list of inputs (check here for different styles of inputs) - we will go with creating text file with the list of fastq files (one line per sample)</p>
 </div>
 
 

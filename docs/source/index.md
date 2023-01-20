@@ -44,15 +44,15 @@ basic_run
 ```
 
 ```{toctree}
-:caption: Sub Workflows
+:caption: Understanding the Pipeline
 :maxdepth: 2
 
 modules
 ```
 
 ```{toctree}
-:caption: Advanced Setups
-:maxdepth: 3
+:caption: Advanced Tutorials
+:maxdepth: 2
 
 produce_outputs
 ```

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advanced Features &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>Demultiplex pooled snRNA seq datasets &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
@@ -16,6 +16,7 @@
       <link rel="stylesheet" href="_static/css/micromodal.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/sphinx_rtd_theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/page_style.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -69,9 +70,9 @@
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Setups</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Features</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demultiplex pooled snRNA seq datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-file">Configuration File</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#common-project-specific-parameters">Common (project-specific) parameters</a><ul>
@@ -102,7 +103,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Advanced Features</li>
+      <li class="breadcrumb-item active">Demultiplex pooled snRNA seq datasets</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/produce_outputs.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -112,13 +113,15 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="advanced-features">
-<h1>Advanced Features<a class="headerlink" href="#advanced-features" title="Permalink to this heading"></a></h1>
+  <div class="section" id="demultiplex-pooled-snrna-seq-datasets">
+<h1>Demultiplex pooled snRNA seq datasets<a class="headerlink" href="#demultiplex-pooled-snrna-seq-datasets" title="Permalink to this heading"></a></h1>
+<p>This setup shows one complex workflow that will be simplified and streamlined by this pipeline. To make it more interesting, this tutorial will annotate individual samples through genotype based demultiplexing (using cellSNP-vireoSNP workflow) as well as HTO based demultiplexing (using kite-hashsolo workflow).</p>
 <div class="section" id="configuration-file">
 <h2>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this heading"></a></h2>
+<p>To begin with any utilisation of this pipeline starts with setting up the configuration file <em>new_config.yaml</em></p>
 <div class="section" id="overview">
 <h3>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h3>
-<p>This pipeline depends on a yaml config file (new_config.yaml), which has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned in a way that encapsulates rule-specific options/parameters within a sub-workflow module through comments. Each of the rules, however, do have its own required and optional parameters. Thus, necessitating a further demarcation using comments.</p>
+<p>This yaml config file (new_config.yaml) has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned, through comments, into separate sub-workflow modules in a way containing rule-specific options/parameters (ocurring in the order of their appearance in the sub-workflow scripts). Typically, there are certain parameters that need not be changed irrespective of the project the pipeline is being used for</p>
 </div>
 <div class="section" id="common-project-specific-parameters">
 <h3>Common (project-specific) parameters<a class="headerlink" href="#common-project-specific-parameters" title="Permalink to this heading"></a></h3>

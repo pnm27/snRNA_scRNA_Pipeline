@@ -1,10 +1,14 @@
-# Advanced Features
+# Demultiplex pooled snRNA seq datasets
+
+This setup shows one complex workflow that will be simplified and streamlined by this pipeline. To make it more interesting, this tutorial will annotate individual samples through genotype based demultiplexing (using cellSNP-vireoSNP workflow) as well as HTO based demultiplexing (using kite-hashsolo workflow).
 
 ## Configuration File
 
+To begin with any utilisation of this pipeline starts with setting up the configuration file *new_config.yaml*
+
 ### Overview
 
-This pipeline depends on a yaml config file (new_config.yaml), which has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned in a way that encapsulates rule-specific options/parameters within a sub-workflow module through comments. Each of the rules, however, do have its own required and optional parameters. Thus, necessitating a further demarcation using comments. 
+This yaml config file (new_config.yaml) has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned, through comments, into separate sub-workflow modules in a way containing rule-specific options/parameters (ocurring in the order of their appearance in the sub-workflow scripts). Typically, there are certain parameters that need not be changed irrespective of the project the pipeline is being used for
 
 ### Common (project-specific) parameters
 
