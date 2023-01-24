@@ -1,4 +1,27 @@
 # snRNA_scRNA_Pipeline Introduction
+### TODO:
+
+
+   - Add rule-specific [conda envs](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#integrated-package-management) and verify them. Conda envs can't be used with **run**, which is present in the following rules:
+      - [x] STARsolo
+      - [ ] split_bams
+      - [ ] split_bams_gt
+      - [ ] kite
+      - [ ] pheno_demux3
+   - [ ] Move documentation to configargparse.
+   - [ ] Write down schemas.
+   - Add tutorials.
+	 - pooled snRNA seq
+       - [ ] simple
+       - [ ] complex
+     - scRNA seq
+	   - [ ] simple
+       - [ ] complex
+   - [ ] Combine rules split_bams and split_bams_gt.
+   - [ ] Add new Picard metrics.
+   - [ ] Include in new_config.yaml an option to select wasp mode in the rule STARsolo
+   - [ ] Search Ranking of readthedocs (using config file for this too).
+   - [ ] Might incorporate git submodules for repos on git that I use.
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 
 

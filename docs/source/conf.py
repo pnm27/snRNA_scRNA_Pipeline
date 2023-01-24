@@ -55,7 +55,10 @@ source_suffix = [
 myst_heading_anchors = 3
 
 # Myst extend the figure directive
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = [
+    "colon_fence",
+    "tasklist",
+]
 
 # To make available sections that don't have a unique name as a hyperlink target
 autosectionlabel_prefix_document = True

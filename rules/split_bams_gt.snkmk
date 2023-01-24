@@ -161,6 +161,7 @@ rule split_bams:
         if proc_donors:
             for donor in proc_donors:
                 # bam_files+=1
+                # Change this nameing style
                 jname=f"NPSAD_{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
                 job_name_l.append(jname)
                 shell("""

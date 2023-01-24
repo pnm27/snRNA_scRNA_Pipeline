@@ -264,12 +264,12 @@ split_bams_pipeline_gt_demux:
   short_bam: _chr1.bam # Change this to be flexible
   time_per_donor: "02:30"
   mito_reads_file: _mito_reads_stats.txt
-  ngscheckmate_res_dir: /sc/arion/projects/psychAD/pnm/
-  inp_file: /sc/arion/projects/CommonMind/pnm/choroid_plexus/NGS_inp_short.txt
-  ngscheckmate_dir: /sc/arion/work/prashf01/
-  ngscheckmate_ref_bed: /sc/arion/projects/psychAD/ref_GRCh38/hglft_genome_6702d_cdce40_wo_chr.bed
-  ngs_inp_type: B # either B or V or null; currently only B or V
-  proj_name: psychAD
+  # ngscheckmate_res_dir: /sc/arion/projects/psychAD/pnm/
+  # inp_file: /sc/arion/projects/CommonMind/pnm/choroid_plexus/NGS_inp_short.txt
+  # ngscheckmate_dir: /sc/arion/work/prashf01/
+  # ngscheckmate_ref_bed: /sc/arion/projects/psychAD/ref_GRCh38/hglft_genome_6702d_cdce40_wo_chr.bed
+  # ngs_inp_type: B # either B or V or null; currently only B or V
+  # proj_name: psychAD
 
 
 # Identifying swaps
