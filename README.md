@@ -8,6 +8,7 @@
       - [ ] split_bams_gt
       - [ ] kite
       - [ ] pheno_demux3
+   - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
    - [ ] Move documentation to configargparse.
    - [ ] Write down schemas.
    - Add tutorials.
@@ -17,7 +18,7 @@
      - scRNA seq
 	   - [ ] simple
        - [ ] complex
-   - [ ] Combine rules split_bams and split_bams_gt.
+   - [ ] Combine sub-workflows split_bams and split_bams_gt.
    - [ ] Add new Picard metrics.
    - [ ] Include in new_config.yaml an option to select wasp mode in the rule STARsolo
    - [ ] Search Ranking of readthedocs (using config file for this too).

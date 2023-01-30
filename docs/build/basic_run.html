@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Setting up a basic pipeline &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>Understanding Snakemake workflows &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
@@ -62,8 +63,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Setting up a basic pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#understanding-snakemake-workflows">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#a-basic-pipeline">A basic pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#setting-up">Setting up</a></li>
+</ul>
+</li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding the Pipeline</span></p>
 <ul>
@@ -93,7 +97,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Setting up a basic pipeline</li>
+      <li class="breadcrumb-item active">Understanding Snakemake workflows</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/basic_run.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -103,18 +107,21 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="setting-up-a-basic-pipeline">
-<h1>Setting up a basic pipeline<a class="headerlink" href="#setting-up-a-basic-pipeline" title="Permalink to this heading"></a></h1>
-<p>Let’s start to setup the pipeline to run a basic set of softwares required for preprocessing a scRNAseq data i.e. use STARsolo to align our cDNA fastqs and run a set of PICARD tools while retaining all the statistics produced by these tools.</p>
-</div>
-<div class="section" id="understanding-snakemake-workflows">
+  <section id="understanding-snakemake-workflows">
 <h1>Understanding Snakemake workflows<a class="headerlink" href="#understanding-snakemake-workflows" title="Permalink to this heading"></a></h1>
 <p>To begin with understanding this setup, it is highly advised to go through the basic <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html">Snakemake’s tutorial</a>.</p>
 <p>To surmise the workflow setup, one should follow the bottom-top approach i.e. identify the final files (or a set of) that’s required and build the way up to the infput files. This is an example of the <a class="hxr-hoverxref hxr-tooltip reference internal" href="glossary.html#term-DAG"><span class="xref std std-term">DAG</span></a> created by Snakemake.</p>
+</section>
+<section id="a-basic-pipeline">
+<h1>A basic pipeline<a class="headerlink" href="#a-basic-pipeline" title="Permalink to this heading"></a></h1>
+<p>Let’s start to setup the pipeline to run a basic set of softwares required for preprocessing a scRNAseq data i.e. use STARsolo to align our cDNA fastqs and run a set of PICARD tools while retaining all the statistics produced by these tools.</p>
 <p>For our example case, we require 2 sets of files from our workflow i.e the outputs created by PICARD programs - CollectGcBiasMetrics and CollectRnaSeqMetrics as they are created independent of each other. Hence, if we were to use only the outputs of one program the other output won’t be produced.</p>
 <p>To finally assimilate all these statistics (alignment statistics and read statistics) we will be runnning another script <em>run_update_logs.sh</em> (click here to know how)</p>
+<section id="setting-up">
+<h2>Setting up<a class="headerlink" href="#setting-up" title="Permalink to this heading"></a></h2>
 <p>Firstly, create a list of inputs (check here for different styles of inputs) - we will go with creating text file with the list of fastq files (one line per sample)</p>
-</div>
+</section>
+</section>
 
 
            </div>

@@ -173,7 +173,7 @@ rule split_bams:
                 """, i=donor, j=jname)
 
             with open(output[0], "a") as fout:
-                fout.write(f"Number of 'new' bam files expected at the completion of all the scripts for the bam file {input.short_bam} is {len(job_name_l)}")
+                fout.write(f"Number of 'new' bam files expected at the completion of all the scripts for the bam file {input.short_bam} is {len(job_name_l)}\n")
 
 
         else:

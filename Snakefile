@@ -31,6 +31,8 @@ configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
 
 # Set few global variables (DON'T CHANGE!)
+# These will change according to the subworkflow needed
+# These are just placeholders
 ONLY_SOLO = False
 ONLY_VIREO = False
 BOTH_DEMUX = False # Not eyt implemented the rule

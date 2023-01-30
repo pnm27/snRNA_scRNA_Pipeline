@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Modules &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -37,7 +38,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Demultiplex pooled snRNA seq datasets" href="produce_outputs.html" />
-    <link rel="prev" title="Setting up a basic pipeline" href="basic_run.html" /> 
+    <link rel="prev" title="Understanding Snakemake workflows" href="basic_run.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -62,8 +63,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Setting up a basic pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html#understanding-snakemake-workflows">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html#a-basic-pipeline">A basic pipeline</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding the Pipeline</span></p>
 <ul class="current">
@@ -110,10 +111,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <div class="section" id="modules">
+  <section id="modules">
 <h1>Modules<a class="headerlink" href="#modules" title="Permalink to this heading"></a></h1>
 <p>This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords.</p>
-<div class="section" id="selectable-modules">
+<section id="selectable-modules">
 <span id="id1"></span><h2>Selectable Modules<a class="headerlink" href="#selectable-modules" title="Permalink to this heading"></a></h2>
 <p>The following combinations of programs can be run:</p>
 <ul>
@@ -135,8 +136,8 @@
 <li>starsolo_resolve_swaps_gt_demux <sup><small>#</small></sup></li>
 </ul>
 <p>where <strong>starsolo</strong> represents STARsolo; <strong>rnaseqmet</strong> and <strong>gcbiasmet</strong> refer to PICARD’s CollectRnaSeqMetrics and CollectGcBiasMetrics, respectively while <strong>picard</strong> represents inclusion of both the previously-mentioned programs; <strong>kb_solo</strong> refers to using kallisto, bustools and calico_solo for demultiplexing; <strong>gt_demux</strong> refers to using cellSNP and vireoSNP for genotype based demultiplexing; <strong>split_bams</strong> refers to splitting pooled/multiplexed bams using hashsolo’s outputs while <strong>split_bams_gt_demux</strong> refers to splitting pooled/multiplexed bams using vireo’s output; <strong>identify_swaps</strong> refers to using qtltools_mbv. The option <strong>multi_vcf</strong> is to provide muiltiple runs (i.e. multiple sets of vcf inputs) for the same sample.</p>
-</div>
-<div class="section" id="module-description">
+</section>
+<section id="module-description">
 <h2>Module description<a class="headerlink" href="#module-description" title="Permalink to this heading"></a></h2>
 <table class="docutils align-default" id="module-info-table">
 <caption><span class="caption-text">Modules_info</span><a class="headerlink" href="#module-info-table" title="Permalink to this table"></a></caption>
@@ -218,9 +219,9 @@
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div class="section" id="sub-snakemake-workflows">
+</section>
+</section>
+<section id="sub-snakemake-workflows">
 <h1>Sub-Snakemake workflows<a class="headerlink" href="#sub-snakemake-workflows" title="Permalink to this heading"></a></h1>
 <p>This pipeline divides each module into its self-contained individual workflows. These are:</p>
 <table class="docutils align-default" id="sub-smk-info-table">
@@ -277,7 +278,7 @@ produced by either hashsolo or vireoSNP using custom scripts.</p></td>
 </tr>
 </tbody>
 </table>
-<div class="section" id="overview-of-the-pipeline">
+<section id="overview-of-the-pipeline">
 <h2>Overview of the pipeline<a class="headerlink" href="#overview-of-the-pipeline" title="Permalink to this heading"></a></h2>
 <p>Directed Acyclic Graph of the whole pipeline:
 <img alt="DAG" src="_images/Whole_pipeline.png" /></p>
@@ -345,14 +346,14 @@ flowchart TB
 <dd><p>Not yet implemented</p>
 </dd>
 </dl>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="basic_run.html" class="btn btn-neutral float-left" title="Setting up a basic pipeline" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="basic_run.html" class="btn btn-neutral float-left" title="Understanding Snakemake workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="produce_outputs.html" class="btn btn-neutral float-right" title="Demultiplex pooled snRNA seq datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

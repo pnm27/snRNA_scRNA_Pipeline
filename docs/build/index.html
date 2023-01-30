@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>snRNA_scRNA_Pipeline Introduction &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -61,8 +62,8 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Setting up a basic pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html#understanding-snakemake-workflows">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html#a-basic-pipeline">A basic pipeline</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding the Pipeline</span></p>
 <ul>
@@ -106,9 +107,9 @@
 <p class="admonition-title">Warning</p>
 <p>This documentation is incomplete and is under heavy development!</p>
 </div>
-<div class="section" id="snrna-scrna-pipeline-introduction">
+<section id="snrna-scrna-pipeline-introduction">
 <h1>snRNA_scRNA_Pipeline Introduction<a class="headerlink" href="#snrna-scrna-pipeline-introduction" title="Permalink to this heading"></a></h1>
-<div class="section" id="todo">
+<section id="todo">
 <h2>TODO:<a class="headerlink" href="#todo" title="Permalink to this heading"></a></h2>
 <ul class="contains-task-list simple">
 <li><p>Add rule-specific <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#integrated-package-management">conda envs</a> and verify them. Conda envs can’t be used with <strong>run</strong>, which is present in the following rules:</p>
@@ -120,6 +121,7 @@
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> pheno_demux3</p></li>
 </ul>
 </li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Move documentation to configargparse.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Write down schemas.</p></li>
 <li><p>Add tutorials.</p>
@@ -138,7 +140,7 @@
 </li>
 </ul>
 </li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Combine rules split_bams and split_bams_gt.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Combine sub-workflows split_bams and split_bams_gt.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add new Picard metrics.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Include in new_config.yaml an option to select wasp mode in the rule STARsolo</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Search Ranking of readthedocs (using config file for this too).</p></li>
@@ -155,8 +157,8 @@
 	<li> Organize outputs from each module </li>
 	<li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
 </ul>
-</div>
-<div class="section" id="requirements">
+</section>
+<section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
 <p>This pipeline depends on the following packages/programs:</p>
 <ul>
@@ -194,8 +196,11 @@
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Setting up a basic pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="basic_run.html#understanding-snakemake-workflows">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html">Understanding Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basic_run.html#a-basic-pipeline">A basic pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="basic_run.html#setting-up">Setting up</a></li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="toctree-wrapper compound">
@@ -227,16 +232,16 @@
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 </div>
-</div>
-</div>
-<div class="section" id="indices-and-tables">
+</section>
+</section>
+<section id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this heading"></a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
+</section>
 
 
            </div>
