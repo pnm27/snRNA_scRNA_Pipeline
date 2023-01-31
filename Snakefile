@@ -30,14 +30,15 @@ min_version("6.4.0")
 configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
 
-# Set few global variables (DON'T CHANGE!)
-# These will change according to the subworkflow needed
-# These are just placeholders
+# Set few global variables (DON'T CHANGE FOR INITIAL RUNS (FOR EACH PROJECT)!)
+# FOr subsequent runs on the same project i.e. when there exist previous
+# outputs of either demultiplex runs: CHECK THE DOCUMENTATION FOR HOW TO 
+# CHANGE THESE VARS
 ONLY_SOLO = False
 ONLY_VIREO = False
-BOTH_DEMUX = False # Not eyt implemented the rule
+BOTH_DEMUX = False # Not yet implemented the rule
 ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
-ADD_VIREO = False # When a demultiplex run with calico_solo has been done, modify it later
+ADD_VIREO = False # When a demultiplex run with calico_solo has been done
 
 
 include: "rules/input_processing.snkmk"

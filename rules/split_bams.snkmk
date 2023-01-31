@@ -7,9 +7,12 @@ def get_chr_pref(wildcards):
 
 def get_mito(wildcards):
     if config['chr_prefix'] == None or config['mito'].startswith(config['chr_prefix']):
-        return config['mito']
+        ret_val = config['mito'] if not config['mito'].endswith('-') else config['mito'][:-1]
+        return ret_val
     else:
-        return config['chr_prefix'] + config['mito'] 
+        ret_val = config['chr_prefix'] + config['mito']
+        ret_val =  ret_val if not ret_val.endswith('-') else ret_val[:-1]
+        return ret_val
 
 
 # defining local rules

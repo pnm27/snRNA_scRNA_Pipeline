@@ -9,6 +9,12 @@
       - [ ] kite
       - [ ] pheno_demux3
    - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
+   - [ ] Beautify the function get_filt_barcodes (pheno_demux3.snkmk).
+   - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
+     - when both demultiplex software are run simultaneously.
+     - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
+   - [ ] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
+   - [ ] Make the functions similar for demultiplexing with any method.
    - [ ] Move documentation to configargparse.
    - [ ] Write down schemas.
    - Add tutorials.
@@ -18,9 +24,12 @@
      - scRNA seq
 	   - [ ] simple
        - [ ] complex
+   - [ ] Remove dependency on STARsolo as an aligner.
    - [ ] Combine sub-workflows split_bams and split_bams_gt.
+   - [ ] Add options in config file to allow adding extra params for every software:
+     - [ ] WASP mode in STARsolo_sort.snkmk
    - [ ] Add new Picard metrics.
-   - [ ] Include in new_config.yaml an option to select wasp mode in the rule STARsolo
+   - [ ] Include in new_config.yaml an option to select wasp mode for the rule STARsolo_sort.snkmk
    - [ ] Search Ranking of readthedocs (using config file for this too).
    - [ ] Might incorporate git submodules for repos on git that I use.
 
@@ -38,6 +47,13 @@ The highlights of the pipeline are:
 	<li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
 </ul>
 
+
+## Changelog:
+
+  - Changed param name in demultiplex info from *Unique genes* to *gene_ids with an associated gene_name*.
+  - Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.
+  
+  
 ## Requirements
 This pipeline depends on the following packages/programs:
 <ul>

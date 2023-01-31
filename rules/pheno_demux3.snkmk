@@ -40,17 +40,27 @@ def ret_cols(fname) -> int :
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
 
-# 
-# 
+# Make this function to take first set of final_count_matrix file, if one demux is already done
+# or to simply filter the count matrix file (output of alignment) according to the same filters
+# as in calico_solo's rule
 def get_filt_barcodes(wildcards):
-    if config['gt_demux_pipeline']['get_bc_final_count_mat'] or config['gt_demux_pipeline']['get_bc_final_count_mat'].lower() == "true":
-        return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
-    else:
+
+    if ADD_SOLO:
         pass
+    elif ADD_VIREO:
+        return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+    elif ONLY_VIREO or BOTH_DEMUX:
+        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
+    else:
+        raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
 
 
-
-
+# Parameter option
+def get_inp_type(wildcards, input):
+    if ADD_SOLO or ADD_VIREO or input[0].endswith('.h5ad'):
+        return 'prev'
+    else:
+        return 'star'
 
 # Consolidate this function and ret_dons
 # MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
@@ -178,28 +188,41 @@ rule create_inp_cellSNP:
     priority: 8
 
     params:
+        inp_type=get_inp_type, 
+        # When a run of calico_solo exists
         col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
         bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length
-        keep_all_cells=config['gt_demux_pipeline']['include_all_cells'],
-        doub=config['gt_demux_pipeline']['doublet'], # Doublets classified as
-        neg=config['gt_demux_pipeline']['negative'], # Negatives classified as
-        na=config['gt_demux_pipeline']['na'] # Cells not present in hashsolo classified as
+        keep_all_cells=config['gt_demux_pipeline']['include_all_cells'], # Include all cells (don't remove cells prev classified as doublets, etc.)
+        doub=config['gt_demux_pipeline']['doublet'], # Doublets named as
+        neg=config['gt_demux_pipeline']['negative'], # Negatives named as
+        na=config['gt_demux_pipeline']['na'], # Cells not present in hashsolo named as
+        # When no previous runs of calico_solo exists
+        genes_info=config['demux_pipeline']['gene_info_file'],
+        mito=config['demux_pipeline']['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
+        min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+        genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
+        mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
 
     resources:
         mem_mb=allocate_mem_CICS,
         time_min=allocate_time_CICS
 
-    # group: "phenotype-demux"
+    # group: "genotype-demux"
 
     output:
         f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
 
     shell:
         """
-        if [[ "{params.keep_all_cells}" == "yes" ]] || [[ "{params.keep_all_cells}" == "True" ]]; then
-            python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -b {params.bc_len} --keep_all_cells
+        if [[ "{params.inp_type}" == "prev" ]]; then
+            if [[ "{params.keep_all_cells}" == "yes" ]] || [[ "{params.keep_all_cells}" == "True" ]]; then
+                python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -b {params.bc_len} --keep_all_cells --prev
+            else
+                python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len} --prev
+            fi
         else
-            python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -c {params.col_name} -e {params.na} -d {params.doub} -n {params.neg} -b {params.bc_len}
+            python3 helper_py_scripts/create_inp_cellSNP.py {input} -o {output} -m {params.mito} -g {params.min_genes} --min_cells {params.min_cells} --id2name {params.genes_info}
         fi
         sleep 100
         """
@@ -228,7 +251,7 @@ rule cellSNP:
         ref_snps=config['gt_demux_pipeline']['cellsnp_ref_snps'], # modify this to accept either a text file containing per pool vcf or one single vcf file
         genome_1k_ref=config['gt_demux_pipeline']['genome_1k_ref']
 
-    # group: "phenotype-demux"
+    # group: "genotype-demux"
 
     output:
         f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}",
@@ -266,7 +289,7 @@ rule vireoSNP:
     output:
         f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
 
-    # group: "phenotype-demux"
+    # group: "genotype-demux"
 
     params:
         # donor_info=get_donor_info,

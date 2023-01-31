@@ -122,6 +122,15 @@
 </ul>
 </li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Beautify the function get_filt_barcodes (pheno_demux3.snkmk).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Employ a strategy for final count matrix dir (file dir in config file) for the cases:</p>
+<ul>
+<li><p>when both demultiplex software are run simultaneously.</p></li>
+<li><p>When there’s an order (try to name each run separately or at least keep the order somewhere mentioned).</p></li>
+</ul>
+</li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Make the functions similar for demultiplexing with any method.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Move documentation to configargparse.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Write down schemas.</p></li>
 <li><p>Add tutorials.</p>
@@ -140,9 +149,15 @@
 </li>
 </ul>
 </li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Remove dependency on STARsolo as an aligner.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Combine sub-workflows split_bams and split_bams_gt.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add options in config file to allow adding extra params for every software:</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> WASP mode in STARsolo_sort.snkmk</p></li>
+</ul>
+</li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add new Picard metrics.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Include in new_config.yaml an option to select wasp mode in the rule STARsolo</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Include in new_config.yaml an option to select wasp mode for the rule STARsolo_sort.snkmk</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Search Ranking of readthedocs (using config file for this too).</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Might incorporate git submodules for repos on git that I use.</p></li>
 </ul>
@@ -156,6 +171,13 @@
 	<li> Preserve folder structures (mirroring fastqs' folder structures) </li>
 	<li> Organize outputs from each module </li>
 	<li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
+</ul>
+</section>
+<section id="changelog">
+<h2>Changelog:<a class="headerlink" href="#changelog" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Changed param name in demultiplex info from <em>Unique genes</em> to <em>gene_ids with an associated gene_name</em>.</p></li>
+<li><p>Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.</p></li>
 </ul>
 </section>
 <section id="requirements">

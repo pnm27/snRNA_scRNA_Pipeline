@@ -13,7 +13,7 @@ rule run_calico_solo:
         min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
         min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
-        mito_prefix=config['demux_pipeline']['mito_prefix'] # Mitochondrial genes' (names') prefix
+        mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
 
     threads: 2
 

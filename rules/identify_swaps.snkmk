@@ -1,6 +1,6 @@
 def get_bam_inputs(wildcards):
     if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
-        return f"{config['split_bams_pipeline_phe_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}{config['fold_struct_gt_demux_redo']}.bam"
+        return f"{config['split_bams_pipeline_gt_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}{config['fold_struct_gt_demux_redo']}.bam"
     else:
         return config['identify_swaps']['mbv_inp']
 

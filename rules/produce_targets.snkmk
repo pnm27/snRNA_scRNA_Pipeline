@@ -55,29 +55,29 @@ def targets_PICARD(conf_f, progs='all') -> list:
 # Temporary function, will change to targets_gt_demux
 def targets_cellSNP(conf_f) -> list:
     out_dir = conf_f['gt_demux_pipeline']['cellsnp_dir']
-    fs_phe = conf_f['fold_struct_gt_demux']
+    fs_gt = conf_f['fold_struct_gt_demux']
     cells_suff = conf_f['gt_demux_pipeline']['cellsnp_cells']
     base_suff = conf_f['gt_demux_pipeline']['cellsnp_base']
 
-    target_list = [f"{out_dir}{fs_phe}{cells_suff}", f"{out_dir}{fs_phe}{base_suff}"]
+    target_list = [f"{out_dir}{fs_gt}{cells_suff}", f"{out_dir}{fs_gt}{base_suff}"]
     return target_list
 
 
 
 def targets_gt_demux(conf_f) -> list:
     out_dir = conf_f['gt_demux_pipeline']['vireosnp_dir']
-    fs_phe = conf_f['fold_struct_gt_demux']
+    fs_gt = conf_f['fold_struct_gt_demux']
     suff = config['gt_demux_pipeline']['donors_classification']
     
-    return [f"{out_dir}{fs_phe}{suff}"]
+    return [f"{out_dir}{fs_gt}{suff}"]
 
 
 # For multi-vcf_inputs
 def targets_gt_demux2(conf_f) -> list:
     out_dir = conf_f['gt_demux_pipeline']['final_count_matrix_dir']
-    fs_phe = conf_f['fold_struct_demux']
+    fs_gt = conf_f['fold_struct_demux']
     
-    return [f"{out_dir}{fs_phe}" ]
+    return [f"{out_dir}{fs_gt}" ]
 
 
 def targets_SplitBams(conf_f) -> list:

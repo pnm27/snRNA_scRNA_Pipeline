@@ -21,7 +21,7 @@ whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10
 genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
 reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
 chr_prefix: null
-mito: MT
+mito: MT-
 
 # ENCLOSE WILDCARDS IN {}
 # HERE, 'id1' IS THE WILDCARD.
@@ -32,7 +32,7 @@ fold_struct: "Sample_{id1}-cDNA/{id1}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
 fold_struct_kb: "Sample_{id1}-HTO/"
 # Folder structure for demux through the kallisto-bustools pipeline
-fold_struct_demux: "{id1}/{id1}-THO"
+fold_struct_demux: "{id1}/{id1}-HTO"
 # Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
 fold_struct_gt_demux: "Sample_{id1}-cDNA/{vcf_type}/"
 # Folder structure for adding phe demux when calico_solo run exists ('vcf_type' wildcard for multi-vcfs input)
@@ -50,7 +50,7 @@ fold_struct_vcf: "{id1}-cDNA/"
 fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
 # fold_struct_swaps_check: "{id1}_{donor}"
 
-STAR_version: star/2.7.8a
+STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.9a
 
@@ -86,7 +86,8 @@ STARsolo_pipeline:
   genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
   genefull_summary: _Solo.out/GeneFull/Summary.csv
-  extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150"
+  # extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150" # Example of adding more STARsolo command-line options
+  extra_params: null # or valid extra parameters in STARsolo, as above
 
 
 # PICARD pipeline--------------------------------------------------------------
@@ -149,7 +150,6 @@ demux_pipeline:
   max_mito_percentage: 5
   min_genes_per_cell: 1000
   min_cells_per_gene: 10
-  mito_prefix: MT-
   calico_solo_h5ad: _STARsolo_out.h5ad
   final_count_matrix_h5ad: _STARsolo_out.h5ad
   demultiplex_info: _STARsolo_info.tsv
@@ -166,7 +166,7 @@ gt_demux_pipeline:
   genome_1k_ref: /sc/arion/projects/psychAD/pnm/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vcf.gz
   donor_genotype: GT
   # temp_cellsnp_filt_dir: /sc/arion/projects/psychAD/pnm/filt_cellsnp/
-  top_genes_cs_filt_bed: /sc/arion/projects/psychAD/pnm/top1k_genes.bed
+  # top_genes_cs_filt_bed: /sc/arion/projects/psychAD/pnm/top1k_genes.bed
   # split_compiled_vcf: False
   # Optional params
   demux_col: SubID_cs

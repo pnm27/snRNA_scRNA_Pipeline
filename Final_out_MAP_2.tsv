@@ -1,7 +1,7 @@
 Started job on	JOB_START	STAR	REG	
 Started mapping on	MAP_START	STAR	REG	
 Finished on	JOB_FINISH	STAR	REG	
-"Mapping speed, Million of reads per hour"	MAP_SPEED	STAR	REG	
+Mapping speed, Million of reads per hour	MAP_SPEED	STAR	REG	
 Number of input reads	N_READS	STAR	REG	
 Average input read length	AVG_READ_LEN	STAR	REG	
 Uniquely mapped reads number	N_UNI_MAP_READS	STAR	REG	
@@ -13,7 +13,7 @@ Number of splices: GT/AG	GTAG_N_SPLICES	STAR	REG
 Number of splices: GC/AG	GCAG_N_SPLICES	STAR	REG	
 Number of splices: AT/AC	ATAC_N_SPLICES	STAR	REG	
 Number of splices: Non-canonical	NON_CANON_N_SPLICES	STAR	REG	
-"Mismatch rate per base, %"	MMR_PER_BASE	STAR	REG	
+Mismatch rate per base, %	MMR_PER_BASE	STAR	REG	
 Deletion rate per base	DEL_RATE_PER_BASE	STAR	REG	
 Deletion average length	DEL_AVG_LEN	STAR	REG	
 Insertion rate per base	INS_RATE_PER_BASE	STAR	REG	
@@ -78,7 +78,7 @@ nNoFeature	N_READS _NO_FEATURE	STARsolo	GENE_FEATURE	number of reads that map to
 nAmbigFeature	N_READS_AMBI_FEATURE	STARsolo	GENE_FEATURE	number of reads that belong to more than one feature
 nAmbigFeatureMultimap	N_READS_AMBI_FEATURE_MULTI_MAP	STARsolo	GENE_FEATURE	number of reads that belong to more than one feature and are also multimapping to the genome (this is a subset of the nAmbigFeature)
 nTooMany	N_READS_TOO_MANY	STARsolo	GENE_FEATURE	number of reads with ambiguous CB (i.e. CB matches whitelist with one mismatch but with posterior probability 0.95)
-nNoExactMatch	N_READS_NO_EXACT_MATCH	STARsolo	GENE_FEATURE	"number of reads with CB that matches a whitelist barcode with 1 mismatch, but this whitelist barcode does not get any other reads with exact matches of CB"
+nNoExactMatch	N_READS_NO_EXACT_MATCH	STARsolo	GENE_FEATURE	number of reads with CB that matches a whitelist barcode with 1 mismatch, but this whitelist barcode does not get any other reads with exact matches of CB
 nExactMatch	N_READS_EXACT_MATCH	STARsolo	GENE_FEATURE	number of reads with CB that match the whitelist exactly
 nMatch	N_READS_MATCH	STARsolo	GENE_FEATURE	total number of reads that match CB with 0 or 1 mismatches (this is superset of nExactMatch)
 nCellBarcodes	N_CB_UNIQ	STARsolo	GENE_FEATURE	
@@ -147,7 +147,10 @@ nMismatchOneWL	N_MM_ONE_WL	STARsolo	BARCODE_STATS
 nMismatchToMultWL	N_MM_MULTI_WL	STARsolo	BARCODE_STATS	
 Started with cells	N_CELLS_START	STARsolo	DEMUX	
 Started with genes	N_GENES_START	STARsolo	DEMUX	
-Unique genes	N_GENES_UNIQ	STARsolo	DEMUX	
+gene_ids with an associated gene_name	N_GENES_UNIQ	STARsolo	DEMUX	Number of genes retained after removing gene IDs without a gene name
+total UMI counts lost to gene ids wo names	TOTAL_UMI_COUNTS_LOST	STARsolo	DEMUX	Total UMI counts removed due to previous filter
+avg UMI counts lost per cell	AVG_UMI_COUNTS_LOST_PER_CELL	STARsolo	DEMUX	Avg UMI counts lost per cell due to previous filter
+avg UMI counts lost per gene	AVG_UMI_COUNTS_LOST_PER_GENE	STARsolo	DEMUX	Avg UMI counts lost per gene due to previous filter
 min #genes expressed per cell	THRESH_N_GENES_PER_CELL	STARsolo	DEMUX	min no. of genes to be expressed by a cell to pass filter (Basic Filter)
 min #cells expressing per gene	THRESH_N_CELLS_EXPRESS_GENE	STARsolo	DEMUX	min no. of cells required to express a gene for it to pass filter (Basic Filter)
 Retained cells after previous filter	N_CELLS_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining cells after applying Basic Filter
