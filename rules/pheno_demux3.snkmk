@@ -197,11 +197,11 @@ rule create_inp_cellSNP:
         neg=config['gt_demux_pipeline']['negative'], # Negatives named as
         na=config['gt_demux_pipeline']['na'], # Cells not present in hashsolo named as
         # When no previous runs of calico_solo exists
-        genes_info=config['demux_pipeline']['gene_info_file'],
-        mito=config['demux_pipeline']['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        min_genes=config['demux_pipeline']['min_genes_per_cell'], # Min #genes per cell
-        min_cells=config['demux_pipeline']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
-        genes_info=config['demux_pipeline']['gene_info_file'], # File containing gene names and gene ids for annotations
+        genes_info=config['gene_info_file'],
+        mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        min_genes=config['min_genes_per_cell'], # Min #genes per cell
+        min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+        genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
         mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
 
     resources:
