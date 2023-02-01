@@ -62,6 +62,21 @@ def get_inp_type(wildcards, input):
     else:
         return 'star'
 
+
+def get_cellsnp_inputs(wildcards):
+    ret_dict={}
+    ret_dict['bc']=f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
+    ret_dict['bams']=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
+
+    if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
+        if not config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
+            # modify this to accept either a text file containing per pool vcf or one single vcf file
+            ret_dict['ref_snps'] = config['gt_demux_pipeline']['cellsnp_ref_snps']
+
+    ret_dict['genome_1k_ref']=config['gt_demux_pipeline']['genome_1k_ref']
+
+    return ret_dict
+
 # Consolidate this function and ret_dons
 # MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
 # MULTI_VCF
@@ -245,10 +260,7 @@ rule create_inp_cellSNP:
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        bc=f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
-        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        ref_snps=config['gt_demux_pipeline']['cellsnp_ref_snps'], # modify this to accept either a text file containing per pool vcf or one single vcf file
-        genome_1k_ref=config['gt_demux_pipeline']['genome_1k_ref']
+        unpack(get_cellsnp_inputs)
 
     # group: "genotype-demux"
 
@@ -275,9 +287,14 @@ rule cellSNP:
 
     shell:
         """
-        ml bcftools/1.15.1
-        bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} {input.ref_snps} {input.genome_1k_ref}
-        cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+        read -r -a array <<< "{input}"
+        if [[ "${{#array[@]}}" -lt 4 ]]; then
+            cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {input.genome_1k_ref} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+        else
+            ml bcftools/1.15.1
+            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} {input.ref_snps} {input.genome_1k_ref}
+            cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+        fi
         """
 
 
