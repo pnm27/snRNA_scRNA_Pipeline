@@ -2,7 +2,7 @@
 # Provided a file that contains multiple vcfs per each sample
 # present as config['gt_demux_pipeline']['vcf_info']
 from typing import Union # Need verion > 3.5
-import numpy as np, pandas as pd
+import numpy as np, pandas as pd, os
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
@@ -99,29 +99,30 @@ def get_vir_inputs(wildcards):
     #     raise IOError("Given vcf file in 'vcf_info' in config file is not BGZF formatted!")
     # elif config['gt_demux_pipeline']['vcf_info'].endswith('txt') or config['gt_demux_pipeline']['vcf_info'].endswith('csv') \
     #     or config['gt_demux_pipeline']['vcf_info'].endswith('tsv'):
-    col_set1 = ["pool", "n_dons", "vcf"]
-    col_set2 = ["pool", "n_dons"]
-    n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
-    # For condn. 1)
-    if config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
-        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
-        try:
-            ret_dict['donor_info'] = temp_df.loc[temp_df["pool"] == wildcards.id1, "vcf"].values[0]
-        except:
+    if config['gt_demux_pipeline']['vcf_info'] is not None and os.path.isfile(config['gt_demux_pipeline']['vcf_info']):
+        col_set1 = ["pool", "n_dons", "vcf"]
+        col_set2 = ["pool", "n_dons"]
+        n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+        # For condn. 1)
+        if config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
+            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
+            try:
+                ret_dict['donor_info'] = temp_df.loc[temp_df["pool"] == wildcards.id1, "vcf"].values[0]
+            except:
+                pass
+        # Run without vcf
+        elif config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
             pass
-    # Run without vcf
-    elif config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
-        pass
-    # For condn. 2)
-    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
-        raise ValueError("Expecting 2-columned"\
-            " file: pool name and expected donors")
-    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
-        ret_dict['donor_info'] = config['gt_demux_pipeline']['donors_per_pool_file']
-    elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
-        raise IOError("Given vcf file in 'donors_per_pool_file' in config file is not BGZF formatted!")
-    else:
-        raise IOError("Unexpected file type or value provided to 'donors_per_pool_file' in config file")
+        # For condn. 2)
+        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
+            raise ValueError("Expecting 2-columned"\
+                " file: pool name and expected donors")
+        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
+            ret_dict['donor_info'] = config['gt_demux_pipeline']['donors_per_pool_file']
+        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
+            raise IOError("Given vcf file in 'donors_per_pool_file' in config file is not BGZF formatted!")
+        else:
+            raise IOError("Unexpected file type or value provided to 'donors_per_pool_file' in config file")
 
     return ret_dict
 
