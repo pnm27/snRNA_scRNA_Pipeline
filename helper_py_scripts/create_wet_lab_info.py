@@ -56,12 +56,12 @@ def get_argument_parser():
 	"will overwrite the previous file. Default: files_tracker.txt "
 	"(in the current working dir).", default="files_tracker.txt",
 	)
-	parser.add_argument('--columns', nargs=5, help="List of column names "
-	"RESPECTIVELY to sample_ID (as present in the spreadsheets), HTO numbers, "
-	"SubIDs, and set number.",
-	metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID', 'Set_number'), 
-	default=['unique_sample_ID', 'hto', 'hto_barcode', 'SubID', 'Set_number'],
-	)
+	# parser.add_argument('--columns', nargs=5, help="List of column names "
+	# "RESPECTIVELY to sample_ID (as present in the spreadsheets), HTO numbers, "
+	# "SubIDs, and set number.",
+	# metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID', 'Set_number'), 
+	# default=['unique_sample_ID', 'hto', 'hto_barcode', 'SubID', 'Set_number'],
+	# )
 	parser.add_argument('-p', '--project_name', help="Project name with which "
 	"'unique sample ID' column starts with",
 	)
