@@ -54,6 +54,10 @@ The highlights of the pipeline are:
   - Changed param name in demultiplex info from *Unique genes* to *gene_ids with an associated gene_name*.
   - Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.
   - Added an option to run cellSNP without any ref vcfs (1000 Genomes Project vcf is min requirement)
+  - Now create_wet_lab_info scripts can:
+    - Run without a converter file
+    - Save donor file along with the wet lab compilation file
+    - argparse documented
   
   
 ## Requirements
