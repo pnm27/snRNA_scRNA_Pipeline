@@ -186,37 +186,37 @@ rule split_bams:
 # Make sure this runs after each type of demux i.e. after calico_solo and after vireo
 # NGScheckmate git has issues with indentations in ncm.py
 # Open it up in an editor to correct them
-rule run_NGSCheckmate:
-    params:
-        # split_bams_dir=f"{config['split_bams_pipeline_gt_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
-        inp_file_list=config['split_bams_pipeline_gt_demux']['inp_file'],
-        ngscheckmate_dir=config['split_bams_pipeline_gt_demux']['ngscheckmate_dir'],
-        ref_fasta=config['genome_fasta'],
-        ref_bed=config['split_bams_pipeline_gt_demux']['ngscheckmate_ref_bed'],
-        inp_type=config['split_bams_pipeline_gt_demux']['ngs_inp_type'],
-        proj_name=config['split_bams_pipeline_gt_demux']['proj_name'],
-        out_dir={config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}
-        # n_donors=get_donors
+# rule run_NGSCheckmate:
+#     params:
+#         # split_bams_dir=f"{config['split_bams_pipeline_gt_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}",
+#         inp_file_list=config['split_bams_pipeline_gt_demux']['inp_file'],
+#         ngscheckmate_dir=config['split_bams_pipeline_gt_demux']['ngscheckmate_dir'],
+#         ref_fasta=config['genome_fasta'],
+#         ref_bed=config['split_bams_pipeline_gt_demux']['ngscheckmate_ref_bed'],
+#         inp_type=config['split_bams_pipeline_gt_demux']['ngs_inp_type'],
+#         proj_name=config['split_bams_pipeline_gt_demux']['proj_name'],
+#         out_dir={config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}
+#         # n_donors=get_donors
 
-    threads: 5
+#     threads: 5
 
-    resources:
-        mem_mb=allocate_mem_RN
-        # time_min=allocate_time_RN
+#     resources:
+#         mem_mb=allocate_mem_RN
+#         # time_min=allocate_time_RN
 
-    output:
-        f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt"
-    shell:
-        """
-        ml samtools
-        ml bcftools/1.15.1
-        export NCM_HOME={params.ngscheckmate_dir}NGSCheckMate
-        echo "REF={params.ref_fasta}" > ${{NCM_HOME}}/ncm.conf
-        echo "SAMTOOLS=samtools" >> ${{NCM_HOME}}/ncm.conf
-        echo "BCFTOOLS=bcftools" >> ${{NCM_HOME}}/ncm.conf
-        python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} -O {params.out_dir}
-        sleep 30
-        """
+#     output:
+#         f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt"
+#     shell:
+#         """
+#         ml samtools
+#         ml bcftools/1.15.1
+#         export NCM_HOME={params.ngscheckmate_dir}NGSCheckMate
+#         echo "REF={params.ref_fasta}" > ${{NCM_HOME}}/ncm.conf
+#         echo "SAMTOOLS=samtools" >> ${{NCM_HOME}}/ncm.conf
+#         echo "BCFTOOLS=bcftools" >> ${{NCM_HOME}}/ncm.conf
+#         python ${{NCM_HOME}}/ncm.py -{params.inp_type} -l {params.inp_file_list} -bed {params.ref_bed} -N {params.proj_name} -O {params.out_dir}
+#         sleep 30
+#         """
 
 
 # rule consolidate_gt_check_results:
