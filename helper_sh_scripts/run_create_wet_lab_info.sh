@@ -16,6 +16,7 @@ run_script="/sc/arion/projects/psychAD/pnm/helper_py_scripts/create_wet_lab_info
 process_log="/sc/arion/projects/psychAD/pnm/NPSAD_spreadsheet/process_log.txt"
 files_tracker_log="/sc/arion/projects/psychAD/pnm/NPSAD_spreadsheet/files_tracker_log.txt"
 all_f="" # To store file name(s)
+proj="NPSAD" # This name will be searched in wet lab files' column
 # columns="unique_sample_ID hashtag ab_barcode SubID Set_number" # Columns that are relevant to downstream analyses
 
 echo "Starting the script $0 at: "
@@ -54,11 +55,11 @@ then
     then
         echo "Processing ${c} files, with a converter file, starting at: "
         date
-        python3 ${run_script} ${all_f} -o ${spreadsheet_file} -c ${converter_file} -l ${files_tracker_log} # --columns ${columns}
+        python3 ${run_script} ${all_f} -o ${spreadsheet_file} -c ${converter_file} -l ${files_tracker_log} -p ${proj} # --columns ${columns}
     else
         echo "Processing ${c} files, without a converter file, starting at: "
         date
-        python3 ${run_script} ${all_f} -o ${spreadsheet_file} -l ${files_tracker_log}
+        python3 ${run_script} ${all_f} -o ${spreadsheet_file} -l ${files_tracker_log} -p ${proj}
     fi
 fi
 
