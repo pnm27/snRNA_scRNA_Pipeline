@@ -14,6 +14,7 @@
      - when both demultiplex software are run simultaneously.
      - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
    - [ ] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
+   - [ ] Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.
    - [ ] Make the functions similar for demultiplexing with any method.
    - [ ] Move documentation to configargparse.
    - [ ] Write down schemas.
@@ -52,6 +53,7 @@ The highlights of the pipeline are:
 
   - Changed param name in demultiplex info from *Unique genes* to *gene_ids with an associated gene_name*.
   - Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.
+  - Added an option to run cellSNP without any ref vcfs (1000 Genomes Project vcf is min requirement)
   
   
 ## Requirements
