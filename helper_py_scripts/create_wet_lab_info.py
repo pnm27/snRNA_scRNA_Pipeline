@@ -29,7 +29,7 @@ def get_subid(ser1, df1, df2):
 			subids.append(val)
 	    
 		ret_val.append(','.join(subids))
-		
+
 	# Assuming per set there will be 4 rows representing 2 reps plus cDNA and HTO
 	return list(chain.from_iterable(repeat(v, 4) for v in ret_val))
         
@@ -46,10 +46,10 @@ def get_argument_parser():
 	"Default: output.csv (in the current working dir).", 
 	default="output.csv",
 	)
-	parser.add_argument('-c', '--converter', help="File hash created "
+	parser.add_argument('-c', '--converter', nargs='?', help="File hash created "
 	"by Jaro (links 'set' and ''). Expected with 'tsv' extension. "
 	"Default: output.tsv (in the current working dir).", 
-	default="converter.xlsx",
+	const="converter.xlsx", default=None
 	)
 	parser.add_argument('-l', '--files_tracker', help="This file retains "
 	"info about the processed xlsx file(s). Expected with 'txt' extension, "
@@ -179,21 +179,27 @@ def main():
 				fout.write("Hence, Re-do all related analyses.")
 
 
+	if args.converter is not None:
+		# Project dependent converter file
+		conv_df = pd.read_excel(args.converter, usecols=list(range(15)))
+		conv_df['Sample_ID'] = conv_df['Sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
+		# Strip leading and trailing whitespaces
+		df_obj = conv_df.select_dtypes(['object'])
+		conv_df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
-	conv_df = pd.read_excel(args.converter, usecols=list(range(15)))
-	conv_df['Sample_ID'] = conv_df['Sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
-	# Strip leading and trailing whitespaces
-	df_obj = conv_df.select_dtypes(['object'])
-	conv_df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
-
-	op_df['SubID'] = get_subid(op_df['Set_number'], donor_info, conv_df)
+		op_df['SubID'] = get_subid(op_df['Set_number'], donor_info, conv_df)
 
 	op_df['hashtag'] = op_df['hashtag'].apply(lambda x: re.sub('_', ',', x))
 	op_df['ab_barcode'] = op_df['ab_barcode'].apply(lambda x: re.sub('_', ',', x))
-
-
+	op_df['hashtag'] = op_df['hashtag'].apply(lambda x: x.replace('HTO#', ''))
 	op_df.to_csv(args.output, sep='\t', index=False)
+
+	ext = args.output[args.output.rfind('.'):]
+	donor_filename = args.output[:args.output.rfind('.')] + '_donor' + ext
+	donor_info['hashtag'] = donor_info['hashtag'].apply(lambda x: x.replace('#', ''))
+	donor_info.to_csv(donor_filename, sep='\t', index=False)
+
 
 if __name__ == '__main__':
     main()
