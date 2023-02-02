@@ -175,12 +175,13 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
 
         elif target_step == "starsolo_split_bams":
             target_files = targets_SplitBams(conf_f=conf_f)
-
+            ONLY_SOLO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo_split_bams_gt_demux":
             target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
+            ONLY_VIREO = True
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
             final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
             # final_target_list.append(f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt")
@@ -190,6 +191,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             # Add final steps for split_bams
             target_files = targets_SplitBams(conf_f=conf_f)
             suff = ".txt"
+            ONLY_VIREO = True
             # If multiple vcfs per sample needs to be run or not
             if isinstance(VCF_TYPE, list):
                 
@@ -248,7 +250,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
         elif target_step == "starsolo_gt_demux_multi_vcf":
             target_files = targets_gt_demux2(conf_f=conf_f)
             suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
-            # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
+            ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
             # If multiple vcfs per sample needs to be run
             if isinstance(VCF_TYPE, list):

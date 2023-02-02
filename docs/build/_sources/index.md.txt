@@ -37,7 +37,7 @@ modules
 :caption: Advanced Tutorials
 :maxdepth: 2
 
-produce_outputs
+complex_tutorials
 ```
 
 ```{toctree}

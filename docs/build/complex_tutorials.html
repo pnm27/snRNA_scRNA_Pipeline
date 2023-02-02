@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>Demultiplex pooled snRNA seq datasets &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
@@ -34,7 +35,7 @@
         <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
         <script>mermaid.initialize({startOnLoad:true});</script>
     <script src="_static/js/theme.js"></script>
-    <link rel="index" title="Index" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
 
@@ -68,10 +69,6 @@
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="complex_tutorials.html">Demultiplex pooled snRNA seq datasets</a></li>
-</ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -91,8 +88,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">Index</li>
+      <li class="breadcrumb-item active">Demultiplex pooled snRNA seq datasets</li>
       <li class="wy-breadcrumbs-aside">
+            <a href="_sources/complex_tutorials.md.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -100,34 +98,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- <a href="#D"><strong>D</strong></a>
- | <a href="#P"><strong>P</strong></a>
- 
-</div>
-<h2 id="D">D</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="glossary.html#term-DAG"><strong>DAG</strong></a>
-</li>
-  </ul></td>
-</tr></table>
-
-<h2 id="P">P</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="glossary.html#term-pooled-sample"><strong>pooled sample</strong></a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="glossary.html#term-preprocessing"><strong>preprocessing</strong></a>
-</li>
-  </ul></td>
-</tr></table>
-
+  <section id="demultiplex-pooled-snrna-seq-datasets">
+<h1>Demultiplex pooled snRNA seq datasets<a class="headerlink" href="#demultiplex-pooled-snrna-seq-datasets" title="Permalink to this heading"></a></h1>
+<p>This setup shows one complex workflow that will be simplified and streamlined by this pipeline. To make it more interesting, this tutorial will annotate individual samples through genotype based demultiplexing (using cellSNP-vireoSNP workflow) as well as HTO based demultiplexing (using kite-hashsolo workflow).</p>
+<section id="configuration-file">
+<h2>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this heading"></a></h2>
+<p>To begin with any utilisation of this pipeline starts with setting up the configuration file <em>new_config.yaml</em></p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h3>
+<p>This yaml config file (new_config.yaml) has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned, through comments, into separate sub-workflow modules in a way containing rule-specific options/parameters (ocurring in the order of their appearance in the sub-workflow scripts). Typically, there are certain parameters that need not be changed irrespective of the project the pipeline is being used for</p>
+</section>
+<section id="common-project-specific-parameters">
+<h3>Common (project-specific) parameters<a class="headerlink" href="#common-project-specific-parameters" title="Permalink to this heading"></a></h3>
+<p>The following pictures showcase parameters that are project-specific.</p>
+<figure class="align-default" id="id1">
+<img alt="fig1" src="_images/config_1.jpg" />
+<figcaption>
+<p><span class="caption-text">new_config.yaml (Part 1)</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<section id="module-selector">
+<h4>Module selector<a class="headerlink" href="#module-selector" title="Permalink to this heading"></a></h4>
+<p><strong>last_step</strong>:
+This is the key which needs to be fed one of the <a class="reference internal" href="modules.html#selectable-modules"><span class="std std-ref">pre-selected modules</span></a></p>
+</section>
+</section>
+</section>
+</section>
 
 
            </div>

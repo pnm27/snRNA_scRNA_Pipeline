@@ -85,7 +85,7 @@ def main():
 
 
 	try:
-		op_df = pd.read_csv(args.output)
+		op_df = pd.read_csv(args.output, sep='\t')
 
 	except:
 		op_df = pd.DataFrame(columns=col_names)
@@ -121,6 +121,7 @@ def main():
 			except:
 				print(inp_f)
 				print(op_df.columns)
+				
 			if not t_df.empty:
 				op_df = pd.concat([op_df, t_df])
 			# For those samples that were present in the output

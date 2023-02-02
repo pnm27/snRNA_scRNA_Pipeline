@@ -8,10 +8,20 @@ To surmise the workflow setup, one should follow the bottom-top approach i.e. id
 
 Let's start to setup the pipeline to run a basic set of softwares required for preprocessing a scRNAseq data i.e. use STARsolo to align our cDNA fastqs and run a set of PICARD tools while retaining all the statistics produced by these tools.
 
-For our example case, we require 2 sets of files from our workflow i.e the outputs created by PICARD programs - CollectGcBiasMetrics and CollectRnaSeqMetrics as they are created independent of each other. Hence, if we were to use only the outputs of one program the other output won't be produced.
+For our example case, we require 2 sets of files from our workflow i.e the outputs created by PICARD programs - CollectGcBiasMetrics and CollectRnaSeqMetrics as they are created independent of each other. Hence, if we were to use only the outputs of one program the other outputs won't be produced.
 
 To finally assimilate all these statistics (alignment statistics and read statistics) we will be runnning another script *run_update_logs.sh* (click here to know how)
 
 ## Setting up
 
-Firstly, create a list of inputs (check here for different styles of inputs) - we will go with creating text file with the list of fastq files (one line per sample)
+Firstly, create a list of inputs (check here for different styles of inputs) - we will go with creating text file with the list of fastq files (one line per sample).
+
+### How fastq files are arranged
+
+This [tree structure](../../images/scRNAseq/with_one_wc/fastqs.png) shows how the fastq files are present in our directory.
+
+### Create fastq_files.txt
+This [pic](../../images/scRNAseq/with_one_wc/fastq_files.png) shows the content of the fastq_files.txt.
+As one can see it contains one representation for each sample i.e. doesn't separate R1 and R2.
+
+This [tree structure](../../images/scRNAseq/with_one_wc/overall.png) shows how all the files are present in our directory.
