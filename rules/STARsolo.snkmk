@@ -133,7 +133,7 @@ rule STARsolo_sort:
         r2=$(echo "{input.R2}" | tr '[:blank:]' ',')
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
-        if [[ {config[STARsolo_pipeline][extra_params]} == "None" ]]; then
+        if [[ "{config[STARsolo_pipeline][extra_params]}" == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
             --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
