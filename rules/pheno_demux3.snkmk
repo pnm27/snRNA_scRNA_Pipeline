@@ -67,12 +67,12 @@ def get_cellsnp_inputs(wildcards):
     ret_dict={}
     ret_dict['bc']=f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
     ret_dict['bams']=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-
+    ret_dict['genome_1k_ref']=config['gt_demux_pipeline']['genome_1k_ref']
+    
     if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
         if not config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
             # modify this to accept either a text file containing per pool vcf or one single vcf file
             ret_dict['ref_snps'] = config['gt_demux_pipeline']['cellsnp_ref_snps']
-            ret_dict['genome_1k_ref']=config['gt_demux_pipeline']['genome_1k_ref']
 
     elif config['gt_demux_pipeline']['cellsnp_ref_snps'] is None:
         # If no ref provided then use 1000 Genomes Project vcf as input
