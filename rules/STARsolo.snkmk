@@ -147,9 +147,7 @@ rule STARsolo_sort:
         fi
         files=( {output[3]} {output[8]} {output[9]} )
         for i in ${{files[@]}}; do
-        {
             [ ! -f ${{i}} ] && gzip ${{i%".gz"}}
-        }
         done
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
