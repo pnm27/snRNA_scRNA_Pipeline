@@ -15,49 +15,61 @@ def save_df(df, suff, op):
 		print("Can't save to file because of incorrect extension. Extension can be 'csv', 'tsv' or 'txt'")
 
 
+def get_argument_parser():
+	"""Generate and return argument parser."""
 
-#Parse Command-Line arguments
-parser = argparse.ArgumentParser(description="Create a two-columned txt file with barcodes corresponding to each Donor when provided with annotated h5ad")
+	#Parse Command-Line arguments
+	parser = argparse.ArgumentParser(description="Create a two-columned txt file with barcodes corresponding to each Donor when provided with annotated h5ad")
 
-parser.add_argument('inp', help="Path to cached final count matrix with annotated barcodes")
-parser.add_argument('output', help="Provide output file name.")
+	parser.add_argument('inp', help="Path to cached final count matrix with annotated barcodes")
+	parser.add_argument('output', help="Provide output file name.")
 
-# Optional parameters
+	# Optional parameters
 
-parser.add_argument('--overwrite', action='store_true', help="Flag describing whether to overwrite or not. If not, \"_2\" will be appended")
+	parser.add_argument('--overwrite', action='store_true', help="Flag describing whether to overwrite or not. If not, \"_2\" will be appended")
 
-
-# Parse arguments
-args = parser.parse_args()
-
-inp_h5ad = args.inp
-fout = args.output
-rem_op = args.overwrite
+	return parser
 
 
-file_ext = re.search(r'(\.[^.]+)$', fout).group(1)
+def main():
 
-adata = ad.read(inp_h5ad)
 
-d = Counter(adata.obs['SubID_cs'])
-for vals in ['Doublet', 'Negative', 'Not Present']:
-    d.pop(vals, None)
+	parser = get_argument_parser()
+	# Parse arguments
+	args = parser.parse_args()
 
-df_l = []
-for k in d.keys():
-    df_l.extend( (k, bc) for bc in adata[adata.obs['SubID_cs'] == k].obs_names.to_list() )
+	inp_h5ad = args.inp
+	fout = args.output
+	rem_op = args.overwrite
 
-temp_df = pd.DataFrame(df_l, columns=['Subj_ID', 'barcodes'])
 
-if rem_op:
-	try:
-		os.remove(fout)
+	file_ext = re.search(r'(\.[^.]+)$', fout).group(1)
 
-	except:
-		pass
-	save_df(temp_df, file_ext, fout)
+	adata = ad.read(inp_h5ad)
 
-else:	
-	file_pref = re.search(r'(.*)\.[^.]+$', fout).group(1)
-	new_name = file_pref + '_2' + file_ext
-	save_df(temp_df, file_ext, new_name)
+	d = Counter(adata.obs['SubID_cs'])
+	for vals in ['Doublet', 'Negative', 'Not Present']:
+		d.pop(vals, None)
+
+	df_l = []
+	for k in d.keys():
+		df_l.extend( (k, bc) for bc in adata[adata.obs['SubID_cs'] == k].obs_names.to_list() )
+
+	temp_df = pd.DataFrame(df_l, columns=['Subj_ID', 'barcodes'])
+
+	if rem_op:
+		try:
+			os.remove(fout)
+
+		except:
+			pass
+		save_df(temp_df, file_ext, fout)
+
+	else:	
+		file_pref = re.search(r'(.*)\.[^.]+$', fout).group(1)
+		new_name = file_pref + '_2' + file_ext
+		save_df(temp_df, file_ext, new_name)
+
+
+if __name__ == '__main__':
+	main()

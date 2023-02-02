@@ -37,7 +37,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Demultiplex pooled snRNA seq datasets" href="produce_outputs.html" />
+    <link rel="next" title="Demultiplex pooled snRNA seq datasets" href="complex_tutorials.html" />
     <link rel="prev" title="Understanding Snakemake workflows" href="basic_run.html" /> 
 </head>
 
@@ -80,7 +80,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="produce_outputs.html">Demultiplex pooled snRNA seq datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="complex_tutorials.html">Demultiplex pooled snRNA seq datasets</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
@@ -282,62 +282,7 @@ produced by either hashsolo or vireoSNP using custom scripts.</p></td>
 <h2>Overview of the pipeline<a class="headerlink" href="#overview-of-the-pipeline" title="Permalink to this heading"></a></h2>
 <p>Directed Acyclic Graph of the whole pipeline:
 <img alt="DAG" src="_images/Whole_pipeline.png" /></p>
-<div class="mermaid">
-            %%{init: { &quot;theme&quot;:'neutral', 
-      'themeVariables': {
-      'fontSize': '20',
-      'primaryColor': '#BB2528',
-      'primaryTextColor': '#fff',
-      'primaryBorderColor': '#7C0000',
-      'lineColor': '#F8B229',
-      'secondaryColor': '#006100',
-      'tertiaryColor': '#fff'
-    }, 
-    &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;:300 } } }%%
-flowchart TB
-  subgraph cDNA
-    direction TB
-    id1[/cDNA fastqs/]--&gt;|align|id2(STARsolo)--&gt;|&quot;filter cells&quot;|id3(&quot;cellSNP (cellsnp-lite)&quot;)
-    id3--&gt;id6{&quot;all genotypes&lt;br/&gt;available?&quot;}
-    subgraph PICARD
-      direction LR
-      A(CollectGcBiasMetrics)
-      B(CollectRnaSeqMetrics)
-    end
-  end
-  subgraph genotype-based
-    id6--&gt;|yes|id8(&quot;vireoSNP&lt;br/&gt;without&lt;br/&gt;genotypes&quot;)--&gt;|identify&lt;br/&gt;swaps|id9(QTLtools-mbv)
-    id9--&gt;|&quot;rectify&lt;br/&gt;swaps&quot;|id11(vireoSNP)
-    subgraph SNPs
-      direction LR
-      id4[(&quot;External Genotypes &lt;br/&gt;(SNParray or WGS)&quot;)]
-      id5[(&quot;1000 Genomes Project&quot;)]
-      style id4 fill:#348ceb,stroke:#333,stroke-width:4px
-      style id5 fill:#348ceb,stroke:#333,stroke-width:4px
-    end
-  end
-  subgraph demultiplex
-    direction TB
-    id12(custom scripts)--&gt;id13[/&quot;final count&lt;br/&gt;matrix&quot;/]
-  end
-  subgraph kite
-    direction TB
-    id14[/HTO fastqs/]--&gt;id18(&quot;run kallisto&quot;)
-    id16(&quot;create feature&lt;br/&gt;barcode file&quot;)--&gt;|&quot;create mismatch&lt;br/&gt;FASTA&lt;br/&gt; and t2g files&quot;|id17(&quot;featuremap&lt;br/&gt;(pachter/kite lab)&quot;)
-    id17--&gt;|mismatch&lt;br/&gt;FASTA|id15(&quot;build kallisto index&quot;)
-    id15--&gt;id18
-    id18--&gt;|&quot;run bustools&quot;|id19(&quot;correct, sort&lt;br/&gt;and&lt;br/&gt;count&quot;)
-    id19--&gt;|&quot;hashing&lt;br/&gt;count&lt;br/&gt;matrix&quot;|id20(hashsolo)
-  end
-  id2 --&gt; |&quot;collect read stats&quot;|PICARD
-  SNPs --&gt; |&quot;common SNPs&quot;|id3
-  id4 --&gt; id9
-  id4 --&gt; |&quot;correct&lt;br/&gt;donors&quot;|id11
-  id11 --&gt; id12
-  id2--&gt;|&quot;filter cells&quot;|id20
-  id20--&gt;id12
-  id6--&gt;|no|kite
-        </div><hr class="footnotes docutils" />
+<hr class="footnotes docutils" />
 <dl class="footnote brackets">
 <dt class="label" id="consol"><span class="brackets">1</span><span class="fn-backref">(<a href="#id2">1</a>,<a href="#id4">2</a>)</span></dt>
 <dd><p>Consolidating into one</p>
@@ -354,7 +299,7 @@ flowchart TB
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="basic_run.html" class="btn btn-neutral float-left" title="Understanding Snakemake workflows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="produce_outputs.html" class="btn btn-neutral float-right" title="Demultiplex pooled snRNA seq datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="complex_tutorials.html" class="btn btn-neutral float-right" title="Demultiplex pooled snRNA seq datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

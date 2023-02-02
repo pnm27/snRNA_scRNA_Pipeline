@@ -27,15 +27,15 @@ import scanpy as sc, pandas as pd, numpy as np
 import re, argparse
 
 
+# sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
+# sc.settings.autosave = True
+# sc.settings.autoshow = False
+sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
+sc.logging.print_version_and_date()
 
-if __name__ == '__main__':
 
-    # sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
-    # sc.settings.autosave = True
-    # sc.settings.autoshow = False
-    sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
-    sc.logging.print_version_and_date()
-
+def get_argument_parser():
+    """Generate and return argument parser."""
     parser = argparse.ArgumentParser(description="Create h5ad output after running calico_solo(hashsolo)")
 
     parser.add_argument('bustools_out', help="Path to cached output of bustools kite pipeline(h5ad)")
@@ -49,7 +49,11 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
     parser.add_argument('--mito_prefix', help="How mitochondrial genes can be identified from the gene_info_file. e.g. mito genes have prefix \'MT-\' (DEFAULT)", default='MT-')
 
+    return parser
 
+def main():
+
+    parser = get_argument_parser()
     args = parser.parse_args()
 
 
@@ -101,3 +105,7 @@ if __name__ == '__main__':
     inplace: bool = True
 
     '''
+
+
+if __name__ == '__main__':
+    main()

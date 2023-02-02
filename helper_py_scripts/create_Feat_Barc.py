@@ -44,40 +44,53 @@ sample_1 hto4 ATCTATGGTTG
 import pandas as pd
 import re, argparse, os
 
-#Parse Command-Line arguments
-parser = argparse.ArgumentParser(description="Create FeatureBarcodes file for a given sample from a wet lab manifest")
 
-# Positional Paramaters
-parser.add_argument('wet_lab_file', help="Path to file that contains HTO info for each set")
+def get_argument_parser():
+    """Generate and return argument parser."""
+    #Parse Command-Line arguments
+    parser = argparse.ArgumentParser(description="Create FeatureBarcodes file for a given sample from a wet lab manifest")
 
-# Optional parameters
-parser.add_argument('-o', '--output', help="Name of the output file (csv file)")
-parser.add_argument('-s', '--sample_name', help="Name of the sample")
-parser.add_argument('-c', '--columns', nargs=3, help="List of column names RESPECTIVELY to set_ID(should contain the sample name provided to this script), \
-    HTO numbers and Donors/SubIDs.", metavar=('set_ID', 'HTO_name', 'HTO_barcode'), default=['set_ID', 'hto', 'hto_barcode'])
+    # Positional Paramaters
+    parser.add_argument('wet_lab_file', help="Path to file that contains HTO info for each set")
 
+    # Optional parameters
+    parser.add_argument('-o', '--output', help="Name of the output file (csv file)")
+    parser.add_argument('-s', '--sample_name', help="Name of the sample")
+    parser.add_argument('-c', '--columns', nargs=3, help="List of column names RESPECTIVELY to set_ID(should contain the sample name provided to this script), \
+        HTO numbers and Donors/SubIDs.", metavar=('set_ID', 'HTO_name', 'HTO_barcode'), default=['set_ID', 'hto', 'hto_barcode'])
 
-args = parser.parse_args()
-
-fout = args.output if args.output.endswith('.csv') else args.output + '.csv'
-print(fout)
-
-#val_list = []
-samp_val = args.sample_name.replace('-', '_') +'_HTO'
-cols = args.columns
+    return parser
 
 
-pd_df = pd.read_csv(args.wet_lab_file, sep='\t')
-a = pd_df.loc[pd_df[cols[0]] == samp_val, cols[1:]] # Series as an output, HTOs at a[0] and barcode sequences at a[1]
-a[cols[1]] = a[cols[1]].apply(lambda x: x.replace('HTO#', ''))
+def main(): 
+    """Main function"""
+    
+    parser = get_argument_parser()
+    args = parser.parse_args()
 
-# Custom-requirement
-htos=a.iloc[0,0].split(',')
-hto_barc_seq=a.iloc[0,1].split(',')
+    fout = args.output if args.output.endswith('.csv') else args.output + '.csv'
+    print(fout)
 
-df_to_save=[]
-for i in range(len(htos)):
-    df_to_save.append( ('HTO' + htos[i], hto_barc_seq[i]) )
+    #val_list = []
+    samp_val = args.sample_name.replace('-', '_') +'_HTO'
+    cols = args.columns
 
-df = pd.DataFrame(df_to_save)
-df.to_csv(fout, sep=',', header=False, index=False, mode='w+')
+
+    pd_df = pd.read_csv(args.wet_lab_file, sep='\t')
+    a = pd_df.loc[pd_df[cols[0]] == samp_val, cols[1:]] # Series as an output, HTOs at a[0] and barcode sequences at a[1]
+    a[cols[1]] = a[cols[1]].apply(lambda x: x.replace('HTO#', ''))
+
+    # Custom-requirement
+    htos=a.iloc[0,0].split(',')
+    hto_barc_seq=a.iloc[0,1].split(',')
+
+    df_to_save=[]
+    for i in range(len(htos)):
+        df_to_save.append( ('HTO' + htos[i], hto_barc_seq[i]) )
+
+    df = pd.DataFrame(df_to_save)
+    df.to_csv(fout, sep=',', header=False, index=False, mode='w+')
+
+
+if __name__ == '__main__':
+    main()

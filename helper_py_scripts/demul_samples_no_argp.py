@@ -133,7 +133,7 @@ def ret_subj_ids(ser, t_df) -> pd.DataFrame:
     return pd.DataFrame(ret_df_l, columns=headers)
 
 
-if __name__ == '__main__':
+def main():
 
     sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
     sc.settings.autosave = True
@@ -408,4 +408,6 @@ if __name__ == '__main__':
 
 
 
+if __name__ == '__main__':
+    main()
     sleep(60)

@@ -36,7 +36,9 @@
         <script>mermaid.initialize({startOnLoad:true});</script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Glossary" href="glossary.html" />
+    <link rel="prev" title="Modules" href="modules.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -69,6 +71,26 @@
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
 </ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Demultiplex pooled snRNA seq datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-overwiew">Pipeline overwiew</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-target-files">Preparing target files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-file">Configuration File</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#common-project-specific-parameters">Common (project-specific) parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dag-control-and-project-info-params">DAG control and project info params</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#folder-structures">Folder structures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#extra-info-can-be-removed-soon">Extra Info (can be removed soon!)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-selector">Module selector</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#project-specific-changes-to-rules">Project-specific changes to rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#changes-to-executor-script">Changes to executor script</a></li>
+</ul>
+</li>
+</ul>
 <p class="caption" role="heading"><span class="caption-text">Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -100,23 +122,105 @@
              
   <section id="demultiplex-pooled-snrna-seq-datasets">
 <h1>Demultiplex pooled snRNA seq datasets<a class="headerlink" href="#demultiplex-pooled-snrna-seq-datasets" title="Permalink to this heading"></a></h1>
-<p>This setup shows one complex workflow that will be simplified and streamlined by this pipeline. To make it more interesting, this tutorial will annotate individual samples through genotype based demultiplexing (using cellSNP-vireoSNP workflow) as well as HTO based demultiplexing (using kite-hashsolo workflow).</p>
+<p>This setup shows one complex workflow that will be simplified and streamlined by this pipeline.</p>
+<p>To make it more interesting, this tutorial will annotate individual samples through genotype based demultiplexing (using cellSNP-vireoSNP workflow) as well as HTO based demultiplexing (using kite-hashsolo workflow).</p>
+<section id="pipeline-overwiew">
+<h2>Pipeline overwiew<a class="headerlink" href="#pipeline-overwiew" title="Permalink to this heading"></a></h2>
+<p>The pipeline can be visualized as:</p>
+<div class="mermaid">
+            %%{init: { &quot;theme&quot;:'neutral', 
+      'themeVariables': {
+      'fontSize': '20',
+      'primaryColor': '#BB2528',
+      'primaryTextColor': '#fff',
+      'primaryBorderColor': '#7C0000',
+      'lineColor': '#F8B229',
+      'secondaryColor': '#006100',
+      'tertiaryColor': '#fff'
+    }, 
+    &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;:300 } } }%%
+flowchart TB
+  subgraph cDNA
+    direction TB
+    id1[/cDNA fastqs/]--&gt;|align|id2(STARsolo)--&gt;|&quot;filter cells&quot;|id3(&quot;cellSNP (cellsnp-lite)&quot;)
+    id3--&gt;id6{&quot;all genotypes&lt;br/&gt;available?&quot;}
+    subgraph PICARD
+      direction LR
+      A(CollectGcBiasMetrics)
+      B(CollectRnaSeqMetrics)
+    end
+  end
+  subgraph genotype-based
+    id6--&gt;|yes|id8(&quot;vireoSNP&lt;br/&gt;without&lt;br/&gt;genotypes&quot;)--&gt;|identify&lt;br/&gt;swaps|id9(QTLtools-mbv)
+    id9--&gt;|&quot;rectify&lt;br/&gt;swaps&quot;|id11(vireoSNP)
+    subgraph SNPs
+      direction LR
+      id4[(&quot;External Genotypes &lt;br/&gt;(SNParray or WGS)&quot;)]
+      id5[(&quot;1000 Genomes Project&quot;)]
+      style id4 fill:#348ceb,stroke:#333,stroke-width:4px
+      style id5 fill:#348ceb,stroke:#333,stroke-width:4px
+    end
+  end
+  subgraph demultiplex
+    direction TB
+    id12(custom scripts)--&gt;id13[/&quot;final count&lt;br/&gt;matrix&quot;/]
+  end
+  subgraph kite
+    direction TB
+    id14[/HTO fastqs/]--&gt;id18(&quot;run kallisto&quot;)
+    id16(&quot;create feature&lt;br/&gt;barcode file&quot;)--&gt;|&quot;create mismatch&lt;br/&gt;FASTA&lt;br/&gt; and t2g files&quot;|id17(&quot;featuremap&lt;br/&gt;(pachter/kite lab)&quot;)
+    id17--&gt;|mismatch&lt;br/&gt;FASTA|id15(&quot;build kallisto index&quot;)
+    id15--&gt;id18
+    id18--&gt;|&quot;run bustools&quot;|id19(&quot;correct, sort&lt;br/&gt;and&lt;br/&gt;count&quot;)
+    id19--&gt;|&quot;hashing&lt;br/&gt;count&lt;br/&gt;matrix&quot;|id20(hashsolo)
+  end
+  id2 --&gt; |&quot;collect read stats&quot;|PICARD
+  SNPs --&gt; |&quot;common SNPs&quot;|id3
+  id4 --&gt; id9
+  id4 --&gt; |&quot;correct&lt;br/&gt;donors&quot;|id11
+  id11 --&gt; id12
+  id2--&gt;|&quot;filter cells&quot;|id20
+  id20--&gt;id12
+  id6--&gt;|no|kite
+        </div></section>
+<section id="preparing-target-files">
+<h2>Preparing target files<a class="headerlink" href="#preparing-target-files" title="Permalink to this heading"></a></h2>
+<p>Firstly, we need to create a list of file structure (derived from our fastq files), which will be used by the rule input_processing(add link here) to read in wildcards</p>
+</section>
 <section id="configuration-file">
 <h2>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this heading"></a></h2>
-<p>To begin with any utilisation of this pipeline starts with setting up the configuration file <em>new_config.yaml</em></p>
-<section id="overview">
-<h3>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h3>
+<p>To begin with, any utilisation of this pipeline starts with setting up the configuration file <em>new_config.yaml</em></p>
 <p>This yaml config file (new_config.yaml) has all relevant options for each rule present in this pipeline. Furthermore, this file has been sectioned, through comments, into separate sub-workflow modules in a way containing rule-specific options/parameters (ocurring in the order of their appearance in the sub-workflow scripts). Typically, there are certain parameters that need not be changed irrespective of the project the pipeline is being used for</p>
-</section>
 <section id="common-project-specific-parameters">
 <h3>Common (project-specific) parameters<a class="headerlink" href="#common-project-specific-parameters" title="Permalink to this heading"></a></h3>
-<p>The following pictures showcase parameters that are project-specific.</p>
+<p>The following pictures showcase parameters that are only project-specific.</p>
+<section id="dag-control-and-project-info-params">
+<h4>DAG control and project info params<a class="headerlink" href="#dag-control-and-project-info-params" title="Permalink to this heading"></a></h4>
 <figure class="align-default" id="id1">
-<img alt="fig1" src="_images/config_1.jpg" />
+<img alt="fig1" src="_images/new_config1.png" />
 <figcaption>
 <p><span class="caption-text">new_config.yaml (Part 1)</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
 </figcaption>
 </figure>
+</section>
+<section id="folder-structures">
+<h4>Folder structures<a class="headerlink" href="#folder-structures" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id2">
+<img alt="fig1" src="_images/new_config2.png" />
+<figcaption>
+<p><span class="caption-text">new_config.yaml (Part 2)</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="extra-info-can-be-removed-soon">
+<h4>Extra Info (can be removed soon!)<a class="headerlink" href="#extra-info-can-be-removed-soon" title="Permalink to this heading"></a></h4>
+<figure class="align-default" id="id3">
+<img alt="fig1" src="_images/new_config3.png" />
+<figcaption>
+<p><span class="caption-text">new_config.yaml (Part 3)</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
 <section id="module-selector">
 <h4>Module selector<a class="headerlink" href="#module-selector" title="Permalink to this heading"></a></h4>
 <p><strong>last_step</strong>:
@@ -124,12 +228,23 @@ This is the key which needs to be fed one of the <a class="reference internal" h
 </section>
 </section>
 </section>
+<section id="project-specific-changes-to-rules">
+<h2>Project-specific changes to rules<a class="headerlink" href="#project-specific-changes-to-rules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="changes-to-executor-script">
+<h2>Changes to executor script<a class="headerlink" href="#changes-to-executor-script" title="Permalink to this heading"></a></h2>
+<p>Finally we have to setup the 2 executor scripts:</p>
+<p>..Snakefile:</p>
+</section>
 </section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
