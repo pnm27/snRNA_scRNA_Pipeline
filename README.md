@@ -58,6 +58,7 @@ The highlights of the pipeline are:
     - Run without a converter file
     - Save donor file along with the wet lab compilation file
     - argparse documented
+  - Fixed an issue with create_wet_lab_info.py file
   
   
 ## Requirements

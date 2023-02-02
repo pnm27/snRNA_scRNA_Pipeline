@@ -103,6 +103,7 @@ def main():
 
 			# Strip leading and trailing whitespaces
 			df_obj2 = t_df.select_dtypes(['object'])
+			df_obj2 = df_obj2.applymap(str) # forcefully convert everything to string
 			t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
 			
 			# Save donor info
@@ -147,6 +148,7 @@ def main():
 
 		# Strip leading and trailing whitespaces
 		df_obj2 = t_df.select_dtypes(['object'])
+		df_obj2 = df_obj2.applymap(str) # forcefully convert everything to string
 		t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
 
 		# Save donor info
