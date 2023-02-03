@@ -42,9 +42,9 @@ def get_argument_parser():
 	parser.add_argument('input', help="(List of) input file(s). "
 	"Assumed to be in xlsx format.", nargs='+',
 	)
-	parser.add_argument('-o', '--output', help="Output file name (tab-sep). "
-	"Default: output.tsv (in the current working dir).", 
-	default="output.tsv",
+	parser.add_argument('-o', '--output', help="Output file name. "
+	"Default: output.csv (in the current working dir).", 
+	default="output.csv",
 	)
 	parser.add_argument('-c', '--converter', nargs='?', help="File hash created "
 	"by Jaro (links 'set' and ''). Expected with 'tsv' extension. "
@@ -83,7 +83,7 @@ def main():
 
 	# work_cols=args.columns
 
-	# For multiplexed compilation
+
 	try:
 		op_df = pd.read_csv(args.output, sep='\t')
 
@@ -92,24 +92,10 @@ def main():
 		op_df["filename"]=""
 		op_df["SubID"]=""
 
-	# Name corresponding donor files
-	ext = args.output[args.output.rfind('.'):]
-	donor_filename = args.output[:args.output.rfind('.')] + '_donor' + ext
-
-	ext = args.files_tracker[args.files_tracker.rfind('.'):]
-	donor_files_tracker = args.files_tracker[:args.files_tracker.rfind('.')] + '_donor' + ext
-
-	# For individual donor compilation
-	try:
-		donor_info = pd.read_csv(donor_filename, sep='\t')
-
-	except:
-		donor_info = pd.DataFrame(columns=col_names)
-		donor_info["filename"]=""
-		donor_info["SubID"]=""
-
 	# Handling sinlge-file as an input or multiple files as input
 	if isinstance(args.input, list):
+		donor_info=pd.DataFrame(columns=col_names)
+		donor_info["filename"]=""
 		for inp_f in args.input:
 			t_df = pd.read_excel(inp_f, names=col_names, skiprows=1, usecols=list(range(len(col_names))))
 			t_df["filename"] = os.path.basename(inp_f).replace('.xlsx', '')
@@ -120,73 +106,39 @@ def main():
 			df_obj2 = df_obj2.applymap(str) # forcefully convert everything to string
 			t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
 			
+			# Save donor info
+			t_donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
+			donor_info = pd.concat([donor_info, t_donor_info])
+
 			# Temporarily add an empty column for SubID
 			t_df["SubID"]=""
-
-			# Save donor info and multiplexed info separately
-			t_donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
-			t_pool_info = t_df.loc[t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
-
-			# if not t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
-			# For those samples that were present in their respective output files (donors and multiplexed files)
-			t_donor_present = t_donor_info.loc[t_donor_info["unique_sample_ID"].isin(donor_info["unique_sample_ID"])]
-			t_pool_present = t_pool_info.loc[t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
-
+			# Retain only multiplexed sample info
+			t_df = t_df.loc[t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
+			# if not t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
+			# For those samples that were present in the output
+			t_df_present = t_df.loc[t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
 			# If the previous df is a subset of the output i.e. these samples were exactly the same previously
 			# at the level specified at beginning of this script
-			df1_donor=donor_info.loc[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
-			df2_donor=t_donor_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
-			df1=op_df.loc[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
-			df2=t_pool_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
+			df1=op_df.loc[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
+			df2=t_df_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
 
-
-			# Retain only those donors that weren't present in the ouput already
+			# For those samples that weren't present in the ouput already
 			try:
-				t_donor_info = t_donor_info[~ t_donor_info["unique_sample_ID"].isin(donor_info["unique_sample_ID"])]
+				t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
 			except:
-				print("For donors compilation. Found some issue! Test what's the issue")
 				print(inp_f)
-				print("----------")
-
-			# Retain only those multiplexed samples that weren't present in the ouput already
-			try:
-				t_pool_info = t_pool_info[~ t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
-			except:
-				print("For multiplexed samples compilation. Found some issue! Test what's the issue")
-				print(inp_f)
-				print("----------")
-			
+				print(op_df.columns)
 				
-			# Concat respective compilations
-			if not t_donor_info.empty:
-				donor_info = pd.concat([donor_info, t_donor_info])
-
-			if not t_pool_info.empty:
-				op_df = pd.concat([op_df, t_pool_info])
-
-
-			# If there's an update to pools already present in their respective compilations
-			# Record thos files and pools/donors that got affected
-			if df1_donor.merge(df2_donor).shape != df1_donor.shape:
-				donor_info.drop(donor_info[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"])].index, inplace=True)
-				donor_info = pd.concat([donor_info, t_donor_present])
-				with open(donor_files_tracker, 'a') as fout:
-					fout.write("The file {} has been updated. The following donors inside this file were updated:".format(inp_f))
-					for sample in df2_donor["unique_sample_ID"]:
-						fout.write("\t\t{}".format(sample))
+			if not t_df.empty:
+				op_df = pd.concat([op_df, t_df])
 
 			if df1.merge(df2).shape != df1.shape:
-				op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"])].index, inplace=True)
-				op_df = pd.concat([op_df, t_pool_present])
+				op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"])].index, inplace=True)
+				op_df = pd.concat([op_df, t_df_present])
 				with open(args.files_tracker, 'a') as fout:
 					fout.write("The file {} has been updated. The following samples inside this file were updated:".format(inp_f))
 					for sample in df2["unique_sample_ID"]:
 						fout.write("\t\t{}".format(sample))
-
-			
-
-		with open(donor_files_tracker, 'a') as fout:
-			fout.write("Hence, Re-do all related analyses.")
 
 		with open(args.files_tracker, 'a') as fout:
 			fout.write("Hence, Re-do all related analyses.")
@@ -201,69 +153,37 @@ def main():
 		df_obj2 = t_df.select_dtypes(['object'])
 		df_obj2 = df_obj2.applymap(str) # forcefully convert everything to string
 		t_df[df_obj2.columns] = df_obj2.apply(lambda x: x.str.strip())
-		
+
+		# Save donor info
+		donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
 		# Temporarily add an empty column for SubID
 		t_df["SubID"]=""
+		
+		# Retain multiplexed sample info
+		t_df = t_df.loc[t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
+		
+		
+		# For those multiplexed samples that weren't present in the ouput already
+		t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
 
-		# Save donor info and multiplexed info separately
-		t_donor_info = t_df.loc[~t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
-		t_pool_info = t_df.loc[t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
-
-		# if not t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
-		# For those samples that were present in their respective output files (donors and multiplexed files)
-		t_donor_present = t_donor_info.loc[t_donor_info["unique_sample_ID"].isin(donor_info["unique_sample_ID"])]
-		t_pool_present = t_pool_info.loc[t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
-
+		# For those samples that were present in the output
+		t_df_present = t_df[t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
+		
 		# If the previous df is a subset of the output i.e. these samples were exactly the same previously
 		# at the level specified at beginning of this script
-		df1_donor=donor_info.loc[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
-		df2_donor=t_donor_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
-		df1=op_df.loc[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
-		df2=t_pool_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
-
-
-		# Retain only those donors that weren't present in the ouput already
-		try:
-			t_donor_info = t_donor_info[~ t_donor_info["unique_sample_ID"].isin(donor_info["unique_sample_ID"])]
-		except:
-			print("For donors compilation. Found some issue! Test what's the issue")
-			print(args.input)
-			print("----------")
-
-		# Retain only those multiplexed samples that weren't present in the ouput already
-		try:
-			t_pool_info = t_pool_info[~ t_pool_info["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
-		except:
-			print("For multiplexed samples compilation. Found some issue! Test what's the issue")
-			print(args.input)
-			print("----------")
+		df1=op_df.loc[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
+		df2=t_df_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
+		if not t_df.empty:
+			op_df = pd.concat([op_df, t_df])
 		
-			
-		# Concat respective compilations
-		if not t_donor_info.empty:
-			donor_info = pd.concat([donor_info, t_donor_info])
-
-		if not t_pool_info.empty:
-			op_df = pd.concat([op_df, t_pool_info])
-
-
-		# If there's an update to pools already present in their respective compilations
-		# Record thos files and pools/donors that got affected
-		if df1_donor.merge(df2_donor).shape != df1_donor.shape:
-			donor_info.drop(donor_info[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"])].index, inplace=True)
-			donor_info = pd.concat([donor_info, t_donor_present])
-			with open(donor_files_tracker, 'a') as fout:
-				fout.write("The file {} has been updated. The following donors inside this file were updated:".format(args.input))
-				for sample in df2_donor["unique_sample_ID"]:
-					fout.write("\t\t{}".format(sample))
-
 		if df1.merge(df2).shape != df1.shape:
-			op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"])].index, inplace=True)
-			op_df = pd.concat([op_df, t_pool_present])
+			op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"])].index, inplace=True)
+			op_df = pd.concat([op_df, t_df_present])
 			with open(args.files_tracker, 'a') as fout:
 				fout.write("The file {} has been updated. The following samples inside this file were updated:".format(args.input))
 				for sample in df2["unique_sample_ID"]:
 					fout.write("\t\t{}".format(sample))
+				fout.write("Hence, Re-do all related analyses.")
 
 
 	if args.converter is not None:
@@ -284,7 +204,8 @@ def main():
 	op_df.drop_duplicates(inplace=True, ignore_index=True)
 	op_df.to_csv(args.output, sep='\t', index=False)
 
-	
+	ext = args.output[args.output.rfind('.'):]
+	donor_filename = args.output[:args.output.rfind('.')] + '_donor' + ext
 	donor_info['hashtag'] = donor_info['hashtag'].apply(lambda x: x.replace('#', ''))
 	donor_info.drop_duplicates(inplace=True, ignore_index=True)
 	donor_info.to_csv(donor_filename, sep='\t', index=False)

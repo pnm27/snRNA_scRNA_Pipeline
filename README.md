@@ -27,8 +27,8 @@
        - [ ] complex
    - [ ] Remove dependency on STARsolo as an aligner.
    - [ ] Combine sub-workflows split_bams and split_bams_gt.
-   - [ ] Fix issue with reading old wet_lab_info file to update (extension issues).
-   - [ ] Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)
+   - [x] Fix issue with reading old wet_lab_info file to update (extension issues).
+   - [x] Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)
    - [ ] Add options in config file to allow adding extra params for every software:
      - [ ] WASP mode in STARsolo_sort.snkmk
    - [ ] Add new Picard metrics.
@@ -61,6 +61,7 @@ The highlights of the pipeline are:
     - Save donor file along with the wet lab compilation file
     - argparse documented
   - Fixed an issue with create_wet_lab_info.py file
+  - create_wet_lab_info.py file now mirrors actions for donor and multiplex compilations.
   
   
 ## Requirements
