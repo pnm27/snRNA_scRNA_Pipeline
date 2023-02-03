@@ -112,9 +112,16 @@ def main():
 
 			# Temporarily add an empty column for SubID
 			t_df["SubID"]=""
-			# Retain multiplexed sample info
+			# Retain only multiplexed sample info
 			t_df = t_df.loc[t_df["unique_sample_ID"].str.contains(args.project_name, na=False)]
 			# if not t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"]).all():
+			# For those samples that were present in the output
+			t_df_present = t_df.loc[t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
+			# If the previous df is a subset of the output i.e. these samples were exactly the same previously
+			# at the level specified at beginning of this script
+			df1=op_df.loc[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
+			df2=t_df_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
+
 			# For those samples that weren't present in the ouput already
 			try:
 				t_df = t_df[~ t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
@@ -124,12 +131,7 @@ def main():
 				
 			if not t_df.empty:
 				op_df = pd.concat([op_df, t_df])
-			# For those samples that were present in the output
-			t_df_present = t_df[t_df["unique_sample_ID"].isin(op_df["unique_sample_ID"])]
-			# If the previous df is a subset of the output i.e. these samples were exactly the same previously
-			# at the level specified at beginning of this script
-			df1=op_df.loc[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"]), ["unique_sample_ID", "hashtag", "ab_barcode"]]
-			df2=t_df_present[["unique_sample_ID", "hashtag", "ab_barcode"]]
+
 			if df1.merge(df2).shape != df1.shape:
 				op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_df["unique_sample_ID"])].index, inplace=True)
 				op_df = pd.concat([op_df, t_df_present])
@@ -188,6 +190,7 @@ def main():
 		conv_df['Sample_ID'] = conv_df['Sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
 		# Strip leading and trailing whitespaces
 		df_obj = conv_df.select_dtypes(['object'])
+		df_obj = df_obj.applymap(str) # forcefully convert everything to string
 		conv_df[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
 
 
@@ -196,11 +199,13 @@ def main():
 	op_df['hashtag'] = op_df['hashtag'].apply(lambda x: re.sub('_', ',', x))
 	op_df['ab_barcode'] = op_df['ab_barcode'].apply(lambda x: re.sub('_', ',', x))
 	op_df['hashtag'] = op_df['hashtag'].apply(lambda x: x.replace('HTO#', ''))
+	op_df.drop_duplicates(inplace=True, ignore_index=True)
 	op_df.to_csv(args.output, sep='\t', index=False)
 
 	ext = args.output[args.output.rfind('.'):]
 	donor_filename = args.output[:args.output.rfind('.')] + '_donor' + ext
 	donor_info['hashtag'] = donor_info['hashtag'].apply(lambda x: x.replace('#', ''))
+	donor_info.drop_duplicates(inplace=True, ignore_index=True)
 	donor_info.to_csv(donor_filename, sep='\t', index=False)
 
 
