@@ -167,7 +167,7 @@ def main():
 
 			# If there's an update to pools already present in their respective compilations
 			# Record thos files and pools/donors that got affected
-			if df1_donor.merge(df2_donor).shape != df1_donor.shape:
+			if not df1_donor.equals(df2_donor):
 				donor_info.drop(donor_info[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"])].index, inplace=True)
 				donor_info = pd.concat([donor_info, t_donor_present])
 				with open(donor_files_tracker, 'a') as fout:
@@ -175,7 +175,7 @@ def main():
 					for sample in df2_donor["unique_sample_ID"]:
 						fout.write("\t\t{}".format(sample))
 
-			if df1.merge(df2).shape != df1.shape:
+			if not df1.equals(df2):
 				op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"])].index, inplace=True)
 				op_df = pd.concat([op_df, t_pool_present])
 				with open(args.files_tracker, 'a') as fout:
@@ -249,7 +249,7 @@ def main():
 
 		# If there's an update to pools already present in their respective compilations
 		# Record thos files and pools/donors that got affected
-		if df1_donor.merge(df2_donor).shape != df1_donor.shape:
+		if not df1_donor.equals(df2_donor):
 			donor_info.drop(donor_info[donor_info["unique_sample_ID"].isin(t_donor_info["unique_sample_ID"])].index, inplace=True)
 			donor_info = pd.concat([donor_info, t_donor_present])
 			with open(donor_files_tracker, 'a') as fout:
@@ -257,7 +257,7 @@ def main():
 				for sample in df2_donor["unique_sample_ID"]:
 					fout.write("\t\t{}".format(sample))
 
-		if df1.merge(df2).shape != df1.shape:
+		if not df1.equals(df2):
 			op_df.drop(op_df[op_df["unique_sample_ID"].isin(t_pool_info["unique_sample_ID"])].index, inplace=True)
 			op_df = pd.concat([op_df, t_pool_present])
 			with open(args.files_tracker, 'a') as fout:
