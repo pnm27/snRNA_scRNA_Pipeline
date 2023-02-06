@@ -180,11 +180,12 @@ def get_vir_inputs(wildcards):
 #             raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
 
 
+# Set logic similar to vir inp function
 def ret_dons(wildcards, input) -> Union[None, int]:
-    col_set = ["pool", "n_dons"]
+    col_set = ["pool", "n_dons", "vcf"]
     n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set)
-    return temp_df.loc[temp_df["pool"] == '-'.join(wildcards.id1.split('-')[:-1]), "n_dons"].values[0]
+    return int(temp_df.loc[temp_df["pool"] == '-'.join(wildcards.id1.split('-')[:-1]), "n_dons"].values[0])
 
 
 # Multi_module branch related function
