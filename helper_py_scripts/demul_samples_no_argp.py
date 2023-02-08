@@ -5,12 +5,11 @@
 from typing import Union # Need verion > 3.5
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import glob2, os, re, sys
+import os, sys
 from collections import Counter
 from openpyxl import load_workbook
 from collections import defaultdict, OrderedDict as ord_dict
 import datetime
-import functools
 from time import sleep
 from demultiplex_helper_funcs import parse_HTO, parse_subids, auto_read
 
@@ -32,7 +31,29 @@ def redo_test(inp_key, rem_last_n_chars=0) -> Union[str, None]:
 
 
 # For calico_solo------------------------------------------------------------------------
-def ret_htos_calico_solo(bcs, df_s):
+def ret_htos_calico_solo(bcs, df_s) -> list[pd.DataFrame, int, int]:
+    r"""Return HTO information and classification for each cell barcode.
+
+    This function returns blah blah blah
+
+    Params
+    ------
+    bcs
+        A pd series of cell barcodes
+    df_s
+        Wet lab file containing HTO information and SubID (donor IDs) for each pool
+
+    Returns
+    -------
+    pd.DataFrame
+        Contains SubID and HTO name (or number - as present in the wet lab file) \
+            indexed by cell barcodes
+    int
+        number of doublets
+    int
+        number of negatives.
+
+    """
 
     # List of htos from the wet lab spreadsheet
     hto_l = parse_HTO(df_s, cols[1], snakemake.params.samples_info, samp, snakemake.params.hto_sep)

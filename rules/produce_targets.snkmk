@@ -131,17 +131,19 @@ def targets_all(conf_f, PICARD=True, progs='all') -> list:
 
 # Add wildcards info here in the 'expand' function
 def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
-    global ONLY_SOLO, ONLY_VIREO
+    global ONLY_SOLO, ONLY_VIREO, BOTH_DEMUX
     # conf_f['last_step'] is expected to be None if yaml file is provided for the config['select_fastqs']
     if last_step is not None:
         target_step = last_step.lower()
         # folder_st_bam = fs['fold_struct']
         # folder_st = fs['fold_struct_demux']
 
-        # 'all' is only for the modules: STARsolo, PICARD (both) and calico_solo demux
+        # 'all' is only for the modules: STARsolo, PICARD (both) and calico_solo
+        # and vireo (demux) *
+        # In the future add create h5ad and split bams for gt check
         if target_step == "all":
             target_files = targets_all(conf_f=conf_f, PICARD=True, progs=target_step)
-            ONLY_SOLO = True
+            BOTH_DEMUX = True
             final_target_list = [expand(f"{target}", zip, **wc_d) for target in target_files] # if multiple wildcards are present then either 'zip' or 'product' (default)
 
         elif target_step == "starsolo_kb_solo":

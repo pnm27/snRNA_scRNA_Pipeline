@@ -41,6 +41,8 @@ extensions = [
     "sphinxcontrib.mermaid",
     "hoverxref.extension",
     "sphinxcontrib.bibtex",
+    'sphinx.ext.autosummary',
+    "numpydoc",
     # "sphinx_mdinclude",
 ]
 

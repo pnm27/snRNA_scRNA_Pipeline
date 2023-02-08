@@ -1,4 +1,10 @@
 # Modules
+
+
+``` {currentmodule} helper_py_scripts/
+
+```
+
 This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords. 
 
 ```{eval-rst}
@@ -130,6 +136,12 @@ This pipeline divides each module into its self-contained individual workflows. 
 
 [^not-yet]: Not yet implemented
 
+```{autosummary} 
+  :toctree: generated/
+  :nosignatures:
+
+   demul_samples_no_argp.ret_htos_calico_solo  
+```
 
 ## Overview of the pipeline
 
