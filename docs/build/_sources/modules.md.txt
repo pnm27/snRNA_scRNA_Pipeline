@@ -136,7 +136,8 @@ This pipeline divides each module into its self-contained individual workflows. 
 
 [^not-yet]: Not yet implemented
 
-```{autosummary} 
+```{eval-rst}
+.. autosummary::  
   :toctree: generated/
   :nosignatures:
 
