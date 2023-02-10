@@ -89,7 +89,7 @@ new_config.yaml (Part 1)
 #### Folder structures
 
 :::{figure-md}
-![fig1](../../images/new_config2.png)
+![fig2](../../images/new_config2.png)
 
 new_config.yaml (Part 2)
 :::
@@ -97,7 +97,7 @@ new_config.yaml (Part 2)
 #### Extra Info (can be removed soon!)
 
 :::{figure-md}
-![fig1](../../images/new_config3.png)
+![fig3](../../images/new_config3.png)
 
 new_config.yaml (Part 3)
 :::

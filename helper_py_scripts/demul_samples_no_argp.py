@@ -31,13 +31,13 @@ def redo_test(inp_key, rem_last_n_chars=0) -> Union[str, None]:
 
 
 # For calico_solo------------------------------------------------------------------------
-def ret_htos_calico_solo(bcs, df_s) -> list[pd.DataFrame, int, int]:
+def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame) -> list[pd.DataFrame, int, int]:
     r"""Return HTO information and classification for each cell barcode.
 
     This function returns blah blah blah
 
-    Params
-    ------
+    Parameters
+    ----------
     bcs
         A pd series of cell barcodes
     df_s
@@ -46,8 +46,8 @@ def ret_htos_calico_solo(bcs, df_s) -> list[pd.DataFrame, int, int]:
     Returns
     -------
     pd.DataFrame
-        Contains SubID and HTO name (or number - as present in the wet lab file) \
-            indexed by cell barcodes
+        Contains SubID and HTO name (or number - as present in the wet lab file)
+        indexed by cell barcodes
     int
         number of doublets
     int

@@ -18,10 +18,18 @@ Firstly, create a list of inputs (check here for different styles of inputs) - w
 
 ### How fastq files are arranged
 
-This [tree structure](../../images/scRNAseq/with_one_wc/fastqs.png) shows how the fastq files are present in our directory.
+This following pic shows how the fastq files are present in our directory.
+
+:::{figure-md}
+:width: 200px
+![tree structure](../../images/file_structs/scRNAseq/with_one_wc/fastqs.png)
+
+
+directories
+:::
 
 ### Create fastq_files.txt
-This [pic](../../images/scRNAseq/with_one_wc/fastq_files.png) shows the content of the fastq_files.txt.
+This following[pic](../../images/file_structs/scRNAseq/with_one_wc/fastq_files.png) shows the content of the fastq_files.txt.
 As one can see it contains one representation for each sample i.e. doesn't separate R1 and R2.
 
-This [tree structure](../../images/scRNAseq/with_one_wc/overall.png) shows how all the files are present in our directory.
+This [tree structure](../../images/file_structs/scRNAseq/with_one_wc/overall.png) shows how all the files are present in our directory.

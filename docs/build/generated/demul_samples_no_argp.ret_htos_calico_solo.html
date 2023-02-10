@@ -116,9 +116,26 @@
 <h1>demul_samples_no_argp.ret_htos_calico_solo<a class="headerlink" href="#demul-samples-no-argp-ret-htos-calico-solo" title="Permalink to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="demul_samples_no_argp.ret_htos_calico_solo">
-<span class="sig-prename descclassname"><span class="pre">demul_samples_no_argp.</span></span><span class="sig-name descname"><span class="pre">ret_htos_calico_solo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_s</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#demul_samples_no_argp.ret_htos_calico_solo" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">demul_samples_no_argp.</span></span><span class="sig-name descname"><span class="pre">ret_htos_calico_solo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#demul_samples_no_argp.ret_htos_calico_solo" title="Permalink to this definition"></a></dt>
 <dd><p>Return HTO information and classification for each cell barcode.</p>
 <p>This function returns blah blah blah</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bcs</strong> – A pd series of cell barcodes</p></li>
+<li><p><strong>df_s</strong> – Wet lab file containing HTO information and SubID (donor IDs) for each pool</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>pd.DataFrame</em> – Contains SubID and HTO name (or number - as present in the wet lab file)
+indexed by cell barcodes</p></li>
+<li><p><em>int</em> – number of doublets</p></li>
+<li><p><em>int</em> – number of negatives.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
