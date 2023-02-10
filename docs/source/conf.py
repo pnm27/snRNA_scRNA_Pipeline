@@ -13,7 +13,9 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
+# sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
+HERE = Path(__file__).parent
+sys.path[:0] = [str(HERE.parent), str(HERE / '../../helper_py_scripts/')]
 print(sys.path)
 
 # -- Project information -----------------------------------------------------
