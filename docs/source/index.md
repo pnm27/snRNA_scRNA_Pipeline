@@ -30,7 +30,7 @@ basic_run
 :caption: Understanding the Pipeline
 :maxdepth: 2
 
-modules
+sub_workflows
 ```
 
 ```{toctree}

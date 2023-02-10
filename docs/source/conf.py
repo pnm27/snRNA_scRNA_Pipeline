@@ -12,11 +12,10 @@
 #
 import os
 import sys
-from pathlib import Path
 
-# sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
-HERE = Path(__file__).parent
-sys.path[:0] = [str(HERE.parent), str(HERE / '../../helper_py_scripts/')]
+sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
+# HERE = Path(__file__).parent
+# sys.path[:0] = [str(HERE.parent), str(HERE / '../../helper_py_scripts/')]
 print(sys.path)
 
 # -- Project information -----------------------------------------------------
@@ -113,6 +112,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# For autodoc
+autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 

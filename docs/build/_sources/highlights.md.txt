@@ -15,6 +15,6 @@ To modify rules (adding extra params) is easy (add_here the extra params option 
 )
 ## One-select running of popular workflows
 
-Many {ref}`pre-selected workflows <modules:module description>` are present in the pipeline
+Many {ref}`pre-selected workflows <sub_workflows:module description>` are present in the pipeline
 ## Easy resource maintenance
 ## Re-attempts for known issues or errors
