@@ -14,6 +14,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
+print(sys.path)
 
 # -- Project information -----------------------------------------------------
 
