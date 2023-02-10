@@ -113,8 +113,19 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-# For autodoc
+# For autodoc setup to work on RTD
 autosummary_generate = True
+# Turn off prepending module names
+add_module_names = False
+# Sort members by type
+autodoc_member_order = 'groupwise'
+# Document __init__, __repr__, and __str__ methods
+# def skip(app, what, name, obj, would_skip, options):
+#     if name in ("__init__", "__repr__", "__str__"):
+#         return False
+#     return would_skip
+# def setup(app):
+#     app.connect("autodoc-skip-member", skip)
 
 # -- Options for HTML output -------------------------------------------------
 
