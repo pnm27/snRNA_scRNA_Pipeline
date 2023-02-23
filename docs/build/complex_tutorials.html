@@ -38,7 +38,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Glossary" href="glossary.html" />
-    <link rel="prev" title="demul_samples_no_argp.ret_htos_calico_solo" href="generated/demul_samples_no_argp.ret_htos_calico_solo.html" /> 
+    <link rel="prev" title="update_logs module" href="update_logs.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -70,12 +70,16 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="sub_workflows.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sub_workflows.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">helper_py_scripts</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Demultiplex pooled snRNA seq datasets</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#pipeline-overwiew">Pipeline overwiew</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#preparing-target-files">Preparing target files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-target-files">Preparing target files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fastq-file-structure">Fastq File Structure</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-file">Configuration File</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#common-project-specific-parameters">Common (project-specific) parameters</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dag-control-and-project-info-params">DAG control and project info params</a></li>
@@ -186,6 +190,9 @@ flowchart TB
 <section id="preparing-target-files">
 <h2>Preparing target files<a class="headerlink" href="#preparing-target-files" title="Permalink to this heading"></a></h2>
 <p>Firstly, we need to create a list of file structure (derived from our fastq files), which will be used by the rule input_processing(add link here) to read in wildcards</p>
+<section id="fastq-file-structure">
+<h3>Fastq File Structure<a class="headerlink" href="#fastq-file-structure" title="Permalink to this heading"></a></h3>
+</section>
 </section>
 <section id="configuration-file">
 <h2>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this heading"></a></h2>
@@ -242,7 +249,7 @@ This is the key which needs to be fed one of the <a class="reference internal" h
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="generated/demul_samples_no_argp.ret_htos_calico_solo.html" class="btn btn-neutral float-left" title="demul_samples_no_argp.ret_htos_calico_solo" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="update_logs.html" class="btn btn-neutral float-left" title="update_logs module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -31,6 +31,7 @@ basic_run
 :maxdepth: 2
 
 sub_workflows
+modules
 ```
 
 ```{toctree}

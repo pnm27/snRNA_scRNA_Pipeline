@@ -1,0 +1,7 @@
+resolve\_gt\_swaps module
+=========================
+
+.. automodule:: resolve_gt_swaps
+   :members:
+   :undoc-members:
+   :show-inheritance:

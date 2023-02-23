@@ -14,7 +14,7 @@ compared to the gene counts file and thus one should expect, at max, the number
 of barcodes retained in the hasing counts file.
 
 Help
-------
+----
 
     python3 create_h5ad_from_calico_solo.py -h
 

@@ -130,6 +130,27 @@ elif os.path.isdir(config['select_fastqs']):
     # IDS, = glob_wildcards(config['select_fastqs'])
     ID1, DONOR = glob_wildcards(os.path.join(config['select_fastqs'], config['wildcards_select']))
     
+    # Example of how to filter out a list of files
+    # In here some of the values in ID1 (wildcard)
+    # are to be removed. So to remove it's corresponding 
+    # values from DONOR
+
+    # wants=["Ch-Plexus-11-C1", "Ch-Plexus-11-C2", 
+    #        "Ch-Plexus-12-C1", "Ch-Plexus-12-C2", 
+    #        "Ch-Plexus-16-C1", "Ch-Plexus-16-C2", 
+    #        "Ch-Plexus-21-C1", "Ch-Plexus-21-C2", 
+    #        "Ch-Plexus-24-A1", "Ch-Plexus-24-A2", 
+    #        "Ch-Plexus-28-A1", "Ch-Plexus-28-A2", 
+    #        "Ch-Plexus-4-A1", "Ch-Plexus-4-A2", 
+    #        "Ch-Plexus-7-C1", "Ch-Plexus-7-C2",
+    #        ]
+    
+    # to_rem=[]
+    # ID1 = [ j if j in wants else to_rem.append(i) for i, j in enumerate(ID1) ]
+    # ID1 = [ j for j in ID1 if j is not None ]
+    # DONOR = [ j for i, j in enumerate(DONOR) if i not in to_rem]
+
+
     # Create a dict of wildcards
     wildcards_list={'id1': ID1, 'donor': DONOR}
 

@@ -16,13 +16,11 @@ Help
 
 import anndata as ad, string
 import scanpy as sc, pandas as pd, numpy as np
-import glob2, os, re, sys, argparse
+import os, re, sys, argparse
 from collections import Counter
 from openpyxl import load_workbook
 from collections import defaultdict
 # using datetime module
-import datetime
-import functools
 from itertools import repeat
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pandas as pd
 import os
@@ -181,10 +181,9 @@ def get_latest_extra_columns():
     global new_cols_to_add
     return len(new_cols_to_add)
 
+def get_argument_parser():
+    """Generate and return argument parser."""
 
-# Run this only when executed through Snakemake
-if __name__ == "__main__":
-    # Parse arguments
     parser = argparse.ArgumentParser(description="Compile all the files to combine all stats. NOTE: For all optional files (including all folder structures), if parameter is present but no value is \
         provided then values will be used as described by the defaults in respective help message. Folder structures for STARsolo output and PICARD is assumed to be the same, by default. \
         For optional files, the only required value is that of the parent folder.")
@@ -224,10 +223,16 @@ if __name__ == "__main__":
     parser.add_argument('--dem_info', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_STARsolo_info.tsv\"", const="_STARsolo_info.tsv", default=None)
 
+    return parser
 
+
+def main():
+    """Main entry point"""
+
+    # Parse arguments
+    parser = get_argument_parser()
     args = parser.parse_args()
-
-
+    
     # Parse directory values
     bam_dir = args.bam_dir
     pic_dir = args.picard_dir
@@ -387,3 +392,8 @@ if __name__ == "__main__":
 
 
     sleep(30)
+    
+
+# Run this only when executed through Snakemake
+if __name__ == "__main__":
+    main()

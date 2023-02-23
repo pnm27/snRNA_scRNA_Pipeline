@@ -137,8 +137,7 @@ This pipeline divides each module into its self-contained individual workflows. 
 [^not-yet]: Not yet implemented
 
 ```{eval-rst}
-.. autosummary::  
-  :toctree: generated/
+.. autosummary::
   :nosignatures:
 
    demul_samples_no_argp.ret_htos_calico_solo  

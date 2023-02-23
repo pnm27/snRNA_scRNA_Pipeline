@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #  The files_tracker file lets the user know if a particular wet lab file's (files') content has been changed at the level of (either):
 # "unique_sample_ID", "hashtag", "ab_barcode"

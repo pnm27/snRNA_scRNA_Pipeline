@@ -68,6 +68,9 @@ flowchart TB
 
 Firstly, we need to create a list of file structure (derived from our fastq files), which will be used by the rule input_processing(add link here) to read in wildcards
 
+### Fastq File Structure
+
+
 ## Configuration File
 
 To begin with, any utilisation of this pipeline starts with setting up the configuration file *new_config.yaml*

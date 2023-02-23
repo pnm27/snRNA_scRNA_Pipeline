@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import re, glob2, os, argparse, gc, warnings
 import pandas as pd, anndata as ad, scanpy as sc
 from pathlib import Path

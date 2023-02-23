@@ -1,8 +1,8 @@
-#!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
+#!/usr/bin/env python3
 
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import glob2, os, re, argparse
+import os, re, argparse
 from time import sleep
 
  

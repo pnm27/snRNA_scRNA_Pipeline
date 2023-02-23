@@ -1,4 +1,4 @@
-#!/sc/arion/work/prashf01/conda/envs/snakemake/bin/python
+#!/usr/bin/env python3
 
 # Solo didn't run through scvi, scvi-tools nor scanpy.external
 # Only this seems to work
