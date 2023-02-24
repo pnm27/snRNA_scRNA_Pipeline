@@ -205,7 +205,7 @@ def main():
 
         # Process STARsolo output----------------------------------------------------------------------------------------------------------------------------
         ct = datetime.datetime.now()
-        print(f"Processing STARsolo's output at: {ct}")
+        print(f"Processing STARsolo's (or mtx files) output at: {ct}")
         try:
             adata = sc.read_10x_mtx(starsolo_mat, make_unique=True, 
             var_names= "gene_ids", cache=True)

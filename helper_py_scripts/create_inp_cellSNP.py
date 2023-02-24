@@ -9,9 +9,6 @@ h5ad column containing classifications and if some of the cells that
 have been classified as a doublet and/or negative cells have to be removed 
 then too this script can be used).
 
-Help
------
-    python3 create_inp_cellSNP.py -h
 """
 
 import anndata as ad, string
@@ -28,18 +25,21 @@ def get_argument_parser():
     """Generate and return argument parser."""
 
     # Parse Command-Line arguments
-    parser = argparse.ArgumentParser(description="Produce inputs (text files) per sample for cellSNP"
-    ", containing filtered barcodes for each. If 'prev' flag is used then an h5ad file is expected"
-    " and if not then a path containing the 10 mtx files. For an h5ad file one can specifiy if "
-    "cell classifications are present or not and if present, then whether certain cell classes "
-    "need to be removed or not ('keep_all_cells' flag)")
+    parser = argparse.ArgumentParser(description="Produce inputs "
+    "(text files) per sample for cellSNP, containing filtered barcodes "
+    "for each. If 'prev' flag is used then an h5ad file is expected"
+    " and if not then a path containing the 10 mtx files. For an h5ad "
+    "file one can specifiy if cell classifications are present or not "
+    "and if present, then whether certain cell classes need to be "
+    "removed or not ('keep_all_cells' flag)"
+    )
 
     parser.add_argument('inp', help="Path to the cached output of the final "
     "matrix (h5ad) or Path containing 10x mtx files.",
     )
     parser.add_argument('-b', '--barcode_len', nargs='?', 
-    type=int, help="Barcode length. For 10x, it is 16. When parameter present "
-    "but no value provided: 16. Default: None", 
+    type=int, help="Barcode length. For 10x, it is 16. When parameter "
+    "present but no value provided: 16. Default: None", 
     const=16, default=None,
     )
 
@@ -50,12 +50,14 @@ def get_argument_parser():
     help="Use this flag when the input is an h5ad with cells "
     "classification present.",
     )
-    prev_count_file.add_argument('-c', '--column', nargs='?', help="Column name "
+    prev_count_file.add_argument('-c', '--column', nargs='?', 
+    help="Column name "
     "containing classifications of Doublets and Negatives. Value "
     "when parameter present but no value provided: SubID_cs. Default: None",
     const='SubID_cs', default=None,
     )
-    prev_count_file.add_argument('-o', '--output', help="Name of the output file",
+    prev_count_file.add_argument('-o', '--output', 
+    help="Name of the output file",
     default="inp_for_cellSNP.txt"
     )
     prev_count_file.add_argument('--keep_all_cells', action='store_true',
