@@ -11,6 +11,7 @@ helper_py_scripts
    create_inp_splitBam
    create_inp_splitBam_phe_demux
    create_wet_lab_info
+   demul_samples_ext_vS
    demul_samples_no_argp
    demultiplex_helper_funcs
    split_seth5ad_to_samph5ad
