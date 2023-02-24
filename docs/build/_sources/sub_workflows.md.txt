@@ -140,7 +140,7 @@ This pipeline divides each module into its self-contained individual workflows. 
 .. autosummary::
   :nosignatures:
 
-   demul_samples_no_argp.ret_htos_calico_solo  
+   demultiplex_helper_funcs.ret_htos_calico_solo  
 ```
 
 ## Overview of the pipeline

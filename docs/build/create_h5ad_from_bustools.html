@@ -73,7 +73,6 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">helper_py_scripts</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="create_Feat_Barc.html">create_Feat_Barc module</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">create_h5ad_from_bustools module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#help">Help</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create_h5ad_from_bustools.get_argument_parser"><code class="docutils literal notranslate"><span class="pre">get_argument_parser()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create_h5ad_from_bustools.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 </ul>
@@ -128,15 +127,8 @@
   <section id="module-create_h5ad_from_bustools">
 <span id="create-h5ad-from-bustools-module"></span><h1>create_h5ad_from_bustools module<a class="headerlink" href="#module-create_h5ad_from_bustools" title="Permalink to this heading"></a></h1>
 <p>Create h5ad file from a bustools output.</p>
-<p>This create takes the output after a bustools count run.</p>
-<section id="help">
-<h2>Help<a class="headerlink" href="#help" title="Permalink to this heading"></a></h2>
-<blockquote>
-<div><p>$ python3 create_h5ad_from_bustools.py -h</p>
-</div></blockquote>
-<p class="rubric">Example</p>
-<p>python3 create_h5ad_from_bustools.py sample_1_bus_op/output.mtx                 sample_1_bus_op/output.barcodes.txt sample_1_bus_op/output.barcodes.txt                          -o h5ad_files/sample_1_bus_OP.h5ad</p>
-</section>
+<p>This sciprt takes the output after a bustools count run and creates
+an h5ad file.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="create_h5ad_from_bustools.get_argument_parser">
 <span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_h5ad_from_bustools.get_argument_parser" title="Permalink to this definition"></a></dt>
