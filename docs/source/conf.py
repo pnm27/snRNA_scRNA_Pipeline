@@ -66,6 +66,9 @@ myst_enable_extensions = [
     "tasklist",
 ]
 
+# For mermaid runs
+mermaid_params = ['-p' 'puppeteer-config.json']
+
 # To make available sections that don't have a unique name as a hyperlink target
 autosectionlabel_prefix_document = True
 
