@@ -1,7 +1,0 @@
-get\_vir\_demux\_stats module
-=============================
-
-.. automodule:: get_vir_demux_stats
-   :members:
-   :undoc-members:
-   :show-inheritance:

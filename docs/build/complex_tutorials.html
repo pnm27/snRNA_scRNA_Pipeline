@@ -132,17 +132,22 @@
 <h2>Pipeline overwiew<a class="headerlink" href="#pipeline-overwiew" title="Permalink to this heading"></a></h2>
 <p>The pipeline can be visualized as:</p>
 <div class="mermaid">
-            %%{init: { &quot;theme&quot;:'neutral', 
-      'themeVariables': {
-      'fontSize': '20',
-      'primaryColor': '#BB2528',
-      'primaryTextColor': '#fff',
-      'primaryBorderColor': '#7C0000',
-      'lineColor': '#F8B229',
-      'secondaryColor': '#006100',
-      'tertiaryColor': '#fff'
-    }, 
-    &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;:300 } } }%%
+            %%{
+  init: {
+    &quot;theme&quot;:'neutral',
+      &quot;themeVariables&quot;: {
+        'fontSize': '20',
+        'primaryColor': '#BB2528',
+        'primaryTextColor': '#fff',
+        'primaryBorderColor': '#7C0000',
+        'lineColor': '#F8B229',
+        'secondaryColor': '#006100',
+        'tertiaryColor': '#fff'
+      },
+    &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;: 300 }
+  }
+}%%
+
 flowchart TB
   subgraph cDNA
     direction TB
