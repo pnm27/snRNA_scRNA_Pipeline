@@ -15,7 +15,6 @@ import anndata as ad, string
 import scanpy as sc, pandas as pd, numpy as np
 import os, re, sys, argparse
 from collections import Counter
-from openpyxl import load_workbook
 from collections import defaultdict
 # using datetime module
 from itertools import repeat

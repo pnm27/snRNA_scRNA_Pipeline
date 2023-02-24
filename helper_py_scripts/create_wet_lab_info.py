@@ -4,7 +4,6 @@
 # "unique_sample_ID", "hashtag", "ab_barcode"
 # NOTE: After each run the files_tracker file will be overwritten
 import os, re, sys, glob2, time
-from openpyxl import load_workbook
 from collections import Counter
 import pandas as pd, numpy as np, argparse
 from itertools import chain, repeat
