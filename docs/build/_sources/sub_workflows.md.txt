@@ -136,15 +136,11 @@ This pipeline divides each module into its self-contained individual workflows. 
 
 [^not-yet]: Not yet implemented
 
+## Overview of the pipeline
+
 ```{eval-rst}
 .. autosummary::
   :nosignatures:
 
    demultiplex_helper_funcs.ret_htos_calico_solo  
 ```
-
-## Overview of the pipeline
-
-Directed Acyclic Graph of the whole pipeline:
-![DAG](../../images/Whole_pipeline.png)
-

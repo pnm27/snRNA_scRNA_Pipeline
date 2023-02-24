@@ -113,8 +113,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-# For autodoc setup to work on RTD
-autosummary_generate = True
+# For autodoc setup to not show on toctree
+autosummary_generate = False
 # Turn off prepending module names
 add_module_names = False
 # Sort members by type

@@ -8,23 +8,22 @@ To make it more interesting, this tutorial will annotate individual samples thro
 
 The pipeline can be visualized as:
 
-:::{mermaid}
+```{mermaid}
 %%{
   init: {
-    "theme":'neutral',
+    "theme": "neutral",
       "themeVariables": {
-        'fontSize': '20',
-        'primaryColor': '#BB2528',
-        'primaryTextColor': '#fff',
-        'primaryBorderColor': '#7C0000',
-        'lineColor': '#F8B229',
-        'secondaryColor': '#006100',
-        'tertiaryColor': '#fff'
+        "fontSize": "20",
+        "primaryColor": "#BB2528",
+        "primaryTextColor": "#fff",
+        "primaryBorderColor": "#7C0000",
+        "lineColor": "#F8B229",
+        "secondaryColor": "#006100",
+        "tertiaryColor": "#fff"
       },
     "flowchart": { "wrap": true, "width": 300 }
   }
 }%%
-
 flowchart TB
   subgraph cDNA
     direction TB
@@ -68,7 +67,7 @@ flowchart TB
   id2-->|"filter cells"|id20
   id20-->id12
   id6-->|no|kite
-:::
+```
 
 ## Preparing target files
 
