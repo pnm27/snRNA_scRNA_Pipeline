@@ -2,18 +2,8 @@
 
 """Create h5ad file from a bustools output.
 
-This create takes the output after a bustools count run.
-
-Help
-------
-	$ python3 create_h5ad_from_bustools.py -h
-
-Example
---------
-	python3 create_h5ad_from_bustools.py sample_1_bus_op/output.mtx \
-		sample_1_bus_op/output.barcodes.txt sample_1_bus_op/output.barcodes.txt \
-			 -o h5ad_files/sample_1_bus_OP.h5ad
-
+This sciprt takes the output after a bustools count run and creates 
+an h5ad file.
 """
 
 import scanpy as sc, pandas as pd, numpy as np
