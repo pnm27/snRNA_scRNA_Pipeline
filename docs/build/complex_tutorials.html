@@ -131,70 +131,72 @@
 <h2>Pipeline overwiew<a class="headerlink" href="#pipeline-overwiew" title="Permalink to this heading"></a></h2>
 <p>The pipeline can be visualized as:</p>
 <div class="mermaid">
-            %%{
+            %%{ 
   init: {
-    &quot;theme&quot;: &quot;neutral&quot;,
+      &quot;theme&quot;:&quot;neutral&quot;,
       &quot;themeVariables&quot;: {
-        &quot;fontSize&quot;: &quot;20&quot;,
-        &quot;primaryColor&quot;: &quot;#BB2528&quot;,
-        &quot;primaryTextColor&quot;: &quot;#fff&quot;,
-        &quot;primaryBorderColor&quot;: &quot;#7C0000&quot;,
-        &quot;lineColor&quot;: &quot;#F8B229&quot;,
-        &quot;secondaryColor&quot;: &quot;#006100&quot;,
-        &quot;tertiaryColor&quot;: &quot;#fff&quot;
+        &quot;fontSize&quot;:20,
+        &quot;primaryColor&quot;:&quot;#BB2528&quot;,
+        &quot;primaryTextColor&quot;:&quot;#fff&quot;,
+        &quot;primaryBorderColor&quot;:&quot;#7C0000&quot;,
+        &quot;lineColor&quot;:&quot;#F8B229&quot;,
+        &quot;secondaryColor&quot;:&quot;#006100&quot;,
+        &quot;tertiaryColor&quot;:&quot;#fff&quot;
       },
-    &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;: 300 }
-  }
+      &quot;flowchart&quot;: { &quot;wrap&quot;: true, &quot;width&quot;: 300 }
+    }
 }%%
-flowchart TB
-  subgraph cDNA
-    direction TB
-    id1[/cDNA fastqs/]--&gt;|align|id2(STARsolo)--&gt;|&quot;filter cells&quot;|id3(&quot;cellSNP (cellsnp-lite)&quot;)
-    id3--&gt;id6{&quot;all genotypes&lt;br/&gt;available?&quot;}
-    subgraph PICARD
-      direction LR
-      A(CollectGcBiasMetrics)
-      B(CollectRnaSeqMetrics)
+
+   flowchart TB
+   subgraph cDNA
+      direction TB
+      id1[/cDNA fastqs/]--&gt;|align|id2(STARsolo)--&gt;|&quot;filter cells&quot;|id3(&quot;cellSNP (cellsnp-lite)&quot;)
+      id3--&gt;id6{&quot;all genotypes&lt;br/&gt;available?&quot;}
+      subgraph PICARD
+         direction LR
+         A(CollectGcBiasMetrics)
+         B(CollectRnaSeqMetrics)
+      end
     end
-  end
-  subgraph genotype-based
-    id6--&gt;|yes|id8(&quot;vireoSNP&lt;br/&gt;without&lt;br/&gt;genotypes&quot;)--&gt;|identify&lt;br/&gt;swaps|id9(QTLtools-mbv)
-    id9--&gt;|&quot;rectify&lt;br/&gt;swaps&quot;|id11(vireoSNP)
-    subgraph SNPs
-      direction LR
-      id4[(&quot;External Genotypes &lt;br/&gt;(SNParray or WGS)&quot;)]
-      id5[(&quot;1000 Genomes Project&quot;)]
-      style id4 fill:#348ceb,stroke:#333,stroke-width:4px
-      style id5 fill:#348ceb,stroke:#333,stroke-width:4px
-    end
-  end
-  subgraph demultiplex
-    direction TB
-    id12(custom scripts)--&gt;id13[/&quot;final count&lt;br/&gt;matrix&quot;/]
-  end
-  subgraph kite
-    direction TB
-    id14[/HTO fastqs/]--&gt;id18(&quot;run kallisto&quot;)
-    id16(&quot;create feature&lt;br/&gt;barcode file&quot;)--&gt;|&quot;create mismatch&lt;br/&gt;FASTA&lt;br/&gt; and t2g files&quot;|id17(&quot;featuremap&lt;br/&gt;(pachter/kite lab)&quot;)
-    id17--&gt;|mismatch&lt;br/&gt;FASTA|id15(&quot;build kallisto index&quot;)
-    id15--&gt;id18
-    id18--&gt;|&quot;run bustools&quot;|id19(&quot;correct, sort&lt;br/&gt;and&lt;br/&gt;count&quot;)
-    id19--&gt;|&quot;hashing&lt;br/&gt;count&lt;br/&gt;matrix&quot;|id20(hashsolo)
-  end
-  id2 --&gt; |&quot;collect read stats&quot;|PICARD
-  SNPs --&gt; |&quot;common SNPs&quot;|id3
-  id4 --&gt; id9
-  id4 --&gt; |&quot;correct&lt;br/&gt;donors&quot;|id11
-  id11 --&gt; id12
-  id2--&gt;|&quot;filter cells&quot;|id20
-  id20--&gt;id12
-  id6--&gt;|no|kite
+   subgraph genotype-based
+      id6--&gt;|yes|id8(&quot;vireoSNP&lt;br/&gt;without&lt;br/&gt;genotypes&quot;)--&gt;|identify&lt;br/&gt;swaps|id9(QTLtools-mbv)
+      id9--&gt;|&quot;rectify&lt;br/&gt;swaps&quot;|id11(vireoSNP)
+      subgraph SNPs
+         direction LR
+         id4[(&quot;External Genotypes &lt;br/&gt;(SNParray or WGS)&quot;)]
+         id5[(&quot;1000 Genomes Project&quot;)]
+         style id4 fill:#348ceb,stroke:#333,stroke-width:4px
+         style id5 fill:#348ceb,stroke:#333,stroke-width:4px
+      end
+   end
+   subgraph demultiplex
+      direction TB
+      id12(custom scripts)--&gt;id13[/&quot;final count&lt;br/&gt;matrix&quot;/]
+   end
+   subgraph kite
+      direction TB
+      id14[/HTO fastqs/]--&gt;id18(&quot;run kallisto&quot;)
+      id16(&quot;create feature&lt;br/&gt;barcode file&quot;)--&gt;|&quot;create mismatch&lt;br/&gt;FASTA&lt;br/&gt; and t2g files&quot;|id17(&quot;featuremap&lt;br/&gt;(pachter/kite lab)&quot;)
+      id17--&gt;|mismatch&lt;br/&gt;FASTA|id15(&quot;build kallisto index&quot;)
+      id15--&gt;id18
+      id18--&gt;|&quot;run bustools&quot;|id19(&quot;correct, sort&lt;br/&gt;and&lt;br/&gt;count&quot;)
+      id19--&gt;|&quot;hashing&lt;br/&gt;count&lt;br/&gt;matrix&quot;|id20(hashsolo)
+   end
+   id2 --&gt; |&quot;collect read stats&quot;|PICARD
+   SNPs --&gt; |&quot;common SNPs&quot;|id3
+   id4 --&gt; id9
+   id4 --&gt; |&quot;correct&lt;br/&gt;donors&quot;|id11
+   id11 --&gt; id12
+   id2--&gt;|&quot;filter cells&quot;|id20
+   id20--&gt;id12
+   id6--&gt;|no|kite
         </div></section>
 <section id="preparing-target-files">
 <h2>Preparing target files<a class="headerlink" href="#preparing-target-files" title="Permalink to this heading"></a></h2>
 <p>Firstly, we need to create a list of file structure (derived from our fastq files), which will be used by the rule input_processing(add link here) to read in wildcards</p>
 <section id="fastq-file-structure">
 <h3>Fastq File Structure<a class="headerlink" href="#fastq-file-structure" title="Permalink to this heading"></a></h3>
+<p>asdasd</p>
 </section>
 </section>
 <section id="configuration-file">
