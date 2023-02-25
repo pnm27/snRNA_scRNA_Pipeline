@@ -25,7 +25,7 @@ The pipeline can be visualized as:
     }
 }%%
 
-   flowchart TB
+flowchart TB
    subgraph cDNA
       direction TB
       id1[/cDNA fastqs/]-->|align|id2(STARsolo)-->|"filter cells"|id3("cellSNP (cellsnp-lite)")
