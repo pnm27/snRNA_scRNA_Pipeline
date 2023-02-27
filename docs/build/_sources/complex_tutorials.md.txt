@@ -9,65 +9,65 @@ To make it more interesting, this tutorial will annotate individual samples thro
 The pipeline can be visualized as:
 
 ```{mermaid}
-%%{ 
-  init: {
-      "theme":"neutral",
-      "themeVariables": {
-        "fontSize":20,
-        "primaryColor":"#BB2528",
-        "primaryTextColor":"#fff",
-        "primaryBorderColor":"#7C0000",
-        "lineColor":"#F8B229",
-        "secondaryColor":"#006100",
-        "tertiaryColor":"#fff"
-      },
-      "flowchart": { "wrap": true, "width": 300 }
-    }
-}%%
+   %%{ 
+      init: {
+         "theme":"neutral",
+         "themeVariables": {
+           "fontSize":20,
+           "primaryColor":"#BB2528",
+           "primaryTextColor":"#fff",
+           "primaryBorderColor":"#7C0000",
+           "lineColor":"#F8B229",
+           "secondaryColor":"#006100",
+           "tertiaryColor":"#fff"
+         },
+         "flowchart": { "wrap": true, "width": 300 }
+      }
+   }%%
 
-flowchart TB
-   subgraph cDNA
-      direction TB
-      id1[/cDNA fastqs/]-->|align|id2(STARsolo)-->|"filter cells"|id3("cellSNP (cellsnp-lite)")
-      id3-->id6{"all genotypes<br/>available?"}
-      subgraph PICARD
-         direction LR
-         A(CollectGcBiasMetrics)
-         B(CollectRnaSeqMetrics)
+   flowchart TB
+      subgraph cDNA
+         direction TB
+         id1[/cDNA fastqs/]-->|align|id2(STARsolo)-->|"filter cells"|id3("cellSNP (cellsnp-lite)")
+         id3-->id6{"all genotypes<br/>available?"}
+         subgraph PICARD
+            direction LR
+            A(CollectGcBiasMetrics)
+            B(CollectRnaSeqMetrics)
+         end
       end
-    end
-   subgraph genotype-based
-      id6-->|yes|id8("vireoSNP<br/>without<br/>genotypes")-->|identify<br/>swaps|id9(QTLtools-mbv)
-      id9-->|"rectify<br/>swaps"|id11(vireoSNP)
-      subgraph SNPs
-         direction LR
-         id4[("External Genotypes <br/>(SNParray or WGS)")]
-         id5[("1000 Genomes Project")]
-         style id4 fill:#348ceb,stroke:#333,stroke-width:4px
-         style id5 fill:#348ceb,stroke:#333,stroke-width:4px
+      subgraph genotype-based
+         id6-->|yes|id8("vireoSNP<br/>without<br/>genotypes")-->|identify<br/>swaps|id9(QTLtools-mbv)
+         id9-->|"rectify<br/>swaps"|id11(vireoSNP)
+         subgraph SNPs
+            direction LR
+            id4[("External Genotypes <br/>(SNParray or WGS)")]
+            id5[("1000 Genomes Project")]
+            style id4 fill:#348ceb,stroke:#333,stroke-width:4px
+            style id5 fill:#348ceb,stroke:#333,stroke-width:4px
+         end
       end
-   end
-   subgraph demultiplex
-      direction TB
-      id12(custom scripts)-->id13[/"final count<br/>matrix"/]
-   end
-   subgraph kite
-      direction TB
-      id14[/HTO fastqs/]-->id18("run kallisto")
-      id16("create feature<br/>barcode file")-->|"create mismatch<br/>FASTA<br/> and t2g files"|id17("featuremap<br/>(pachter/kite lab)")
-      id17-->|mismatch<br/>FASTA|id15("build kallisto index")
-      id15-->id18
-      id18-->|"run bustools"|id19("correct, sort<br/>and<br/>count")
-      id19-->|"hashing<br/>count<br/>matrix"|id20(hashsolo)
-   end
-   id2 --> |"collect read stats"|PICARD
-   SNPs --> |"common SNPs"|id3
-   id4 --> id9
-   id4 --> |"correct<br/>donors"|id11
-   id11 --> id12
-   id2-->|"filter cells"|id20
-   id20-->id12
-   id6-->|no|kite
+      subgraph demultiplex
+         direction TB
+         id12(custom scripts)-->id13[/"final count<br/>matrix"/]
+      end
+      subgraph kite
+         direction TB
+         id14[/HTO fastqs/]-->id18("run kallisto")
+         id16("create feature<br/>barcode file")-->|"create mismatch<br/>FASTA<br/> and t2g files"|id17("featuremap<br/>(pachter/kite lab)")
+         id17-->|mismatch<br/>FASTA|id15("build kallisto index")
+         id15-->id18
+         id18-->|"run bustools"|id19("correct, sort<br/>and<br/>count")
+         id19-->|"hashing<br/>count<br/>matrix"|id20(hashsolo)
+      end
+      id2-->|"collect read stats"|PICARD
+      SNPs-->|"common SNPs"|id3
+      id4-->id9
+      id4-->|"correct<br/>donors"|id11
+      id11-->id12
+      id2-->|"filter cells"|id20
+      id20-->id12
+      id6-->|no|kite
 ```
 
 ## Preparing target files

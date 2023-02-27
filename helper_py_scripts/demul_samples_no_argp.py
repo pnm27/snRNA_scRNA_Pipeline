@@ -145,14 +145,23 @@ def main():
     # -----------------------------------------------------------------------
     redo = True if args.input_file.endswith('.h5ad') else False
 
-    add_calico = args.hashsolo_out if redo else None
-    add_vireo = args.vireo_out if redo else None
+    add_calico = args.hashsolo_out
+    add_vireo = args.vireo_out
 
     starsolo_mat = args.input_file[:-13] if not redo else None
 
+    # Both calico_solo and vireo can't be None
+    if add_calico is None and add_vireo is None:
+        raise ValueError(
+            "For this script provide either a VALID calico_solo h5ad "
+            "or vireoSNP's donor file"
+            )
+    
+    no_stats = True if redo and args.cs_stats and args.vs_stats else False
+    
     # For assigning gene names
     t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),
-                        names=["gene_id", "gene_name"], sep="\t")
+                    names=["gene_id", "gene_name"], sep="\t")
     t2g.index = t2g.gene_id
     t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
     
@@ -160,20 +169,12 @@ def main():
     # Store output_file and Create necessary folders
     op = args.count_matrix
 
-    cols = args.columns
-
     # Create parent dir(s) to the output
     if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
         os.makedirs(op.replace(os.path.basename(op), ''))
 
     # Initial run of demultiplexing
     if not redo:
-        # Both calico_solo and vireo can't be None
-        if add_calico is not None and add_vireo is not None:
-            raise ValueError(
-                "For the inital demultiplexing run for STARsolo's output "
-                "provide either a VALID calico_solo h5ad or vireoSNP's "
-                "donor file")
 
         # Batch info
         # This is the values that will be stored in the final h5ad file
@@ -233,7 +234,8 @@ def main():
             adata[:, ~ pd.notna(adata.var["gene_name"])].X.sum(axis=0)
             .mean()
             )
-        adata = adata[:, pd.notna(adata.var["gene_name"])] # Removed gene_ids that don't have an associated gene name
+        # Removed gene_ids that don't have an associated gene name
+        adata = adata[:, pd.notna(adata.var["gene_name"])]
         adata.var_names_make_unique()
         adata.X = adata.X.astype('float64')
         solo_run_info.append(( 'gene_ids with an associated gene_name', 
@@ -267,151 +269,176 @@ def main():
         solo_run_info.append(( 'cells with low mito percent', 
                             adata.n_obs))
         print(adata)
-
-        # For demultiplexing using both methods simultaneously
-        if calico_demux is not None and vireo_demux is not None:
-            pass # to do
-
-        elif calico_demux is not None:
-
-            # Load hashsolo/calico_solo output (h5ad)
-            try:
-                dem_cs = ad.read(calico_demux)
-            except:
-                e = sys.exc_info()[0]
-                print(f"Error encountered while loading the h5ad file!\nError message: {e}")
-
-            print("Successfully loaded calico_solo output!")
-
-            # Demultiplex and assign samples----------------------------------------------------------
-
-            # hto_tags_cs, hto_tags_ms, and hto_tags_hd contain (in sequence): 
-            # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
-            #  as columns no. of doublet cells, no. of negative cells]
-
-            ct = datetime.datetime.now()
-            print(f"Starting: Calculating demultiplexing info for hashsolo/calico solo at: {ct}")
-            cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
-                adata.obs_names.to_series(), df, args.sample_name, args.hto_sep, 
-                [cols[1], cols[3]], 
-                dem_cs.obs['Classification']
-                )
-            
-            ct = datetime.datetime.now()
-            print(f"Assigning demultiplexing info for hashsolo/calico solo at: {ct}")
-
-            adata.obs['SubID_cs'] = cs_dons
-            adata.obs['HTO_n_cs'] = hto_name_cs
-            if not args.cs_stats:
-                solo_run_info.extend(temp_df)
-            
-
-            ct = datetime.datetime.now()
-            print(f"Saving All info as a tsv file and also the h5ad files: {ct}")
-            solo_run_df = pd.DataFrame(solo_run_info, columns=['Observations', 'Vals'])
-            solo_run_df.to_csv(args.demux_info, sep = "\t", index=False)
-
-            # add few more annotations
-            adata.obs['batch'] = batch
-            adata.obs['rep'] = replicate
-            adata.obs['set'] = batch[:-6]
-
-            # If Subject IDs aren't 'string' then convert them
-            adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
-
-            adata.write(op)
-
-            ct = datetime.datetime.now()
-            print(f"Finished: Processing Sample {batch} at: {ct}")
-
-        # To do
-        elif vireo_demux is not None:
-            print("Starting demultiplexing through vireoSNP's output")
-            # Demultiplex and assign samples----------------------------------------------------------
-
-            # hto_tags_cs, hto_tags_ms, and hto_tags_hd contain (in sequence): pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc) as columns
-            #, no. of doublet cells, no. of negative cells]
-            ct = datetime.datetime.now()
-            print(f"Starting: Calculating demultiplexing info for hashsolo/calico solo at: {ct}")
-            hto_tags_cs = ret_htos_calico_solo(adata.obs_names.to_list(), df)
-            ct = datetime.datetime.now()
-            print(f"Finished: Calculating demultiplexing info for hashsolo/calico solo at: {ct}")
-
-
-            # add few more annotations
-            adata.obs['batch'] = batch
-            adata.obs['rep'] = replicate
-            adata.obs['set'] = batch[:-6]
-
-            # Create obs columns in adata to represent the SubID as assigned by calico solo and its associated hastag number
-            SubID_cs = adata.obs_names.to_series().apply(ret_samp_names, args=(hto_tags_cs[0], ))
-            hasht_n_cs = adata.obs_names.to_series().apply(ret_hto_number, args=(hto_tags_cs[0], ))
-            adata.obs['SubID_cs'] = SubID_cs
-            adata.obs['HTO_n_cs'] = hasht_n_cs
-
-            # Save doublets and negatives info from calico solo
-            solo_run_info.append(('Doublets #cells_cs', hto_tags_cs[1]))
-            solo_run_info.append(('Negative #cells_cs', hto_tags_cs[2]))
-
-
-            # Remaining cells after demultiplexing (for each demux method)
-            rem_cells_cs = adata.obs.SubID_cs.value_counts()
-            prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index != "Negative") & (rem_cells_cs.index != "Not Present")]
-            od = ord_dict(sorted(prop_dict.items()))
-            a = ""
-            for k, v in od.items():
-                b = str(k) + ": " + str(v) + ", "
-                a += b
-
-            solo_run_info.append(( 'After demultiplexing #cells_cs', a.strip()[:-1] ))
-
-
-            ct = datetime.datetime.now()
-            print(f"Saving All info as a tsv file and also the h5ad files: {ct}")
-            solo_run_df = pd.DataFrame(solo_run_info, columns=['Observations', 'Vals'])
-            solo_run_df.to_csv(snakemake.output[1], sep = "\t", index=False)
-
-            # If Subject IDs aren't 'string' then convert them
-            adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
-
-            adata.write(op)
-
-            ct = datetime.datetime.now()
-            print(f"Finished: Processing Sample {batch} at: {ct}")
-        else:
-            raise ValueError("Unexpected condition encountered! (bug: 1)") # Should never be executed
-
-    elif redo:
+    
+    else:
+        ct = datetime.datetime.now()
+        print(f"Reading given h5ad input file at: {ct}")
         try:
-            ann = ad.read(snakemake.input['prev_count_mtx'])
+            adata = ad.read(args.input_file)
         except:
             e = sys.exc_info()[0]
-            print(f"Error encountered while loading the h5ad file (previously completed demultiplex run)!\nError message: {e}")    
+            print(
+                "Error encountered while loading the input h5ad file!"
+                f"\nError message: {e}"
+                )
 
-        if add_vireo is not None:
-            # Storing parsed inputs        
-            vir_class = auto_read(snakemake.input['vireoSNP_out'])
-            if snakemake.input['gt_conv'] is not None:
-                conv_df = pd.read_csv(snakemake.input['gt_conv'])
+        print("Successfully loaded the input file!")
 
-                # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
-                vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
-                conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unique()), ["SubID", "primary_genotype"]]
-                vir_class['Subj_ID'] = vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
-                del vir_class['donor_id']
-            else:
-                vir_class.rename(columns={"donor_id":"Subj_ID"}, inplace=True, errors="raise")
+    # For demultiplexing using calico_solo
+    if add_calico is not None:
+
+        cols = args.columns
+        # Load hashsolo/calico_solo output (h5ad)
+        try:
+            dem_cs = ad.read(add_calico)
+        except:
+            e = sys.exc_info()[0]
+            print(
+                "Error encountered while loading the h5ad file!"
+                f"\nError message: {e}"
+                )
+
+        print("Successfully loaded calico_solo output!")
+
+        # Demultiplex and assign samples----------------------------------------------------------
+
+        # hto_tags_cs, hto_tags_ms, and hto_tags_hd contain (in sequence): 
+        # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
+        #  as columns no. of doublet cells, no. of negative cells]
+
+        ct = datetime.datetime.now()
+        print(
+            "Starting: Calculating demultiplexing info for "
+            f"hashsolo/calico solo at: {ct}"
+            )
+        cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
+            adata.obs_names.to_series(), df, args.sample_name, 
+            args.hto_sep, [cols[1], cols[3]], 
+            dem_cs.obs['Classification']
+            )
+        
+        ct = datetime.datetime.now()
+        print(f"Assigning demultiplexing info for hashsolo/calico solo at: {ct}")
+
+        adata.obs['SubID_cs'] = cs_dons
+        adata.obs['HTO_n_cs'] = hto_name_cs
+        if not args.cs_stats:
+            solo_run_info.extend(temp_df)
+        
+
+        ct = datetime.datetime.now()
+        print(f"Saving All info as a tsv file and also the h5ad files: {ct}")
+        solo_run_df = pd.DataFrame(solo_run_info, columns=['Observations', 'Vals'])
+        solo_run_df.to_csv(args.demux_info, sep = "\t", index=False)
+
+        # add few more annotations
+        adata.obs['batch'] = batch
+        adata.obs['rep'] = replicate
+        adata.obs['set'] = batch[:-6]
+
+        # If Subject IDs aren't 'string' then convert them
+        adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
+
+        adata.write(op)
+
+        ct = datetime.datetime.now()
+        print(f"Finished: Processing Sample {batch} at: {ct}")
+
+    # To do
+    if add_vireo is not None:
+        print("Starting demultiplexing through vireoSNP's output")
+        # Demultiplex and assign samples----------------------------------------------------------
+
+        # hto_tags_cs, hto_tags_ms, and 
+        # hto_tags_hd contain (in sequence): 
+        # pd DF with barcodes as index. SubID and HTO number 
+        # (HTO1, HTO2, etc) as columns
+        #, no. of doublet cells, no. of negative cells]
+        ct = datetime.datetime.now()
+        print(
+            "Starting: Calculating demultiplexing info for "
+            f"hashsolo/calico solo at: {ct}")
+        hto_tags_cs = ret_htos_calico_solo(adata.obs_names.to_list(), df)
+        ct = datetime.datetime.now()
+        print(
+            "Finished: Calculating demultiplexing info for "
+            f"hashsolo/calico solo at: {ct}")
+
+
+        # add few more annotations
+        adata.obs['batch'] = batch
+        adata.obs['rep'] = replicate
+        adata.obs['set'] = batch[:-6]
+
+        # Create obs columns in adata to represent the SubID as assigned by calico solo and its associated hastag number
+        SubID_cs = adata.obs_names.to_series().apply(ret_samp_names, args=(hto_tags_cs[0], ))
+        hasht_n_cs = adata.obs_names.to_series().apply(ret_hto_number, args=(hto_tags_cs[0], ))
+        adata.obs['SubID_cs'] = SubID_cs
+        adata.obs['HTO_n_cs'] = hasht_n_cs
+
+        # Save doublets and negatives info from calico solo
+        solo_run_info.append(('Doublets #cells_cs', hto_tags_cs[1]))
+        solo_run_info.append(('Negative #cells_cs', hto_tags_cs[2]))
+
+
+        # Remaining cells after demultiplexing (for each demux method)
+        rem_cells_cs = adata.obs.SubID_cs.value_counts()
+        prop_dict = rem_cells_cs[(rem_cells_cs.index != "Doublet") & (rem_cells_cs.index != "Negative") & (rem_cells_cs.index != "Not Present")]
+        od = ord_dict(sorted(prop_dict.items()))
+        a = ""
+        for k, v in od.items():
+            b = str(k) + ": " + str(v) + ", "
+            a += b
+
+        solo_run_info.append(( 'After demultiplexing #cells_cs', a.strip()[:-1] ))
+
+
+        ct = datetime.datetime.now()
+        print(f"Saving All info as a tsv file and also the h5ad files: {ct}")
+        solo_run_df = pd.DataFrame(solo_run_info, columns=['Observations', 'Vals'])
+        solo_run_df.to_csv(snakemake.output[1], sep = "\t", index=False)
+
+        # If Subject IDs aren't 'string' then convert them
+        adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
+
+        adata.write(op)
+
+        ct = datetime.datetime.now()
+        print(f"Finished: Processing Sample {batch} at: {ct}")
+    # else:
+    #     raise ValueError("Unexpected condition encountered! (bug: 1)") # Should never be executed
+
+    # elif redo:
+    #     try:
+    #         ann = ad.read(snakemake.input['prev_count_mtx'])
+    #     except:
+    #         e = sys.exc_info()[0]
+    #         print(f"Error encountered while loading the h5ad file (previously completed demultiplex run)!\nError message: {e}")    
+
+    #     if add_vireo is not None:
+    #         # Storing parsed inputs        
+    #         vir_class = auto_read(snakemake.input['vireoSNP_out'])
+    #         if snakemake.input['gt_conv'] is not None:
+    #             conv_df = pd.read_csv(snakemake.input['gt_conv'])
+
+    #             # vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+    #             vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
+    #             conv_df = conv_df.loc[conv_df['primary_genotype'].isin(vir_class['donor_id'].unique()), ["SubID", "primary_genotype"]]
+    #             vir_class['Subj_ID'] = vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
+    #             del vir_class['donor_id']
+    #         else:
+    #             vir_class.rename(columns={"donor_id":"Subj_ID"}, inplace=True, errors="raise")
                 
-            # get_df = adata.obs_names.to_series().apply(ret_subj_ids, args=(vir_class,))
-            get_df = ret_subj_ids(ann.obs_names.to_list(), vir_class)
-            ann.obs['SubID_vS'] = get_df["Subj_ID"].to_list()
-            ann.obs['max_prob'] = get_df["prob_max"].to_list()
-            ann.obs['doublet_prob'] = get_df["prob_doublet"].to_list()
+    #         # get_df = adata.obs_names.to_series().apply(ret_subj_ids, args=(vir_class,))
+    #         get_df = ret_subj_ids(ann.obs_names.to_list(), vir_class)
+    #         ann.obs['SubID_vS'] = get_df["Subj_ID"].to_list()
+    #         ann.obs['max_prob'] = get_df["prob_max"].to_list()
+    #         ann.obs['doublet_prob'] = get_df["prob_doublet"].to_list()
 
-            ann.write(op)
+    #         ann.write(op)
 
-    else:
-        raise ValueError("Unexpected condition encountered! (bug: 2)") # Should never be executed
+    # else:
+    #     raise ValueError("Unexpected condition encountered! (bug: 2)") # Should never be executed
 
 
 

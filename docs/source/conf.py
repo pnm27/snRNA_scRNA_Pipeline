@@ -46,16 +46,18 @@ extensions = [
     "hoverxref.extension",
     "sphinxcontrib.bibtex",
     'sphinx.ext.autosummary',
+    "sphinxcontrib.jquery",
     # "numpydoc",
     # "sphinx_mdinclude",
 ]
 
 # For todo extension
 todo_include_todos = True
-source_suffix = [
-    ".rst",
-    ".md",
-]
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.txt': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # For having myst to generate anchors until ### (h3 level) headings
 myst_heading_anchors = 3
@@ -114,7 +116,9 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = [
+    'build',
+    ]
 
 # For autodoc setup to not show on toctree
 autosummary_generate = False
@@ -127,7 +131,8 @@ autodoc_member_order = 'groupwise'
 #     if name in ("__init__", "__repr__", "__str__"):
 #         return False
 #     return would_skip
-# def setup(app):
+def setup(app):
+    print(app)
 #     app.connect("autodoc-skip-member", skip)
 
 # -- Options for HTML output -------------------------------------------------
