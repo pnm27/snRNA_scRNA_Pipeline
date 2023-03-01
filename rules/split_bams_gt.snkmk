@@ -79,7 +79,7 @@ rule create_inp_splitBams_gt_demux:
         f"{config['split_bams_pipeline_gt_demux']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
 
     params:
-        conv_df=config['split_bams_pipeline_gt_demux']['gt_conv']
+        conv_df=config['gt_conv']
 
     threads: 1
 

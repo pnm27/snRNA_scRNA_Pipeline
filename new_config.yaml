@@ -23,6 +23,7 @@ reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.b
 chr_prefix: null
 mito: MT-
 gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
+gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv #If no name changes are needed
 
 # Standard Filters for gene count matrix files
 max_mito_percentage: 5
@@ -243,7 +244,6 @@ split_bams_pipeline:
 split_bams_pipeline_gt_demux:
   inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_gt_demux/
   subset_chr: 1
-  gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv #If no name changes are needed
   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_gt_demux/
   split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux/
   split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux/

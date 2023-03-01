@@ -14,7 +14,9 @@
    - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
      - when both demultiplex software are run simultaneously.
      - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
-   - [ ] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
+   - [ ] Fix demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
+   - [ ] Changed the *demux_info* parameter to optional (from positional) in demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
+   - [x] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
    - [ ] Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.
    - [ ] Make the functions similar for demultiplexing with any method.
    - [ ] Move documentation to configargparse.

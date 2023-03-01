@@ -3,16 +3,36 @@ def get_inputs_demux(wildcards):
     if ONLY_SOLO:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
     elif ONLY_VIREO:
-        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+        if config['last_step'].lower().endswith('multi_vcf'):
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+        else:
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+        if config['gt_conv'] is not None:
+            ret_dict['gt_conv'] = config['gt_conv']
 
     elif BOTH_DEMUX:
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
-        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+        if config['last_step'].lower().endswith('multi_vcf'):
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+        else:
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+        if config['gt_conv'] is not None:
+            ret_dict['gt_conv'] = config['gt_conv']
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
 
     return ret_dict
 
+
+def get_condn(wildcards):
+    if ONLY_SOLO:
+        return 'S'
+    elif ONLY_VIREO:
+        return 'V'
+    elif BOTH_DEMUX:
+        return 'B'
+    else:
+        return None
 
 
 def get_inputs_add_demux(wildcards):
@@ -21,8 +41,12 @@ def get_inputs_add_demux(wildcards):
         ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
 
     elif ADD_VIREO:
-        ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
-        ret_dict['gt_conv'] = config['split_bams_pipeline_gt_demux']['gt_conv']
+        if config['last_step'].lower().endswith('multi_vcf'):
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+        else:
+            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+        if config['gt_conv'] is not None:
+            ret_dict['gt_conv'] = config['gt_conv']
 
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
@@ -30,6 +54,14 @@ def get_inputs_add_demux(wildcards):
     return ret_dict
 
 
+def get_condn2(wildcards):
+    if ADD_SOLO:
+        return 'S'
+    elif ADD_VIREO:
+        return 'V'
+    else:
+        return None
+    
 
 if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
     rule demux_samples_calico_solo_STARsolo:
@@ -48,13 +80,97 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
             cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
             sample_name="{id1}",
-            hto_sep=config['demux_pipeline']['hto_sep']
+            hto_sep=config['demux_pipeline']['hto_sep'],
+            mito_prefix=config['mito'], # Mitochondrial genes' (names') prefix
+            condn=get_condn
 
         resources:
             mem_mb=allocate_mem_DXP,
             time_min=allocate_time_DXP
 
-        script: "../helper_py_scripts/demul_samples_no_argp.py"
+        shell: 
+            """
+            read -r -a array <<< "{input}"
+            if [ "{params.condn}" == "S" ]; then
+                if [ "{params.hto_sep}" != "None" ]; then
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    --demux_info {output[1]} \
+                    -m {params.mito} -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                else
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    --demux_info {output[1]} \
+                    -m {params.mito} -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                fi
+            elif [ "{params.condn}" == "V" ]
+                if [[ "${{#array[@]}}" -lt 3 ]]; then
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    --demux_info {output[1]} \
+                    -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]}
+                else
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    --demux_info {output[1]} \
+                    -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]} \
+                    --converter_file {input[2]}
+                fi
+
+            elif [ "{params.condn}" == "B" ]
+                if [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" != "None" ]]; then
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py {input[0]} {output[0]} \
+                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
+                    -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                    --vireo_out {input[2]}
+                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]]
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py {input[0]} {output[0]} \
+                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
+                    -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                    --vireo_out {input[2]}
+
+                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]]
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py {input[0]} {output[0]} \
+                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
+                    -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                    --vireo_out {input[2]} --converter_file {input[3]}
+
+                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]]
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py {input[0]} {output[0]} \
+                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
+                    -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+                    --vireo_out {input[2]} --converter_file {input[3]}
+                fi
+            else
+                echo "Nothing happened! Check 'condn' in params!"
+            fi
+            """
 
 
 # To do the 'ADD_SOLO' part
@@ -71,5 +187,48 @@ if ADD_VIREO or ADD_SOLO:
         resources:
             mem_mb=allocate_mem_AOTFCM,
             time_min=allocate_time_AOTFCM
+    
+        params:
+            samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
+            cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+            genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
+            sample_name="{id1}",
+            hto_sep=config['demux_pipeline']['hto_sep'],
+            condn=get_condn2
 
-        script: "../helper_py_scripts/demul_samples_no_argp.py"
+        shell: 
+            """
+            read -r -a array <<< "{input}"
+            if [ "{params.condn}" == "S" ] && [ "{params.hto_sep}" != "None" ]; then
+                python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    -m {params.mito} -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+            elif [ "{params.condn}" == "S" ] && [ "{params.hto_sep}" == "None" ]; then
+                python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    -m {params.mito} -g {params.min_genes} \
+                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
+                    --wet_lab_file {params.samples_info} \
+                    --columns {params.cols} --calico_solo {input[1]} \
+                    --sample_name {params.sample_name}
+            elif [ "{params.condn}" == "V" ]
+                if [[ "${{#array[@]}}" -lt 3 ]]; then
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]}
+                else
+                    python3 ../helper_py_scripts/demul_samples_no_argp.py \
+                    {input[0]} {output[0]} {params.genes_info} \
+                    -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
+                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]} \
+                    --converter_file {input[2]}
+                fi
+            else
+                echo "Nothing happened! Check 'condn' in params!"
+            fi
+            """
