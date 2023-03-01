@@ -14,8 +14,7 @@
    - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
      - when both demultiplex software are run simultaneously.
      - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
-   - [ ] Fix demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
-   - [ ] Changed the *demux_info* parameter to optional (from positional) in demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
+   - [x] Fix demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
    - [x] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
    - [ ] Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.
    - [ ] Make the functions similar for demultiplexing with any method.
@@ -65,6 +64,11 @@ The highlights of the pipeline are:
     - argparse documented
   - Fixed an issue with create_wet_lab_info.py file
   - create_wet_lab_info.py file now mirrors actions for donor and multiplex compilations.
+  - Changed name of the rule demux_samples_calico_solo_STARsolo to demux_samples.
+  - Changed the *demux_info* parameter to optional (from positional) in demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
+  - Added working argparse to demul_samples_no_argp.py script.
+  - Changed the name of sub-workflow demultiplex_no_argp.snkmk to demultiplex.snkmk
+  - Changed the name of sub-workflow demul_samples_no_argp.py to demul_samples.py
   
   
 ## Requirements

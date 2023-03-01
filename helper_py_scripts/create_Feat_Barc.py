@@ -6,14 +6,6 @@
 This script is used to create featurebarcodes csv file given a file 
 containing sample names, its corresponding hto names and hto barcodes, respectively.
 
-Help
------
-    $ python3 create_Feat_Barc.py -h
-
-Usage
-------
-    $ python3 create_Feat_Barc.py <input_file> -o <output_file> -s <sample_name> -c <space-separated list of 3 columns>
-
 Examples
 --------
     $ python3 create_Feat_Barc.py samples_info.txt -o sample_1_fb.csv -s sample_1 -c set_name hto_name hto_bc
@@ -41,6 +33,16 @@ sample_1 hto5 ATCTCTTGTTG
 sample_1 hto4 ATCTATGGTTG
 
 """
+
+# Help
+# -----
+#     $ python3 create_Feat_Barc.py -h
+
+# Usage
+# ------
+#     $ python3 create_Feat_Barc.py <input_file> -o <output_file> -s <sample_name> -c <space-separated list of 3 columns>
+
+
 import pandas as pd
 import re, argparse, os
 

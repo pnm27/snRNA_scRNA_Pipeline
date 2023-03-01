@@ -53,7 +53,7 @@ include: "rules/calico_solo_demux.snkmk"
 # include: "rules/split_fastqs.snkmk" # outdated
 # include: "rules/split_fastqs_2.snkmk" # outdated
 include: "rules/pheno_demux3.snkmk"
-include: "rules/demultiplex_no_argp.snkmk"
+include: "rules/demultiplex.snkmk"
 include: "rules/split_bams.snkmk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"

@@ -35,7 +35,7 @@ create_h5ad_bustools:
 run_calico_solo:
   - "-q express"
 
-demux_samples_calico_solo_STARsolo:
+demux_samples:
   - "-q express"
 
 create_inp_cellSNP:
