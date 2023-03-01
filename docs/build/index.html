@@ -130,7 +130,7 @@
 <li><p>When there’s an order (try to name each run separately or at least keep the order somewhere mentioned).</p></li>
 </ul>
 </li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Fix demultiplex_no_argp.snkmk’s rule that handles adding new demux to a final count matrix. How to keep documentation</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Fix demultiplex_no_argp.snkmk’s rule that handles adding new demux to a final count matrix.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Make the functions similar for demultiplexing with any method.</p></li>
@@ -193,6 +193,11 @@
 </li>
 <li><p>Fixed an issue with create_wet_lab_info.py file</p></li>
 <li><p>create_wet_lab_info.py file now mirrors actions for donor and multiplex compilations.</p></li>
+<li><p>Changed name of the rule demux_samples_calico_solo_STARsolo to demux_samples.</p></li>
+<li><p>Changed the <em>demux_info</em> parameter to optional (from positional) in demultiplex_no_argp.snkmk’s rule that handles adding new demux to a final count matrix.</p></li>
+<li><p>Added working argparse to demul_samples_no_argp.py script.</p></li>
+<li><p>Changed the name of sub-workflow demultiplex_no_argp.snkmk to demultiplex.snkmk</p></li>
+<li><p>Changed the name of sub-workflow demul_samples_no_argp.py to demul_samples.py</p></li>
 </ul>
 </section>
 <section id="requirements">

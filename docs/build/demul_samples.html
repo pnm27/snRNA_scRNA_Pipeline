@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>create_Feat_Barc module &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>demul_samples module &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
@@ -92,9 +92,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
-      <li class="breadcrumb-item active">create_Feat_Barc module</li>
+      <li class="breadcrumb-item active">demul_samples module</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/create_Feat_Barc.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/demul_samples.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -102,42 +102,18 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-create_Feat_Barc">
-<span id="create-feat-barc-module"></span><h1>create_Feat_Barc module<a class="headerlink" href="#module-create_Feat_Barc" title="Permalink to this heading"></a></h1>
-<p>Create Feature Barcodes file for KITEseq.</p>
-<p>This script is used to create featurebarcodes csv file given a file
-containing sample names, its corresponding hto names and hto barcodes, respectively.</p>
-<p class="rubric">Examples</p>
-<p>$ python3 create_Feat_Barc.py samples_info.txt -o sample_1_fb.csv -s sample_1 -c set_name hto_name hto_bc</p>
-<p>samples_info.txt</p>
-<p>set_name hto_name hto_bc
-sample_1 hto1 ATCTATGGTTG
-sample_1 hto3 ATGAATGGTTG
-sample_2 hto3 ATCCGGTGTTG
-sample_1 hto4 ATCTATGGTTG
-sample_2 hto2 AGCTATGGTTG
-sample_2 hto6 ATTTATGGTTG
-sample_1 hto5 ATCTCTTGTTG
-sample_2 hto8 ATCTACTATTG
-…
-…
-…
-…</p>
-<p>sample_1_fb.csv
-sample_1 hto1 ATCTATGGTTG
-sample_1 hto3 ATGAATGGTTG
-sample_1 hto5 ATCTCTTGTTG
-sample_1 hto4 ATCTATGGTTG</p>
+  <section id="module-demul_samples">
+<span id="demul-samples-module"></span><h1>demul_samples module<a class="headerlink" href="#module-demul_samples" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="create_Feat_Barc.get_argument_parser">
-<span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_Feat_Barc.get_argument_parser" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="demul_samples.get_argument_parser">
+<span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#demul_samples.get_argument_parser" title="Permalink to this definition"></a></dt>
 <dd><p>Generate and return argument parser.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="create_Feat_Barc.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_Feat_Barc.main" title="Permalink to this definition"></a></dt>
-<dd><p>Main function</p>
+<dt class="sig sig-object py" id="demul_samples.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#demul_samples.main" title="Permalink to this definition"></a></dt>
+<dd><p>Main entry point</p>
 </dd></dl>
 
 </section>
