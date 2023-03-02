@@ -325,19 +325,15 @@ rule vireoSNP:
         mem_mb=allocate_mem_vS,
         time_min=allocate_time_vS
         
-    run:
-        # If vcf is provided
-        try:
-            if isinstance(input['donor_info'], object) and isinstance(params.n_donors, int):
-                shell("""
-                vireo -c {input[cellsnp_input]} -d {input[donor_info]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-                """)
-            elif isinstance(input['donor_info'], object) and params.n_donors is None:
-                shell("""
-                vireo -c {input[cellsnp_input]} -d {input[donor_info]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-                """)
-            
-        except:
-            shell("""
-            vireo -c {input[cellsnp_input]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-            """)
+    shell:
+        """
+        read -r -a array <<< "{input}"
+        if [[ "${{#array[@]}}" -eq 2 ]] && [[ "{params.n_donors}" != "None ]]; then
+            vireo -c {input[0]} -d {input[1]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+        elif [[ "${{#array[@]}}" -eq 2 ]] && [[ "{params.n_donors}" == "None ]]
+            vireo -c {input[0]} -d {input[1]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+        elif [[ "${{#array[@]}}" -eq 1 ]] && [[ "{params.n_donors}" != "None ]]
+            vireo -c {input[0]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+        else
+            echo "Nothing ran! Check the conditions in the rule vireoSNP!"
+        """

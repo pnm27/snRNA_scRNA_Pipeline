@@ -3,14 +3,31 @@ import glob2, re
 
 def get_r1_hto_fastqs(wildcards):
     temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
-    r1_files = sorted(glob2.glob("{parent_dir}{fs}*{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix'])))
+    r1_files = sorted((
+        glob2.glob("{parent_dir}{fs}*{suff}"
+        .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix']))
+        ))
     return r1_files
 
 
 def get_r2_hto_fastqs(wildcards):
     temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
-    r2_files = sorted(glob2.glob("{parent_dir}{fs}*{suff}".format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R2_suffix'])))
+    r2_files = sorted((
+        glob2.glob("{parent_dir}{fs}*{suff}"
+        .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R2_suffix']))
+        ))
     return r2_files
+
+
+
+def get_hto_fastqs(wildcards):
+    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    all_files = sorted((
+        glob2.glob("{parent_dir}{fs}*{suff}"
+        .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix'].replace('1', '*')))
+        ))
+    return all_files
+
 
 
 rule create_FB:
@@ -94,8 +111,7 @@ rule build_kallisto_index:
 rule run_kallisto:
     input:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}",
-        R1=get_r1_hto_fastqs,
-        R2=get_r2_hto_fastqs
+        fastq_files=get_hto_fastqs
 
     # priority: 10
 
@@ -114,18 +130,11 @@ rule run_kallisto:
         mem_mb=allocate_mem_RK, #allocate_mem_KBP,
         time_min=allocate_time_RK
 
-    run:
-        f = []
-        for x, y in zip(r1_files, r2_files):
-            f.extend([x, y])
-
-
-        inp_f = ' '.join(f)
-        shell(
+    shell:
         """
         ml kallisto
-        kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.R1} {input.R2}
-        """)
+        kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input[1]}
+        """
 
 
 rule run_bustools_correct:
