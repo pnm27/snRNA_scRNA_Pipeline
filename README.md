@@ -6,8 +6,8 @@
       - [x] STARsolo
       - [ ] split_bams
       - [ ] split_bams_gt
-      - [ ] kite
-      - [ ] pheno_demux3
+      - [x] kite
+      - [x] pheno_demux3
    - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
    - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
    - [ ] Beautify the function get_filt_barcodes (pheno_demux3.snkmk).
