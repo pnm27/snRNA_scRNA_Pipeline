@@ -12,18 +12,12 @@ def read_files_ext(fname, **kwargs) -> pd.DataFrame :
     if not os.path.isfile(fname):
         raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
 
-    # if fname.endswith('.csv') and h is None:
-    #     return pd.read_csv(fname)
-    # elif fname.endswith('.csv') and h is not None:
-    #     return pd.read_csv(fname, names=h)
-    # elif fname.endswith('.tsv') and h is None:
-    #     return pd.read_csv(fname, sep='\t')
-    # elif fname.endswith('.tsv') and h is not None:
-    #     return pd.read_csv(fname, sep='\t', names=h)
     if fname.endswith('.csv'):
         return pd.read_csv(fname, **kwargs)
     elif fname.endswith('.tsv'):
         return pd.read_csv(fname, sep='\t', **kwargs)
+    elif fname.endswith('.txt'):
+        return pd.read_csv(fname, sep=' ', **kwargs)
     else:
         raise OSError(f"The given file {fname} doen't have either csv or tsv extension. Other extensions are not supported!")
 
@@ -181,10 +175,17 @@ def get_vir_inputs(wildcards):
 
 
 # Set logic similar to vir inp function
-def ret_dons(wildcards, input) -> Union[None, int]:
-    col_set = ["pool", "n_dons", "vcf"]
+def ret_dons(wildcards) -> Union[None, int]:
+    col_set1 = ["pool", "n_dons", "vcf"]
+    col_set2 = ["pool", "n_dons"]
     n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
-    temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set)
+    if n_cols == 3:
+        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
+    elif n_cols == 2:
+        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set2)
+    else:
+        raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
+    
     return int(temp_df.loc[temp_df["pool"] == '-'.join(wildcards.id1.split('-')[:-1]), "n_dons"].values[0])
 
 

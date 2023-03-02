@@ -23,7 +23,7 @@ reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.b
 chr_prefix: null
 mito: MT-
 gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
-gt_conv: /sc/arion/projects/psychAD/pnm/NPSAD_gt_converter_Jaro.csv #If no name changes are needed
+gt_conv: null # null, If no name changes are needed otherwise a file
 
 # Standard Filters for gene count matrix files
 max_mito_percentage: 5
