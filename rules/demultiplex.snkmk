@@ -1,27 +1,58 @@
 def get_inputs_demux(wildcards):
-    ret_dict={'starsolo_out': f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"}
+    ret_list = [
+        f"{config['STARsolo_pipeline']['bams_dir']}"
+        f"{config['fold_struct']}"
+        f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        ]
     if ONLY_SOLO:
-        ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
+        ret_list.append(
+            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            )
     elif ONLY_VIREO:
         if config['last_step'].lower().endswith('multi_vcf'):
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         else:
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         if config['gt_conv'] is not None:
-            ret_dict['gt_conv'] = config['gt_conv']
+            ret_list.append(config['gt_conv'])
 
     elif BOTH_DEMUX:
-        ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
+        ret_list.append(
+            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            )
         if config['last_step'].lower().endswith('multi_vcf'):
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         else:
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         if config['gt_conv'] is not None:
-            ret_dict['gt_conv'] = config['gt_conv']
+            ret_list.append(config['gt_conv'])
     else:
-        raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
+        raise ValueError(
+            "Unexpected inputs to the rule 'demux_samples'! Please "
+            "check the INPUTS and the FLAGS!"
+            )
 
-    return ret_dict
+    return ret_list
 
 
 def get_condn(wildcards):
@@ -36,22 +67,42 @@ def get_condn(wildcards):
 
 
 def get_inputs_add_demux(wildcards):
-    ret_dict={'prev_count_mtx': f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"}
+    ret_list=[
+        f"{config['demux_pipeline']['final_count_matrix_dir']}"
+        f"{config['fold_struct_demux']}"
+        f"{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        ]
     if ADD_SOLO:
-        ret_dict['calico_solo_out'] = f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
+        ret_list.append(
+            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            )
 
     elif ADD_VIREO:
         if config['last_step'].lower().endswith('multi_vcf'):
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{wildcards.vcf_type}/{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         else:
-            ret_dict['vireoSNP_out'] = f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+            ret_list.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+                )
         if config['gt_conv'] is not None:
-            ret_dict['gt_conv'] = config['gt_conv']
+            ret_list.append(config['gt_conv'])
 
     else:
-        raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
+        raise ValueError(
+            "Unexpected inputs to the rule "
+            "'add_obs_to_final_count_matrix'! Please check the INPUTS "
+            "and the FLAGS!"
+            )
 
-    return ret_dict
+    return ret_list
 
 
 def get_condn2(wildcards):
@@ -91,8 +142,17 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
         shell: 
             """
             read -r -a array <<< "{input}"
+            opts_cs=("--calico_solo")
+            opts_vs=("--vireo_out" "-converter_file")
+            opts_both=(${{opts_cs[@]}} ${{opts_vs[@]}})
+            cmd_str=""
             if [ "{params.condn}" == "S" ]; then
                 if [ "{params.hto_sep}" != "None" ]; then
+                    for i in "${{!array[@]}}"
+                    do
+                        cmd_str+="${{opts1[i]}} ${{array[i]}} "
+                    done
+                    cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                     python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     --demux_info {output[1]} \

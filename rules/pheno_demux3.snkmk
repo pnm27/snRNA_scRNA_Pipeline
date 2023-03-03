@@ -58,22 +58,26 @@ def get_inp_type(wildcards, input):
 
 
 def get_cellsnp_inputs(wildcards):
-    ret_dict={}
-    ret_dict['bc']=f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt",
-    ret_dict['bams']=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-    ret_dict['genome_1k_ref']=config['gt_demux_pipeline']['genome_1k_ref']
+    ret_list=[]
+    ret_list.extend(
+        [
+        f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt", 
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}", 
+        ]
+    )
     
     if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
         if not config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
             # modify this to accept either a text file containing per pool vcf or one single vcf file
-            ret_dict['ref_snps'] = config['gt_demux_pipeline']['cellsnp_ref_snps']
-
+            ret_list.append(config['gt_demux_pipeline']['cellsnp_ref_snps'])
+            ret_list.append(config['gt_demux_pipeline']['genome_1k_ref'])
+        
     elif config['gt_demux_pipeline']['cellsnp_ref_snps'] is None:
         # If no ref provided then use 1000 Genomes Project vcf as input
-        ret_dict['ref_snps']=config['gt_demux_pipeline']['genome_1k_ref']
+        ret_list(config['gt_demux_pipeline']['genome_1k_ref'])
 
 
-    return ret_dict
+    return ret_list
 
 # Consolidate this function and ret_dons
 # MAKE THIS COMPATIBLE WITH NPSAD INPUTS WHERE WE HAVE MULTIPLE VCF POOL RUNS i.e. WITH FUNCTION
@@ -86,39 +90,53 @@ def get_cellsnp_inputs(wildcards):
 # 3) None, if the runs are to be without any vcf files and config['gt_demux_pipeline']['donors_per_pool_file'] should be 
 #    a 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
 def get_vir_inputs(wildcards):
-    ret_dict = {'cellsnp_input': f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}"}
+    ret_list = [
+        f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}"
+        f"{config['gt_demux_pipeline']['cellsnp_cells']}"
+        ]
     # if config['gt_demux_pipeline']['vcf_info'].endswith('vcf.gz'):
     #     ret_dict['donor_info'] = config['gt_demux_pipeline']['vcf_info']
     # elif config['gt_demux_pipeline']['vcf_info'].endswith('vcf'):
     #     raise IOError("Given vcf file in 'vcf_info' in config file is not BGZF formatted!")
     # elif config['gt_demux_pipeline']['vcf_info'].endswith('txt') or config['gt_demux_pipeline']['vcf_info'].endswith('csv') \
     #     or config['gt_demux_pipeline']['vcf_info'].endswith('tsv'):
-    if config['gt_demux_pipeline']['vcf_info'] is not None and os.path.isfile(config['gt_demux_pipeline']['vcf_info']):
+    if config['gt_demux_pipeline']['vcf_info'] is not None \
+        and os.path.isfile(config['gt_demux_pipeline']['vcf_info']):
         col_set1 = ["pool", "n_dons", "vcf"]
         col_set2 = ["pool", "n_dons"]
         n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
         # For condn. 1)
-        if config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 3:
-            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
+        if config['gt_demux_pipeline']['donors_per_pool_file'] is None \
+            and n_cols == 3:
+            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
+                                     names=col_set1)
             try:
-                ret_dict['donor_info'] = temp_df.loc[temp_df["pool"] == '-'.join(wildcards.id1.split('-')[:-1]), "vcf"].values[0]
+                ret_list.append(
+                    temp_df.loc[temp_df["pool"] == '-'.join(wildcards.id1.split('-')[:-1]), "vcf"]
+                    .values[0]
+                    )
             except:
                 pass
         # Run without vcf
-        elif config['gt_demux_pipeline']['donors_per_pool_file'] is None and n_cols == 2:
+        elif config['gt_demux_pipeline']['donors_per_pool_file'] is None \
+            and n_cols == 2:
             pass
         # For condn. 2)
-        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 3:
+        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') \
+            and n_cols == 3:
             raise ValueError("Expecting 2-columned"\
                 " file: pool name and expected donors")
-        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') and n_cols == 2:
-            ret_dict['donor_info'] = config['gt_demux_pipeline']['donors_per_pool_file']
+        elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf.gz') \
+            and n_cols == 2:
+            ret_list.append(config['gt_demux_pipeline']['donors_per_pool_file'])
         elif config['gt_demux_pipeline']['donors_per_pool_file'].endswith('vcf'):
-            raise IOError("Given vcf file in 'donors_per_pool_file' in config file is not BGZF formatted!")
+            raise IOError("Given vcf file in 'donors_per_pool_file' in "
+                          "config file is not BGZF formatted!")
         else:
-            raise IOError("Unexpected file type or value provided to 'donors_per_pool_file' in config file")
+            raise IOError("Unexpected file type or value provided to "
+                          "'donors_per_pool_file' in config file")
 
-    return ret_dict
+    return ret_list
 
 
 
@@ -295,13 +313,30 @@ rule cellSNP:
     shell:
         """
         read -r -a array <<< "{input}"
+        opts1=("-b" "-s" "-R")
+        opts2=("-b" "-s")
+        cmd_str=""
         if [[ "${{#array[@]}}" -lt 4 ]]; then
-            cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {input.ref_snps} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            for i in "${{!array[@]}}"
+            do
+                cmd_str+="${{opts1[i]}} ${{array[i]}} "
+            done
+            cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
+            set -x
+            cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         else
+            for i in "${{!array[@]:0:2}}"
+            do
+                cmd_str+="${{opts2[i]}} ${{array[i]}} "
+            done
+            cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
+
             ml bcftools/1.15.1
-            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} {input.ref_snps} {input.genome_1k_ref}
-            cellsnp-lite -s {input.bams} -b {input.bc} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            set -x
+            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
+            cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         fi
+        set +x
         """
 
 
@@ -328,13 +363,19 @@ rule vireoSNP:
         
     shell:
         """
+        opts=("-c" "-d")
+        cmd_str=""
         read -r -a array <<< "{input}"
-        if [[ "${{#array[@]}}" -eq 2 ]] && [[ "{params.n_donors}" != "None ]]; then
-            vireo -c {input[0]} -d {input[1]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-        elif [[ "${{#array[@]}}" -eq 2 ]] && [[ "{params.n_donors}" == "None ]]
-            vireo -c {input[0]} -d {input[1]} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-        elif [[ "${{#array[@]}}" -eq 1 ]] && [[ "{params.n_donors}" != "None ]]
-            vireo -c {input[0]} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+        for i in "${{!array[@]}}";
+        do
+            d+="${{opts[i]}} ${{array[i]}} "
+        done
+        d="${{d:0:${{#d}}-1}}"
+        if [[ "{params.n_donors}" != "None" ]]; then
+            vireo ${{d}} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
+        elif [[ "{params.n_donors}" == "None" ]]; then
+            vireo ${{d}} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
         else
             echo "Nothing ran! Check the conditions in the rule vireoSNP!"
+        fi
         """
