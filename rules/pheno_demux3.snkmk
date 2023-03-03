@@ -74,7 +74,7 @@ def get_cellsnp_inputs(wildcards):
         
     elif config['gt_demux_pipeline']['cellsnp_ref_snps'] is None:
         # If no ref provided then use 1000 Genomes Project vcf as input
-        ret_list(config['gt_demux_pipeline']['genome_1k_ref'])
+        ret_list.append(config['gt_demux_pipeline']['genome_1k_ref'])
 
 
     return ret_list
