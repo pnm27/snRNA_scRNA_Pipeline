@@ -198,7 +198,7 @@ def main():
         sc.pp.filter_cells(adata, min_genes=min_genes)
         sc.pp.filter_genes(adata, min_cells=min_cells)
         # Filter data wrt mito content
-        adata.var["mito"] = adata.var_names.str.startswith(args.mito_prefix)
+        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
         adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
 

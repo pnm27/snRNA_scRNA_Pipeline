@@ -249,7 +249,7 @@ def main():
                             adata.n_vars))
 
         # Filter data wrt mito content
-        adata.var["mito"] = adata.var_names.str.startswith(args.mito_prefix)
+        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
         adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
         filter_info.append(( 'max percent mito content per cell', 
