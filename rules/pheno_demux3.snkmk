@@ -248,6 +248,7 @@ rule create_inp_cellSNP:
         time_min=allocate_time_CICS
 
     # group: "genotype-demux"
+    threads: 2
 
     output:
         f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
