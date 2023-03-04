@@ -115,6 +115,13 @@ def main():
     parser = get_argument_parser()
     args = parser.parse_args()
 
+    op=args.output
+
+    # Create parent dir(s) to the output
+    if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
+        os.makedirs(op.replace(os.path.basename(op), ''))
+
+
     # Previously demultiplexed final count matrix exists
     if args.prev:
 
@@ -195,7 +202,7 @@ def main():
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
         adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
 
-    with open(args.output, 'w') as f:
+    with open(op, 'w') as f:
         for item in adata.obs_names.tolist():
             item=item[:args.barcode_len] # To remove the suffixes used to make barcodes unique, if present
             f.write("%s\n" % item)

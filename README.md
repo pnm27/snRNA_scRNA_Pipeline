@@ -10,6 +10,7 @@
       - [x] pheno_demux3
    - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
    - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
+   - [ ] Add conditions for time in resources.snkmk.
    - [ ] Beautify the function get_filt_barcodes (pheno_demux3.snkmk).
    - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
      - when both demultiplex software are run simultaneously.
