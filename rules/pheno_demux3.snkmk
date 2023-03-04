@@ -285,7 +285,7 @@ rule create_inp_cellSNP:
 rule cellSNP:
     input:
         # bc=get_filt_barcodes,
-        unpack(get_cellsnp_inputs)
+        get_cellsnp_inputs
 
     # group: "genotype-demux"
 
@@ -342,7 +342,7 @@ rule cellSNP:
 
 rule vireoSNP:
     input:
-        unpack(get_vir_inputs)
+        get_vir_inputs
         
     output:
         f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"

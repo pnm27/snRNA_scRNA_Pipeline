@@ -117,7 +117,7 @@ def get_condn2(wildcards):
 if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
     rule demux_samples:
         input:
-            unpack(get_inputs_demux)
+            get_inputs_demux
 
         output:
             f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
@@ -148,9 +148,9 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
             cmd_str=""
             if [ "{params.condn}" == "S" ]; then
                 if [ "{params.hto_sep}" != "None" ]; then
-                    for i in "${{!array[@]}}"
+                    for i in $(seq 1 $((${{#array[@]}}-1)) )
                     do
-                        cmd_str+="${{opts1[i]}} ${{array[i]}} "
+                        cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
                     done
                     cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                     python3 ../helper_py_scripts/demul_samples.py \
@@ -159,7 +159,7 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
                     -m {params.mito} -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
                 else
                     python3 ../helper_py_scripts/demul_samples.py \
@@ -168,64 +168,68 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
                     -m {params.mito} -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
                 fi
-            elif [ "{params.condn}" == "V" ]
+            elif [ "{params.condn}" == "V" ]; then
+                for i in $(seq 1 $((${{#array[@]}}-1)) )
+                do
+                    cmd_str+="${{opts_vs[((i-1))]}} ${{array[i]}} "
+                done
+                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                 if [[ "${{#array[@]}}" -lt 3 ]]; then
                     python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     --demux_info {output[1]} \
                     -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
-                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]}
+                    --mito_prefix {params.mito_prefix} ${{cmd_str}}
                 else
                     python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     --demux_info {output[1]} \
                     -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
-                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]} \
-                    --converter_file {input[2]}
+                    --mito_prefix {params.mito_prefix} ${{cmd_str}}
                 fi
 
-            elif [ "{params.condn}" == "B" ]
+            elif [ "{params.condn}" == "B" ]; then
+                for i in $(seq 1 $((${{#array[@]}}-1)) )
+                do
+                    cmd_str+="${{opts_both[((i-1))]}} ${{array[i]}} "
+                done
+                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                 if [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" != "None" ]]; then
                     python3 ../helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
                     {params.genes_info} --demux_info {output[1]} -m {params.mito} \
                     -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
-                    --vireo_out {input[2]}
-                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]]
+                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]]; then
                     python3 ../helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
                     {params.genes_info} --demux_info {output[1]} -m {params.mito} \
                     -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
-                    --vireo_out {input[2]}
-
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]]
+                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]]; then
                     python3 ../helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
                     {params.genes_info} --demux_info {output[1]} -m {params.mito} \
                     -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
-                    --vireo_out {input[2]} --converter_file {input[3]}
 
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]]
+                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]]; then
                     python3 ../helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
                     {params.genes_info} --demux_info {output[1]} -m {params.mito} \
                     -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
-                    --vireo_out {input[2]} --converter_file {input[3]}
                 fi
             else
                 echo "Nothing happened! Check 'condn' in params!"
@@ -239,7 +243,7 @@ if ADD_VIREO or ADD_SOLO:
     # To add results of
     rule add_obs_to_final_count_matrix:
         input:
-            unpack(get_inputs_add_demux)
+            get_inputs_add_demux
 
         output:
             f"{config['gt_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_gt_demux2']}{config['gt_demux_pipeline']['final_count_matrix_h5ad']}"
@@ -259,34 +263,51 @@ if ADD_VIREO or ADD_SOLO:
         shell: 
             """
             read -r -a array <<< "{input}"
+            opts_cs=("--calico_solo")
+            opts_vs=("--vireo_out" "-converter_file")
+            cmd_str=""
             if [ "{params.condn}" == "S" ] && [ "{params.hto_sep}" != "None" ]; then
+                for i in $(seq 1 $((${{#array[@]}}-1)) )
+                do
+                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
+                done
+                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                 python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     -m {params.mito} -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep {params.hto_sep} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
             elif [ "{params.condn}" == "S" ] && [ "{params.hto_sep}" == "None" ]; then
+                for i in $(seq 1 $((${{#array[@]}}-1)) )
+                do
+                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
+                done
+                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                 python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     -m {params.mito} -g {params.min_genes} \
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} --calico_solo {input[1]} \
+                    --columns {params.cols} ${{cmd_str}} \
                     --sample_name {params.sample_name}
             elif [ "{params.condn}" == "V" ]
+                for i in $(seq 1 $((${{#array[@]}}-1)) )
+                do
+                    cmd_str+="${{opts_vs[((i-1))]}} ${{array[i]}} "
+                done
+                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
                 if [[ "${{#array[@]}}" -lt 3 ]]; then
                     python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
-                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]}
+                    --mito_prefix {params.mito_prefix} ${{cmd_str}}
                 else
                     python3 ../helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
                     -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
-                    --mito_prefix {params.mito_prefix} --vireo_out {input[1]} \
-                    --converter_file {input[2]}
+                    --mito_prefix {params.mito_prefix} ${{cmd_str}}
                 fi
             else
                 echo "Nothing happened! Check 'condn' in params!"
