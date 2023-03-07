@@ -60,10 +60,10 @@ rule create_inp_splitBams:
     shell:
         """
         if [ "{params.overwrite}" == True ]; then
-            python3 ../helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
+            python3 helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
 
         else
-            python3 ../helper_py_scripts/create_inp_splitBam.py {input} {output}
+            python3 helper_py_scripts/create_inp_splitBam.py {input} {output}
 
         fi
         sleep 60
@@ -90,10 +90,10 @@ rule create_inp_splitBams_gt_demux:
     shell: 
         """
         if [[ "{params.conv_df}" != "None" ]]; then 
-            python3 ../helper_py_scripts/create_inp_splitBam_gt_demux.py \
+            python3 helper_py_scripts/create_inp_splitBam_gt_demux.py \
             {input[0]} {output[0]} --converter_file {params.conv_df}
         else
-            python3 ../helper_py_scripts/create_inp_splitBam_gt_demux.py \
+            python3 helper_py_scripts/create_inp_splitBam_gt_demux.py \
             {input[0]} {output[0]}
         fi
         """
