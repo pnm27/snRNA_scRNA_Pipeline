@@ -86,5 +86,11 @@ def main():
 
 	file_ext = re.search(r'(\.[^.]+)$', op).group(1)
 
-
 	save_df(vir_class, file_ext, op)
+
+
+if __name__ == '__main__':
+
+    main()
+    sleep(60)
+    
