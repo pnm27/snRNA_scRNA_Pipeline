@@ -256,11 +256,11 @@ split_bams_pipeline_gt_demux:
   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
   filt_bam: _filt.bam
   split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_gt_demux/
-  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt-only
+  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt check only
   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux/
-  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt-only
-  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gt-only
-  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt-only
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt check only
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gtcheck only
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt check only
   sam: _Aligned.sortedByCB.out.sam
   bc_per_donor: 800
   short_bam: _chr1.bam # Change this to be flexible
