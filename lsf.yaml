@@ -44,6 +44,9 @@ create_inp_cellSNP:
 cellSNP:
   - "-q express"
 
+vireoSNP:
+  - "-q premium"
+
 # split_bams:
 #   - "-q "
 

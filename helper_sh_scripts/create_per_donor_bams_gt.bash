@@ -11,9 +11,9 @@ ml samtools/1.15.1
 
 # To debug:
 # 1) Checking inputs
-for val in "$@"; do
-    echo ${val} 
-done
+# for val in "$@"; do
+#     echo ${val} 
+# done
 # 2) check all: 
 # set -x
 

@@ -8,6 +8,8 @@
       - [ ] split_bams_gt
       - [x] kite
       - [x] pheno_demux3
+   - [ ] Add PICARD option in new_config file.
+     - [ ] Simplify produce_targets.snkmk functions.
    - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
    - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
    - [ ] Add conditions for time in resources.snkmk.
