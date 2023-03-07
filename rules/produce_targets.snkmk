@@ -87,13 +87,11 @@ def targets_SplitBams(conf_f, progs=None) -> list:
     out_dir = conf_f['split_bams_pipeline_gt_demux']['split_bams_proxy_dir2']
     op = conf_f['fold_struct_bam_split1']
 
-    target_list = []
+    target_list = [f"{out_dir}{op}"]
+    
     # STARsolo* + PICARD (any) progs
     if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
         target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs))
-
-    else: # For any wrong values to progs or progs == None or just PICARD == False or everything else, run STARsolo*
-        target_list.append(f"{out_dir}{op}")
     
     return target_list
 
@@ -202,7 +200,15 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             suff = ".txt"
             ONLY_VIREO = True
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
-            final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
+            # final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
+            
+            final_target_list = []
+            for id, target in enumerate(target_files):
+                if id == 0:
+                    final_target_list.extend(expand(f"{target}{suff}", zip, **wc_d))
+                else:
+                    final_target_list.extend(expand(f"{target}", zip, **wc_d))
+
             # final_target_list.append(f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt")
 
         # Multi_vcf inputs or when a subdir with the vcf name is needed
