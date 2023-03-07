@@ -1,5 +1,3 @@
-:orphan:
-
 helper_py_scripts
 =================
 
@@ -11,7 +9,7 @@ helper_py_scripts
    create_h5ad_from_calico_solo
    create_inp_cellSNP
    create_inp_splitBam
-   create_inp_splitBam_phe_demux
+   create_inp_splitBam_gt_demux
    create_wet_lab_info
    demul_samples
    demul_samples_ext_vS
