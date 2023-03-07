@@ -40,11 +40,12 @@ def get_argument_parser():
 	parser.add_argument('vireo_inp', help="Path to donor_ids.tsv "
 	"matrix (h5ad) or Path containing 10x mtx files.",
 	)
-	parser.add_argument('-b', '--barcode_len', nargs='?', 
-	type=int, help="Barcode length. For 10x, it is 16. When parameter present "
-	"but no value provided: 16. Default: None", 
-	const=16, default=None,
-	)
+	parser.add_argument('output', help="Path to store the barcodes "
+    "file"
+    )
+	parser.add_argument('--converter_file', help="If names from vireo output "
+    "needs to be changed"
+    )
     
 	return parser
 
@@ -55,17 +56,17 @@ def main():
 	parser = get_argument_parser()
 	args = parser.parse_args()
 
-	vir_class = pd.read_csv(snakemake.input[0], sep='\t', usecols=["cell", "donor_id"])
+	vir_class = pd.read_csv(args.vireo_inp, sep='\t', usecols=["cell", "donor_id"])
 	vir_class = vir_class[(vir_class["donor_id"] != "doublet") & (vir_class["donor_id"] != "unassigned")]
 	vir_class.reset_index(drop=True, inplace=True)
 	# vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
 
 	# For converting genotype IDs to Subject IDs-------------------------------
-	if snakemake.params['conv_df'] is not None:
+	if args.converter_file is not None:
 		# Project-specific filtering of donor_ids for conversion
 		vir_class["donor_id"] = vir_class["donor_id"].apply(lambda x: '_'.join(x.split('_')[1:]) if x.startswith('0_') else x)
 
-		conv_df = pd.read_csv(snakemake.params['conv_df'])
+		conv_df = pd.read_csv(args.converter_file)
 		conv_df = conv_df.loc[conv_df['primary_genotype2'].isin(vir_class['donor_id']), ["SubID", "primary_genotype2"]]
 		vir_class['Subj_ID'] = vir_class['donor_id'].apply(lambda x: conv_df.loc[conv_df["primary_genotype2"] == x, "SubID"].values[0] if not x.startswith('donor') else x)
 		del vir_class['donor_id']
@@ -77,7 +78,7 @@ def main():
 
 	vir_class = vir_class[["Subj_ID", "barcodes"]]
 
-	file_ext = re.search(r'(\.[^.]+)$', snakemake.output[0]).group(1)
+	file_ext = re.search(r'(\.[^.]+)$', args.output).group(1)
 
 
-	save_df(vir_class, file_ext, snakemake.output[0])
+	save_df(vir_class, file_ext, args.output)

@@ -87,7 +87,16 @@ rule create_inp_splitBams_gt_demux:
         mem_mb=allocate_mem_CISPD,
         time_min=10
 
-    script: "../helper_py_scripts/create_inp_splitBam_gt_demux.py"
+    shell: 
+        """
+        if [[ "{params.conv_df}" != "None" ]]; then 
+            python3 ../helper_py_scripts/create_inp_splitBam_gt_demux.py \
+            {input[0]} {output[0]} --converter_file {params.conv_df}
+        else
+            python3 ../helper_py_scripts/create_inp_splitBam_gt_demux.py \
+            {input[0]} {output[0]}
+        fi
+        """
 
 
 
