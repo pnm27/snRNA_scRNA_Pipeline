@@ -9,6 +9,14 @@
 
 ml samtools/1.15.1
 
+# To debug:
+# 1) Checking inputs
+for val in "$@"; do
+    echo ${val} 
+done
+# 2) check all: 
+# set -x
+
 # For some reason, awk wouln't work
 if [ ! -d "${3}" ]; then mkdir -p ${3}; fi
 
@@ -18,3 +26,5 @@ awk -v donor="${1}" '(NR> 1 && $1 == donor){print $2}' ${2} > ${3}${1}.txt
 samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam" && samtools index "${4}${1}.bam" &> /dev/null && rm "${4}${1}.bam.bai" && exit 0 || exit 1
 sleep 20
 
+# Unsetting debug
+# set +x
