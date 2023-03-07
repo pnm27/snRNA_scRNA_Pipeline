@@ -4,8 +4,7 @@
 """
 
 from itertools import repeat
-import pandas as pd, argparse
-import re
+import pandas as pd, argparse, os, re
 from collections import Counter
 
 
@@ -56,6 +55,13 @@ def main():
 	parser = get_argument_parser()
 	args = parser.parse_args()
 
+	# Store output_file and Create necessary folders
+	op = args.output
+
+	# Create parent dir(s) to the output
+	if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
+		os.makedirs(op.replace(os.path.basename(op), ''))
+	
 	vir_class = pd.read_csv(args.vireo_inp, sep='\t', usecols=["cell", "donor_id"])
 	vir_class = vir_class[(vir_class["donor_id"] != "doublet") & (vir_class["donor_id"] != "unassigned")]
 	vir_class.reset_index(drop=True, inplace=True)
@@ -78,7 +84,7 @@ def main():
 
 	vir_class = vir_class[["Subj_ID", "barcodes"]]
 
-	file_ext = re.search(r'(\.[^.]+)$', args.output).group(1)
+	file_ext = re.search(r'(\.[^.]+)$', op).group(1)
 
 
-	save_df(vir_class, file_ext, args.output)
+	save_df(vir_class, file_ext, op)
