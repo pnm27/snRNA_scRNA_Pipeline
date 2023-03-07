@@ -6,6 +6,7 @@
 from itertools import repeat
 import pandas as pd, argparse, os, re
 from collections import Counter
+from time import sleep
 
 
 # Save dataframe to file
