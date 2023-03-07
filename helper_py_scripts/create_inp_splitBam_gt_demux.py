@@ -10,16 +10,11 @@ from time import sleep
 
 
 # Save dataframe to file
-def save_df(df, suff, op, sep=None):
+def save_df(df, suff, op):
 	if suff.lower() == '.csv':
 		df.to_csv(op, index=False)
-	elif suff.lower() == '.tsv':
+	elif suff.lower() == '.tsv' or suff.lower() == '.txt':
 		df.to_csv(op, sep = "\t", index=False)
-	elif suff.lower() == '.txt':
-		if sep is not None:
-			df.to_csv(op, sep = sep, index=False)
-		else:
-			df.to_csv(op, sep = "\t", index=False)
 	else:
 		print(
 			"Can't save to file because of incorrect extension. "
