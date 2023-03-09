@@ -56,31 +56,46 @@ def targets_PICARD(conf_f, progs='all') -> list:
 
 
 # Temporary function, will change to targets_gt_demux
-def targets_cellSNP(conf_f) -> list:
+def targets_cellSNP(conf_f, progs=None) -> list:
     out_dir = conf_f['gt_demux_pipeline']['cellsnp_dir']
     fs_gt = conf_f['fold_struct_gt_demux']
     cells_suff = conf_f['gt_demux_pipeline']['cellsnp_cells']
     base_suff = conf_f['gt_demux_pipeline']['cellsnp_base']
 
     target_list = [f"{out_dir}{fs_gt}{cells_suff}", f"{out_dir}{fs_gt}{base_suff}"]
+
+    # STARsolo* + PICARD (any) progs
+    if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
+        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs))
+
     return target_list
 
 
 
-def targets_gt_demux(conf_f) -> list:
+def targets_gt_demux(conf_f, progs=None) -> list:
     out_dir = conf_f['gt_demux_pipeline']['vireosnp_dir']
     fs_gt = conf_f['fold_struct_gt_demux']
     suff = config['gt_demux_pipeline']['donors_classification']
     
-    return [f"{out_dir}{fs_gt}{suff}"]
+    target_list = [f"{out_dir}{fs_gt}{suff}"]
+    # STARsolo* + PICARD (any) progs
+    if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
+        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs))
+
+    return target_list
 
 
 # For multi-vcf_inputs
-def targets_gt_demux2(conf_f) -> list:
+def targets_gt_demux2(conf_f, progs=None) -> list:
     out_dir = conf_f['gt_demux_pipeline']['final_count_matrix_dir']
     fs_gt = conf_f['fold_struct_demux']
     
-    return [f"{out_dir}{fs_gt}" ]
+    target_list = [f"{out_dir}{fs_gt}" ]
+    # STARsolo* + PICARD (any) progs
+    if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
+        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs))
+    
+    return target_list
 
 
 def targets_SplitBams(conf_f, progs=None) -> list:
@@ -115,7 +130,7 @@ def targets_gt_demux_identify_swaps(conf_f) -> list:
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, progs=None) -> list:
-
+    
     demuxed_mat_dir = conf_f['demux_pipeline']['final_count_matrix_dir']
     demuxed_info_dir = conf_f['demux_pipeline']['demultiplex_info_dir']    
     demux_mat_suff = conf_f['demux_pipeline']['final_count_matrix_h5ad']
@@ -145,8 +160,6 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
     metrics = conf_f['picard_metrics'].lower()
     if last_step is not None:
         target_step = last_step.lower()
-        # folder_st_bam = fs['fold_struct']
-        # folder_st = fs['fold_struct_demux']
 
         # 'all' is only for the modules: STARsolo, PICARD (both) and calico_solo
         # and vireo (demux) *
@@ -157,8 +170,8 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             final_target_list = [expand(f"{target}", zip, **wc_d) for target in target_files] # if multiple wildcards are present then either 'zip' or 'product' (default)
 
         elif target_step == "starsolo_kb_solo":
-            target_files = targets_all(conf_f=conf_f, progs=metrics)
             ONLY_SOLO = True
+            target_files = targets_all(conf_f=conf_f, progs=metrics)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif target_step == "starsolo":
@@ -174,18 +187,8 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
 
         #     final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
-        # elif target_step == "starsolo_rnaseqmet":
-        #     target_files = targets_PICARD(conf_f=conf_f, progs='RNAseq')
-
-        #     final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
-
-        # elif target_step == "starsolo_gcbiasmet":
-        #     target_files = targets_PICARD(conf_f=conf_f, progs='GC')
-
-        #     final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
-
         elif target_step == "starsolo_cellsnp":
-            target_files = targets_cellSNP(conf_f=conf_f)
+            target_files = targets_cellSNP(conf_f=conf_f, progs=metrics)
 
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]    
 
@@ -233,31 +236,46 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
             # Add final steps for gt_demux
-            target_files = targets_gt_demux2(conf_f=conf_f)
+            target_files = targets_gt_demux2(conf_f=conf_f, progs=metrics)
             suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
             # If multiple vcfs per sample needs to be run
             if isinstance(VCF_TYPE, list):
                 
-                temp_list = [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
+                # temp_list = [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
+                for id, target in enumerate(target_files):
+                    if id == 0:
+                        temp_list = [expand(f"{target}", zip, **wc_d)]
+                        final_target_list.extend([expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list])
+                    else:
+                        final_target_list.extend(expand(f"{target}", zip, **wc_d))
                 # temp_list= [expand(f"{target}", **wc_d) for target in target_files][0] # Single wildcard
-                final_target_list2 = [expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
+                
 
             # Single vcf out of a set of multiple vcfs
             elif isinstance(VCF_TYPE, str):
-                
-                final_target_list2 = [expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for target in target_files] # Multiple wildcards example
+
+                for id, target in enumerate(target_files):
+                    if id == 0:
+                        temp_list = expand(f"{target}", zip, **wc_d)
+                        final_target_list.extend([expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for t in temp_list])
+                    else:
+                        final_target_list.extend(expand(f"{target}", zip, **wc_d))
+
+                # final_target_list2 = [expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for target in target_files] # Multiple wildcards example
                 # final_target_list= [expand(f"{target}_{VCF_TYPE}{suff}", **wc_d) for target in target_files] # Single wildcard
             else:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
-            final_target_list.extend(final_target_list2)
+            # target_files = targets_PICARD(conf_f=conf_f, progs=metrics)
+            # final_target_list.extend([expand(f"{target}", zip, **wc_d) for target in target_files])
+            # final_target_list.extend(final_target_list2)
             # final_target_list.append(f"{config['split_bams_pipeline_gt_demux']['ngscheckmate_res_dir']}/{config['split_bams_pipeline_gt_demux']['proj_name']}_all.txt")
 
             
         elif target_step == "starsolo_gt_demux":
-            target_files = targets_gt_demux(conf_f=conf_f)
+            target_files = targets_gt_demux(conf_f=conf_f, progs=metrics)
             ONLY_VIREO = True
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
@@ -271,6 +289,13 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             if isinstance(VCF_TYPE, list):
                 
                 temp_list= [expand(f"{target}", zip, **wc_d) for target in target_files][0] # Multiple wildcards example
+                for id, target in enumerate(target_files):
+                    if id == 0:
+                        temp_list = expand(f"{target}", zip, **wc_d)
+                        final_target_list.extend([expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for t in temp_list])
+                    else:
+                        final_target_list.extend(expand(f"{target}", zip, **wc_d))
+
                 # temp_list= [expand(f"{target}", **wc_d) for target in target_files][0] # Single wildcard
                 final_target_list=[expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list]
 
