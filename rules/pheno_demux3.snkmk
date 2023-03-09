@@ -39,11 +39,11 @@ def ret_cols(fname) -> int :
 # as in calico_solo's rule
 def get_filt_barcodes(wildcards):
 
-    if ADD_SOLO:
+    if global_vars.ADD_SOLO:
         pass
-    elif ADD_VIREO:
+    elif global_vars.ADD_VIREO:
         return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
-    elif ONLY_VIREO or BOTH_DEMUX:
+    elif global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
@@ -51,7 +51,7 @@ def get_filt_barcodes(wildcards):
 
 # Parameter option
 def get_inp_type(wildcards, input):
-    if ADD_SOLO or ADD_VIREO or input[0].endswith('.h5ad'):
+    if global_vars.ADD_SOLO or global_vars.ADD_VIREO or input[0].endswith('.h5ad'):
         return 'prev'
     else:
         return 'star'

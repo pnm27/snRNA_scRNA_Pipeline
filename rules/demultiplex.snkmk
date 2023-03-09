@@ -4,13 +4,13 @@ def get_inputs_demux(wildcards):
         f"{config['fold_struct']}"
         f"{config['STARsolo_pipeline']['genefull_matrix']}"
         ]
-    if ONLY_SOLO:
+    if global_vars.ONLY_SOLO:
         ret_list.append(
             f"{config['demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
             f"{config['demux_pipeline']['calico_solo_h5ad']}"
             )
-    elif ONLY_VIREO:
+    elif global_vars.ONLY_VIREO:
         if config['last_step'].lower().endswith('multi_vcf'):
             ret_list.append(
                 f"{config['gt_demux_pipeline']['vireosnp_dir']}"
@@ -26,7 +26,7 @@ def get_inputs_demux(wildcards):
         if config['gt_conv'] is not None:
             ret_list.append(config['gt_conv'])
 
-    elif BOTH_DEMUX:
+    elif global_vars.BOTH_DEMUX:
         ret_list.append(
             f"{config['demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
@@ -56,11 +56,11 @@ def get_inputs_demux(wildcards):
 
 
 def get_condn(wildcards):
-    if ONLY_SOLO:
+    if global_vars.ONLY_SOLO:
         return 'S'
-    elif ONLY_VIREO:
+    elif global_vars.ONLY_VIREO:
         return 'V'
-    elif BOTH_DEMUX:
+    elif global_vars.BOTH_DEMUX:
         return 'B'
     else:
         return None
@@ -72,14 +72,14 @@ def get_inputs_add_demux(wildcards):
         f"{config['fold_struct_demux']}"
         f"{config['demux_pipeline']['final_count_matrix_h5ad']}"
         ]
-    if ADD_SOLO:
+    if global_vars.ADD_SOLO:
         ret_list.append(
             f"{config['demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
             f"{config['demux_pipeline']['calico_solo_h5ad']}"
             )
 
-    elif ADD_VIREO:
+    elif global_vars.ADD_VIREO:
         if config['last_step'].lower().endswith('multi_vcf'):
             ret_list.append(
                 f"{config['gt_demux_pipeline']['vireosnp_dir']}"
@@ -106,15 +106,15 @@ def get_inputs_add_demux(wildcards):
 
 
 def get_condn2(wildcards):
-    if ADD_SOLO:
+    if global_vars.ADD_SOLO:
         return 'S'
-    elif ADD_VIREO:
+    elif global_vars.ADD_VIREO:
         return 'V'
     else:
         return None
     
 
-if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
+if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
     rule demux_samples:
         input:
             get_inputs_demux
@@ -238,7 +238,7 @@ if ONLY_SOLO or ONLY_VIREO or BOTH_DEMUX:
 
 
 # To do the 'ADD_SOLO' part
-if ADD_VIREO or ADD_SOLO:
+if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
     # If a previous run of the pipeline has produced final_count_matrix using solo
     # To add results of
     rule add_obs_to_final_count_matrix:
