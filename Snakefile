@@ -30,10 +30,12 @@ min_version("6.4.0")
 configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the scefic schema
 
+# REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Set few global variables (DON'T CHANGE FOR INITIAL RUNS (FOR EACH PROJECT)!)
 # FOr subsequent runs on the same project i.e. when there exist previous
 # outputs of either demultiplex runs: CHECK THE DOCUMENTATION FOR HOW TO 
 # CHANGE THESE VARS
+
 class global_vars():
   ONLY_SOLO = False
   ONLY_VIREO = False
