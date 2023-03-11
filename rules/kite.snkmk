@@ -134,7 +134,7 @@ rule run_kallisto:
     shell:
         """
         ml kallisto
-        kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input[1]}
+        kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
         """
 
 
