@@ -34,7 +34,7 @@ rule create_FB:
     input:
         R1=get_r1_hto_fastqs,
         R2=get_r2_hto_fastqs,
-        sample_sheet=config['wet_lab_file']
+        sample_sheet=config['wet_lab_info']
         
     # priority: 10
 
