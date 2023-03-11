@@ -3,7 +3,7 @@
 #  The files_tracker file lets the user know if a particular wet lab file's (files') content has been changed at the level of (either):
 # "unique_sample_ID", "hashtag", "ab_barcode"
 # NOTE: After each run the files_tracker file will be overwritten
-import os, re, sys, glob2, time
+import os, re
 from collections import Counter
 import pandas as pd, numpy as np, argparse
 from itertools import chain, repeat
@@ -82,9 +82,16 @@ def main():
 
 	# work_cols=args.columns
 
+	# Store output_file and Create necessary folders
+	op = args.output
+
+	# Create parent dir(s) to the output
+	if not os.path.isdir(op.replace('/' + os.path.basename(op), '')):
+		os.makedirs(op.replace(os.path.basename(op), ''))
+	
 	# For multiplexed compilation
 	try:
-		op_df = pd.read_csv(args.output, sep='\t')
+		op_df = pd.read_csv(op, sep='\t')
 
 	except:
 		op_df = pd.DataFrame(columns=col_names)
@@ -92,8 +99,8 @@ def main():
 		op_df["SubID"]=""
 
 	# Name corresponding donor files
-	ext = args.output[args.output.rfind('.'):]
-	donor_filename = args.output[:args.output.rfind('.')] + '_donor' + ext
+	ext = op[op.rfind('.'):]
+	donor_filename = op[:op.rfind('.')] + '_donor' + ext
 
 	ext = args.files_tracker[args.files_tracker.rfind('.'):]
 	donor_files_tracker = args.files_tracker[:args.files_tracker.rfind('.')] + '_donor' + ext
@@ -110,7 +117,9 @@ def main():
 	# Handling sinlge-file as an input or multiple files as input
 	if isinstance(args.input, list):
 		for inp_f in args.input:
-			t_df = pd.read_excel(inp_f, names=col_names, skiprows=1, usecols=list(range(len(col_names))))
+			t_df = pd.read_excel(inp_f, names=col_names, skiprows=1, 
+			usecols=list(range(len(col_names))), dtype=object)
+			t_df.drop_duplicates(inplace=True)
 			t_df["filename"] = os.path.basename(inp_f).replace('.xlsx', '')
 			t_df['unique_sample_ID'] = t_df['unique_sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
 
@@ -192,7 +201,9 @@ def main():
 				
 
 	else:
-		t_df = pd.read_excel(args.input, names=col_names, skiprows=1, usecols=list(range(len(col_names))))
+		t_df = pd.read_excel(args.input, names=col_names, skiprows=1, 
+		       usecols=list(range(len(col_names))), dtype=object)
+		t_df.drop_duplicates(inplace=True)
 		t_df["filename"] = os.path.basename(args.input).replace('.xlsx', '')
 		t_df['unique_sample_ID'] = t_df['unique_sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
 
@@ -267,7 +278,8 @@ def main():
 
 	if args.converter is not None:
 		# Project dependent converter file
-		conv_df = pd.read_excel(args.converter, usecols=list(range(15)))
+		conv_df = pd.read_excel(args.converter, usecols=list(range(15)), dtype=object)
+		conv_df.drop_duplicates(inplace=True)
 		conv_df['Sample_ID'] = conv_df['Sample_ID'].apply(lambda x: str(x) if isinstance(x, int) else x)
 		# Strip leading and trailing whitespaces
 		df_obj = conv_df.select_dtypes(['object'])
@@ -281,7 +293,7 @@ def main():
 	op_df['ab_barcode'] = op_df['ab_barcode'].apply(lambda x: re.sub('_', ',', x))
 	op_df['hashtag'] = op_df['hashtag'].apply(lambda x: x.replace('HTO#', ''))
 	op_df.drop_duplicates(inplace=True, ignore_index=True)
-	op_df.to_csv(args.output, sep='\t', index=False)
+	op_df.to_csv(op, sep='\t', index=False)
 
 	
 	donor_info['hashtag'] = donor_info['hashtag'].apply(lambda x: x.replace('#', ''))

@@ -1,4 +1,5 @@
 import glob2, re
+import pandas as pd
 
 
 def get_r1_hto_fastqs(wildcards):
@@ -29,11 +30,11 @@ def get_hto_fastqs(wildcards):
     return all_files
 
 
-
 rule create_FB:
     input:
         R1=get_r1_hto_fastqs,
-        R2=get_r2_hto_fastqs
+        R2=get_r2_hto_fastqs,
+        sample_sheet=config['wet_lab_file']
         
     # priority: 10
 
@@ -41,8 +42,7 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        sample_sheet=config['wet_lab_info'],
-        sample_name="{id1}"
+        sample_name=lambda wildcards: wildcards.id1.replace('-', '_')
 
     resources:
         mem_mb=allocate_mem_CFB, #allocate_mem_KBP,
@@ -50,7 +50,8 @@ rule create_FB:
 
     shell: 
         """
-        python3 helper_py_scripts/create_Feat_Barc.py {params.sample_sheet} -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
+        python3 helper_py_scripts/create_Feat_Barc.py {input.sample_sheet} \
+        -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
         """
 
          

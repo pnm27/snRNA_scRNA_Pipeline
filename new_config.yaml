@@ -119,9 +119,9 @@ kb_pipeline:
   k_mer_length: 15
   chemistry: 10xv3
   columns_to_pick:
-  - set_ID
-  - hto
-  - hto_barcode
+  - unique_sample_ID
+  - hashtag
+  - ab_barcode
 
   # Optional params
   feature_barcodes: FeatureBarcodes.csv
