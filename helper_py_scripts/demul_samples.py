@@ -275,13 +275,13 @@ def main():
 
     # Batch info
     # This is the values that will be stored in the final h5ad file
-    batch=args.sample_name.replace('-', '_')+'_cDNA'
+    # batch=args.sample_name.replace('-', '_')+'_cDNA'
     # Prepare for Extra Information
-    replicate=batch.split('_')[1]
+    replicate=args.sample.split('_')[2]
     # add few more annotations
-    adata.obs['batch'] = batch
+    adata.obs['batch'] = args.sample
     adata.obs['rep'] = replicate
-    adata.obs['set'] = batch[:-6]
+    adata.obs['set'] = '_'.join(args.sample.split('_')[:3])[:-1]
 
     # For demultiplexing using calico_solo
     if add_calico is not None:
