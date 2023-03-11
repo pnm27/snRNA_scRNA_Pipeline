@@ -102,7 +102,7 @@ def main():
     # If htos are present in one-line
     # example:
     # 1,2,3 ATGCTAGCTAG,ATCGATGCTG,GATCGATCGT
-    if a.shape[0] > 1:
+    if a.shape[0] == 1:
         htos=a.iloc[0,0].split(',')
         hto_barc_seq=a.iloc[0,1].split(',')
 
