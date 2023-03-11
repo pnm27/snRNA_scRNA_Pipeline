@@ -56,9 +56,8 @@ def get_argument_parser():
     "mitochondrial genes(in percent) per cell. Default: 5", 
     default=5
     )
-    add_redo_grp.add_argument('--mito_prefix', type=int, help="Max "
-    "mitochondrial genes(in percent) per cell. Default: 5", 
-    default=5
+    add_redo_grp.add_argument('--mito_prefix', help="Prefix for mitochondrial "
+    "genes. Default: 'MT-'", default="MT-" 
     )
     add_redo_grp.add_argument('-g', '--min_genes', type=int, help="Min #genes "
     "per cell. Default: 1000", default=1000
