@@ -95,7 +95,7 @@ def main():
 
 
     pd_df = pd.read_csv(args.donor_file, sep='\t')
-    a = pd_df.loc[pd_df[cols[0]] == samp, cols[1:]]
+    a = pd_df.loc[pd_df[cols[0]].str.lower() == samp.lower(), cols[1:]]
     # a[cols[1]] = a[cols[1]].apply(lambda x: x.replace('HTO#', ''))
 
     # Custom-requirement

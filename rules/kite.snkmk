@@ -42,7 +42,7 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        sample_name=lambda wildcards: wildcards.id1.replace('-', '_')
+        sample_name=lambda wildcards: wildcards.id1.replace('-', '_') + '_cDNA'
 
     resources:
         mem_mb=allocate_mem_CFB, #allocate_mem_KBP,
