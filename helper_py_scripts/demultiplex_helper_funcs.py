@@ -537,8 +537,14 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
 
     get_df = ret_subj_ids(bcs, vir_class)
 
-    n_doubs = vir_class['Subj_ID'].value_counts()['Doublet']
-    n_negs = vir_class['Subj_ID'].value_counts()['Negative']
+    try:
+        n_doubs = vir_class['Subj_ID'].value_counts()['Doublet']
+    except:
+        n_doubs = 0
+    try:
+        n_negs = vir_class['Subj_ID'].value_counts()['Negative']
+    except:
+        n_negs = 0
 
     # Save doublets and negatives info from calico solo
     temp_df.append(('Doublets #cells_vs', n_doubs))
