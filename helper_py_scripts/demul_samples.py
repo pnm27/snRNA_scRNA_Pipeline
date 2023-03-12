@@ -403,7 +403,7 @@ def main():
     adata.write(op)
 
     ct = datetime.datetime.now()
-    print(f"Finished: Processing Sample {batch} at: {ct}")
+    print(f"Finished: Processing Sample {args.sample_name} at: {ct}")
 
 
 
