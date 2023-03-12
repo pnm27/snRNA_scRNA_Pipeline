@@ -70,7 +70,7 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
         elif hs != None and test_len > 1:
             raise ValueError(
                 f"After subsetting sample {s_name} from the wet lab "
-                f"file {fname}, there are multiple rows ({test_len}) "
+                f"file, there are multiple rows ({test_len}) "
                 "of HTOs for this sample while a separator value is "
                 "also provided."
                 )
@@ -78,12 +78,11 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
             raise ValueError(
                 f"Either the given separator {hs} is wrong or the sample "
                 f"{s_name} has incomplete HTO values in the wet lab file "
-                f"{fname}"
                 )
         else:
             raise ValueError(
                 "Something is wrong with the given input(s):\n\twet lab "
-                f"file: {fname}\n\tsample: {s_name}\n\tHTO-separator: "
+                f"file:\n\tsample: {s_name}\n\tHTO-separator: "
                 f"{hs}"
                 )
 
@@ -147,18 +146,18 @@ def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
         elif hs != None and test_len > 1:
             raise ValueError(
                 f"After subsetting sample {s_name} from the wet lab file "
-                f"{fname}, there are multiple rows ({test_len}) of HTOs for "
+                f", there are multiple rows ({test_len}) of HTOs for "
                 f"this sample while a separator value is also provided."
             )
         elif hs != None and test_len == 1 and sub.str.count(hs).values[0] == 1:
             raise ValueError(
                 f"Either the given separator {hs} is wrong or the sample "
-                f"{s_name} has incomplete donor ids in the wet lab file {fname}"
+                f"{s_name} has incomplete donor ids in the wet lab file"
                 )
         else:
             raise ValueError(
                 "Something is wrong with the given input(s):\n\twet lab "
-                f"file: {fname}\n\tsample: {s_name}\n\tHTO-separator: {hs}"
+                f"file:\n\tsample: {s_name}\n\tHTO-separator: {hs}"
                 )
 
 
