@@ -295,14 +295,14 @@ def main():
 
         # Wet Lab file, Filter wet lab file's columns, if needed
         df = auto_read(args.wet_lab_file)
-        if df.loc[df[cols[0]] == args.sample_name].empty:
+        if df.loc[df[cols[0]].str.lower() == args.sample_name.lower()].empty:
             raise ValueError("Check dtypes!\nSample (variable name 'var'"
             f", data type {type(args.sample_name)}, with value "
-            f"{args.sample_name} ) couldn't be subset from the wet lab "
+            f"{args.sample_name.lower()} ) couldn't be subset from the wet lab "
             "file.\nData types for the wet lab "
-            f"file:\n{df.dtypes}")
+            f"file:\n{df.dtypes}\nWhile the top 5 rows are:\n{df[cols[0]][:5]}")
         else:
-            df = df.loc[df[cols[0]] == args.sample_name]
+            df = df.loc[df[cols[0]].str.lower() == args.sample_name.lower()]
 
 
         # Load hashsolo/calico_solo output (h5ad)
