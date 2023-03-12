@@ -230,9 +230,9 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     negative_n = 0
 
     for bc in bcs:
-        if bc in dem_cs.obs_names:
+        if bc in dem_cs.index:
             hto_n = (
-                dem_cs[dem_cs.obs_names == bc].obs.Classification
+                dem_cs[dem_cs.index == bc]
                 .values[0]
                 )
             
