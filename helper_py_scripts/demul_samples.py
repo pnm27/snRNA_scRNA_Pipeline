@@ -392,8 +392,12 @@ def main():
             filter_info.extend(solo_dem_stats)
         elif not solo_dem_stats and vir_dem_stats:
             filter_info.extend(vir_dem_stats)
+        elif solo_dem_stats and vir_dem_stats:
+            filter_info.extend(solo_dem_stats)
+            filter_info.extend(vir_dem_stats)
         else:
-            print("This error shouldn't occur!")
+            print("Proivded a file to collect demultiplex info but used "
+                  "flags to not include both demux stats!")
 
         solo_run_df = pd.DataFrame(filter_info, 
                                     columns=['Observations', 'Vals'])
