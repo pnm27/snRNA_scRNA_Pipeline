@@ -33,8 +33,7 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
         htos = wet_lab_df[hto_col]
         test_len = len(htos)
         sub = wet_lab_df[subid_col]
-        test_len2 = len(sub)
-        assert test_len
+        # test_len2 = len(sub)
 
         # No command-line params and inference that all HTOs are present 
         # in one row separated by ","
@@ -66,7 +65,10 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
                 ), "Not equal number of hto and donor names"
             return htos.tolist()
         elif hs != None and test_len == 1 and htos.str.count(hs).values[0] > 1:
-            return htos.values[0].split(hs)
+            ret_list.append(htos.values[0].split(hs))
+            ret_list.append(sub.values[0].split(hs))
+
+            return ret_list
         elif hs != None and test_len > 1:
             raise ValueError(
                 f"After subsetting sample {s_name} from the wet lab "
