@@ -95,6 +95,10 @@ def get_argument_parser():
             dest="cs_stats",
 			help="If flag is used no demux stats are present",
 			)
+    cs.add_argument('--no-subid_convert', action='store_true', 
+            dest="subid_convert",
+			help="If flag is used no conversion to subID is needed",
+			)
 
     # For vireo inputs
     vs = parser.add_argument_group("VIREO DEMUX OPTIONS", "Add "
@@ -331,7 +335,7 @@ def main():
         cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
             adata.obs_names.to_series(), df, args.sample_name, 
             args.hto_sep, [cols[1], cols[3]], 
-            dem_cs.obs['Classification']
+            dem_cs.obs['Classification'], args.subid_convert
             )
         
         ct = datetime.datetime.now()

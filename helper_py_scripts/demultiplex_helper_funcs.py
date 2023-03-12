@@ -23,7 +23,8 @@ def auto_read(fname, **kwargs) -> pd.DataFrame :
 
 
 # Simplify these 'parse' functions
-def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
+def parse_file(wet_lab_df, cols, s_name, hs, d_con) \
+    -> list[list[str], list[str]]:
 
     hto_col = cols[0]
     subid_col = cols[1]
@@ -44,7 +45,8 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
                 ), "Not equal number of hto and donor names"
 
             ret_list.append(htos.values[0].split(','))
-            ret_list.append(sub.values[0].split(','))
+            if not d_con:
+                ret_list.append(sub.values[0].split(','))
 
             return ret_list
         # No command-line params and inference that all HTOs are present 
@@ -56,7 +58,8 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
                 ), "Not equal number of hto and donor names"
 
             ret_list.append(htos.values[0].split())
-            ret_list.append(sub.values[0].split())
+            if not d_con:
+                ret_list.append(sub.values[0].split())
 
             return ret_list
         elif hs == None and test_len > 1:
@@ -66,7 +69,8 @@ def parse_file(wet_lab_df, cols, s_name, hs) -> list[list[str], list[str]]:
             return htos.tolist()
         elif hs != None and test_len == 1 and htos.str.count(hs).values[0] > 1:
             ret_list.append(htos.values[0].split(hs))
-            ret_list.append(sub.values[0].split(hs))
+            if not d_con:
+                ret_list.append(sub.values[0].split(hs))
 
             return ret_list
         elif hs != None and test_len > 1:
@@ -166,8 +170,8 @@ def parse_subids(wet_lab_df, col_val, fname, s_name, hs=None) -> list:
 
 # calico_solo demultiplexing function----------------------------------------
 def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
-    sep: str, col_list: list[str, str], 
-    dem_cs: pd.Series) -> list[pd.Series, pd.Series, int, int]:
+    sep: str, col_list: list[str, str], dem_cs: pd.Series, 
+    donor_convert: bool) -> list[pd.Series, pd.Series, int, int]:
     r"""Return HTO information and classification for each cell barcode.
 
     This function returns a 2 pandas series representing donor IDs and 
@@ -190,6 +194,9 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     dem_cs
         A pd series with cell barcodes as index and "HTO classification" \
             (solo output)
+    donor_convert
+        If donor names have to be converted from the names used in \
+        calico_solo (hashsolo) demultiplexing method
 
     Returns
     -------
@@ -206,7 +213,10 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 
     # List of htos and don ids from the wet lab spreadsheet (respectively)
     # the indices of these 2 correspond to each other
-    hto_l, subid_l = parse_file(df_s, col_list, samp, sep)
+    if not donor_convert:
+        hto_l, subid_l = parse_file(df_s, col_list, samp, sep, donor_convert)
+    else:
+        hto_l = parse_file(df_s, col_list, samp, sep, donor_convert)
 
     # List of barcodes
     # barc_l = []
@@ -242,10 +252,13 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
                 # barc_l.append(bc)
                 hash_n.append(hto_n)
                 # If the subID doesn't match the HTO value
-                try:
-                    ret_samp.append(subid_l[hto_l.index(hto_n)])
-                except:
-                    ret_samp.append(hto_n+"_NA")
+                if not donor_convert:
+                    try:
+                        ret_samp.append(subid_l[hto_l.index(hto_n)])
+                    except:
+                        ret_samp.append(hto_n+"_NA")
+                else:
+                    ret_samp.append(hto_n)                    
 
         else:
             # barc_l.append(bc)
@@ -284,8 +297,8 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 # Calico_solo execution------------------------------------------------------
 # def demux_by_calico_solo(obs_index: pd.Index, df_s: pd.DataFrame):
 def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
-    sep: str, col_list: list[str, str], dem_cs: pd.Series) \
-    -> list[pd.Series, pd.Series, list[str]]:
+    sep: str, col_list: list[str, str], dem_cs: pd.Series, 
+    donor_convert: bool) -> list[pd.Series, pd.Series, list[str]]:
     r"""Main function for classification by calico_solo.
 
     This function assigns calico_solo classification using another
@@ -298,7 +311,8 @@ def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 
     # hto_tags_cs = ret_htos_calico_solo(bcs, df_s, samp, sep, col_list, dem_cs)
     SubID_cs, hasht_n_cs, n_doubs, n_negs = ret_htos_calico_solo(bcs, 
-                                            df_s, samp, sep, col_list, dem_cs)
+                                            df_s, samp, sep, col_list, 
+                                            dem_cs, donor_convert)
     
     # Create obs columns in adata to represent the SubID as assigned by 
     # calico solo and its associated hastag number

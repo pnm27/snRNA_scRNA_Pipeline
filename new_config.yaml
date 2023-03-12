@@ -150,6 +150,7 @@ demux_pipeline:
   - hashtag
   - ab_barcode
   - SubID
+  SubID_convert: False # If calico_solo SubID conversion needed (boolean)
   final_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/solo/
   demultiplex_info_dir: /sc/arion/projects/psychAD/demultiplex/info/
   # Optional params
