@@ -323,7 +323,7 @@ def main():
 
         # Example for Adding additional info per sample
         sample_name=sample
-        r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
+        # r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
         preparer = sample.split('-')[2][0]
         replicate = sample.split('-')[2][1]
         set_val = sample[:-6]
@@ -352,7 +352,7 @@ def main():
            
         if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any()) :
             # Add a kwargs style input for extra annotations
-            row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, round_num=r_num, sample=sample_name, prep=preparer, rep=replicate, set_num=set_val))
+            row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, sample=sample_name, prep=preparer, rep=replicate, set_num=set_val))
 
         print(f"Finished adding {sample_name} to the file")
 
