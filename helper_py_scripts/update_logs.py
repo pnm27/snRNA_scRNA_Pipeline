@@ -157,7 +157,23 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
                    new_row.append(add_value)
 
                 else:
-                     new_row.append(add_value)         
+                     new_row.append(add_value)
+                     
+            elif sub_prog == "DEMUX_CS":
+                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_CS"), "val_in_log"].values[0], "vals"].values[0]
+                if add_value.endswith(','):
+                    new_row.append(add_value[:-1])
+                else:
+                     new_row.append(add_value)        
+
+            elif sub_prog == "DEMUX_VS":
+                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_VS"), "val_in_log"].values[0], "vals"].values[0]
+                if add_value.endswith(','):
+                    new_row.append(add_value[:-1])
+                else:
+                     new_row.append(add_value)        
 
             else:
                 raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
