@@ -324,8 +324,8 @@ def main():
         # Example for Adding additional info per sample
         sample_name=sample
         # r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
-        preparer = sample.split('-')[2][0]
-        replicate = sample.split('-')[2][1]
+        preparer = sample.split('-')[2][0] if len(sample.split('-')[2]) > 1 else "NA"
+        replicate = sample.split('-')[2][1] if len(sample.split('-')[2]) > 1 else sample.split('-')[2][0]
         set_val = sample[:-6]
 
         
