@@ -408,7 +408,7 @@ def main():
             print("Can't calculate percentage of cells retained for demultiplexing")
 
         try:
-            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_START")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
         except:
             print("Can't calculate percentage of cells retained for demultiplexing")
 
@@ -432,7 +432,7 @@ def main():
             print("Can't calculate percentage of cells retained for demultiplexing")
 
         try:
-            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_START")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
         except:
             print("Can't calculate percentage of cells retained for demultiplexing")
 
