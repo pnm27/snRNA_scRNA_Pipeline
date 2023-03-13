@@ -62,7 +62,6 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     new_row = []
     # Extra Annotations through kwargs
     # Reproduce the sequence of how the new_columns were set
-    new_row.append(kwargs["round_num"])
     new_row.append(kwargs["sample"])
     new_row.append(kwargs["set_num"])
     new_row.append(kwargs["prep"])
