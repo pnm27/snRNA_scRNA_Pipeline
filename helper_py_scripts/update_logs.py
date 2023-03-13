@@ -158,7 +158,7 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
 
                 else:
                      new_row.append(add_value)
-                     
+
             elif sub_prog == "DEMUX_CS":
                 temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
                 add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_CS"), "val_in_log"].values[0], "vals"].values[0]
@@ -189,7 +189,10 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
 
 
 # Extra columns (annotations) to add (This sequence should be maintained everywhere)
-new_cols_to_add = [['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], ['REP', 'LAB', 'BATCH']]
+new_cols_to_add = [
+    ['ROUND', 'LAB', 'BATCH'], ['SAMPLE', 'LAB', 'SAMPLE'], 
+    ['SET', 'LAB', 'BATCH'], ['PREPARER', 'LAB', 'BATCH'], 
+    ['REP', 'LAB', 'BATCH']]
 
 # Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
 def get_latest_extra_columns():
