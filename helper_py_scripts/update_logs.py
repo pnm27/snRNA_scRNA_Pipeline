@@ -401,7 +401,7 @@ def main():
             print("Can't calculate Negative ratio! Check output file for more info!")
 
         try:
-            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int).values
                         -combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int).values)
 
         except:
@@ -425,7 +425,7 @@ def main():
             print("Can't calculate Negative ratio! Check output file for more info!")
 
         try:
-            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int).values
                         -combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int).values)
 
         except:
