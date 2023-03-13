@@ -390,25 +390,49 @@ def main():
     if args.dem_info != None:
         try:
             # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
         except:
             print("Can't calculate Doublet ratio! Check output file for more info!")
 
         try:
             # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX", "N_NEGATIVE_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_CS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
         except:
             print("Can't calculate Negative ratio! Check output file for more info!")
 
         try:
-            combo_log[("STARsolo", "DEMUX", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX", "N_DOUBLET_CELLS_CS")].astype(int).values
-                        -combo_log[("STARsolo", "DEMUX", "N_NEGATIVE_CELLS_CS")].astype(int).values)
+            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int).values
+                        -combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int).values)
 
         except:
             print("Can't calculate percentage of cells retained for demultiplexing")
 
         try:
-            combo_log[("STARsolo", "DEMUX", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_START")].astype(int).values
+        except:
+            print("Can't calculate percentage of cells retained for demultiplexing")
+
+        try:
+            # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX_VS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+        except:
+            print("Can't calculate Doublet ratio! Check output file for more info!")
+
+        try:
+            # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX_VS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+        except:
+            print("Can't calculate Negative ratio! Check output file for more info!")
+
+        try:
+            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int).values
+                        -combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int).values)
+
+        except:
+            print("Can't calculate percentage of cells retained for demultiplexing")
+
+        try:
+            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX_CS", "N_CELLS_START")].astype(int).values
         except:
             print("Can't calculate percentage of cells retained for demultiplexing")
 
