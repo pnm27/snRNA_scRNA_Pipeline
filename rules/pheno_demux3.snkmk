@@ -67,8 +67,8 @@ def get_cellsnp_inputs(wildcards):
     )
     
     if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
-        if not config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
-            # modify this to accept either a text file containing per pool vcf or one single vcf file
+        # modify this to accept either a text file containing per pool vcf or one single vcf file
+        if config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
             ret_list.append(config['gt_demux_pipeline']['cellsnp_ref_snps'])
             ret_list.append(config['gt_demux_pipeline']['genome_1k_ref'])
         

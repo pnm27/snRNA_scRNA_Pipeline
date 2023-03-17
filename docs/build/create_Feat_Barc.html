@@ -66,7 +66,9 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Understanding the Pipeline</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="sub_workflows.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sub_workflows.html">Overview of the Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sub_workflows.html#wildcard-processing">Wildcard Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sub_workflows.html#selectable-modules">Selectable Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sub_workflows.html#sub-snakemake-workflows">Sub-Snakemake workflows</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced Tutorials</span></p>
@@ -107,27 +109,6 @@
 <p>Create Feature Barcodes file for KITEseq.</p>
 <p>This script is used to create featurebarcodes csv file given a file
 containing sample names, its corresponding hto names and hto barcodes, respectively.</p>
-<p class="rubric">Examples</p>
-<p>$ python3 create_Feat_Barc.py samples_info.txt -o sample_1_fb.csv -s sample_1 -c set_name hto_name hto_bc</p>
-<p>samples_info.txt</p>
-<p>set_name hto_name hto_bc
-sample_1 hto1 ATCTATGGTTG
-sample_1 hto3 ATGAATGGTTG
-sample_2 hto3 ATCCGGTGTTG
-sample_1 hto4 ATCTATGGTTG
-sample_2 hto2 AGCTATGGTTG
-sample_2 hto6 ATTTATGGTTG
-sample_1 hto5 ATCTCTTGTTG
-sample_2 hto8 ATCTACTATTG
-…
-…
-…
-…</p>
-<p>sample_1_fb.csv
-sample_1 hto1 ATCTATGGTTG
-sample_1 hto3 ATGAATGGTTG
-sample_1 hto5 ATCTCTTGTTG
-sample_1 hto4 ATCTATGGTTG</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="create_Feat_Barc.get_argument_parser">
 <span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_Feat_Barc.get_argument_parser" title="Permalink to this definition"></a></dt>

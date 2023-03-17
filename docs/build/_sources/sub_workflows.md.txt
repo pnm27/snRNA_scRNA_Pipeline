@@ -1,17 +1,35 @@
-# Modules
+# Overview of the Pipeline
+To set up the pipeline for projects, the following setups need to be performed:
+
+1. Setting up wildcards for the project (see {ref}`how <sub_workflows:Wildcard Processing>`).
+2. According to the experiment select a module (module options).
+3. As required and wherever possible, setup the folder structures for different programs.
+4. Check and modify parameters of the programs to be run (in new_config.yaml file).
+   1. (Currently) make sure all required python and R packages are present.
+5. Change global variables as required (in Snakefile - check).
+
+# Wildcard Processing
+For the purpose of creating wildcards a list of samples to be processed is provided to the pipeline. There are 3 ways to achieve this:
+
+- list of samples/pools (as a folder structure)
+- yaml file containing the list of samples/pools
+- Directory containing input files
+
+## List of samples
+
 
 
 ``` {currentmodule} helper_py_scripts/
 
 ```
 
-This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords. 
+This pipeline has many combinations of the aforementioned programs as a built-in set that can be executed using specific keywords.
 
 ```{eval-rst}
 .. _selectable-modules:
 ```
 
-## Selectable Modules
+# Selectable Modules
 The following combinations of programs can be run:
 
 <ul>
@@ -47,19 +65,13 @@ where **starsolo** represents STARsolo; **rnaseqmet** and **gcbiasmet** refer to
 * - all
   - module_info (more desc in its own file)
   - sub_wkfl
+* - all_multi_vcf
+  - module_info (more desc in its own file)
+  - sub_wkfl
 * - starsolo
   - module_info (more desc in its own file)
   - sub_wkfl
-* - starsolo_rnaseqmet
-  - module_info (more desc in its own file)
-  - sub_wkfl
-* - starsolo_gcbiasmet
-  - module_info (more desc in its own file)
-  - sub_wkfl
 * - starsolo_kb_solo
-  - module_info (more desc in its own file)
-  - sub_wkfl
-* - starsolo_picard
   - module_info (more desc in its own file)
   - sub_wkfl
 * - starsolo_gt_demux
@@ -78,12 +90,6 @@ where **starsolo** represents STARsolo; **rnaseqmet** and **gcbiasmet** refer to
   - module_info (more desc in its own file)
   - sub_wkfl
 * - starsolo_cellsnp
-  - module_info (more desc in its own file)
-  - sub_wkfl
-* - starsolo_rnaseqmet_kb_solo
-  - module_info (more desc in its own file)
-  - sub_wkfl
-* - starsolo_gcbiasmet_kb_solo
   - module_info (more desc in its own file)
   - sub_wkfl
 * - starsolo_gt_demux_identify_swaps
@@ -135,8 +141,6 @@ This pipeline divides each module into its self-contained individual workflows. 
 [^consol]: Consolidating into one
 
 [^not-yet]: Not yet implemented
-
-## Overview of the pipeline
 
 ```{eval-rst}
 .. autosummary::

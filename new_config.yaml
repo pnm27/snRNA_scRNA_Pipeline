@@ -14,8 +14,7 @@ cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 R1_suffix: .R1.fastq.gz
 R2_suffix: .R2.fastq.gz
 
-# Wet lab Info file which contains all details like sample name; set name(if applicable); donor names, HTOs, and HTO_barcodes(if applicable)
-# ; etc.
+
 wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
 gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
 whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
@@ -298,40 +297,40 @@ finalize_demux:
   
 
 # SNV-Aware alignment------------------------------------------------------
-STARsolo_snv_aware:
-  bams_dir: /sc/arion/projects/psychAD/pnm/STARsolo_SA_bams/
-  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  
-  star_params_dir: /sc/arion/projects/psychAD/pnm/STARsolo_SA_params/
-  sjdboverhang: 89
-  umi_len: 12
-  soloType: CB_UMI_Simple
-  solo_cell_filter: EmptyDrops_CR
-  SAM_attr: NH HI AS nM NM MD vW
-  features: Gene GeneFull SJ Velocyto
-  temp_genotypes_vcf_dir: /sc/arion/projects/psychAD/pnm/donor_vcfs/
-  genotypes_vcf: /sc/arion/projects/psychAD/pnm/genotypes.vcf.gz
-  vcf_id_donor_id_hash: /sc/arion/projects/psychAD/pnm/NPSAD_clinical_metadata/clinical_metadata.csv
-  hash_columns:
-    - SubID
-    - SNParray_ID
-  # Optional params
-  bai: _Aligned.sortedByCoord.out.bam.bai
-  bam: _Aligned.sortedByCoord.out.bam
-  STAR_log_final: _Log.final.out
-  barcodes_stats: _Solo.out/Barcodes.stats
-  gene_features: _Solo.out/Gene/Features.stats
-  gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
-  gene_features: _Solo.out/Gene/filtered/features.tsv
-  gene_matrix: _Solo.out/Gene/filtered/matrix.mtx
-  gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
-  gene_summary: _Solo.out/Gene/Summary.csv
-  genefull_features: _Solo.out/GeneFull/Features.stats
-  genefull_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
-  genefull_features: _Solo.out/GeneFull/filtered/features.tsv.gz
-  genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
-  genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
-  genefull_summary: _Solo.out/GeneFull/Summary.csv
-  vcf_suffix: .vcf.gz
+# STARsolo_snv_aware:
+#   bams_dir: /sc/arion/projects/psychAD/pnm/STARsolo_SA_bams/
+#   genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o  
+#   star_params_dir: /sc/arion/projects/psychAD/pnm/STARsolo_SA_params/
+#   sjdboverhang: 89
+#   umi_len: 12
+#   soloType: CB_UMI_Simple
+#   solo_cell_filter: EmptyDrops_CR
+#   SAM_attr: NH HI AS nM NM MD vW
+#   features: Gene GeneFull SJ Velocyto
+#   temp_genotypes_vcf_dir: /sc/arion/projects/psychAD/pnm/donor_vcfs/
+#   genotypes_vcf: /sc/arion/projects/psychAD/pnm/genotypes.vcf.gz
+#   vcf_id_donor_id_hash: /sc/arion/projects/psychAD/pnm/NPSAD_clinical_metadata/clinical_metadata.csv
+#   hash_columns:
+#     - SubID
+#     - SNParray_ID
+#   # Optional params
+#   bai: _Aligned.sortedByCoord.out.bam.bai
+#   bam: _Aligned.sortedByCoord.out.bam
+#   STAR_log_final: _Log.final.out
+#   barcodes_stats: _Solo.out/Barcodes.stats
+#   gene_features: _Solo.out/Gene/Features.stats
+#   gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
+#   gene_features: _Solo.out/Gene/filtered/features.tsv
+#   gene_matrix: _Solo.out/Gene/filtered/matrix.mtx
+#   gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
+#   gene_summary: _Solo.out/Gene/Summary.csv
+#   genefull_features: _Solo.out/GeneFull/Features.stats
+#   genefull_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
+#   genefull_features: _Solo.out/GeneFull/filtered/features.tsv.gz
+#   genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
+#   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
+#   genefull_summary: _Solo.out/GeneFull/Summary.csv
+#   vcf_suffix: .vcf.gz
 
 
 # RNA velocity pipeline------------------------------------------------------

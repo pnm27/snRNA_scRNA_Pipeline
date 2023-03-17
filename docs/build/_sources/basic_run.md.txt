@@ -2,7 +2,7 @@
 
 To begin with understanding this setup, it is highly advised to go through the basic [Snakemake's tutorial](https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html).
 
-To surmise the workflow setup, one should follow the bottom-top approach i.e. identify the final files (or a set of) that's required and build the way up to the infput files. This is an example of the {term}`DAG` created by Snakemake.
+To surmise the workflow setup, it's easier to follow the bottom-top approach i.e. identify the final files (or a set of) that's required and build the way up to the infput files. This is an example of the {term}`DAG` created by Snakemake.
 
 # A basic pipeline
 

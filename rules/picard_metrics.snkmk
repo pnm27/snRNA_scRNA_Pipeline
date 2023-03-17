@@ -19,7 +19,7 @@ rule Picard_GC_bias_metrics:
        
     threads: 2
 
-    group: "PICARD_metrics"
+    # group: "PICARD_metrics"
      
     shell:
         """
@@ -48,7 +48,7 @@ rule Picard_RNAseq_metrics:
 
     threads: 4
 
-    group: "PICARD_metrics"
+    # group: "PICARD_metrics"
 
     shell:
         """

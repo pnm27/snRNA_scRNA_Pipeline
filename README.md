@@ -1,45 +1,97 @@
 # snRNA_scRNA_Pipeline Introduction
 ## TODO:
 
-
-   - Add rule-specific [conda envs](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#integrated-package-management) and verify them. Conda envs can't be used with **run**, which is present in the following rules:
-      - [x] STARsolo
-      - [ ] split_bams
-      - [ ] split_bams_gt
-      - [x] kite
-      - [x] pheno_demux3
-   - [ ] Add PICARD option in new_config file.
-     - [ ] Simplify produce_targets.snkmk functions.
-   - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
-   - [ ] Change input for the rules create_inp_splitBams and create_inp_splitBams_gt_demux. Input function that should remove low mito cells.
-   - [ ] Add conditions for time in resources.snkmk.
-   - [ ] Beautify the function get_filt_barcodes (pheno_demux3.snkmk).
-   - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
-     - when both demultiplex software are run simultaneously.
-     - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
-   - [x] Fix demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
-   - [x] Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
-   - [ ] Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.
-   - [ ] Make the functions similar for demultiplexing with any method.
-   - [ ] Move documentation to configargparse.
+- Miscellaneous:
+   - [x] Add PICARD option in new_config file.
    - [ ] Write down schemas.
    - Add tutorials.
-	 - pooled snRNA seq
-       - [ ] simple
-       - [ ] complex
+     - pooled snRNA seq
+       - [ ] single wildcard
+       - [ ] multiple wildcards
      - scRNA seq
-	   - [ ] simple
-       - [ ] complex
+       - [ ] single wildcard
+       - [ ] multiple wildcards
+     - [ ] Double HTOs
    - [ ] Remove dependency on STARsolo as an aligner.
+   - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
    - [ ] Combine sub-workflows split_bams and split_bams_gt.
-   - [x] Fix issue with reading old wet_lab_info file to update (extension issues).
-   - [x] Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)
-   - [ ] Add options in config file to allow adding extra params for every software:
-     - [ ] WASP mode in STARsolo_sort.snkmk
-   - [ ] Add new Picard metrics.
-   - [ ] Include in new_config.yaml an option to select wasp mode for the rule STARsolo_sort.snkmk
-   - [ ] Search Ranking of readthedocs (using config file for this too).
+      - [ ] Search Ranking of readthedocs (using config file for this too).
    - [ ] Might incorporate git submodules for repos on git that I use.
+   - [ ] Add new Picard metrics.
+   - [ ] Add options in config file to allow adding extra params for every software:
+   - [ ] For reruns of vireo, provide a way to retain those information in update logs file.
+- analyse_vireo:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- calico_solo_demux:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- demultiplex:
+    - new_config params:
+    - snakemake_rules:
+    - [ ] Employ a strategy for final count matrix dir (file dir in config file) for the cases:
+        - when both demultiplex software are run simultaneously.
+        - When there's an order (try to name each run separately or at least keep the order somewhere mentioned).
+    - scripts:
+         - [ ] when adding calico_solo or vireo include the demultiplex file (file containing demux stats) as input and append to it.
+         - [ ] For reruns of vireo, provide a way to retain those information in demultiplex info file.
+- helper_functions:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- identify_swaps:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- input_processing:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- kite:
+    - new_config params:
+    - snakemake_rules:
+        - [x] Remove run directive
+    - scripts:
+- pheno_demux3:
+    - new_config params:
+    - snakemake_rules:
+        - [x] Remove run directive
+        - [ ] Beautify the function get_filt_barcodes.
+    - scripts:
+- picard_metrics:
+    - new_config params:
+    - snakemake_rules:
+    - scripts:
+- produce_targets:
+    - new_config params:
+    - snakemake_rules:
+        - [ ] Simplify target functions.
+    - scripts:
+- resources:
+    - scripts:
+    - [ ] Add conditions for time and mem
+- split_bams_gt*:
+    - new_config params:
+    - snakemake_rules:
+        - [ ] Remove run directive
+        - [ ] Input function that removes low mito cells.
+    - scripts:
+- split_bams*:
+    - new_config params:
+    - snakemake_rules:
+        - [ ] Remove run directive
+        - [ ] Input function that removes low mito cells.
+    - scripts:
+- STARsolo:
+    - new_config params:
+    - snakemake_rules:
+        - [x] Remove run directive
+        - [ ] WASP mode
+    - scripts:
+        - [ ] WASP mode
+
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 
 
@@ -72,6 +124,12 @@ The highlights of the pipeline are:
   - Added working argparse to demul_samples_no_argp.py script.
   - Changed the name of sub-workflow demultiplex_no_argp.snkmk to demultiplex.snkmk
   - Changed the name of sub-workflow demul_samples_no_argp.py to demul_samples.py
+  - Fix demultiplex_no_argp.snkmk's rule that handles adding new demux to a final count matrix.
+  - Add an option (in config file) to create h5ads when demultiplexing (demultiplex_no_argp.snkmk) or not (can be used as switch when doing gt checks and finalizing donor assignment).
+  - Add an option for the rule cellSNP when ref SNPs vcf need not be subsetted further.
+  -  Make the functions similar for demultiplexing with any method.
+  - Fix issue with reading old wet_lab_info file to update (extension issues).
+  - Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)
   
   
 ## Requirements

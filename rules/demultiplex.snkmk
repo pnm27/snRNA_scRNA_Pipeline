@@ -303,12 +303,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
-                    --no-subid_convert
-                fi
-            else
-                echo "Nothing happened! Check 'condn' in params!"
-            fi
+                    --sample_name {params.sampleAfter cs demultiplexing #cells	H
             """
 
 

@@ -8,6 +8,9 @@ BAM_processing:
 Picard_GC_bias_metrics:
   - "-q express"
 
+Picard_RNAseq_metrics:
+  - "-q express"
+  
 create_FB:
   - "-q express"
 
