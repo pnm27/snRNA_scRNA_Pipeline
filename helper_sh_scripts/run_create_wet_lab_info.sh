@@ -27,6 +27,8 @@ if [ ! -s "${process_log}" ]; then touch ${process_log}; fi
 
 declare -i c=0
 
+# If the files are present inside subfolders
+# Inside the dir (mentioned in spreadsheet_dir)
 for var in `ls ${spreadsheet_dir%/}/*/*.xlsx`
 do
     # File is not empty (doesn't matter if it exists but empty) or file name not present in "proccess log" file

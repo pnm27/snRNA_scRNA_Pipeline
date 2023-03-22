@@ -78,7 +78,7 @@ def get_argument_parser():
     cs.add_argument('--hto_sep', help="If, per each sample in the "
     "wet lab file (6th positional argument to this script), HTOs are "
     "all present in one row separated by some SEP then specify it here. "
-    "Default: ' '", default=' '
+    "Default: None", default=None,
     )
     cs.add_argument('--columns', nargs=4, help="List of column names "
     "RESPECTIVELY to sample_ID (as present in the spreadsheets - "
