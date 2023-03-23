@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-import pandas as pd, numpy as np, os
+import pandas as pd, numpy as np, os, sys
 from collections import OrderedDict as ord_dict
+from typing import Union # Need verion > 3.5
 
+
+assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 # Basic helper functions-----------------------------------------------------
 def auto_read(fname, **kwargs) -> pd.DataFrame :

@@ -12,11 +12,13 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
     # for eg. round5/Sample_xxxxx-cDNA/xxxxx-cDNA
     # round_num = round5
     # sample_name = xxxxx
+    # 
     with open(config['select_fastqs']) as fq:
         for line in fq:
-            line_sp = line.split('/')
-            round_num.append(line_sp[0])
-            sample_name.append(line_sp[1].strip().replace('-cDNA', ''))
+            if not line.startswith('#'):
+                line_sp = line.split('/')
+                round_num.append(line_sp[0])
+                sample_name.append(line_sp[1].strip().replace('-cDNA', ''))
 
     # Create a dict of wildcards
     wildcards_list={'num':round_num, 'id1':sample_name}
