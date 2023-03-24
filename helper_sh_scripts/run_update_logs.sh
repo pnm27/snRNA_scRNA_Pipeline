@@ -11,7 +11,7 @@ OUTPUT_FILE="/sc/arion/projects/psychAD/pnm/All_logs.tsv"
 INPUT_FILE="/sc/arion/projects/psychAD/pnm/fastq_files.txt"
 BAM_STRUCT="Sample_<sample>*/"
 PICARD_STRUCT="Sample_<sample>*/"
-DEMUX_STRUCT="round*-"
+DEMUX_STRUCT="Sample_<sample>*/"
 
 
 samp_list=""

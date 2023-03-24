@@ -29,7 +29,20 @@ directories
 :::
 
 ### Create fastq_files.txt
-This following[pic](../../images/file_structs/scRNAseq/with_one_wc/fastq_files.png) shows the content of the fastq_files.txt.
+This following pic shows the content of the fastq_files.txt.
+:::{figure-md}
+:width: 150px
+![pic](../../images/file_structs/scRNAseq/with_one_wc/fastq_files.png)
+
+pools
+:::
 As one can see it contains one representation for each sample i.e. doesn't separate R1 and R2.
 
-This [tree structure](../../images/file_structs/scRNAseq/with_one_wc/overall.png) shows how all the files are present in our directory.
+This shows how all the files are present in our directory.
+
+:::{figure-md}
+:width: 150px
+![tree structure](../../images/file_structs/scRNAseq/with_one_wc/overall.png)
+
+tree_struct
+:::

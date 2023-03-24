@@ -19,7 +19,7 @@
    - [ ] Might incorporate git submodules for repos on git that I use.
    - [ ] Add new Picard metrics.
    - [ ] Add options in config file to allow adding extra params for every software:
-   - [ ] For reruns of vireo, provide a way to retain those information in update logs file.\
+   - [ ] For reruns of vireo, provide a way to retain those information in update logs file.
    - [ ] Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.
 - analyse_vireo:
     - new_config params:
