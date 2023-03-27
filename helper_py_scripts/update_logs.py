@@ -357,7 +357,7 @@ def main():
         # r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
         preparer = sample.split('-')[2][0] if len(sample.split('-')[2]) > 1 else "NA"
         replicate = sample.split('-')[2][1] if len(sample.split('-')[2]) > 1 else sample.split('-')[2][0]
-        set_val = '-'.join(sample.split('-')[:2]) + '-' + preparer if preparer != 'NA' else sample.split('-')[:2]
+        set_val = '-'.join(sample.split('-')[:2]) + '-' + preparer if preparer != 'NA' else '-'.join(sample.split('-')[:2])
 
         
         # Test if at least one of the input files exists
