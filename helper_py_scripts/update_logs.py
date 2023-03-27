@@ -142,38 +142,45 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
                     add_value = ""
                 new_row.append(add_value)
            
-            elif sub_prog == "DEMUX":
+            elif sub_prog.startswith("DEMUX"):
                 temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX"), "val_in_log"].values[0], "vals"].values[0]
-                if val == "N_CELLS_AFTER_DEMUX_CS" and add_value.endswith(','):
-                    new_row.append(add_value[:-1])
+                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog), "val_in_log"].values[0], "vals"].values[0]
 
-                # Compatibility with older-style of producing demux_info file
-                elif val == "N_CELLS_AFTER_DEMUX_CS" and 'Name:' in add_value:
-                   add_value = add_value[:add_value.find('Name:')]
-                   add_value= re.sub('[^\S\r\n]+', ':', add_value)
-                   add_value = add_value[:-1]
-                   add_value = re.sub('\n', ',', add_value)
-                   new_row.append(add_value)
+                # DEPRACATED WITH ADVENT OF NEW SUB_PROG 'DEMUX_CS' AND 'DEMUX_VS'
+                # if val == "N_CELLS_AFTER_DEMUX_CS" and add_value.endswith(','):
+                #     new_row.append(add_value[:-1])
 
-                else:
-                     new_row.append(add_value)
+                # # Compatibility with older-style of producing demux_info file
+                # elif val == "N_CELLS_AFTER_DEMUX_CS" and 'Name:' in add_value:
+                #    add_value = add_value[:add_value.find('Name:')]
+                #    add_value= re.sub('[^\S\r\n]+', ':', add_value)
+                #    add_value = add_value[:-1]
+                #    add_value = re.sub('\n', ',', add_value)
+                #    new_row.append(add_value)
 
-            elif sub_prog == "DEMUX_CS":
-                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_CS"), "val_in_log"].values[0], "vals"].values[0]
+                # else:
+                #     new_row.append(add_value)
+
                 if add_value.endswith(','):
                     new_row.append(add_value[:-1])
                 else:
-                     new_row.append(add_value)        
+                    new_row.append(add_value)   
 
-            elif sub_prog == "DEMUX_VS":
-                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
-                add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_VS"), "val_in_log"].values[0], "vals"].values[0]
-                if add_value.endswith(','):
-                    new_row.append(add_value[:-1])
-                else:
-                     new_row.append(add_value)        
+            # elif sub_prog == "DEMUX_CS":
+            #     temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+            #     add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_CS"), "val_in_log"].values[0], "vals"].values[0]
+            #     if add_value.endswith(','):
+            #         new_row.append(add_value[:-1])
+            #     else:
+            #          new_row.append(add_value)        
+
+            # elif sub_prog == "DEMUX_VS":
+            #     temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+            #     add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_VS"), "val_in_log"].values[0], "vals"].values[0]
+            #     if add_value.endswith(','):
+            #         new_row.append(add_value[:-1])
+            #     else:
+            #          new_row.append(add_value)          
 
             else:
                 raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
@@ -340,11 +347,17 @@ def main():
         dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info) if args.dem_info != None else ""
 
         # Example for Adding additional info per sample
+        # Assuming 'sample' has values like PD-Set71-C2
+        # preparer = 'c'
+        # replicate = 2
+        # Assuming 'sample' has values like PD-set4-2
+        # preparer = 'NA'
+        # replicate = 'PD-set4'
         sample_name=sample
         # r_num = int(re.search('/round([0-9]+)/', files_dict["STAR_final"]).group(1))
         preparer = sample.split('-')[2][0] if len(sample.split('-')[2]) > 1 else "NA"
         replicate = sample.split('-')[2][1] if len(sample.split('-')[2]) > 1 else sample.split('-')[2][0]
-        set_val = sample[:-6]
+        set_val = sample.split('-')[:2] + '-' + preparer if preparer != 'NA' else sample.split('-')[:2]
 
         
         # Test if at least one of the input files exists
@@ -367,13 +380,37 @@ def main():
 
 
         # Check for each sample in the list if it has all required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
-        per_samp_check = {'REG': ss_log_final, 'GC': pc_gc_file, 'RNASEQMETRIC': pc_rs_file, 'GENE_FEATURE': ss_gene_features, 'GENEFULL_FEATURE': ss_genefull_features,
-                        'GENE_SUMM': ss_gene_summary, 'GENEFULL_SUMM': ss_genefull_summary, 'BARCODE_STATS': ss_bc_stats, 'DEMUX': dem_file}
+        per_samp_check = {
+            'REG': ss_log_final, 'GC': pc_gc_file, 
+            'RNASEQMETRIC': pc_rs_file, 'GENE_FEATURE': ss_gene_features, 
+            'GENEFULL_FEATURE': ss_genefull_features, 
+            'GENE_SUMM': ss_gene_summary, 'GENEFULL_SUMM': ss_genefull_summary, 
+            'BARCODE_STATS': ss_bc_stats, 'DEMUX': dem_file
+            }
+        
         for k, v in per_samp_check.items():
-            if k not in samp_excl_progs and v == "":
+            if k == 'REG' and v == "":
+                ss_dep_files = [
+                    'REG', 'GENE_FEATURE', 'GENE_SUMM',
+                    'GENEFULL_FEATURE', 'GENEFULL_SUMM',
+                    'BARCODE_STATS'
+                    ]
+                ss_dep_files = [ j for j in ss_dep_files if j not in samp_excl_progs ]
+                samp_excl_progs.extend(ss_dep_files)
+
+            elif k not in samp_excl_progs and v == "":
                 samp_excl_progs.append(k)
 
 
+        if len(samp_excl_progs) == len(per_samp_check):
+            skip_sample=True
+
+        if skip_sample:
+            print(
+                    f"Skipping {sample_name} as all the input files "
+                    "are not present!!"
+                    )
+            continue
            
         if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any()) :
             # Add a kwargs style input for extra annotations

@@ -18,10 +18,12 @@ samp_list=""
 while read l 
 do
 {
-    # Remove 'cDNA' at the end of the names
-    # glob can add cDNA or HTO as required
-	samp_name=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "-" -f2- | rev )
-	samp_list=${samp_list}" "${samp_name}
+    if ! grep -q "^#" <<< ${l}; then
+        # Remove 'cDNA' at the end of the names
+        # glob can add cDNA or HTO as required
+        samp_name=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "-" -f2- | rev )
+        samp_list=${samp_list}" "${samp_name}
+    fi
 }
 done < ${INPUT_FILE}
 
