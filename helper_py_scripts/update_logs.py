@@ -442,12 +442,12 @@ def main():
                         -combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int).values)
 
         except:
-            print("Can't calculate percentage of cells retained for demultiplexing")
+            print("Can't calculate final demultiplexed cells from calico_solo run")
 
         try:
             combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
         except:
-            print("Can't calculate percentage of cells retained for demultiplexing")
+            print("Can't calculate percentage of cells retained after calico_solo demultiplexing")
 
         try:
             # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
@@ -466,12 +466,12 @@ def main():
                         -combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int).values)
 
         except:
-            print("Can't calculate percentage of cells retained for demultiplexing")
+            print("Can't calculate final demultiplexed cells from vireo run")
 
         try:
             combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
         except:
-            print("Can't calculate percentage of cells retained for demultiplexing")
+            print("Can't calculate percentage of cells retained after vireo demultiplexing")
 
 
     combo_log.to_csv(out, sep = "\t", index=False)
