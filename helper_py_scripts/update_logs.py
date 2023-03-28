@@ -68,8 +68,8 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     new_row.append(kwargs["rep"])
     # Store Barcode.stats and Feature.stats files as DF in a list for easy access
     # Seq is Feature.stats for Gene, Feature.stats for GeneFull, Barcode.stats
-    stats_file = [x for k, x in all_files_dict.items() if '.stats' in x ]
-    list_df = [get_df(x) for x in stats_file ]
+    # stats_file = [x for k, x in all_files_dict.items() if '.stats' in x ]
+    # list_df = [get_df(x) for x in stats_file ]
     
     
     # Add values to a list in the same sequence as the final output file/dataframe
@@ -414,7 +414,31 @@ def main():
            
         if not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any()) :
             # Add a kwargs style input for extra annotations
-            row_list.append(write_logs(combo_log, map_names, files_dict, samp_excl_progs, sample=sample_name, prep=preparer, rep=replicate, set_num=set_val))
+            row_list.append(write_logs(
+                                    combo_log, map_names, files_dict, 
+                                    samp_excl_progs, sample=sample_name, 
+                                    prep=preparer, rep=replicate, 
+                                    set_num=set_val
+                                    )
+                            )
+        
+        else:
+            old_val = combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample), :].to_numpy().flatten().tolist()
+            new_val = write_logs(
+                                combo_log, map_names, files_dict, 
+                                samp_excl_progs, sample=sample_name, 
+                                prep=preparer, rep=replicate, 
+                                set_num=set_val
+                                )
+
+            if old_val != new_val:
+                combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample)] = [new_val]
+            else:
+                print(
+                    f"Skipping {sample_name} as the output file already "
+                    "contains the same value for all columns!!"
+                    )
+                continue
 
         print(f"Finished adding {sample_name} to the file")
 
