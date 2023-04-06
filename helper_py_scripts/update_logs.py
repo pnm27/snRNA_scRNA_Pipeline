@@ -266,9 +266,18 @@ def main():
 
 
     # Validate the optional parameters, if present
-    opt_file_params = {'ss_l': ['.out', 'REG'], 'pc_gc': ['.txt', 'GC'], 'pc_rs':['.txt', 'RNASEQMETRIC'], 'ss_g_f': ['.stats', 'GENE_FEATURE'], 'ss_gf_f': ['.stats', 'GENEFULL_FEATURE'],
-                       'ss_g_s': ['.csv', 'GENE_SUMM'], 'ss_gf_s': ['.csv', 'GENEFULL_SUMM'], 'ss_bc': ['.stats', 'BARCODE_STATS'], 'dem_info': ['.tsv', 'DEMUX'], 'output_file': ['.tsv', None],
-                       'map_file': ['.tsv', None]}
+    opt_file_params = {
+                    'ss_l': ['.out', 'REG'], 'pc_gc': ['.txt', 'GC'], 
+                    'pc_rs':['.txt', 'RNASEQMETRIC'], 
+                    'ss_g_f': ['.stats', 'GENE_FEATURE'], 
+                    'ss_gf_f': ['.stats', 'GENEFULL_FEATURE'],
+                    'ss_g_s': ['.csv', 'GENE_SUMM'], 
+                    'ss_gf_s': ['.csv', 'GENEFULL_SUMM'], 
+                    'ss_bc': ['.stats', 'BARCODE_STATS'], 
+                    'dem_info': ['.tsv', 'DEMUX'], 
+                    'output_file': ['.tsv', None],
+                    'map_file': ['.tsv', None]
+                    }
 
     # List of programs from which no stats need be recorded
     exclude_progs=[]
@@ -430,7 +439,8 @@ def main():
                                 prep=preparer, rep=replicate, 
                                 set_num=set_val
                                 )
-
+            
+            # If the new_val is different than the old value, replace it 
             if old_val != new_val:
                 combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample)] = [new_val]
             else:
