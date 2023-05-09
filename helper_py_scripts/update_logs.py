@@ -75,7 +75,9 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
     # Add values to a list in the same sequence as the final output file/dataframe
     for prog, sub_prog, val in big_df.columns.tolist():
         add_value=""
-        if prog != "LAB" and sub_prog not in no_progs:
+        if prog != "LAB" and (sub_prog not in no_progs and
+                        not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
+                        ):
             if sub_prog == "REG":
                 temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
                 temp_df["vals"] = temp_df.vals.str.strip()
@@ -185,8 +187,10 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, **kwargs):
             else:
                 raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
 
-        elif prog != "LAB" and sub_prog in no_progs:
-            new_row.append(add_value)
+        elif prog != "LAB" and not (sub_prog not in no_progs and
+                        not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
+                        ):
+            new_row.append("")
 
         else:
             continue
@@ -456,58 +460,91 @@ def main():
     temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
     combo_log = pd.concat([combo_log, temp_df], ignore_index=True)
 
+    # Conversions for easier divisons
+    combo_log[("STARsolo", "DEMUX", "N_CELLS_START")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX", "N_CELLS_START")]
+        ]
+    combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")]
+        ]
 
     # If the demux file is not used for compilation then skip these steps
     if args.dem_info != None:
         try:
             # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            # combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate Doublet ratio! Check output file for more info!")
 
         try:
             # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX_CS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_CS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate Negative ratio! Check output file for more info!")
 
         try:
-            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int).values
-                        -combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].astype(int).values)
+            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].subtract(combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")])
+                        ).subtract(combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")])
 
         except:
-            print("Can't calculate final demultiplexed cells from calico_solo run")
+            print("Can't calculate final demultiplexed cells from calico_solo run!")
 
         try:
-            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate percentage of cells retained after calico_solo demultiplexing")
 
         try:
             # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX_VS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_VS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate Doublet ratio! Check output file for more info!")
 
         try:
             # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
-            combo_log[("STARsolo", "DEMUX_VS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_VS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate Negative ratio! Check output file for more info!")
 
         try:
-            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].astype(int)-combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].astype(int).values
-                        -combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].astype(int).values)
+            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].subtract(combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")])
+                        ).subtract(combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")])
 
         except:
             print("Can't calculate final demultiplexed cells from vireo run")
 
         try:
-            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")]/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int).values
+            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
         except:
             print("Can't calculate percentage of cells retained after vireo demultiplexing")
 
 
+    combo_log.replace([np.inf, -np.inf], np.nan, inplace=True)
     combo_log.to_csv(out, sep = "\t", index=False)
 
 

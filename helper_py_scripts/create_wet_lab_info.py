@@ -41,6 +41,10 @@ def get_argument_parser():
 	parser.add_argument('input', help="(List of) input file(s). "
 	"Assumed to be in xlsx format.", nargs='+',
 	)
+	parser.add_argument('--lib-prep', action='store_true', 
+	help="If flag is used then assimilate for lib prep "
+	"(different columns in spreadsheet)",
+	)
 	parser.add_argument('-o', '--output', help="Output file name (tab-sep). "
 	"Default: output.tsv (in the current working dir).", 
 	default="output.tsv",
@@ -73,12 +77,21 @@ def main():
 
 	parser = get_argument_parser()
 	args = parser.parse_args()
-	col_names = ["project", "sample_ID", "Rx", "Set_number", "unique_sample_ID",
-			"sample_type", "sample_notes", "date_processed", "Preparer", "input",
-			"DNA_stain", "Hash_pool_contents", "hashtag", "ab_barcode", "FACS_by",
-			"cell_type", "yield", "FACS_notes", "10x_by", "post_spin_cell_conc",
-			"perc_viable_10x", "dilution", "normalized_conc", "amount_in_10x", "targeted_recovery",
-			"n_cells", "capture_method", "Bead_lot_num", "10x_notes"]
+
+	if not args.lib_prep:
+		col_names = [
+			"project", "sample_ID", "Rx", "Set_number", "unique_sample_ID",
+			"sample_type", "sample_notes", "date_processed", "Preparer", 
+			"input", "DNA_stain", "Hash_pool_contents", "hashtag", 
+			"ab_barcode", "FACS_by", "cell_type", "yield", "FACS_notes", 
+			"10x_by", "post_spin_cell_conc", "perc_viable_10x", 
+			"dilution", "normalized_conc", "amount_in_10x", 
+			"targeted_recovery", "n_cells", "capture_method", 
+			"Bead_lot_num", "10x_notes"
+			]
+	else:
+		col_names1 = []
+		col_names2 = []
 
 	# work_cols=args.columns
 

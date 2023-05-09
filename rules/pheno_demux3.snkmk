@@ -383,8 +383,10 @@ rule vireoSNP:
         done
         d="${{d:0:${{#d}}-1}}"
         if [[ "{params.n_donors}" != "None" ]]; then
+            set -x
             vireo ${{d}} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
         elif [[ "{params.n_donors}" == "None" ]]; then
+            set -x
             vireo ${{d}} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
         else
             echo "Nothing ran! Check the conditions in the rule vireoSNP!"
