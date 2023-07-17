@@ -369,7 +369,7 @@ def main():
         ct = datetime.datetime.now()
         print(
             "Assigning demultiplexing info for vireo "
-            f"solo at: {ct}"
+            f"at: {ct}"
             )
 
         adata.obs['SubID_vs'] = vs_dons
