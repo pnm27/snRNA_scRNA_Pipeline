@@ -7,6 +7,7 @@ helper_py_scripts
    :maxdepth: 4
 
    create_Feat_Barc
+   create_aggregate_matrix
    create_h5ad_from_bustools
    create_h5ad_from_calico_solo
    create_inp_cellSNP
