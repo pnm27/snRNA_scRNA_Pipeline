@@ -54,179 +54,353 @@ rule create_FB:
         -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
         """
 
+
          
 
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule create_mismatch_fasta:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
-rule create_mismatch_fasta:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
+        # priority: 10
 
-    # priority: 10
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
 
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
+        params:
+            headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
-    params:
-        headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
-
-    resources:
-        mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
-        time_min=allocate_time_CMF
-
-
-    shell: 
-        """
-        if [[ "{params.headers}" == "yes" ]] || [[ "{params.headers}" == "True" ]]; then
-            python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
-
-        else
-            python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]}
-
-        fi
-        """
+        resources:
+            mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
+            time_min=allocate_time_CMF
 
 
-rule build_kallisto_index:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}"
+        shell: 
+            """
+            if [[ "{params.headers}" == "yes" ]] || [[ "{params.headers}" == "True" ]]; then
+                python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
 
-    # priority: 10
+            else
+                python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]}
 
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}"
+            fi
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule create_mismatch_fasta:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['feature_barcodes']}"
 
-    params:
-        k_mer_len=config['kb_pipeline']['k_mer_length']
-    resources:
-        mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
-        time_min=allocate_time_BKI
+        # priority: 10
 
-    shell:
-        """
-        ml kallisto
-        kallisto index -i {output} -k {params.k_mer_len} {input}
-        """
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_fa']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_t2g']}"
 
+        params:
+            headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
-rule run_kallisto:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}",
-        fastq_files=get_hto_fastqs
-
-    # priority: 10
-
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}"
-
-    params:
-        output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
-        chemistry=config['kb_pipeline']['chemistry']
-
-    threads: 1
-
-    resources:
-        mem_mb=allocate_mem_RK, #allocate_mem_KBP,
-        time_min=allocate_time_RK
-
-    shell:
-        """
-        ml kallisto
-        kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
-        """
+        resources:
+            mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
+            time_min=allocate_time_CMF
 
 
-rule run_bustools_correct:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}"
+        shell: 
+            """
+            if [[ "{params.headers}" == "yes" ]] || [[ "{params.headers}" == "True" ]]; then
+                python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]} --header
 
-    # priority: 10
+            else
+                python3 {config[featuremap_script]} {input} --t2g {output[1]} --fa {output[0]}
 
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
+            fi
+            """
 
-    params:
-        whitelist=config['whitelist']
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule build_kallisto_index:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}"
 
-    resources:
-        mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
-        time_min=allocate_time_RBCor
+        # priority: 10
 
-    shell:
-        """
-        ml bustools
-        bustools correct -w {params.whitelist} {input} -o {output}
-        """
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}"
 
-        
-rule run_bustools_sort:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
+        params:
+            k_mer_len=config['kb_pipeline']['k_mer_length']
+        resources:
+            mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
+            time_min=allocate_time_BKI
 
-    # priority: 10
+        shell:
+            """
+            ml kallisto
+            kallisto index -i {output} -k {params.k_mer_len} {input}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule build_kallisto_index:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_fa']}"
 
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}"
+        # priority: 10
 
-    threads: 1
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_idx']}"
 
-    resources:
-        mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
-        time_min=allocate_time_RBS
+        params:
+            k_mer_len=config['kb_pipeline']['k_mer_length']
+        resources:
+            mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
+            time_min=allocate_time_BKI
 
-    shell:
-        """
-        ml bustools
-        bustools sort -t 4 -o {output} {input}
-        """
-
-
-rule run_bustools_count:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
-
-    # priority: 10
-
-    output:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
-
-    params:
-        output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
-
-    resources:
-        mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
-        time_min=allocate_time_RBCnt
-
-    shell:
-        """
-        ml bustools
-        bustools count -o {params.output_pref} --genecounts -g {input[3]} -e {input[1]} -t {input[2]} {input[0]}
-        """
+        shell:
+            """
+            ml kallisto
+            kallisto index -i {output} -k {params.k_mer_len} {input}
+            """
 
 
-rule create_h5ad_bustools:
-    input:
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
-        f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule run_kallisto:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}",
+            fastq_files=get_hto_fastqs
 
-    # priority: 10
+        # priority: 10
 
-    output:
-        f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}"
 
-    resources:
-        mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
-        time_min=allocate_time_CHB
+        params:
+            output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
+            chemistry=config['kb_pipeline']['chemistry']
 
-    shell:
-        """
-        python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}
-        """
+        threads: 1
+
+        resources:
+            mem_mb=allocate_mem_RK, #allocate_mem_KBP,
+            time_min=allocate_time_RK
+
+        shell:
+            """
+            ml kallisto
+            kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule run_kallisto:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_idx']}",
+            fastq_files=get_hto_fastqs
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['ec_matrix']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['tx']}"
+
+        params:
+            output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
+            chemistry=config['kb_pipeline']['chemistry']
+
+        threads: 1
+
+        resources:
+            mem_mb=allocate_mem_RK, #allocate_mem_KBP,
+            time_min=allocate_time_RK
+
+        shell:
+            """
+            ml kallisto
+            kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
+            """
+
+
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule run_bustools_correct:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
+
+        params:
+            whitelist=config['whitelist']
+
+        resources:
+            mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
+            time_min=allocate_time_RBCor
+
+        shell:
+            """
+            ml bustools
+            bustools correct -w {params.whitelist} {input} -o {output}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule run_bustools_correct:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file_corrected']}"
+
+        params:
+            whitelist=config['whitelist']
+
+        resources:
+            mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
+            time_min=allocate_time_RBCor
+
+        shell:
+            """
+            ml bustools
+            bustools correct -w {params.whitelist} {input} -o {output}
+            """
+
+
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':        
+    rule run_bustools_sort:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_corrected']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}"
+
+        threads: 1
+
+        resources:
+            mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
+            time_min=allocate_time_RBS
+
+        shell:
+            """
+            ml bustools
+            bustools sort -t 4 -o {output} {input}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':        
+    rule run_bustools_sort:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file_corrected']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file_sorted']}"
+
+        threads: 1
+
+        resources:
+            mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
+            time_min=allocate_time_RBS
+
+        shell:
+            """
+            ml bustools
+            bustools sort -t 4 -o {output} {input}
+            """
+
+
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule run_bustools_count:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['ec_matrix']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['tx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_t2g']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
+
+        params:
+            output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
+
+        resources:
+            mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
+            time_min=allocate_time_RBCnt
+
+        shell:
+            """
+            ml bustools
+            bustools count -o {params.output_pref} --genecounts -g {input[3]} -e {input[1]} -t {input[2]} {input[0]}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule run_bustools_count:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file_sorted']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['ec_matrix']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['tx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['features_mismatch_t2g']}"
+
+        # priority: 10
+
+        output:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
+
+        params:
+            output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
+
+        resources:
+            mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
+            time_min=allocate_time_RBCnt
+
+        shell:
+            """
+            ml bustools
+            bustools count -o {params.output_pref} --genecounts -g {input[3]} -e {input[1]} -t {input[2]} {input[0]}
+            """
+
+
+if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
+    rule create_h5ad_bustools:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
+
+        # priority: 10
+
+        output:
+            f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"
+
+        resources:
+            mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
+            time_min=allocate_time_CHB
+
+        shell:
+            """
+            python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}
+            """
+elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
+    rule create_h5ad_bustools:
+        input:
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_mtx']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_genes']}",
+            f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_count_dir']}{config['kb_pipeline']['bus_count_barcodes']}"
+
+        # priority: 10
+
+        output:
+            f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}_{{i}}{config['demux_pipeline']['bustools_h5ad']}"
+
+        resources:
+            mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
+            time_min=allocate_time_CHB
+
+        shell:
+            """
+            python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}
+            """

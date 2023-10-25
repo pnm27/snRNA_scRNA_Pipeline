@@ -5,12 +5,17 @@
 from typing import Union # Need verion > 3.5
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import os, sys, argparse
+import os, sys, argparse, itertools
 from collections import Counter
 from collections import defaultdict, OrderedDict as ord_dict
 import datetime
 from time import sleep
-from demultiplex_helper_funcs import demux_by_calico_solo, demux_by_vireo, auto_read
+from demultiplex_helper_funcs import (
+    auto_read, 
+    demux_by_calico_solo, 
+    demux_by_vireo,
+    get_donor_info, 
+    )
 
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
@@ -25,6 +30,42 @@ assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 #     else:
 #         return None
 
+# Example run: For multi-HTO per donor in a multiplexed pool
+
+# python3 demul_samples.py [--demux_info demultiplex/info/poolA.txt -m 5 --mito_prefix 5 -g 1000 -c 10 -w wet_lab_file.csv
+                        # --calico_solo demultiplex/solo/poolA/round1.h5ad demultiplex/solo/poolA/round2.h5ad 
+                        # --hto_sep "_" --columns Pool_name HTO HTO_bc Sample -p poolA
+                        # -pref round1 round2 [--no-demux-stats-cs] [--no-subid_convert] 
+                        # input_file count_matrix gene_info_file
+
+# 
+# wet_lab_file.csv
+# Pool_name Sample HTO HTO_bc
+# poolA	samp1	HTO1_HTO2	AATCGATCGAT_ATCGGCTTAGCT
+# poolA	samp2	HTO7_HTO8	AATCGGCTGAT_AAACGCTTAGCT
+# poolA	samp3	HTO3_HTO5	AACCCATCGAT_ATCGCTCCAGCT
+# poolA	samp4	HTO3_HTO4	AAGCGATCGAT_ATTTCGCTTAGC
+# poolA	samp5	HTO5_HTO6	AATCGACTGAT_ATCGGCTTACCC
+# poolA	samp6	HTO9_HTO10	AATCCTCCGAT_ATCGGCTGGGC
+# poolB	samp7	HTO7_HTO8	AATCGGCTGAT_AAACGCTTAGCT
+# poolB	samp8	HTO9_HTO10	AATCCTCCGAT_ATCGGCTGGGC
+# poolB	samp9	HTO6_HTO5	AATCGACTGAT_ATCGGCTTACCC
+# poolB	samp10	HTO2_HTO5	ATCGGCTTAGCT_ATCGGCTTACCC
+# poolB	samp11	HTO1_HTO2	AATCGATCGAT_ATCGGCTTAGCT
+# poolB	samp12	HTO3_HTO4	AAGCGATCGAT_ATTTCGCTTAGC
+
+# and calico_solo output 'tree' looks like:
+
+# demultiplex/
+# └── solo
+#     ├── poolA
+#     │   ├── round1.h5ad
+#     │   └── round2.h5ad
+#     └── poolB
+#         ├── round1.h5ad
+#         └── round2.h5ad
+
+
 
 
 def get_argument_parser():
@@ -32,7 +73,8 @@ def get_argument_parser():
 
     #Parse Command-Line arguments
     parser = argparse.ArgumentParser(description="Demultiplex pools "
-    "(supports hashsolo and vireo)"
+    "(supports hashsolo and vireo). Note: poor cells are not removed but "
+    "they aren't included while demultiplexing"
     )
     parser.add_argument('input_file', help="Path to matrix.mtx.gz or h5ad "
     "file. If an h5ad file is provided then it is expected that it "
@@ -41,7 +83,7 @@ def get_argument_parser():
     parser.add_argument('count_matrix', help="Path to store the final "
     "count matrix(h5ad)"
     )
-    parser.add_argument('gene_info_file', help="Path to file that "
+    parser.add_argument('gene_info_file', help="Path to the file that "
     "contains gene names and ids for annotation (tab-separated txt file)"
     )
     parser.add_argument('--demux_info', help="Path to store demultiplexing "
@@ -52,18 +94,24 @@ def get_argument_parser():
     add_redo_grp = parser.add_argument_group('START AFRESH', "Creating output "
     "for the first time."
     )
-    add_redo_grp.add_argument('-m', '--max_mito', type=int, help="Max "
-    "mitochondrial genes(in percent) per cell. Default: 5", 
-    default=5
+    add_redo_grp.add_argument('-m', '--max_mito', type=int, nargs='?', 
+    help="Max mitochondrial genes(in percent) per cell. "
+    "If no given value to parameter, will default to 5 otherwise no filter", 
+    default=None, const=5,
     )
-    add_redo_grp.add_argument('--mito_prefix', help="Prefix for mitochondrial "
-    "genes. Default: 'MT-'", default="MT-" 
+    add_redo_grp.add_argument('--mito_prefix', nargs='?', 
+    help="Prefix for mitochondrial genes. If no given value to "
+    "parameter, will default to 'MT-' otherwise no filter", 
+    default=None, const="MT-",
     )
-    add_redo_grp.add_argument('-g', '--min_genes', type=int, help="Min #genes "
-    "per cell. Default: 1000", default=1000
+    add_redo_grp.add_argument('-g', '--min_genes', nargs='?', type=int, 
+    help="Min #genes per cell. If no given value to parameter, will "
+    "default to 1000 otherwise no filter", default=None, const=1000,
     )
-    add_redo_grp.add_argument('-c', '--min_cells', type=int, help="Min #cells "
-    "expressing a gene for it to pass the filter. Default: 10", default=10
+    add_redo_grp.add_argument('-c', '--min_cells', nargs='?', type=int, 
+    help="Min #cells expressing a gene for it to pass the filter. "
+    "If no given value to parameter, will default to 10 otherwise "
+    "no filter", default=None, const=10,
     )  
 
     # For calico_solo inputs
@@ -73,45 +121,58 @@ def get_argument_parser():
     "contains HTO info for each set (either csv or tsv file)"
     )
     cs.add_argument('--calico_solo', dest='hashsolo_out', help="Path "
-    "to cached output of hashsolo(h5ad)", metavar="hashsolo.h5ad"
+    "to cached output of hashsolo(h5ad) file(s). If no given value to "
+    "parameter, will default to not process hashsolo output otherwise ",
+    nargs='*', metavar="hashsolo.h5ad", default=None,
     )
-    cs.add_argument('--hto_sep', help="If, per each sample in the "
+    cs.add_argument('--hto_sep', nargs='?', help="If, per each pool in the "
     "wet lab file (6th positional argument to this script), HTOs are "
     "all present in one row separated by some SEP then specify it here. "
-    "Default: None", default=None,
+    "NOTE: A value is also expected"
+    "Default: None", default="_", const=None,
     )
     cs.add_argument('--columns', nargs=4, help="List of column names "
     "RESPECTIVELY to sample_ID (as present in the spreadsheets - "
     "identifies pooled samples), HTO numbers, it's associated barcodes, "
-    "and Donors/SubIDs (contains each multiplexed donors).", 
-    metavar=('sample_ID', 'HTO_name', 'HTO_barcode', 'Sub_ID'),
+    "and Donors/SubIDs (contains each multiplexed donors). If multiple HTOs "
+    "are used per samples in a pool then use 'hto_sep' parameter "
+    "to explain how the htos are present. Check 'hto_sep' description "
+    "for more info", 
+    metavar=('pool_ID', 'HTO_name', 'HTO_barcode', 'donor_ID'),
     default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID']
     )
-    cs.add_argument('-s', '--sample_name', help="Name of the sample. "
+    cs.add_argument('-p', '--pool_name', help="Name of the pool. "
     "Check whether this name coincides with that in this script as well "
     "as the one in the wet_lab_file"
     )
     cs.add_argument('--no-demux-stats-cs', action='store_true', 
             dest="cs_stats",
-			help="If flag is used no demux stats are present",
+			help="If flag is used no demux stats will be stored.",
 			)
     cs.add_argument('--no-subid_convert', action='store_true', 
             dest="subid_convert",
-			help="If flag is used no conversion to subID is needed",
+			help="If flag is used no conversion to subID is needed."
+            "Also expected when used for multi-HTO setup",
 			)
+    # Only for multi-HTO pools
+    cs.add_argument('--pref', help="Prefix for each hashsolo "
+    "run per pool. This should match the number of hashsolo files "
+    "provided as input and in the same sequence! ", nargs='*', metavar="prefix",
+    )
 
     # For vireo inputs
     vs = parser.add_argument_group("VIREO DEMUX OPTIONS", "Add "
-    "genotype-based demultiplexing outputs to create final count matrix"
+    "genotype-based demultiplexing outputs to create final count matrix."
     )
     vs.add_argument('--vireo_out', help="Path to donor_ids.tsv file",
-    metavar="donor_ids.tsv")
+    metavar="donor_ids.tsv"
+    )
     vs.add_argument('--converter_file', help="If names from vireo output "
-    "needs to be changed"
+    "needs to be changed."
     )
     vs.add_argument('--no-demux-stats-vs', action='store_true',
             dest="vs_stats",
-			help="If flag is used no demux stats are present",
+			help="If flag is used no demux stats will be stored.",
 			)
 
     return parser
@@ -154,6 +215,8 @@ def main():
     add_calico = args.hashsolo_out
     add_vireo = args.vireo_out
 
+    multi_hto_setup = True if len(add_calico) > 1 else False
+
     starsolo_mat = args.input_file[:-13] if not redo else None
 
     # Filtering stats
@@ -169,7 +232,7 @@ def main():
             "or vireoSNP's donor file"
             )
     
-    no_stats = True if redo and args.cs_stats and args.vs_stats else False
+    # no_stats = True if args.cs_stats and args.vs_stats else False
     
     # For assigning gene names
     t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),
@@ -213,52 +276,75 @@ def main():
         adata.var_names_make_unique()
         adata.var["gene_id"] = adata.var.index.values
         adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
+        # Typically shows discrepancies in reference genome used for
+        # alignemnt and that for annotation (here: gene_info file)
+        geneids_w_gene_names = pd.notna(adata.var["gene_name"]) 
         adata.var_names = (
             adata.var_names.to_series().map(lambda x: x + '_index')
             )
-        total_umi_lost = adata[:, ~ pd.notna(adata.var["gene_name"])].X.sum()
+        total_umi_lost = adata[:, ~ geneids_w_gene_names].X.sum()
+        # avg_umis_per_cell_before = (
+        #     adata.X.sum(axis=1)
+        #     .mean()
+        #     )
+        # avg_umis_per_gene_before = (
+        #     adata.X.sum(axis=0)
+        #     .mean()
+        #     )
         avg_umis_lost_per_cell = (
-            adata[:, ~ pd.notna(adata.var["gene_name"])].X.sum(axis=1)
+            adata[:, ~ geneids_w_gene_names].X.sum(axis=1)
             .mean()
             )
         avg_umis_lost_per_gene = (
-            adata[:, ~ pd.notna(adata.var["gene_name"])].X.sum(axis=0)
+            adata[:, ~ geneids_w_gene_names].X.sum(axis=0)
             .mean()
             )
-        # Removed gene_ids that don't have an associated gene name
-        adata = adata[:, pd.notna(adata.var["gene_name"])]
+        
+        # Don't consider gene_ids that don't have an associated gene name      
         adata.var_names_make_unique()
         adata.X = adata.X.astype('float64')
         filter_info.append(( 'gene_ids with an associated gene_name', 
                             adata.n_vars))
-        filter_info.append(( 'total UMI counts lost to gene ids wo names', 
-                            total_umi_lost))
         filter_info.append(( 'avg UMI counts lost per cell', 
                             avg_umis_lost_per_cell))
         filter_info.append(( 'avg UMI counts lost per gene', 
                             avg_umis_lost_per_gene))
+        filter_info.append(( 'total UMI counts lost to gene ids wo names', 
+                            total_umi_lost))
         print(adata)
 
         # Filter data using cell level metrics
-        sc.pp.filter_cells(adata, min_genes=min_genes)
-        sc.pp.filter_genes(adata, min_cells=min_cells)
+        cell_subset, n_genesPerCell = sc.pp.filter_cells(adata, min_genes=min_genes, inplace=False)
+        adata.obs['n_genes'] = n_genesPerCell
+        gene_subset, n_cellsPerGene = sc.pp.filter_genes(adata, min_cells=min_cells)
+        adata.var['n_cells'] = n_cellsPerGene
         filter_info.append(( 'min #genes expressed per cell', 
                             min_genes))
         filter_info.append(( 'min #cells expressing per gene', 
                             min_cells))
-        filter_info.append(( 'Retained cells after previous filter', 
-                            adata.n_obs))
-        filter_info.append(( 'Retained genes after previous filter', 
-                            adata.n_vars))
+        filter_info.append(( 'Remaining cells after previous filter', 
+                            cell_subset.sum()))
+        filter_info.append(( 'Remaining genes after previous filter', 
+                            gene_subset.sum()))
 
         # Filter data wrt mito content
         adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
-        adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
+        mito_QCpass = adata.obs["pct_counts_mito"]< max_mito
+        # adata._inplace_subset_obs(cell_subset)
+        # adata._inplace_subset_obs(mito_QCpass)
+        # adata._inplace_subset_var(gene_subset)
         filter_info.append(( 'max percent mito content per cell', 
                             max_mito))
         filter_info.append(( 'cells with low mito percent', 
-                            adata.n_obs))
+                            mito_QCpass.sum()))
+        
+        qc_pass_cells = cell_subset.astype('bool') & mito_QCpass.astype('bool')
+        filter_info.append(( 'Cells passing mito and basic filter threshold', 
+                            qc_pass_cells.sum()))
+        
+        # Assign 'QC_pass' observation according to the selected filters
+        adata.obs['QC_pass'] = qc_pass_cells
         print(adata)
     
     else:
@@ -279,79 +365,146 @@ def main():
 
     # Batch info
     # This is the values that will be stored in the final h5ad file
-    # batch=args.sample_name.replace('-', '_')+'_cDNA'
+    # batch=args.pool_name.replace('-', '_')+'_cDNA'
     # Prepare for Extra Information
-    replicate=args.sample_name.split('_')[2]
+    replicate=args.pool_name.split('_')[2]
     # add few more annotations
-    adata.obs['batch'] = args.sample_name
+    adata.obs['batch'] = args.pool_name
     adata.obs['rep'] = replicate
-    adata.obs['set'] = '_'.join(args.sample_name.split('_')[:3])[:-1]
+    adata.obs['set'] = '_'.join(args.pool_name.split('_')[:3])[:-1]
+    cell_bcs =  adata.obs_names.to_series()
 
     # For demultiplexing using calico_solo
     if add_calico is not None:
-
-        ct = datetime.datetime.now()
-        print(
-            f"Starting calico_solo/hashsolo demultiplexing at: {ct}"
-        )
-
-        cols = args.columns
-
         # Wet Lab file, Filter wet lab file's columns, if needed
         df = auto_read(args.wet_lab_file)
-        if df.loc[df[cols[0]].str.lower() == args.sample_name.lower()].empty:
+        if df.loc[df[cols[0]].str.lower() == args.pool_name.lower()].empty:
             raise ValueError("Check dtypes!\nSample (variable name 'var'"
-            f", data type {type(args.sample_name)}, with value "
-            f"{args.sample_name.lower()} ) couldn't be subset from the wet lab "
+            f", data type {type(args.pool_name)}, with value "
+            f"{args.pool_name.lower()} ) couldn't be subset from the wet lab "
             "file.\nData types for the wet lab "
             f"file:\n{df.dtypes}\nWhile the top 5 rows are:\n{df[cols[0]][:5]}")
         else:
-            df = df.loc[df[cols[0]].str.lower() == args.sample_name.lower()]
-
-
-        # Load hashsolo/calico_solo output (h5ad)
-        try:
-            dem_cs = ad.read(add_calico)
-        except:
-            e = sys.exc_info()[0]
-            print(
-                "Error encountered while loading the h5ad file!"
-                f"\nError message: {e}"
-                )
-
-        print("Successfully loaded calico_solo output!")
-
-        # Demultiplex and assign samples-------------------------------------
-
-        # hto_tags_cs, hto_tags_ms, and hto_tags_hd contain (in sequence): 
-        # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
-        #  as columns no. of doublet cells, no. of negative cells]
+            df = df.loc[df[cols[0]].str.lower() == args.pool_name.lower()]
 
         ct = datetime.datetime.now()
         print(
-            "Starting: Assigning cell classifications by"
-            f"hashsolo/calico solo at: {ct}"
+                f"Starting calico_solo/hashsolo demultiplexing at: {ct}"
             )
-        cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
-            adata.obs_names.to_series(), df, args.sample_name, 
-            args.hto_sep, [cols[1], cols[3]], 
-            dem_cs.obs['Classification'], args.subid_convert
+
+        cols = args.columns
+        hto_count=0
+
+        # If more than 1 hasholo outputs are given then it means
+        # more than 1 HTO is used for sample identification
+        if multi_hto_setup:
+            assert args.hto_sep is not None, "Expected command line " \
+            "argument to 'hto_sep' parameter as multiple calico_solo " \
+            "outputs are provided per pool!"
+            assert args.subid_convert == False, "'no-subid-convert' flag " \
+            "is not expected as multiple calico_solo outputs are " \
+            "provided per pool!"
+            assert len(add_calico) == len(args.pref), "Prefix options " \
+            "given to 'pref' parameter should be equal to number of " \
+            "hashsolo inputs!"
+
+        for c in add_calico:
+            # For use in column names
+            suff = args.pref
+
+            print(
+                f"Loading file {c}"
             )
         
-        ct = datetime.datetime.now()
-        print(
-            "Assigning demultiplexing info for hashsolo/calico "
-            f"solo at: {ct}"
-            )
+            # Load hashsolo/calico_solo output (h5ad)
+            try:
+                dem_cs = ad.read(c)
+            except:
+                e = sys.exc_info()[0]
+                print(
+                    "Error encountered while loading the h5ad file!"
+                    f"\nError message: {e}"
+                    )
 
-        adata.obs['SubID_cs'] = cs_dons
-        adata.obs['HTO_n_cs'] = hto_name_cs
-        if not args.cs_stats:
-            solo_dem_stats.extend(temp_df)
+            print("Successfully loaded calico_solo output!")
+
+            # Demultiplex and assign samples-------------------------------------
+
+            # hto_tags_cs, hto_tags_ms, and hto_tags_hd contain (in sequence): 
+            # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
+            #  as columns no. of doublet cells, no. of negative cells]
+
+            ct = datetime.datetime.now()
+            print(
+                "Starting: Assigning cell classifications by"
+                f"hashsolo/calico solo at: {ct}"
+                )
+            if not multi_hto_setup:
+                cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
+                    cell_bcs, df, args.pool_name, 
+                    args.hto_sep, [cols[1], cols[3]], 
+                    dem_cs.obs['Classification'], args.subid_convert,
+                    # hto_count, multi_hto_setup
+                    )
+            else:
+                cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
+                    cell_bcs, df, args.pool_name, 
+                    args.hto_sep, [cols[1], cols[3]], 
+                    dem_cs.obs['Classification'], False,
+                    # hto_count, multi_hto_setup
+                    )
+            
+            ct = datetime.datetime.now()
+            print(
+                "Assigning demultiplexing info for hashsolo/calico "
+                f"solo at: {ct}"
+                )
+
+            
+            # When not a multi-hto experiment
+            if not multi_hto_setup and not args.subid_convert:
+                adata.obs['SubID_cs'] = cs_dons
+                adata.obs['HTO_n_cs'] = hto_name_cs
+            #  No donor-name conversion needed
+            elif not multi_hto_setup and args.subid_convert:
+                adata.obs['HTO_n_cs'] = hto_name_cs
+            # For multi-hto setup donor-names not needed per each run 
+            # of calico solo
+            else:
+                adata.obs['HTO_n_cs_'+suff] = hto_name_cs
+
+            if not args.cs_stats and not multi_hto_setup:
+                solo_dem_stats.extend(temp_df)
+
+            
+
+        # args.subid_convert is assumed to be False i.e. in multi-HTO setup
+        # hto combos need to be changed to donor names
+        if multi_hto_setup:
+            hto_cols = [c for c in adata.obs.columns if c.startswith('HTO_n_cs_')]
+            adata.obs.loc[:, 'combo'] = adata.obs[hto_cols[0]].str.cat(
+                [adata.obs[x] for x in hto_cols[1:]], sep='_'
+                )
+            
+            temp_l = []
+            for i, j in enumerate(df[cols[1]]):
+                vals = [df[cols[3]][i], j]
+                vals.extend([list(c) \
+                    for c in list(set(list(itertools.permutations(
+                    j.split(args.hto_sep)))))
+                    ]
+                )
+                temp_l.append(vals)
+            
+            temp_df2 = pd.DataFrame(temp_l, 
+                        columns=['comb' + str(x+1) for x in range(len(vals)-2)]
+                        )
+
+            adata.obs['SubID_cs'] = adata.obs['comb'].apply(get_donor_info, args=(temp_df2, ))
 
         # If Subject IDs aren't 'string' then convert them
-        adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
-
+        if 'SubID_cs' in adata.obs.columns:
+            adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
     # To do
     if add_vireo is not None:
         print("Starting demultiplexing through vireoSNP's output")
@@ -407,7 +560,7 @@ def main():
     adata.write(op)
 
     ct = datetime.datetime.now()
-    print(f"Finished: Processing Sample {args.sample_name} at: {ct}")
+    print(f"Finished: Processing Sample {args.pool_name} at: {ct}")
 
 
 

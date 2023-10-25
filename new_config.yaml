@@ -3,6 +3,7 @@
 last_step: STARsolo_kb_solo
 picard_metrics: all # can be null, all, rnaseq or gc
 create_final_h5ad: True # can be True, False or null
+hto_demux_type: single # Can be single, multiple or null
 
 # Limit processing to the files present in
 select_fastqs: /sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt

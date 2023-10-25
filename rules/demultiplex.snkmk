@@ -5,6 +5,7 @@ def get_inputs_demux(wildcards):
         f"{config['STARsolo_pipeline']['genefull_matrix']}"
         ]
     if global_vars.ONLY_SOLO:
+        checkpoint_output = checkpoints.clustering.get(**wildcards).output[0]
         ret_list.append(
             f"{config['demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
@@ -130,7 +131,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
             samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
             cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-            sample_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
+            pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
             hto_sep=config['demux_pipeline']['hto_sep'],
             mito_prefix=config['mito'], # Mitochondrial genes' (names') prefix
             condn=get_condn,
@@ -162,7 +163,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 else
                     python3 helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
@@ -171,7 +172,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 fi
             elif [ "{params.condn}" == "S" ] && \
                  [ "{params.subid_convert}" != "True" ]; then
@@ -189,7 +190,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     --wet_lab_file {params.samples_info} \
                     --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 else
                     python3 helper_py_scripts/demul_samples.py \
@@ -199,7 +200,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 fi
             elif [ "{params.condn}" == "V" ]; then
@@ -213,7 +214,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                 --demux_info {output[1]} \
                 -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
                 --mito_prefix {params.mito_prefix} ${{cmd_str}} \
-                --sample_name {params.sample_name}
+                --pool_name {params.pool_name}
 
             elif [ "{params.condn}" == "B" ]; then
                 for i in $(seq 1 $((${{#array[@]}}-1)) )
@@ -230,7 +231,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     --wet_lab_file {params.samples_info} \
                     --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
                 [[ "{params.subid_convert}" != "True" ]]; then
                     python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
@@ -239,7 +240,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
                 [[ "{params.subid_convert}" == "True" ]]; then
@@ -249,7 +250,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
                 [[ "{params.subid_convert}" != "True" ]]; then
                     python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
@@ -258,7 +259,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
                 [[ "{params.subid_convert}" == "True" ]]; then
@@ -268,7 +269,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
                 [[ "{params.subid_convert}" != "True" ]]; then
                     python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
@@ -277,7 +278,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
                 [[ "{params.subid_convert}" == "True" ]]; then
@@ -287,7 +288,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
                 elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
                 [[ "{params.subid_convert}" != "True" ]]; then
                     python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
@@ -296,7 +297,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
                     -c {params.min_cells} --mito_prefix {params.mito_prefix} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
                 fi
             else
@@ -324,7 +325,7 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
             samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
             cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-            sample_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
+            pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
             hto_sep=config['demux_pipeline']['hto_sep'],
             condn=get_condn2,
             subid_convert=config['demux_pipeline']['SubID_convert']
@@ -346,7 +347,7 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
                     {input[0]} {output[0]} {params.genes_info} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
             elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" != "None" ]] && \
             [[ "{params.subid_convert}" != "True" ]]; then
                 for i in $(seq 1 $((${{#array[@]}}-1)) )
@@ -358,7 +359,7 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
                     {input[0]} {output[0]} {params.genes_info} \
                     --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
             elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" == "None" ]] && \
             [[ "{params.subid_convert}" == "True" ]]; then
@@ -371,7 +372,7 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
                     {input[0]} {output[0]} {params.genes_info} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name}
+                    --pool_name {params.pool_name}
             elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" == "None" ]] && \
             [[ "{params.subid_convert}" != "True" ]]; then
                 for i in $(seq 1 $((${{#array[@]}}-1)) )
@@ -383,7 +384,7 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
                     {input[0]} {output[0]} {params.genes_info} \
                     --wet_lab_file {params.samples_info} \
                     --columns {params.cols} ${{cmd_str}} \
-                    --sample_name {params.sample_name} \
+                    --pool_name {params.pool_name} \
                     --no-subid_convert
             elif [[ "{params.condn}" == "V" ]]; then
                 for i in $(seq 1 $((${{#array[@]}}-1)) )
@@ -394,11 +395,11 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
                 if [[ "${{#array[@]}}" -lt 3 ]]; then
                     python3 helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
-                    ${{cmd_str}} --sample_name {params.sample_name}
+                    ${{cmd_str}} --pool_name {params.pool_name}
                 else
                     python3 helper_py_scripts/demul_samples.py \
                     {input[0]} {output[0]} {params.genes_info} \
-                    ${{cmd_str}} --sample_name {params.sample_name}
+                    ${{cmd_str}} --pool_name {params.pool_name}
                 fi
             else
                 echo "Nothing happened! Check 'condn' in params!"

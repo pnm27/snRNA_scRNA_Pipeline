@@ -27,7 +27,7 @@ def auto_read(fname, **kwargs) -> pd.DataFrame :
 
 # Simplify these 'parse' functions
 def parse_file(wet_lab_df, cols, s_name, hs, d_con) \
-    -> Union[list[str], list[list[str], list[str]]]:
+    -> Union[list[str], tuple[list[str], list[str]]]:
 
     hto_col = cols[0]
     subid_col = cols[1]
@@ -188,12 +188,42 @@ def demux_stats(demux_freq: pd.Series, demux_name: str) -> list[str]:
 #                 f"file:\n\tsample: {s_name}\n\tHTO-separator: {hs}"
 #                 )
 
+def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame, 
+    sep: str, col_list: list):
+    r"""Return donor information for each cell barcode for multi-HTO setup.
+
+    This function returns a pandas series containing demultiplexed donor
+    info according to the data contained in the wet lab info file. This 
+    function is made specially for multi-HTO setup.
+
+    Parameters
+    ----------
+    hto_df
+        A series of cell barcodes from gene count matrix
+    pool_info_df
+        Subset of wet lab file containing multi-HTO information and \
+        SubID (donor IDs)
+
+    col_list
+        List of column names in the wet lab file in the sequence: pool name, \
+        HTO names (separated by 'sep'), HTO barcode, donor info
+
+    Returns
+    -------
+    pd.Series
+        Contains donor IDs with cell barcodes as index
+
+    """
+
+    mask=np.column_stack([f for f in ])
+
 
 
 # calico_solo demultiplexing function----------------------------------------
 def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     sep: Union[str, None], col_list: list[str, str], dem_cs: pd.Series, 
-    donor_convert: bool) -> list[pd.Series, pd.Series, int, int]:
+    donor_convert: bool, hto_count: int, multi_hto_setp: bool
+    ) -> list[pd.Series, pd.Series, int, int]:
     r"""Return HTO information and classification for each cell barcode.
 
     This function returns a 2 pandas series representing donor IDs and 
@@ -206,21 +236,25 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
         A pd series of cell barcodes from gene count matrix
     df_s
         Wet lab file containing HTO information and SubID (donor IDs) \
-            for each pool
+        for each pool
     samp
         Pool name (present in `df_s` file)
     sep
         Separator used if all HTOs and donors are present in one row \
-            otherwise None
+        or if multi-HTO setup otherwise None
     col_list
         List of column names (first val HTO, second val SubID)
     dem_cs
         A pd series with cell barcodes as index and "HTO classification" \
-            (solo output)
+        (solo output)
     donor_convert
         If donor names have to be converted from the names used in \
         calico_solo (hashsolo) demultiplexing method
-
+    hto_count
+        If run for multi-HTO setup this indicates the position of HTO \
+        in the sequence
+    multi_hto_setp
+        True for multi-HTO setup
     Returns
     -------
     pd.Series
@@ -321,7 +355,8 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 # def demux_by_calico_solo(obs_index: pd.Index, df_s: pd.DataFrame):
 def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     sep: str, col_list: list[str, str], dem_cs: pd.Series, 
-    donor_convert: bool) -> list[pd.Series, pd.Series, list[str]]:
+    donor_convert: bool, hto_count: int, multi_hto_sep: str = ""
+    ) -> list[pd.Series, pd.Series, list[str]]:
     r"""Main function for classification by calico_solo.
 
     This function assigns calico_solo classification using another

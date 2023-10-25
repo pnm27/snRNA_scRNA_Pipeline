@@ -66,6 +66,7 @@ def get_cellsnp_inputs(wildcards):
         ]
     )
     
+    # 'cellsnp_ref_snps' is useful when per-Pool vcfs need to subset for SNVs
     if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
         # modify this to accept either a text file containing per pool vcf or one single vcf file
         if config['gt_demux_pipeline']['cellsnp_ref_snps'].endswith('.vcf.gz'):
@@ -103,7 +104,7 @@ def get_vir_inputs(wildcards):
     if config['gt_demux_pipeline']['vcf_info'] is not None \
         and os.path.isfile(config['gt_demux_pipeline']['vcf_info']):
         col_set1 = ["pool", "n_dons", "vcf"]
-        col_set2 = ["pool", "n_dons"]
+        # col_set2 = ["pool", "n_dons"]
         n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
         # Make snakemake's wildcard same as the value in the "pool" column
         samp_name = '-'.join(wildcards.id1.split('-')[:-1])

@@ -2,13 +2,13 @@ import os, glob2, re
 
 
 def get_r1_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1) # Add wildcards
+    temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
     r1_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R1_suffix']}"))
     return r1_files
 
 
 def get_r2_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1)
+    temp_fold=f"{config['fold_struct']}".format(**wildcards)
     r2_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R2_suffix']}"))
     return r2_files
 
@@ -31,7 +31,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
     '''
     # This is to check the log file produced after each attempt for the error value
-    file_p_temp = f"{config['fold_struct']}".format(id1=wildcards.id1)
+    file_p_temp = f"{config['fold_struct']}".format(**wildcards)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
