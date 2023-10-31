@@ -52,7 +52,7 @@ fold_struct_filt_bc: "filt_bc_vireo_Sample_{id1}-cDNA"
 fold_struct_bam_split1: "Sample-{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
 fold_struct_bam_split2: "Sample_{id1}-cDNA/" # Used for per-barcode and per-donor bam files
 # Folder structure for per-donor vcf files for STARsolo SNV-Aware pipeline
-fold_struct_vcf: "{id1}-cDNA/"
+# fold_struct_vcf: "{id1}-cDNA/"
 # Folder structure for per-donor SNV-aware STARsolo bams
 # fold_struct_snv_aware: "{id1}/"
 

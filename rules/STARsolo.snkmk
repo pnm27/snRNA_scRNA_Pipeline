@@ -70,10 +70,6 @@ def get_limitsjdbval_coll(wildcards, resources):
                     sj_collap = ins_nsj
 
 
-        # return 1000000
-
-
-    # return 1000000
     return [ins_nsj, sj_collap]
 
 
