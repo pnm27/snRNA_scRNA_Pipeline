@@ -303,7 +303,9 @@ def main():
     map_names = pd.read_csv(args.map_file, delimiter="\t", names=["val_in_log", "curr_val", "prog", "sub_prog", "desc"])
     cl = pd.DataFrame(new_cols_to_add, columns=list(map_names.columns.values)[1:-1])
     cols = map_names.iloc[:, 1:-1]
-    cl = cl.append(cols, ignore_index=True)
+    # cl = cl.append(cols, ignore_index=True) # DEPRACATED
+    cl = pd.concat([cl, cols], ignore_index=True, axis=0)
+
 
     # Change column header order to: curr_val, sub_prog, prog so that the output file looks like:
     #Prog

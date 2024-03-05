@@ -337,7 +337,7 @@ rule cellSNP:
         opts2=("-b" "-s")
         cmd_str=""
         if [[ "${{#array[@]}}" -lt 4 ]]; then
-            for i in "${{!array[@]}}"
+            for i in {{0..1}}
             do
                 cmd_str+="${{opts1[i]}} ${{array[i]}} "
             done
@@ -345,7 +345,7 @@ rule cellSNP:
             set -x
             cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         else
-            for i in "${{!array[@]:0:2}}"
+            for i in {{0..1}}
             do
                 cmd_str+="${{opts2[i]}} ${{array[i]}} "
             done
