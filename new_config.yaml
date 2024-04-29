@@ -58,7 +58,7 @@ fold_struct_bam_split2: "Sample_{id1}-cDNA/" # Used for per-barcode and per-dono
 
 fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
 # fold_struct_swaps_check: "{id1}_{donor}"
-fold_struct_bamcompare: "Sample-{id2}-{rep}"
+fold_struct_bamcompare: "Sample-{id2}"
 
 STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py

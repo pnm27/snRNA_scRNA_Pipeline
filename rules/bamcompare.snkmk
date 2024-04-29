@@ -4,12 +4,13 @@ import glob2
 def get_BC_input(wildcards):
     all_bams = sorted(glob2.glob(
         f"{config['bamCompare']['bams_dir']}{config['fold_struct_bamcompare']}*/"
-        f"{config['fold_struct_bamcompare']}*{config['bamCompare']['bam']}".format(id2=wildcards.id2, rep=wildcards.rep)))
+        f"{config['fold_struct_bamcompare']}*{config['bamCompare']['bam']}".format(id2=wildcards.id2)))
 
+    return all_bams
 
 rule bamCompare:
     input:
-        get_BC_input()
+        get_BC_input
     # priority: 9
 
     output:
@@ -19,7 +20,7 @@ rule bamCompare:
     params:
         outfile_fmt=config['bamCompare']['out_format']
 
-    conda: "envs/bamCompare.yaml"
+    conda: "../envs/bamCompare.yaml"
     resources:
         mem_mb=allocate_mem_BC,
         time_min=allocate_time_BC
