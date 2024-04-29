@@ -62,6 +62,7 @@ include: "rules/split_bams.snkmk"
 # include: "rules/split_bams_gt.snkmk"
 # include: "rules/pheno_demux2.snkmk"
 include: "rules/identify_swaps.snkmk"
+include: "rules/bamcompare.snkmk"
 
 
 rule all:

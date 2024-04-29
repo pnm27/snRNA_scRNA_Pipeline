@@ -130,6 +130,10 @@ def allocate_mem_QM(wildcards):
     return 5000
 
 
+def allocate_mem_BC(wildcards, attempt):
+    return 25000 + 20*(attempt-1)
+
+
 # Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
 # CAREFULL about exceeding time limits
 def allocate_time_SS(wildcards, attempt):
@@ -247,4 +251,7 @@ def allocate_timem_RN(wildcards, attempt):
     return 360
 
 def allocate_time_QM(wildcards, attempt):
+    return 60 + 20*(attempt-1)
+
+def allocate_time_BC(wildcards, attempt):
     return 60 + 20*(attempt-1)

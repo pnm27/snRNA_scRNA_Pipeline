@@ -13,7 +13,7 @@
 #     PD-set1-2 246048 246048 243003 BM-4
 #     ...
 
-# 2) conversion file 2: conversion_vir_irst_run2.tsv
+# 2) conversion file 2: conversion_vir_first_run2.tsv
 #     Sample Donor_name donID donor
 #     PD-set1-1 donor0 250118 250149 
 #     PD-set1-1 donor1 246048 243003 
