@@ -1,0 +1,8 @@
+name: bamcompare
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - deeptools
