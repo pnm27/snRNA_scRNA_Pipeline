@@ -58,7 +58,7 @@ fold_struct_bam_split2: "Sample_{id1}-cDNA/" # Used for per-barcode and per-dono
 
 fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
 # fold_struct_swaps_check: "{id1}_{donor}"
-fold_struct_bamcompare: "Sample-{id2}"
+fold_struct_deeptools: "Sample-{id2}"
 
 STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
@@ -281,12 +281,12 @@ identify_swaps:
   mbv_suffix: .bamstat.txt
   mbv_extra_opt: "--filter-mapping-quality 150" # null if no extra params needed for the run
   
-# bamCompare-----------------------------------------------------------------
-bamCompare:
+# deeptools-----------------------------------------------------------------
+multiBamSummary:
   bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
   bam: _Aligned.sortedByCoord.out.bam
-  outdir:  /sc/arion/projects/psychAD/snakemake_pipeline/bamCompare_out/
-  out_format: .bigwig # can be bigwig or bedgraph
+  outdir:  /sc/arion/projects/psychAD/snakemake_pipeline/multiBamSummary_out/
+  # out_format: .bigwig # can be bigwig or bedgraph
   rep1_suffix: 1-cDNA
   rep2_suffix: 2-cDNA
   extra_params: null # or valid extra parameters in deepTools' bamCompare

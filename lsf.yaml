@@ -80,6 +80,6 @@ add_obs_to_final_count_matrix:
 qtltools_mbv:
   - "-q express"
 
-bamCompare:
+multiBamSummary:
   - "-q express"
   

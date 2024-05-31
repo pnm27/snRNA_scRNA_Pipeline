@@ -130,7 +130,7 @@ def allocate_mem_QM(wildcards):
     return 5000
 
 
-def allocate_mem_BC(wildcards, attempt):
+def allocate_mem_MBS(wildcards, attempt):
     return 2000 + 1000*(attempt-1)
 
 
@@ -253,5 +253,5 @@ def allocate_timem_RN(wildcards, attempt):
 def allocate_time_QM(wildcards, attempt):
     return 60 + 20*(attempt-1)
 
-def allocate_time_BC(wildcards, attempt):
+def allocate_time_MBS(wildcards, attempt):
     return 150 + 30*(attempt-1)

@@ -1,4 +1,4 @@
-name: bamcompare
+name: deeptools
 channels:
   - conda-forge
   - bioconda
