@@ -138,9 +138,9 @@ def targets_gt_demux_identify_swaps(conf_f) -> list:
 
 
 def targets_multibamsummary(conf_f) -> list:
-    out_dir = conf_f['multiBamSummary']['outdir']
+    out_dir = conf_f['plotCorrelation']['outdir']
     fs = conf_f['fold_struct_deeptools']
-    suff = ".npz"
+    suff = conf_f['plotCorrelation']['out_fmt']
     
     return [f"{out_dir}{fs}{suff}"]
 
