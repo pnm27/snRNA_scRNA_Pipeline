@@ -291,6 +291,12 @@ multiBamSummary:
   rep2_suffix: 2-cDNA
   extra_params: null # or valid extra parameters in deepTools' bamCompare
 
+plotCorrelation:
+  outdir: /sc/arion/projects/psychAD/snakemake_pipeline/plotCorrelation_out/
+  corr_method: spearman
+  plot_type: scatterplot
+  out_fmt: .npz
+
 
 # RNA velocity pipeline------------------------------------------------------
 split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/

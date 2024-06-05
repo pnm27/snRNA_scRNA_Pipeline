@@ -137,10 +137,10 @@ def targets_gt_demux_identify_swaps(conf_f) -> list:
     return [f"{out_dir}{fs}{suff}"]
 
 
-def targets_bamcompare(conf_f) -> list:
-    out_dir = conf_f['bamCompare']['outdir']
-    fs = conf_f['fold_struct_bamcompare']
-    suff = conf_f['bamCompare']['out_format']
+def targets_multibamsummary(conf_f) -> list:
+    out_dir = conf_f['multiBamSummary']['outdir']
+    fs = conf_f['fold_struct_deeptools']
+    suff = ".npz"
     
     return [f"{out_dir}{fs}{suff}"]
 
@@ -374,9 +374,9 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             target_files = targets_resolve_swaps_gt_demux(conf_f=conf_f)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
-        elif target_step == "bamcompare":
+        elif target_step == "multibamsummary":
             # global_vars.ONLY_SOLO = True
-            target_files = targets_bamcompare(conf_f=conf_f)
+            target_files = targets_multibamsummary(conf_f=conf_f)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files[0]]
 
         else:
