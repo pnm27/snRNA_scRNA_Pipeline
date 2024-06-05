@@ -295,7 +295,7 @@ plotCorrelation:
   outdir: /sc/arion/projects/psychAD/snakemake_pipeline/plotCorrelation_out/
   corr_method: spearman
   plot_type: scatterplot
-  out_fmt: .npz
+  out_fmt: .png
 
 
 # RNA velocity pipeline------------------------------------------------------
