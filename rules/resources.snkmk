@@ -264,6 +264,6 @@ def allocate_time_MBS(wildcards, attempt):
     return 300 + 30*(attempt-1)
 
 
-def allocate_mem_PC(wildcards, attempt):
+def allocate_time_PC(wildcards, attempt):
     return 240 + 200*(attempt-1)
 
