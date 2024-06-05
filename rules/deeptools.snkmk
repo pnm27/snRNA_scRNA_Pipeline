@@ -61,5 +61,5 @@ rule plotCorrelation:
      
     shell:
         """
-        plotCorrelation -in {input} -c {params.correlation_method} -p {params.plot_type} -o {output} -v --outFileCorMatrix
+        plotCorrelation -in {input} -c {params.correlation_method} -p {params.plot_type} -o {output} --outFileCorMatrix {params.corr_matrix}
         """
