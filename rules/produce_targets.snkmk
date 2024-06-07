@@ -138,6 +138,14 @@ def targets_gt_demux_identify_swaps(conf_f) -> list:
 
 
 def targets_multibamsummary(conf_f) -> list:
+    out_dir = conf_f['multiBamSummary']['outdir']
+    fs = conf_f['fold_struct_deeptools']
+    suff = ".npz"
+    
+    return [f"{out_dir}{fs}{suff}"]
+
+
+def targets_multibamsummaryPlotCorr(conf_f) -> list:
     out_dir = conf_f['plotCorrelation']['outdir']
     fs = conf_f['fold_struct_deeptools']
     suff = conf_f['plotCorrelation']['out_fmt']
@@ -373,6 +381,11 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
         elif target_step == "starsolo_resolve_swaps_gt_demux":
             target_files = targets_resolve_swaps_gt_demux(conf_f=conf_f)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
+
+        elif target_step == "multibamsummaryplotcorr":
+            # global_vars.ONLY_SOLO = True
+            target_files = targets_multibamsummaryPlotCorr(conf_f=conf_f)
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files[0]]
 
         elif target_step == "multibamsummary":
             # global_vars.ONLY_SOLO = True

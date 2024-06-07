@@ -45,7 +45,7 @@ def get_argument_parser():
 	parser.add_argument('--split_by', nargs='+', 
 			help="To split bams by classifications preoduced by either "
 			"one or both of calico_solo and vireo provide column(s) "
-			"that contain the classification",
+			"that contain the classification. If vireo, specify 'vireo'.",
 			metavar="method", dest="method",
 			)
 	
@@ -78,7 +78,7 @@ def main():
 	inp_h5ad = args.inp
 	fout = args.output
 	rem_op = args.overwrite
-	suff = [ s[1:] if s.startwith('_') else s for s in args.demux_suffix]
+	suff = [ s[1:] if s.startswith('_') else s for s in args.demux_suffix]
 
 
 	file_ext = re.search(r'(\.[^.]+)$', fout).group(1)
@@ -89,8 +89,13 @@ def main():
 	for i, dem in enumerate(args.method):
 
 		d = Counter(adata.obs[dem])
-		for vals in ['Doublet', 'Negative', 'Not Present']:
-			d.pop(vals, None)
+		
+		if dem != "vireo":
+			for vals in ['Doublet', 'Negative', 'Not Present']:
+				d.pop(vals, None)
+		else:
+			for vals in ['doublet', 'unassigned']:
+				d.pop(vals, None)
 
 		df_l = []
 		for k in d.keys():
