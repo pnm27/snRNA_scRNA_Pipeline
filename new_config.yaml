@@ -213,6 +213,14 @@ gt_demux_pipeline:
   - donor_id
   final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
 
+# Demultiplex info---------------------------------------------------------
+demultiplex:
+  final_demultiplex_info: null
+  final_demultiplex_info_poolCol: null
+  final_demultiplex_info_donorCol: null
+  final_demultiplex_info_donorSep: null
+
+
 
 # Split bams pipeline------------------------------------------------------
 # Split bams by calico_solo output

@@ -89,8 +89,8 @@ def main():
 	for i, dem in enumerate(args.method):
 
 		d = Counter(adata.obs[dem])
-		
-		if dem != "vireo":
+
+		if "vs" in dem or "vireo" in dem:
 			for vals in ['Doublet', 'Negative', 'Not Present']:
 				d.pop(vals, None)
 		else:
