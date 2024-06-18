@@ -149,7 +149,7 @@ rule split_bams:
             if [ ! -f "{params.temp_bam}" ]; then samtools view -L {input[0]} -o {params.temp_bam} {input.filt_bam}; fi
             sleep 20
         """)
-
+        os.makedirs(os.path.basename(output[0]), exist_ok=True)
         # If proc_donors is not empty then run
         if proc_donors:
             with open(output[0], "a") as fout:

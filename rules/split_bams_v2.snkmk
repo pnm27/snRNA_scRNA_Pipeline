@@ -63,7 +63,7 @@ rule create_inp_splitBams:
     shell:
         """
         if [ "{params.overwrite}" == True ]; then
-            python3 helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite
+            python3 helper_py_scripts/create_inp_splitBam.py {input} {output} --overwrite --split_by SubID_vs_w_gt --demux_suffix vs
 
         else
             python3 helper_py_scripts/create_inp_splitBam.py {input} {output}
@@ -233,6 +233,8 @@ rule delete_filt_bam:
 
     shell:
         """
+            op={output}
+            if [ ! -d "${{op%$(basename ${{op}})}}" ]; then mkdir -p ${{op%$(basename ${{op}})}}; fi
             echo 'Created all individual bam files: ' >>> {output}
             echo '{input}' >>> {output}
             rm {params.filt_bam} && echo 'Deleted temporary filtered file {{params.filt_bam}}' >>> {output} || echo 'Could not delete temporary file {{params.filt_bam}}' >>> {output}
