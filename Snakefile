@@ -42,6 +42,8 @@ class global_vars():
   BOTH_DEMUX = False # Not yet implemented the rule
   ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
   ADD_VIREO = False # When a demultiplex run with calico_solo has been done
+  SPLIT_BY_SOLO = False # When subset pooled bams by output of calico_solo
+  SPLIT_BY_VIREO = True # When subset pooled bams by output of vireo
 
 
 include: "rules/input_processing.snkmk"

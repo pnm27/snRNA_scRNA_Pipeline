@@ -97,7 +97,7 @@ STARsolo_pipeline:
   genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
   genefull_summary: _Solo.out/GeneFull/Summary.csv
   # extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150" # Example of adding more STARsolo command-line options
-  extra_params: null # or valid extra parameters in STARsolo, as above
+  extra_params: "--outReadsUnmapped Fastx" # or valid extra parameters in STARsolo, as above
 
 
 # PICARD pipeline--------------------------------------------------------------
