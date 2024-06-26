@@ -11,6 +11,7 @@ ml samtools
 
 args=$@
 mito_pref="MT"
+verbose="FALSE"
 POSITIONAL_ARGS=()
 parse_args ()
 {
@@ -67,6 +68,11 @@ parse_args ()
         shift
         ;;
 
+        -v|--verbose)
+        verbose="TRUE"
+        shift
+        ;;
+
         -*|--*)
         echo "Unknown option $1"
         exit 1
@@ -115,6 +121,10 @@ fi
 if [ ! -d "${tempdir}" ]; then mkdir -p ${tempdir}; fi
 if [ ! -d "${outdir}" ]; then mkdir -p ${outdir}; fi
 
+if [[ ${verbose} == "TRUE" ]]; then
+    set -x
+fi
+
 awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir}${donor}.txt
 # samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
 samtools view -D CB:${tempdir}${donor}.txt ${pooled_bam} -bho "${tempdir}${donor}.bam"
@@ -143,3 +153,6 @@ else
 
 fi
 
+if [[ ${verbose} == "TRUE" ]]; then
+    set +x
+fi
