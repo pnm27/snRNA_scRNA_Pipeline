@@ -109,7 +109,9 @@ if [[ $# -gt 0 ]]; then
     if [[ ! -z $5 ]]; then
         pooled_bam=${5}
     fi
-    if [[ ! -z $6 ]]; then
+    if [[ ! -z $6 && $# -eq 6 ]]; then
+        bedfile=${6}
+    else
         mito_file=${6}
     fi
     if [[ ! -z $7 ]]; then
