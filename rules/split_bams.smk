@@ -1,7 +1,7 @@
 import os, pandas as pd
 
 def get_chr_pref(wildcards):
-    if config['chr_prefix'] != None:
+    if config['chr_prefix'] is None:
         return ''
     else:
         return config['chr_prefix']

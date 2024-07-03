@@ -126,14 +126,14 @@ if [ ! -d "${outdir}" ]; then mkdir -p ${outdir}; fi
 if [[ ${verbose} == "TRUE" ]]; then
     set -x
 fi
-
-awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir}${donor}.txt
-# samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
-samtools view -D CB:${tempdir}${donor}.txt ${pooled_bam} -bho "${tempdir}${donor}.bam"
-sleep 20
-samtools index "${tempdir}${donor}.bam" &> /dev/null
-sleep 20
-
+if [[ ! -f "${tempdir}${donor}.bam.bai" ]]; then
+    awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir}${donor}.txt
+    # samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
+    samtools view -D CB:${tempdir}${donor}.txt ${pooled_bam} -bho "${tempdir}${donor}.bam"
+    sleep 20
+    samtools index "${tempdir}${donor}.bam" &> /dev/null
+    sleep 20
+fi
 if [[ ! -z ${mito_file} ]]; then
     mito_reads=$(samtools view -c "${tempdir}${donor}.bam" "${mito_pref}")
     echo "Number of mito reads for the donor ${donor}: ${mito_reads}" >> ${mito_file}

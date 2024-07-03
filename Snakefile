@@ -46,25 +46,25 @@ class global_vars():
   SPLIT_BY_VIREO = True # When subset pooled bams by output of vireo
 
 
-include: "rules/input_processing.snkmk"
-include: "rules/produce_targets.snkmk"
-include: "rules/helper_functions.snkmk"
-include: "rules/resources.snkmk"
-include: "rules/STARsolo.snkmk"
-include: "rules/picard_metrics.snkmk"
-include: "rules/kite.snkmk"
-include: "rules/calico_solo_demux.snkmk"
+include: "rules/input_processing.smk"
+include: "rules/produce_targets.smk"
+include: "rules/helper_functions.smk"
+include: "rules/resources.smk"
+include: "rules/STARsolo.smk"
+include: "rules/picard_metrics.smk"
+include: "rules/kite.smk"
+include: "rules/calico_solo_demux.smk"
 # include: "rules/pheno_demux.snkmk" # GOD knows why
 # include: "rules/split_fastqs.snkmk" # outdated
 # include: "rules/split_fastqs_2.snkmk" # outdated
-include: "rules/pheno_demux3.snkmk"
-include: "rules/demultiplex.snkmk"
-include: "rules/split_bams.snkmk"
+include: "rules/pheno_demux3.smk"
+include: "rules/demultiplex.smk"
+include: "rules/split_bams.smk"
 # For just gt purposes
 # include: "rules/split_bams_gt.snkmk"
 # include: "rules/pheno_demux2.snkmk"
-include: "rules/identify_swaps.snkmk"
-include: "rules/deeptools.snkmk"
+include: "rules/identify_swaps.smk"
+include: "rules/deeptools.smk"
 
 
 rule all:
