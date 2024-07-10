@@ -24,6 +24,9 @@ rule qtltools_mbv:
         mem_mb=allocate_mem_QM,
         time_min=allocate_time_QM
 
+    envmodules:
+        "qtltools/1.3"
+
     shell:
         """
         ml qtltools/1.3

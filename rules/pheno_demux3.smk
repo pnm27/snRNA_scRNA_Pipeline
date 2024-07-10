@@ -261,6 +261,8 @@ rule create_inp_cellSNP:
 
     output:
         f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
+    
+    conda: "../envs/basic_sctools.yaml"
 
     shell:
         """
@@ -283,7 +285,7 @@ rule create_inp_cellSNP:
             --min_cells {params.min_cells} --id2name {params.genes_info} \
             --mito_prefix {params.mito_prefix}
         fi
-        sleep 100
+        sleep 60
         """
 
 
@@ -329,6 +331,8 @@ rule cellSNP:
     resources:
         mem_mb=allocate_mem_cS,
         time_min=allocate_time_cS
+    
+    conda: "../envs/gt_demux.yaml"
 
     shell:
         """
@@ -381,6 +385,8 @@ rule vireoSNP:
         mem_mb=allocate_mem_vS,
         time_min=allocate_time_vS
         
+    conda: "../envs/gt_demux.yaml"
+
     shell:
         """
         opts=("-c" "-d")
@@ -400,4 +406,5 @@ rule vireoSNP:
         else
             echo "Nothing ran! Check the conditions in the rule vireoSNP!"
         fi
+        set +x
         """

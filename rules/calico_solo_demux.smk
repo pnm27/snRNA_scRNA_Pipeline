@@ -17,6 +17,8 @@ rule run_calico_solo:
 
     threads: 2
 
+    conda: "../envs/hashsolo.yaml"
+
     resources:
         mem_mb=allocate_mem_RCS,
         time_min=allocate_time_RCS

@@ -19,7 +19,10 @@ rule Picard_GC_bias_metrics:
        
     threads: 2
 
-    # group: "PICARD_metrics"
+    conda: "../envs/picard.yaml"
+
+    envmodules:
+        "picard/2.22.3"
      
     shell:
         """
@@ -48,7 +51,10 @@ rule Picard_RNAseq_metrics:
 
     threads: 4
 
-    # group: "PICARD_metrics"
+    conda: "../envs/picard.yaml"
+
+    envmodules:
+        "picard/2.22.3"
 
     shell:
         """

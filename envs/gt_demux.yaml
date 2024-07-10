@@ -1,11 +1,10 @@
-name: pysam
+name: gt_demux
 channels:
   - conda-forge
   - bioconda
   - anaconda
   - defaults
 dependencies:
-  - python ==3.9
-  - pysam ==0.16
-  - pip:
-      - anndata==0.7.6
+  - cellsnp-lite
+  - bcftools
+  - vireoSNP

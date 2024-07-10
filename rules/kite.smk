@@ -121,16 +121,19 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         input:
             f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_fa']}"
 
-        # priority: 10
-
         output:
             f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['features_mismatch_idx']}"
 
         params:
             k_mer_len=config['kb_pipeline']['k_mer_length']
+
         resources:
             mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
             time_min=allocate_time_BKI
+
+        conda: "../envs/kallisto.yaml"
+
+        envmodules: "kallisto/0.46.1"
 
         shell:
             """
@@ -149,9 +152,14 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         params:
             k_mer_len=config['kb_pipeline']['k_mer_length']
+
         resources:
             mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
             time_min=allocate_time_BKI
+
+        conda: "../envs/kallisto.yaml"
+
+        envmodules: "kallisto/0.46.1"
 
         shell:
             """
@@ -183,6 +191,10 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
             mem_mb=allocate_mem_RK, #allocate_mem_KBP,
             time_min=allocate_time_RK
 
+        conda: "../envs/kallisto.yaml"
+
+        envmodules: "kallisto/0.46.1"
+
         shell:
             """
             ml kallisto
@@ -211,6 +223,10 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
             mem_mb=allocate_mem_RK, #allocate_mem_KBP,
             time_min=allocate_time_RK
 
+        conda: "../envs/kallisto.yaml"
+
+        envmodules: "kallisto/0.46.1"
+
         shell:
             """
             ml kallisto
@@ -235,6 +251,10 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
             mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
             time_min=allocate_time_RBCor
 
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
+
         shell:
             """
             ml bustools
@@ -256,6 +276,10 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         resources:
             mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
             time_min=allocate_time_RBCor
+
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
 
         shell:
             """
@@ -280,6 +304,10 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
             mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
             time_min=allocate_time_RBS
 
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
+
         shell:
             """
             ml bustools
@@ -300,6 +328,10 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         resources:
             mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
             time_min=allocate_time_RBS
+
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
 
         shell:
             """
@@ -330,6 +362,10 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
             mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
             time_min=allocate_time_RBCnt
 
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
+
         shell:
             """
             ml bustools
@@ -356,6 +392,10 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         resources:
             mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
             time_min=allocate_time_RBCnt
+
+        conda: "../envs/bustools.yaml"
+
+        envmodules: "bustools/0.40.0"
 
         shell:
             """
@@ -400,6 +440,8 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
             mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
             time_min=allocate_time_CHB
 
+        conda: "../envs/basic_sctools.yaml"
+        
         shell:
             """
             python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}

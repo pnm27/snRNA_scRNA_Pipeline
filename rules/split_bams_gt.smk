@@ -57,6 +57,8 @@ rule create_inp_splitBams:
         mem_mb=allocate_mem_CIS,
         time_min=10
 
+    conda: "../envs/basic_sctools.yaml"
+
     shell:
         """
         if [ "{params.overwrite}" == True ]; then
@@ -86,6 +88,8 @@ rule create_inp_splitBams_gt_demux:
     resources:
         mem_mb=allocate_mem_CISPD,
         time_min=10
+
+    conda: "../envs/basic_sctools.yaml"
 
     shell: 
         """
@@ -119,11 +123,17 @@ rule filt_chr_bams:
         mem_mb=allocate_mem_FCB,
         time_min=allocate_time_FCB
 
+    conda: "../envs/pysam.yaml"
+
+    envmodules:
+        "samtools"
+        
     shell:
         """
         ml samtools
         set -x
         samtools view {input} {params.sub_chr} -bho {output}
+        set +x
         """
 
 

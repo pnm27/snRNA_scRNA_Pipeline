@@ -141,6 +141,8 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
             mem_mb=allocate_mem_DXP,
             time_min=allocate_time_DXP
 
+        conda: "../envs/basic_sctools.yaml"
+        
         shell: 
             """
             read -r -a array <<< "{input}"
@@ -329,6 +331,8 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
             hto_sep=config['demux_pipeline']['hto_sep'],
             condn=get_condn2,
             subid_convert=config['demux_pipeline']['SubID_convert']
+
+        conda: "../envs/basic_sctools.yaml"
 
         shell: 
             """
