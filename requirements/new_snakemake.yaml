@@ -1,0 +1,38 @@
+name: new_snakemake
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - snakemake
+  - scipy
+  - umap-learn
+  - scanpy
+  - rpy2
+  - python-igraph
+  - python-louvain
+  - loompy
+  - leidenalg
+  - harmonypy
+  - jupyterlab
+  - cookiecutter
+  - mamba
+  - cellsnp-lite
+  - scvi-tools
+  - scikit-learn-intelex
+  - umi_tools
+  - numpy
+  - cython
+  - numba
+  - matplotlib
+  - scikit-learn
+  - h5py
+  - click
+  - ucsc-gtftogenepred
+  - kneed
+  - sphinx
+  - pip
+  - plotly==5.14.1
+  - r-irkernel
+prefix: /sc/arion/work/prashf01/conda/envs/new_snakemake
