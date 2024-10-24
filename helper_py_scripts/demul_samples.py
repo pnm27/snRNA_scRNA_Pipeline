@@ -316,7 +316,7 @@ def main():
         # Filter data using cell level metrics
         cell_subset, n_genesPerCell = sc.pp.filter_cells(adata, min_genes=min_genes, inplace=False)
         adata.obs['n_genes'] = n_genesPerCell
-        gene_subset, n_cellsPerGene = sc.pp.filter_genes(adata, min_cells=min_cells)
+        gene_subset, n_cellsPerGene = sc.pp.filter_genes(adata, min_cells=min_cells, inplace=False)
         adata.var['n_cells'] = n_cellsPerGene
         filter_info.append(( 'min #genes expressed per cell', 
                             min_genes))

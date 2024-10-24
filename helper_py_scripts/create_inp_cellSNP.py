@@ -181,7 +181,7 @@ def main():
             adata = sc.read_10x_mtx(args.inp[:-13], make_unique=True, var_names= "gene_ids", cache=True)
         except:
             e = sys.exc_info()[0]
-            print(f"Error encountered while loading the h5ad file (previously completed demultiplex run)!\nError message: {e}") 
+            print(f"Error encountered while loading the mtx file!\nError message: {e}") 
 
         t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
         t2g.index = t2g.gene_id

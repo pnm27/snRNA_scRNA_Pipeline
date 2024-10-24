@@ -54,15 +54,11 @@ include: "rules/STARsolo.smk"
 include: "rules/picard_metrics.smk"
 include: "rules/kite.smk"
 include: "rules/calico_solo_demux.smk"
-# include: "rules/pheno_demux.snkmk" # GOD knows why
-# include: "rules/split_fastqs.snkmk" # outdated
-# include: "rules/split_fastqs_2.snkmk" # outdated
-include: "rules/pheno_demux3.smk"
+# include: "rules/pheno_demux3.smk" # DEPRACATED NAME
+include: "rules/genotype_demux.smk"
 include: "rules/demultiplex.smk"
 include: "rules/split_bams.smk"
-# For just gt purposes
-# include: "rules/split_bams_gt.snkmk"
-# include: "rules/pheno_demux2.snkmk"
+# include: "rules/split_bams_gt.snkmk" # For just gt purposes
 include: "rules/identify_swaps.smk"
 include: "rules/deeptools.smk"
 

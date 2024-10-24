@@ -341,11 +341,11 @@ rule cellSNP:
         opts2=("-b" "-s")
         cmd_str=""
         if [[ "${{#array[@]}}" -lt 4 ]]; then
-            for i in {{0..1}}
+            for i in {{0..3}}
             do
                 cmd_str+="${{opts1[i]}} ${{array[i]}} "
             done
-            cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
+            cmd_str=$(echo ${{cmd_str}} | awk '{$1=$1};1')
             set -x
             cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         else
@@ -353,7 +353,7 @@ rule cellSNP:
             do
                 cmd_str+="${{opts2[i]}} ${{array[i]}} "
             done
-            cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
+            cmd_str=$(echo ${{cmd_str}} | awk '{$1=$1};1')
 
             ml bcftools/1.15.1
             set -x

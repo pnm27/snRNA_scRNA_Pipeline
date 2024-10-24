@@ -1,39 +1,36 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>update_logs module &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster.bundle.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-shadow.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-punk.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-noir.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-light.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-borderless.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/micromodal.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/sphinx_rtd_theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/page_style.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/sphinx_rtd_theme.css?v=3234e928" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tables.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/page_style.css" />
+
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-        <script src="_static/js/hoverxref.js"></script>
-        <script src="_static/js/tooltipster.bundle.min.js"></script>
-        <script src="_static/js/micromodal.min.js"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({startOnLoad:true});</script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/js/hoverxref.js"></script>
+      <script src="_static/js/tooltipster.bundle.min.js"></script>
+      <script src="_static/js/micromodal.min.js"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
@@ -44,11 +41,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> snRNAseq scRNAseq Pipeline
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            snRNAseq scRNAseq Pipeline
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -93,7 +94,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">update_logs module</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/update_logs.rst.txt" rel="nofollow"> View page source</a>
@@ -105,42 +106,42 @@
            <div itemprop="articleBody">
              
   <section id="module-update_logs">
-<span id="update-logs-module"></span><h1>update_logs module<a class="headerlink" href="#module-update_logs" title="Permalink to this heading"></a></h1>
+<span id="update-logs-module"></span><h1>update_logs module<a class="headerlink" href="#module-update_logs" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.calc_ratio">
-<span class="sig-name descname"><span class="pre">calc_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denom</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.calc_ratio" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">calc_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denom</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.calc_ratio" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.get_argument_parser">
-<span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_argument_parser" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_argument_parser" title="Link to this definition"></a></dt>
 <dd><p>Generate and return argument parser.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.get_df">
-<span class="sig-name descname"><span class="pre">get_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_df" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_df" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.get_filename">
-<span class="sig-name descname"><span class="pre">get_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_filename" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_filename" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.get_latest_extra_columns">
-<span class="sig-name descname"><span class="pre">get_latest_extra_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_latest_extra_columns" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_latest_extra_columns</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.get_latest_extra_columns" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.main" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.main" title="Link to this definition"></a></dt>
 <dd><p>Main entry point</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="update_logs.write_logs">
-<span class="sig-name descname"><span class="pre">write_logs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">big_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_progs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.write_logs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">write_logs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">big_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapper</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_progs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#update_logs.write_logs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>

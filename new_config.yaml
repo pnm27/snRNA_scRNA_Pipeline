@@ -37,28 +37,28 @@ min_cells_per_gene: 10
 # Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
 # presence of HTO confuses snakemake to determine individual or pooled samples
 # Hence, keep cDNA in all names
-fold_struct: "Sample_{id1}-cDNA/{id1}-cDNA"
+fold_struct: "Sample_{pool}-cDNA/{pool}-cDNA"
 # Folder structure for the kallisto-bustools pipeline
-fold_struct_kb: "Sample_{id1}-HTO/"
+fold_struct_kb: "Sample_{pool}-HTO/"
 # Folder structure for demux through the kallisto-bustools pipeline
-fold_struct_demux: "{id1}/{id1}-HTO"
+fold_struct_demux: "{pool}/{pool}-HTO"
 # Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
-fold_struct_gt_demux: "Sample_{id1}-cDNA/{vcf_type}/"
+fold_struct_gt_demux: "Sample_{pool}-cDNA/{vcf_type}/"
 # Folder structure for adding phe demux when calico_solo run exists ('vcf_type' wildcard for multi-vcfs input)
-fold_struct_gt_demux2: "Sample-{id1}-cDNA_{vcf_type}"
+fold_struct_gt_demux2: "Sample-{pool}-cDNA_{vcf_type}"
 # Folder structure to get cells for cellSNP from
-fold_struct_filt_bc: "filt_bc_vireo_Sample_{id1}-cDNA"
+fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}-cDNA"
 # Folder structures for split bams pipeline
-fold_struct_bam_split1: "Sample-{id1}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
-fold_struct_bam_split2: "Sample_{id1}-cDNA/" # Used for per-barcode and per-donor bam files
+fold_struct_bam_split1: "Sample-{pool}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
+fold_struct_bam_split2: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
 # Folder structure for per-donor vcf files for STARsolo SNV-Aware pipeline
 # fold_struct_vcf: "{id1}-cDNA/"
 # Folder structure for per-donor SNV-aware STARsolo bams
 # fold_struct_snv_aware: "{id1}/"
 
 fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
-fold_struct_swaps_check: "{id1}_{donor}" # for qtltools-mbv
-fold_struct_deeptools: "Sample-{id2}"
+fold_struct_swaps_check: "{pool}_{donor}" # for qtltools-mbv
+fold_struct_deeptools: "Sample-{pool}"
 
 STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
@@ -66,6 +66,8 @@ STAR_snv_aware_version: star/2.7.9a
 
 # If running hashsolo and vireoSNP simultaneously then store in this path
 demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/ # Can be null or a path
+
+hto_demux_type: single
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
@@ -223,8 +225,16 @@ demultiplex:
 
 
 # Split bams pipeline------------------------------------------------------
+
 # Split bams by calico_solo output
 split_bams_pipeline:
+  gt_check: yes # yes or no
+  split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
+    demux: vireo
+    input: raw # Accepts 'h5ad' or 'raw' (output of vireo or solo)
+    column: null # ONLY for 'h5ad' otherwise null
+
+  subset_chr: 1 # Subset BAM files
   inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams/
   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams/
   split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/
@@ -233,13 +243,20 @@ split_bams_pipeline:
   temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp/
   sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/temp_bc/
   new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d/
-  overwrite: yes
-  split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
+  # overwrite: yes
+  # split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
   split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/ # For gt-only
   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
   per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/ # For gt-only
   split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/ # For gt-only
   new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/ # For gt-only
+  donor_name_converter:
+    file: null # Accepts files or null
+    from_column: null # Accepts str (column in the above file) or null
+    to_column: null # Accepts str (column in the above file) or null
+  demux_suffixes:
+    vireo: null # Accept str (e.g. vs, vireo, etc.) or null
+    solo: null # Accept str (e.g. cs, calico_solo, etc.) or null
   # Optional params
   sort_cb_bam: _Aligned.sortedByCB.out.bam
   filt_bam: _filt.bam
@@ -248,36 +265,36 @@ split_bams_pipeline:
   bc_per_donor: 800
   time_per_donor: "02:00"
   short_bam: _chr1.bam
-  mito_reads_file: _mito_reads_stats.txt
+  mito_reads_file: _mito_reads_stats.txt # or null
 
 
-# Split bams by vireoSNP output
-split_bams_pipeline_gt_demux:
-  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_gt_demux/
-  subset_chr: 1
-  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_gt_demux/
-  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux/
-  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux/
-  reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
-  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp_gt_demux/
-  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp_gt_demux/temp_bc/
-  new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux/
-  overwrite: yes
-  split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_gt_demux/
-  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt check only
-  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux/
-  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt check only
-  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gtcheck only
-  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt check only
-  # Optional params
-  sort_cb_bam: _Aligned.sortedByCB.out.bam
-  sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
-  filt_bam: _filt.bam
-  sam: _Aligned.sortedByCB.out.sam
-  bc_per_donor: 800
-  short_bam: _chr1.bam # Change this to be flexible
-  time_per_donor: "02:30"
-  mito_reads_file: _mito_reads_stats.txt
+# # Split bams by vireoSNP output
+# split_bams_pipeline_gt_demux:
+#   inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_gt_demux/
+#   subset_chr: 1
+#   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_gt_demux/
+#   split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux/
+#   split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux/
+#   reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
+#   temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp_gt_demux/
+#   sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp_gt_demux/temp_bc/
+#   new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux/
+#   overwrite: yes
+#   # split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_gt_demux/
+#   split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt check only
+#   per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux/
+#   per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt check only
+#   split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gtcheck only
+#   new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt check only
+#   # Optional params
+#   sort_cb_bam: _Aligned.sortedByCB.out.bam
+#   sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
+#   filt_bam: _filt.bam
+#   sam: _Aligned.sortedByCB.out.sam
+#   bc_per_donor: 800
+#   short_bam: _chr1.bam # Change this to be flexible
+#   time_per_donor: "02:30"
+#   mito_reads_file: _mito_reads_stats.txt
 
 
 # Identifying swaps

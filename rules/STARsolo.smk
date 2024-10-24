@@ -60,8 +60,8 @@ def get_limitsjdbval_coll(wildcards, resources):
    # This is to check the parameters file, else block WILL execute after the for block as the for block as no break in it (need revision)
    # Use try except block to catch file issues
     else:
-        if os.path.isfile("{}{id1}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], id1=wildcards.id1)):
-            with open("{}{id1}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], id1=wildcards.id1)) as fin:
+        if os.path.isfile("{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)): # wildcard
+            with open("{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)) as fin: # wildcard
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
                     temp_nsj = int(re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1))
@@ -91,7 +91,7 @@ rule STARsolo_sort:
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
         SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
         features=config['STARsolo_pipeline']['features'],
-        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{id1}}-cDNA.txt",  # wildcards
+        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{pool}}-cDNA.txt",  # wildcard
         star_def_log_out=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], "_Log.out"),
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
         out_pref=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], '_'),

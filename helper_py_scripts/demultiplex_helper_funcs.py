@@ -215,7 +215,8 @@ def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame,
 
     """
 
-    mask=np.column_stack([f for f in ])
+    # mask=np.column_stack([f for f in ])
+    pass
 
 
 

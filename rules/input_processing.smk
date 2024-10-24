@@ -7,21 +7,34 @@ from snakemake.utils import validate
 if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
 
     #Lists that will contain wildcards
-    round_num=[] # wildcard 'num'
-    sample_name=[] # wildcard 'id1'
-    # for eg. round5/Sample_xxxxx-cDNA/xxxxx-cDNA
-    # round_num = round5
-    # sample_name = xxxxx
-    # 
+    pool=[] # wildcard 'pool'
+    # If fastq files are called Sample_xxxxx-cDNA/xxxxx-cDNA_R1.fastq.gz
+
     with open(config['select_fastqs']) as fq:
         for line in fq:
             if not line.startswith('#'):
                 line_sp = line.split('/')
-                round_num.append(line_sp[0])
-                sample_name.append(line_sp[1].strip().replace('-cDNA', ''))
+                pool.append(line_sp[0].strip().replace('-cDNA', ''))
 
     # Create a dict of wildcards
-    wildcards_list={'num':round_num, 'id1':sample_name}
+    wildcards_list={'pool':pool}
+
+    # EXAMPLE: 2 WILDCARDS for FASTQs
+    # round_num=[] # wildcard 'num'
+    # sample_name=[] # wildcard 'id1'
+    # for eg. round5/Sample_xxxxx-cDNA/xxxxx-cDNA
+    # round_num = round5
+    # sample_name = xxxxx
+    # 
+    # with open(config['select_fastqs']) as fq:
+    #     for line in fq:
+    #         if not line.startswith('#'):
+    #             line_sp = line.split('/')
+    #             round_num.append(line_sp[0])
+    #             sample_name.append(line_sp[1].strip().replace('-cDNA', ''))
+
+    # Create a dict of wildcards
+    # wildcards_list={'num':round_num, 'id1':sample_name}
 
 
 # If the input is yaml file then validate it and process it

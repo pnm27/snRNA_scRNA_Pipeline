@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from itertools import repeat
-import pandas as pd, numpy as np, anndata as ad, scanpy as sc
-import sys, os, re, glob2, argparse
+import pandas as pd, anndata as ad
+import os, re, argparse
 from collections import Counter
 
 
@@ -64,6 +64,7 @@ def main():
 
 	This function creates a 2-columned text file with donors as the 
 	first column with its corresponding barcodes in the second.
+	NOT SUPPORTED YET:
 	If multiple demultiplexing softwares have annotated the cells
 	and one wants to create sep output files for each of them
 	"""
@@ -78,7 +79,10 @@ def main():
 	inp_h5ad = args.inp
 	fout = args.output
 	rem_op = args.overwrite
-	suff = [ s[1:] if s.startswith('_') else s for s in args.demux_suffix]
+	# FOR MULTIPLE DEMUX METHOD SUPPORT
+	# suff = [ s[1:] if s.startswith('_') else s for s in args.demux_suffix]
+	
+	suff = args.demux_suffix[1:] if args.demux_suffix.startswith('_') else args.demux_suffix
 
 
 	file_ext = re.search(r'(\.[^.]+)$', fout).group(1)

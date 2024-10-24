@@ -1,0 +1,314 @@
+# Common Params----------------------------------------------------------------
+# Select pipeline module
+last_step: STARsolo_kb_solo
+picard_metrics: all # can be null, all, rnaseq or gc
+create_final_h5ad: True # can be True, False or null
+hto_demux_type: single # Can be single, multiple or null
+
+# Limit processing to the files present in
+select_fastqs: /sc/arion/projects/psychAD/snakemake_pipeline/fastq_files.txt
+wildcards_select: null # null when select_fastqs is not a dir otherwise provide wildcard(s) to extract
+
+# Fastqs info, R1 and R2 suffix assumed to be the same for both cDNA and HTO
+# Need to update this for multi_modules
+HTO_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
+cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
+R1_suffix: .R1.fastq.gz
+R2_suffix: .R2.fastq.gz
+
+
+wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
+gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
+whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
+genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
+reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
+chr_prefix: null
+mito: MT-
+gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
+gt_conv: null # null, If no name changes are needed otherwise a file
+
+# Standard Filters for gene count matrix files
+max_mito_percentage: 5
+min_genes_per_cell: 1000
+min_cells_per_gene: 10
+
+# ENCLOSE WILDCARDS IN {}
+# HERE, 'id1' IS THE WILDCARD.
+# Folder structure and prefix for the fastqs (will be mirrored by STARsolo)
+# presence of HTO confuses snakemake to determine individual or pooled samples
+# Hence, keep cDNA in all names
+fold_struct: "Sample_{pool}-cDNA/{pool}-cDNA"
+# Folder structure for the kallisto-bustools pipeline
+fold_struct_kb: "Sample_{pool}-HTO/"
+# Folder structure for demux through the kallisto-bustools pipeline
+fold_struct_demux: "{pool}/{pool}-HTO"
+# Folder structure for demux through the cellSNP-vireoSNP pipeline ('vcf_type' wildcard for multi-vcfs input)
+fold_struct_gt_demux: "Sample_{pool}-cDNA/{vcf_type}/"
+# Folder structure for adding phe demux when calico_solo run exists ('vcf_type' wildcard for multi-vcfs input)
+fold_struct_gt_demux2: "Sample-{pool}-cDNA_{vcf_type}"
+# Folder structure to get cells for cellSNP from
+fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}-cDNA"
+# Folder structures for split bams pipeline
+fold_struct_bam_split1: "Sample-{pool}-cDNA" # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
+fold_struct_bam_split2: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
+# Folder structure for per-donor vcf files for STARsolo SNV-Aware pipeline
+# fold_struct_vcf: "{id1}-cDNA/"
+# Folder structure for per-donor SNV-aware STARsolo bams
+# fold_struct_snv_aware: "{id1}/"
+
+fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
+fold_struct_swaps_check: "{pool}_{donor}" # for qtltools-mbv
+fold_struct_deeptools: "Sample-{pool}"
+
+STAR_version: star/2.7.9a
+featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
+STAR_snv_aware_version: star/2.7.9a
+
+# If running hashsolo and vireoSNP simultaneously then store in this path
+demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/ # Can be null or a path
+
+hto_demux_type: single
+
+# BAM processing pipeline----------------------------------------------------
+STARsolo_pipeline:
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
+  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o
+  star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
+  sjdboverhang: 89
+  umi_len: 12
+  soloType: CB_UMI_Simple
+  solo_cell_filter: EmptyDrops_CR
+  SAM_attr: NH HI AS nM NM MD CB UB CR UR CY UY GX GN sS sQ sM
+  features: Gene GeneFull SJ Velocyto
+  misc_reads_file: _discarded_reads_stats.txt
+  # Optional params
+  bai: _Aligned.sortedByCoord.out.bam.bai
+  bam: _Aligned.sortedByCoord.out.bam
+  STAR_log_final: _Log.final.out
+  barcodes_stats: _Solo.out/Barcodes.stats
+  gene_features: _Solo.out/Gene/Features.stats
+  gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
+  gene_features: _Solo.out/Gene/filtered/features.tsv
+  gene_matrix: _Solo.out/Gene/filtered/matrix.mtx
+  gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
+  gene_summary: _Solo.out/Gene/Summary.csv
+  genefull_features: _Solo.out/GeneFull/Features.stats
+  genefull_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
+  genefull_features: _Solo.out/GeneFull/filtered/features.tsv.gz
+  genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
+  genefull_raw_matrix: _Solo.out/GeneFull/raw/matrix.mtx
+  genefull_summary: _Solo.out/GeneFull/Summary.csv
+  # extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150" # Example of adding more STARsolo command-line options
+  extra_params: "--outReadsUnmapped Fastx" # or valid extra parameters in STARsolo, as above
+
+
+# PICARD pipeline--------------------------------------------------------------
+picard_pipeline:
+  # PICARD GcBias Metrics
+  window_size: 100
+  # Optional params
+  gc_bias_metrics: _gc_bias_metrics.txt
+  gc_summary_metrics: _summary_metrics.txt
+
+  # PICARD RNAseq Metrics
+  flat_ref: /sc/arion/projects/psychAD/ref_GRCh38/refFlat_wo_chr.txt
+  strand: NONE
+  # Optional params
+  rnaseq_metrics: _rnaseq_metrics.txt
+
+
+# Bustools-kallisto pipeline---------------------------------------------------
+kb_pipeline:
+  kallisto_bustools_dir: /sc/arion/projects/psychAD/snakemake_pipeline/HTO_info/feature_barcodes/
+  k_mer_length: 15
+  chemistry: 10xv3
+  columns_to_pick:
+  - unique_sample_ID
+  - hashtag
+  - ab_barcode
+  # Optional params
+  feature_barcodes: FeatureBarcodes.csv
+  headers: no
+  features_mismatch_fa: FeaturesMismatch.fa
+  features_mismatch_t2g: FeaturesMismatch.t2g
+  features_mismatch_idx: FeaturesMismatch.idx
+  ec_matrix: matrix.ec
+  tx: transcripts.txt
+  bus_file: output.bus
+  bus_file_corrected: output_corrected.bus
+  bus_file_sorted: output_sorted.bus
+  bus_count_dir: bus_count_out/
+  bus_count_barcodes: output.barcodes.txt
+  bus_count_genes: output.genes.txt
+  bus_count_mtx: output.mtx
+
+
+# Demultiplexing pipeline----------------------------------------------------
+demux_pipeline:
+  h5ad_bustools_dir: /sc/arion/projects/psychAD/pnm/cache/
+  calico_solo_dir: /sc/arion/projects/psychAD/demultiplex/solo/
+  hto_sep: null
+  columns_to_pick:
+  - unique_sample_ID
+  - hashtag
+  - ab_barcode
+  - SubID
+  SubID_convert: False # If calico_solo SubID conversion needed (boolean)
+  final_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/solo/
+  demultiplex_info_dir: /sc/arion/projects/psychAD/demultiplex/info/
+  # Optional params
+  bustools_h5ad: .h5ad
+  calico_solo_h5ad: _STARsolo_out.h5ad
+  final_count_matrix_h5ad: _STARsolo_out.h5ad
+  demultiplex_info: _STARsolo_info.tsv
+
+
+# cellSNP and vireoSNP pipeline----------------------------------------------
+gt_demux_pipeline:
+  cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/cellSNP/
+  inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/inp_for_cellsnp/
+  cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
+  vcf_info: /sc/arion/projects/psychAD/pnm/pool_info.tsv
+  vireosnp_dir: /sc/arion/projects/psychAD/demultiplex/vireoSNP/
+  filt_vcf_dir: /sc/arion/projects/psychAD/pnm/isec_reruns/ # when subsetting SNPs wrt ref SNVs (from a source like 1kGP)
+  genome_1k_ref: /sc/arion/projects/psychAD/pnm/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vcf.gz
+  donor_genotype: GT
+  final_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/vireoSNP_1kGP_isec/
+  # temp_cellsnp_filt_dir: /sc/arion/projects/psychAD/pnm/filt_cellsnp/
+  # top_genes_cs_filt_bed: /sc/arion/projects/psychAD/pnm/top1k_genes.bed
+  # split_compiled_vcf: False
+  # Optional params
+  demux_col: SubID_cs
+  barcode_len: 16
+  include_all_cells: yes
+  doublet: Doublet
+  negative: Negative
+  na: Not Present
+  filt_barcodes: filt_bc_vireo_
+  cell_tag: CB
+  umi_tag: UB
+  cellsnp_base: cellSNP.base.vcf.gz
+  cellsnp_cells: cellSNP.cells.vcf.gz
+  bcftools_thread: 6
+  min_aggr_count: 20
+  min_maf: 0.1
+  n_proc: 20
+  donors_per_pool_file: null # values: null, vcf.gz file
+  donors_vcf: GT_donors.vireo.vcf.gz
+  donors_classification: donor_ids.tsv
+  filt_vcf: filt.vcf.gz
+  hash_columns:
+  - SubID
+  - Orig_VCF_ID
+  - Samples
+  vcf_info_columns:
+  - SetNumber
+  - Gt_count
+  - pool_vcf
+  - pool_vcf_gencode
+  - pool_vcf_gencode_maf_25pct
+  wet_lab_file_cols:
+  - Set_number
+  - unique_sample_ID
+  vireo_donor_file_cols:
+  - cell
+  - donor_id
+  final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
+
+# Demultiplex info---------------------------------------------------------
+demultiplex:
+  final_demultiplex_info: null
+  final_demultiplex_info_poolCol: null
+  final_demultiplex_info_donorCol: null
+  final_demultiplex_info_donorSep: null
+
+
+
+# Split bams pipeline------------------------------------------------------
+
+# Split bams by calico_solo output
+split_bams_pipeline:
+  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams/
+  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams/
+  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/
+  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs/
+  reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
+  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp/
+  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp/temp_bc/
+  new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d/
+  overwrite: yes
+  split_bams_script_dir: /sc/arion/projects/psychAD/split_filt_bams_scripts/
+  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams2/ # For gt-only
+  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor/
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor2/ # For gt-only
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs2/ # For gt-only
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d2/ # For gt-only
+  # Optional params
+  sort_cb_bam: _Aligned.sortedByCB.out.bam
+  filt_bam: _filt.bam
+  sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
+  sam: _Aligned.sortedByCB.out.sam
+  bc_per_donor: 800
+  time_per_donor: "02:00"
+  short_bam: _chr1.bam
+  mito_reads_file: _mito_reads_stats.txt
+
+
+# Split bams by vireoSNP output
+split_bams_pipeline_gt_demux:
+  inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams_gt_demux/
+  subset_chr: 1
+  bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams_gt_demux/
+  split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux/
+  split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux/
+  reads_v_barcodes_dir: /sc/arion/projects/psychAD/pnm/reads_info/
+  temp_dir: /sc/arion/projects/psychAD/pnm/split_bams_temp_gt_demux/
+  sort_temp_dir: /sc/arion/projects/psychAD/pnm/bam_sort_temp_gt_demux/temp_bc/
+  new_temp_dir: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux/
+  overwrite: yes
+  split_bams_script_dir: /sc/arion/projects/psychAD/split_bams_scripts_gt_demux/
+  split_bams_dir2: /sc/arion/projects/psychAD/STARsolo_split_filt_bams_gt_demux2/ # For gt check only
+  per_donor_split_log_dir: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux/
+  per_donor_split_log_dir2: /sc/arion/projects/psychAD/pnm/logs_per_donor_gt_demux2/ # For gt check only
+  split_bams_proxy_dir2: /sc/arion/projects/psychAD/pnm/split_bam_logs_gt_demux2/ # For gtcheck only
+  new_temp_dir2: /sc/arion/projects/psychAD/pnm/n_temp_d_gt_demux2/ # For gt check only
+  # Optional params
+  sort_cb_bam: _Aligned.sortedByCB.out.bam
+  sort_cb_bai: _Aligned.sortedByCB.out.bam.bai
+  filt_bam: _filt.bam
+  sam: _Aligned.sortedByCB.out.sam
+  bc_per_donor: 800
+  short_bam: _chr1.bam # Change this to be flexible
+  time_per_donor: "02:30"
+  mito_reads_file: _mito_reads_stats.txt
+
+
+# Identifying swaps
+identify_swaps:
+  mbv_inp: vireo_outs # value can be either 'vireo_outs' or 'snakemake-type' input file
+  mbv_out_dir: /sc/arion/projects/CommonMind/pnm/choroid_plexus/qtltools_mbv/
+  ref_vcf: /sc/arion/projects/CommonMind/pnm/choroid_plexus/Microglia_Phase1and2_322ind_TopMed_r2_0p3_FixedNames_changed_names_wo_chr.vcf.gz
+  # Optional params
+  mbv_suffix: .bamstat.txt
+  mbv_extra_opt: "--filter-mapping-quality 150" # null if no extra params needed for the run
+  
+# deeptools-----------------------------------------------------------------
+multiBamSummary:
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
+  bam: _Aligned.sortedByCoord.out.bam
+  outdir:  /sc/arion/projects/psychAD/snakemake_pipeline/multiBamSummary_out/
+  # out_format: .bigwig # can be bigwig or bedgraph
+  rep1_suffix: 1-cDNA
+  rep2_suffix: 2-cDNA
+  extra_params: null # or valid extra parameters in deepTools' bamCompare
+
+plotCorrelation:
+  outdir: /sc/arion/projects/psychAD/snakemake_pipeline/plotCorrelation_out/
+  corr_method: spearman
+  plot_type: scatterplot
+  out_fmt: .png
+
+
+# RNA velocity pipeline------------------------------------------------------
+split_bams_dir: /sc/arion/projects/psychAD/STARsolo_split_filt_bams/
+split_bams_proxy_dir: /sc/arion/projects/psychAD/pnm/split_bam_logs/

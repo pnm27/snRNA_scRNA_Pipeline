@@ -92,6 +92,25 @@
         - [ ] WASP mode
     - scripts:
         - [ ] WASP mode
+- Changelog:
+    - Single wildcard is called now *pool* (Earlier mixed use of *num*, *id1* and *id2*).
+    - Retained use of double wildcards.
+    - Revised split_bams script:
+        - [x] Consolidated gt and non-gt versions.
+        - [x] Now, mito file is in params (earlier was an output)
+        - [x] Now, bed file is in params (earlier was an inputs)
+        - [x] Streamlined
+    - Major revisions to **create_per_donor_bams.bash** script
+        - [x] Consolidated gt and non-gt versions.
+        - [x] Handles saving mito_file much elegantly.
+        - [x] Supports argument parsing (with support for older positional args)
+        - [x] Doesn't expect directories, provided as inputs, to follow logic - dirs should end with '/.
+    - Changed name of workflow from **pheno_demux3.snkmk** to **genotype_demux.snkmk**
+    - The rule create_inp_splitBams now:
+      - [x] Uses a consolidated script to create the barcode files using both, h5ad and raw files.
+      - [x] Removed the option to overwrite the outputs as before (but still present in python script).
+      - [x] Rule supports single demux (while the script can handle multiple).
+      - [x] h5ad input alone support for calico_solo while vireo output is supported as is.
 
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 

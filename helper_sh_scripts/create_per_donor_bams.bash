@@ -12,6 +12,8 @@ ml samtools
 args=$@
 mito_pref="MT"
 verbose="FALSE"
+bedfile="None"
+mito_file="/dev/null"
 POSITIONAL_ARGS=()
 parse_args ()
 {
@@ -109,13 +111,16 @@ if [[ $# -gt 0 ]]; then
     if [[ ! -z $5 ]]; then
         pooled_bam=${5}
     fi
-    if [[ ! -z $6 && $# -eq 6 ]]; then
+    if [[ ! -z $6 ]]; then
         bedfile=${6}
-    else
-        mito_file=${6}
     fi
-    if [[ ! -z $7 ]]; then
-        bedfile=${7}
+    if [[ $# -gt 6 ]]; then
+        if [[ ! -z $7 ]]; then
+            mito_file=${7}
+        fi
+        if [[ ! -z $8 ]]; then
+            mito_pref=${8}
+        fi
     fi
 fi
 
@@ -126,32 +131,31 @@ if [ ! -d "${outdir}" ]; then mkdir -p ${outdir}; fi
 if [[ ${verbose} == "TRUE" ]]; then
     set -x
 fi
-if [[ ! -f "${tempdir}${donor}.bam.bai" ]]; then
-    awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir}${donor}.txt
+if [[ ! -f "${tempdir%/}/${donor}.bam.bai" ]]; then
+    awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir%/}/${donor}.txt
     # samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
-    samtools view -D CB:${tempdir}${donor}.txt ${pooled_bam} -bho "${tempdir}${donor}.bam"
+    samtools view -D CB:${tempdir%/}/${donor}.txt ${pooled_bam} -bho "${tempdir%/}/${donor}.bam"
     sleep 20
-    samtools index "${tempdir}${donor}.bam" &> /dev/null
+    samtools index "${tempdir%/}/${donor}.bam" &> /dev/null
     sleep 20
 fi
-if [[ ! -z ${mito_file} ]]; then
-    mito_reads=$(samtools view -c "${tempdir}${donor}.bam" "${mito_pref}")
-    echo "Number of mito reads for the donor ${donor}: ${mito_reads}" >> ${mito_file}
-    # Remove unwanted contigs and secondary alignments
-    samtools view -L "${bedfile}" -F 0x100 -o "${outdir}${donor}.bam" "${tempdir}${donor}.bam"
-    sleep 20
-    samtools index "${outdir}${donor}.bam" &> /dev/null && \
-        ( rm "${tempdir}${donor}.bam" "${tempdir}${donor}.bam.bai"; \
-        echo -n "Number of reads after filtering mito reads for the donor ${donor}: " >> ${mito_file}; \
-            samtools view -c "${outdir}${donor}.bam" >> ${mito_file} ) && exit 0 || exit 1
 
-else
+echo "IGNORE [main_samview], if seen here!"
+mito_reads=$(samtools view -c "${tempdir%/}/${donor}.bam" "${mito_pref}")
+echo "Number of mito reads for the donor ${donor}: ${mito_reads}" >> ${mito_file}
+
+# If bedfile is provided to filter the per-donor bams
+if [[ ${bedfile} != "None" ]]; then
     # Remove unwanted contigs and secondary alignments
-    samtools view -L "${bedfile}" -F 0x100 -o "${outdir}${donor}.bam" "${tempdir}${donor}.bam"
+    samtools view -L "${bedfile}" -F 0x100 -o "${outdir%/}/${donor}.bam" "${tempdir%/}/${donor}.bam"
     sleep 20
-    samtools index "${outdir}${donor}.bam" &> /dev/null && \
-        ( rm "${tempdir}${donor}.bam" "${tempdir}${donor}.bam.bai"; \
-            samtools view -c "${outdir}${donor}.bam" >> ${mito_file} ) && exit 0 || exit 1
+    samtools index "${outdir%/}/${donor}.bam" &> /dev/null && \
+        ( rm "${tempdir%/}/${donor}.bam" "${tempdir%/}/${donor}.bam.bai"; \
+        echo -n "Number of reads after filtering mito reads for the donor ${donor}: " >> ${mito_file}; \
+            samtools view -c "${outdir%/}/${donor}.bam" >> ${mito_file} ) && exit 0 || exit 1
+else
+    mv "${tempdir%/}/${donor}.bam" "${outdir%/}/${donor}.bam"
+    mv "${tempdir%/}/${donor}.bam.bai" "${outdir%/}/${donor}.bam.bai"
 
 fi
 

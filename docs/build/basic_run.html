@@ -1,39 +1,36 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Understanding Snakemake workflows &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster.custom.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster.bundle.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-shadow.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-punk.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-noir.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-light.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tooltipster-sideTip-borderless.min.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/micromodal.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/sphinx_rtd_theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/tables.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/page_style.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/sphinx_rtd_theme.css?v=3234e928" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tables.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/page_style.css" />
+
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
-        <script src="_static/js/hoverxref.js"></script>
-        <script src="_static/js/tooltipster.bundle.min.js"></script>
-        <script src="_static/js/micromodal.min.js"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-        <script src="https://unpkg.com/mermaid@9.4.0/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({startOnLoad:true});</script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/js/hoverxref.js"></script>
+      <script src="_static/js/tooltipster.bundle.min.js"></script>
+      <script src="_static/js/micromodal.min.js"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -46,11 +43,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> snRNAseq scRNAseq Pipeline
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            snRNAseq scRNAseq Pipeline
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -102,7 +103,7 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
       <li class="breadcrumb-item active">Understanding Snakemake workflows</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/basic_run.md.txt" rel="nofollow"> View page source</a>
@@ -114,35 +115,35 @@
            <div itemprop="articleBody">
              
   <section id="understanding-snakemake-workflows">
-<h1>Understanding Snakemake workflows<a class="headerlink" href="#understanding-snakemake-workflows" title="Permalink to this heading"></a></h1>
+<h1>Understanding Snakemake workflows<a class="headerlink" href="#understanding-snakemake-workflows" title="Link to this heading"></a></h1>
 <p>To begin with understanding this setup, it is highly advised to go through the basic <a class="reference external" href="https://snakemake.readthedocs.io/en/stable/tutorial/tutorial.html">Snakemake’s tutorial</a>.</p>
 <p>To surmise the workflow setup, it’s easier to follow the bottom-top approach i.e. identify the final files (or a set of) that’s required and build the way up to the infput files. This is an example of the <a class="hxr-hoverxref hxr-tooltip reference internal" href="glossary.html#term-DAG"><span class="xref std std-term">DAG</span></a> created by Snakemake.</p>
 </section>
 <section id="a-basic-pipeline">
-<h1>A basic pipeline<a class="headerlink" href="#a-basic-pipeline" title="Permalink to this heading"></a></h1>
+<h1>A basic pipeline<a class="headerlink" href="#a-basic-pipeline" title="Link to this heading"></a></h1>
 <p>Let’s start to setup the pipeline to run a basic set of softwares required for preprocessing a scRNAseq data i.e. use STARsolo to align our cDNA fastqs and run a set of PICARD tools while retaining all the statistics produced by these tools.</p>
 <p>For our example case, we require 2 sets of files from our workflow i.e the outputs created by PICARD programs - CollectGcBiasMetrics and CollectRnaSeqMetrics as they are created independent of each other. Hence, if we were to use only the outputs of one program the other outputs won’t be produced.</p>
 <p>To finally assimilate all these statistics (alignment statistics and read statistics) we will be runnning another script <em>run_update_logs.sh</em> (click here to know how)</p>
 <section id="setting-up">
-<h2>Setting up<a class="headerlink" href="#setting-up" title="Permalink to this heading"></a></h2>
+<h2>Setting up<a class="headerlink" href="#setting-up" title="Link to this heading"></a></h2>
 <p>Firstly, create a list of inputs (check here for different styles of inputs) - we will go with creating text file with the list of fastq files (one line per sample).</p>
 <section id="how-fastq-files-are-arranged">
-<h3>How fastq files are arranged<a class="headerlink" href="#how-fastq-files-are-arranged" title="Permalink to this heading"></a></h3>
+<h3>How fastq files are arranged<a class="headerlink" href="#how-fastq-files-are-arranged" title="Link to this heading"></a></h3>
 <p>This following pic shows how the fastq files are present in our directory.</p>
 <figure class="align-default" id="id1" style="width: 200px">
 <img alt="tree structure" src="_images/fastqs.png" />
 <figcaption>
-<p><span class="caption-text">directories</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+<p><span class="caption-text">directories</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>
 <section id="create-fastq-files-txt">
-<h3>Create fastq_files.txt<a class="headerlink" href="#create-fastq-files-txt" title="Permalink to this heading"></a></h3>
+<h3>Create fastq_files.txt<a class="headerlink" href="#create-fastq-files-txt" title="Link to this heading"></a></h3>
 <p>This following pic shows the content of the fastq_files.txt.</p>
 <figure class="align-default" id="id2" style="width: 150px">
 <img alt="pic" src="_images/fastq_files.png" />
 <figcaption>
-<p><span class="caption-text">pools</span><a class="headerlink" href="#id2" title="Permalink to this image"></a></p>
+<p><span class="caption-text">pools</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 <p>As one can see it contains one representation for each sample i.e. doesn’t separate R1 and R2.</p>
@@ -150,7 +151,7 @@
 <figure class="align-default" id="id3" style="width: 150px">
 <img alt="tree structure" src="_images/overall.png" />
 <figcaption>
-<p><span class="caption-text">tree_struct</span><a class="headerlink" href="#id3" title="Permalink to this image"></a></p>
+<p><span class="caption-text">tree_struct</span><a class="headerlink" href="#id3" title="Link to this image"></a></p>
 </figcaption>
 </figure>
 </section>

@@ -1,4 +1,4 @@
-name: hashsolo
+name: basic_sctools
 channels:
   - conda-forge
   - bioconda
