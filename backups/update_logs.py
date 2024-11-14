@@ -225,18 +225,14 @@ def get_argument_parser():
         default=os.path.join(os.getcwd()+"Final_out_MAP_2.tsv"))
     parser.add_argument('-o', '--output_file', help="output file. DEFAULT: <current working directory>/All_logs.tsv", default=os.path.join(os.getcwd()+"All_logs.tsv"))
     parser.add_argument('-b', '--bam_dir', help="Directory containing bam file(s). DEFAULT: current working directory", default=os.getcwd())
-    parser.add_argument('-p', '--picard_dir', nargs='?', help="Directoy containing PICARD outputs. DEFAULT: current working directory", 
-        const=os.getcwd(), default=None)
-    parser.add_argument('-d', '--demul_dir', nargs='?', help="Directory containing demultiplexing stats. DEFAULT: current working directory", 
-        const=os.getcwd(), default=None)
+    parser.add_argument('-p', '--picard_dir', help="Directoy containing PICARD outputs. DEFAULT: current working directory", default=os.getcwd())
+    parser.add_argument('-d', '--demul_dir', help="Directory containing demultiplexing stats. DEFAULT: current working directory", default=os.getcwd())
     parser.add_argument('--bam_struct', help="Regex to identify bam file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
-    parser.add_argument('--pc_struct', nargs='?', help="Regex to identify picard file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
-        provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"",const=os.path.join(os.getcwd(), "<sample>/"), 
-        default=None)
-    parser.add_argument('--dem_struct', nargs='?', help="Regex to identify demultiplex info containing file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
-        provided to this script. DEFAULT: \"<current_working_dir>/<sample>\"", const=os.path.join(os.getcwd(), "<sample>"),
-        default=None)
+    parser.add_argument('--pc_struct', help="Regex to identify picard file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
+        provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
+    parser.add_argument('--dem_struct', help="Regex to identify demultiplex info containing file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
+        provided to this script. DEFAULT: \"<current_working_dir>/<sample>\"", default=os.path.join(os.getcwd(), "<sample>"))
     parser.add_argument('--ss_l', nargs='?', help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
         DEFAULT: \"_Log.final.out\"", const="_Log.final.out", default=None)
     parser.add_argument('--pc_gc', nargs='?',  help="Suffix for the output (if not the same as the default one). Absence of this parameter is treated as not intended in the compilation. \
@@ -271,14 +267,7 @@ def main():
     pic_dir = args.picard_dir
     dem_dir = args.demul_dir
 
-    # If arguments -p (picard_dir) and -d (demultiplex_dir) is not provided
-    # then pc_rs and pc_gc; dem_info are implied to be absent
-    # i.e. without a picard output dir there can't be outputs for
-    # CollectRnaSeqMetrics and CollectGcBiasMetrics similarly for demultiplexing
-    dir_depend_args = {
-        'picard_dir': ['pc_gc', 'pc_rs'],
-        'demul_dir': ['dem_info'],
-    }
+
 
     # Validate the optional parameters, if present
     opt_file_params = {
@@ -297,18 +286,13 @@ def main():
     # List of programs from which no stats need be recorded
     exclude_progs=[]
 
-    # Extension test for files and dir exists for directories (only for BAM)
-    # If these parameters are present, they should have appropriate extensions
+    # Extension test for files and dir exists for directories
     for k, v in vars(args).items():
+        # If these parameters are present, they should have appropriate extensions
         if k in opt_file_params and v != None and not v.endswith(opt_file_params[k][0]):
             raise ValueError(f"The file extension in {v} for the parameter {k} is unexpected!")
-        elif k == 'bam_dir' and ( v == None or not os.path.isdir(v)):
-            raise ValueError(f"The directory {v} provided for the parameter {k} doesn't exist!")
         elif k.endswith('dir') and ( v == None or not os.path.isdir(v)):
-            print(f"No directory was provided for the parameter {k}! Hence, will remove corresponding\n"
-                  " outputs.")
-            for p in dir_depend_args[k]:
-                exclude_progs.append(opt_file_params[p][1])
+            raise ValueError(f"The directory {v} provided for the parameter {k} doesn't exist!")
         elif k in opt_file_params and v == None and not k.endswith('dir') and not k.endswith('file'):
             exclude_progs.append(opt_file_params[k][1])
         else:
@@ -355,15 +339,15 @@ def main():
     # List containing per sample values as lists (list of lists)
     row_list = []
     for sample in args.samples:
-        skip_sample = False # By default, don't skip any sample
+
 
         # create per sample copy of exclude_prog list
         samp_excl_progs = exclude_progs.copy()
 
         # Parse file structures for bam files, picard files and demultiplex info files
         bam_st = args.bam_struct.replace("<sample>", sample)
-        pc_st = args.pc_struct.replace("<sample>", sample) if args.pc_struct is not None else ""
-        dem_st = args.dem_struct.replace("<sample>", sample) if args.dem_struct is not None else ""
+        pc_st = args.pc_struct.replace("<sample>", sample)
+        dem_st = args.dem_struct.replace("<sample>", sample)
         
         # print("Entered loop")
         # Get full filenames if user requires them to be tabulated

@@ -111,6 +111,16 @@
       - [x] Removed the option to overwrite the outputs as before (but still present in python script).
       - [x] Rule supports single demux (while the script can handle multiple).
       - [x] h5ad input alone support for calico_solo while vireo output is supported as is.
+    - Major revisions to **run_update_logs.sh** script
+      - [x] Builds command from input using asssociative arrays.
+      - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
+      - [x] Now support for STARsolo 2.7.10 with **Final_out_MAP_2_7_10a_latest.tsv**.
+    - Major revisions to **update_logs.py** script
+      - [x] All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes *None* in its absence (with no argument value other values are used).
+      - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
+      - [x] Missingness of *picard_dir* implies not collecting GCBias and RNASeq Metrics.
+      - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
+    - New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
 
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 
