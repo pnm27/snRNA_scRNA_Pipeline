@@ -121,6 +121,15 @@
       - [x] Missingness of *picard_dir* implies not collecting GCBias and RNASeq Metrics.
       - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
     - New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
+    - Changed the section name from *demux_pipeline* to *hashsolo_demux_pipeline* in **new_config.yaml** file.
+      - calico_solo_demux.smk: At lines numbered 3 and 9.
+      - create_logs.smk: At lines numbered 11 and 52.
+      - demultiplex.smk: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.
+      - genotype_demux.smk: At line numbered 45.
+      - kite.smk: At lines numbered 417 and 437.
+      - produce_targets.smk: At lines numbered 159-162.
+      - split_bams.smk: At lines numbered 10,16, and 18.
+
 
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 

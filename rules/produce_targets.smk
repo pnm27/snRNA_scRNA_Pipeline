@@ -156,10 +156,10 @@ def targets_multibamsummaryPlotCorr(conf_f) -> list:
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, progs=None) -> list:
     
-    demuxed_mat_dir = conf_f['demux_pipeline']['final_count_matrix_dir']
-    demuxed_info_dir = conf_f['demux_pipeline']['demultiplex_info_dir']    
-    demux_mat_suff = conf_f['demux_pipeline']['final_count_matrix_h5ad']
-    demux_info_suff = conf_f['demux_pipeline']['demultiplex_info']
+    demuxed_mat_dir = conf_f['hashsolo_demux_pipeline']['final_count_matrix_dir']
+    demuxed_info_dir = conf_f['hashsolo_demux_pipeline']['demultiplex_info_dir']    
+    demux_mat_suff = conf_f['hashsolo_demux_pipeline']['final_count_matrix_h5ad']
+    demux_info_suff = conf_f['hashsolo_demux_pipeline']['demultiplex_info']
     # f_st_bam = conf_f['fold_struct']
     f_st = conf_f['fold_struct_demux']
 

@@ -144,7 +144,7 @@ kb_pipeline:
 
 
 # Demultiplexing pipeline----------------------------------------------------
-demux_pipeline:
+hashsolo_demux_pipeline:
   h5ad_bustools_dir: /sc/arion/projects/psychAD/pnm/cache/
   calico_solo_dir: /sc/arion/projects/psychAD/demultiplex/solo/
   hto_sep: null
@@ -226,7 +226,6 @@ demultiplex:
 
 # Split bams pipeline------------------------------------------------------
 
-# Split bams by calico_solo output
 split_bams_pipeline:
   gt_check: yes # yes or no
   split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>create_inp_splitBam module &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
+  <title>create_inp_splitBam_consolidated module &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css?v=7bc2f056" />
@@ -95,9 +95,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">create_inp_splitBam module</li>
+      <li class="breadcrumb-item active">create_inp_splitBam_consolidated module</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/create_inp_splitBam.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/create_inp_splitBam_consolidated.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -105,8 +105,30 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="create-inp-splitbam-module">
-<h1>create_inp_splitBam module<a class="headerlink" href="#create-inp-splitbam-module" title="Link to this heading"></a></h1>
+  <section id="module-create_inp_splitBam_consolidated">
+<span id="create-inp-splitbam-consolidated-module"></span><h1>create_inp_splitBam_consolidated module<a class="headerlink" href="#module-create_inp_splitBam_consolidated" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="create_inp_splitBam_consolidated.get_argument_parser">
+<span class="sig-name descname"><span class="pre">get_argument_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_inp_splitBam_consolidated.get_argument_parser" title="Link to this definition"></a></dt>
+<dd><p>Generate and return argument parser.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="create_inp_splitBam_consolidated.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#create_inp_splitBam_consolidated.main" title="Link to this definition"></a></dt>
+<dd><p>Main entry function</p>
+<p>This function creates a 2-columned text file with donors as the
+first column with its corresponding barcodes in the second.
+NOT SUPPORTED YET:
+If multiple demultiplexing softwares have annotated the cells
+and one wants to create sep output files for each of them</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="create_inp_splitBam_consolidated.save_df">
+<span class="sig-name descname"><span class="pre">save_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#create_inp_splitBam_consolidated.save_df" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 
 

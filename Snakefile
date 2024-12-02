@@ -16,7 +16,6 @@ Further Plans:
 
 
 import os
-#from collections import OrderedDict
 import glob2, re, math
 import pandas as pd
 from snakemake.utils import validate
@@ -28,7 +27,7 @@ min_version("6.4.0")
 
 
 configfile: "new_config.yaml"
-#validate(config, "config.schema.json")  # Path to the scefic schema
+#validate(config, "config.schema.json")  # Path to the specific schema
 
 # REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Set few global variables (DON'T CHANGE FOR INITIAL RUNS (FOR EACH PROJECT)!)
@@ -58,7 +57,6 @@ include: "rules/calico_solo_demux.smk"
 include: "rules/genotype_demux.smk"
 include: "rules/demultiplex.smk"
 include: "rules/split_bams.smk"
-# include: "rules/split_bams_gt.snkmk" # For just gt purposes
 include: "rules/identify_swaps.smk"
 include: "rules/deeptools.smk"
 

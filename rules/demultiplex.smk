@@ -7,9 +7,9 @@ def get_inputs_demux(wildcards):
     if global_vars.ONLY_SOLO:
         checkpoint_output = checkpoints.clustering.get(**wildcards).output[0]
         ret_list.append(
-            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
-            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
             )
     elif global_vars.ONLY_VIREO:
         if config['last_step'].lower().endswith('multi_vcf'):
@@ -29,9 +29,9 @@ def get_inputs_demux(wildcards):
 
     elif global_vars.BOTH_DEMUX:
         ret_list.append(
-            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
-            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
             )
         if config['last_step'].lower().endswith('multi_vcf'):
             ret_list.append(
@@ -69,15 +69,15 @@ def get_condn(wildcards):
 
 def get_inputs_add_demux(wildcards):
     ret_list=[
-        f"{config['demux_pipeline']['final_count_matrix_dir']}"
+        f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
         f"{config['fold_struct_demux']}"
-        f"{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
         ]
     if global_vars.ADD_SOLO:
         ret_list.append(
-            f"{config['demux_pipeline']['calico_solo_dir']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
             f"{config['fold_struct_demux']}"
-            f"{config['demux_pipeline']['calico_solo_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
             )
 
     elif global_vars.ADD_VIREO:
@@ -121,21 +121,21 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
             get_inputs_demux
 
         output:
-            f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}",
-            f"{config['demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['demultiplex_info']}"
+            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}",
+            f"{config['hashsolo_demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['demultiplex_info']}"
 
         params:
             mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
             min_genes=config['min_genes_per_cell'], # Min #genes per cell
             min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
             samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-            cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+            cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
             pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
-            hto_sep=config['demux_pipeline']['hto_sep'],
+            hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
             mito_prefix=config['mito'], # Mitochondrial genes' (names') prefix
             condn=get_condn,
-            subid_convert=config['demux_pipeline']['SubID_convert']
+            subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
 
         resources:
             mem_mb=allocate_mem_DXP,
@@ -325,12 +325,12 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
     
         params:
             samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-            cols=config['demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+            cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
             pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
-            hto_sep=config['demux_pipeline']['hto_sep'],
+            hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
             condn=get_condn2,
-            subid_convert=config['demux_pipeline']['SubID_convert']
+            subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
 
         conda: "../envs/basic_sctools.yaml"
 

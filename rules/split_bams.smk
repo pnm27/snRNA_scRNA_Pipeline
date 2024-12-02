@@ -7,7 +7,7 @@ def get_inp_splitBam(wildcards):
             f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
         elif config['split_bams_pipeline']['split_by']['demux'].lower() in \
             ["cs", "calico", "calico_solo", "hashsolo"]:
-            f"{config['demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['calico_solo_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
     else:
         # if len(config['split_bams_pipeline']['split_by']['demux']) == 1:
         #     if config['split_bams_pipeline']['split_by']['demux'][0].lower() in ['vireo', 'vs'] or \
@@ -15,7 +15,7 @@ def get_inp_splitBam(wildcards):
         #       ["cs", "calico", "calico_solo", "hashsolo"]:
         #         return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
         # else:
-        return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
 
 
 def get_h5ad_cols(wildcards):

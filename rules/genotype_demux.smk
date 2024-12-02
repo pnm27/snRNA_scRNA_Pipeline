@@ -42,7 +42,7 @@ def get_filt_barcodes(wildcards):
     if global_vars.ADD_SOLO:
         pass
     elif global_vars.ADD_VIREO:
-        return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
+        return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
     elif global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
     else:

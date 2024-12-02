@@ -414,7 +414,7 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         # priority: 10
 
         output:
-            f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['bustools_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['bustools_h5ad']}"
 
         resources:
             mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
@@ -434,7 +434,7 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         # priority: 10
 
         output:
-            f"{config['demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}_{{i}}{config['demux_pipeline']['bustools_h5ad']}"
+            f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}_{{i}}{config['hashsolo_demux_pipeline']['bustools_h5ad']}"
 
         resources:
             mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
