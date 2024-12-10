@@ -1,0 +1,21 @@
+default-resources:
+  - "lsf_project=acc_CommonMind"
+  - "lsf_queue=express"
+  - "wallime=720"
+
+set-resources:
+  STARsolo_sort: 
+    lsf_queue: premium
+
+  vireoSNP: 
+    lsf_queue: premium
+
+  create_inp_splitBams: 
+    lsf_queue: premium
+
+  filt_chr_bams: 
+    lsf_queue: premium
+
+  split_bams: 
+    lsf_queue: premium
+

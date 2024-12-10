@@ -122,13 +122,25 @@
       - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
     - New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
     - Changed the section name from *demux_pipeline* to *hashsolo_demux_pipeline* in **new_config.yaml** file.
-      - calico_solo_demux.smk: At lines numbered 3 and 9.
-      - create_logs.smk: At lines numbered 11 and 52.
-      - demultiplex.smk: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.
-      - genotype_demux.smk: At line numbered 45.
-      - kite.smk: At lines numbered 417 and 437.
-      - produce_targets.smk: At lines numbered 159-162.
-      - split_bams.smk: At lines numbered 10,16, and 18.
+      - **calico_solo_demux.smk**: At lines numbered 3 and 9.
+      - **create_logs.smk**: At lines numbered 11 and 52.
+      - **demultiplex.smk**: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.
+      - **genotype_demux.smk**: At line numbered 45.
+      - **kite.smk**: At lines numbered 417 and 437.
+      - **produce_targets.smk**: At lines numbered 159-162.
+      - **split_bams.smk**: At lines numbered 10,16, and 18.
+    - [ ] Issues with using wildcard **vcf_type** in the rule *demux_samples*.
+    - [ ] Issues with output dir selection in the *demux_samples* i.e. automatically pick output dir.
+    - Consolidated the section name from *split_bams_pipeline_gt_demux* in *split_bams_pipeline_gt* (earlier used for calico_solo based split bams) in **new_config.yaml** file.
+      - **split_bams.smk**: At lines numbered 44,45,47 and 52.
+      - **produce_targets.smk**: At line numbered 111.
+      - **identify_swaps.smk**: At line numbered 3.
+    - Added support for Snakemake transition to version > 8.
+      - Added **workflow_profile/config.yaml** which gets reflected in **run_snakemake.sh**.
+      - To emulate previous behavior's for profile manually edited the **lsf_executor_plugin** and added ENV variable.
+      - *lsf.yaml* still is present for snakemake \< v8.
+      - Changed the *threads* directive and replaced with resources: *cpus_per_task*.
+    - Removed dependence on **resources.smk**. Instead all resource requirements are within each snakemake file.
 
 
 

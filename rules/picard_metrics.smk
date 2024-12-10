@@ -1,3 +1,21 @@
+# Resource Allocation ------------------
+def allocate_mem_PGCB(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_time_PGCB(wildcards, attempt):
+    return 60*attempt+60
+
+
+def allocate_mem_PRNA(wildcards, attempt):
+    return 2500*attempt+2500
+
+
+def allocate_time_PRNA(wildcards, attempt):
+    return 210*attempt+210
+
+# --------------------------------------
+
 rule Picard_GC_bias_metrics:
     input:
         bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
@@ -14,10 +32,12 @@ rule Picard_GC_bias_metrics:
         genome_fasta=config["genome_fasta"]
 
     resources:
+        cpus_per_task=2, # For snakemake > v8
         mem_mb=allocate_mem_PGCB,
         time_min=allocate_time_PGCB
        
-    threads: 2
+    # For snakemake < v8
+    # threads: 2
 
     conda: "../envs/picard.yaml"
 
@@ -26,7 +46,6 @@ rule Picard_GC_bias_metrics:
      
     shell:
         """
-        ml picard/2.22.3
         java -jar $PICARD CollectGcBiasMetrics I={input.bams} O={output[0]} CHART={params.output_pref}gc_bias_metrics.pdf SCAN_WINDOW_SIZE={params.window_size} S={output[1]} R={params.genome_fasta}
         """
       
@@ -46,10 +65,12 @@ rule Picard_RNAseq_metrics:
         strand=config['picard_pipeline']['strand']
 
     resources:
+        cpus_per_task=4, # For snakemake > v8
         mem_mb=allocate_mem_PRNA,
         time_min=allocate_time_PRNA
 
-    threads: 4
+    # For snakemake < v8
+    # threads: 4
 
     conda: "../envs/picard.yaml"
 
@@ -58,6 +79,5 @@ rule Picard_RNAseq_metrics:
 
     shell:
         """
-        ml picard/2.22.3
         java -jar $PICARD CollectRnaSeqMetrics I={input.bams} O={output} REF_FLAT={params.flat_ref} STRAND={params.strand}
         """

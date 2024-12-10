@@ -1,10 +1,19 @@
 def get_bam_inputs(wildcards):
     if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
-        return f"{config['split_bams_pipeline_gt_demux']['split_bams_dir2']}{config['fold_struct_bam_split2']}{config['fold_struct_gt_demux_redo']}.bam"
+        return f"{config['split_bams_pipeline']['split_bams_dir2']}{config['fold_struct_bam_split2']}{config['fold_struct_gt_demux_redo']}.bam"
     else:
         return config['identify_swaps']['mbv_inp']
 
 
+# Resource Allocation ------------------
+def allocate_mem_QM(wildcards):
+    return 5000
+
+
+def allocate_time_QM(wildcards, attempt):
+    return 60 + 20*(attempt-1)
+
+# --------------------------------------
 
 rule qtltools_mbv:
     input:
@@ -18,9 +27,11 @@ rule qtltools_mbv:
     params:
         extra_params=config['identify_swaps']['mbv_extra_opt']
 
-    threads: 1
+    # For snakemake < v8
+    # threads: 1
 
     resources:
+        cpus_per_task=1, # For snakemake > v8
         mem_mb=allocate_mem_QM,
         time_min=allocate_time_QM
 
@@ -29,7 +40,6 @@ rule qtltools_mbv:
 
     shell:
         """
-        ml qtltools/1.3
         if [[ "{params.extra_params}" == "None" ]]; then
             QTLtools mbv --bam {input.bam} --out {output} --vcf {input.ref_snps}
         else

@@ -1,3 +1,13 @@
+# Resource Allocation ------------------
+def allocate_mem_RCS(wildcards, attempt):
+    return 4500*attempt+2500
+
+def allocate_time_RCS(wildcards, attempt):
+    return 5*attempt+5
+
+# --------------------------------------
+
+
 rule run_calico_solo:
     input:
         f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['bustools_h5ad']}",
@@ -15,11 +25,13 @@ rule run_calico_solo:
         genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
         mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
 
-    threads: 2
+    # For snakemake < v8
+    # threads: 2
 
     conda: "../envs/hashsolo.yaml"
 
     resources:
+        cpus_per_task=2, # For snakemake > v8
         mem_mb=allocate_mem_RCS,
         time_min=allocate_time_RCS
 

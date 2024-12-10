@@ -108,7 +108,7 @@ def targets_gt_demux2(conf_f, progs=None) -> list:
 
 
 def targets_SplitBams(conf_f, progs=None) -> list:
-    out_dir = conf_f['split_bams_pipeline_gt_demux']['split_bams_proxy_dir2']
+    out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir2']
     op = conf_f['fold_struct_bam_split1']
 
     target_list = [f"{out_dir}{op}"]

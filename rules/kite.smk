@@ -30,6 +30,57 @@ def get_hto_fastqs(wildcards):
     return all_files
 
 
+# Resource Allocation ------------------
+def allocate_mem_CFB(wildcards, attempt):
+    return 50*attempt+80
+
+def allocate_time_CFB(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_CMF(wildcards, attempt):
+    return 50*attempt+70
+
+def allocate_time_CMF(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_BKI(wildcards, attempt):
+    return 1000*attempt+1000
+
+def allocate_time_BKI(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_RK(wildcards, attempt):
+    return 1000*attempt + 500
+
+def allocate_time_RK(wildcards, attempt):
+    return 20*attempt + 20
+
+def allocate_mem_RBCor(wildcards, attempt):
+    return 1500*attempt+1500
+
+def allocate_time_RBCor(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_RBS(wildcards, attempt):
+    return 3000*attempt+3000
+
+def allocate_time_RBS(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_RBCnt(wildcards, attempt):
+    return 1500*attempt+1500
+
+def allocate_time_RBCnt(wildcards, attempt):
+    return 5*attempt+5
+
+def allocate_mem_CHB(wildcards, attempt):
+    return 1500*attempt+1500
+
+def allocate_time_CHB(wildcards, attempt):
+    return 5*attempt+5
+    
+# --------------------------------------
+
 rule create_FB:
     input:
         R1=get_r1_hto_fastqs,
@@ -44,7 +95,11 @@ rule create_FB:
     params:
         sample_name=lambda wildcards: wildcards.id1.replace('-', '_') + '_cDNA'
 
+    # For snakemake < v8
+    # threads: 1
+
     resources:
+        cpus_per_task=1, # For snakemake > v8
         mem_mb=allocate_mem_CFB, #allocate_mem_KBP,
         time_min=allocate_time_CFB
 
@@ -53,9 +108,7 @@ rule create_FB:
         python3 helper_py_scripts/create_Feat_Barc.py {input.sample_sheet} \
         -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
         """
-
-
-         
+  
 
 if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 'single':
     rule create_mismatch_fasta:
@@ -71,7 +124,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         params:
             headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
+        # For snakemake < v8
+        threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
             time_min=allocate_time_CMF
 
@@ -86,6 +143,7 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
             fi
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule create_mismatch_fasta:
         input:
@@ -100,7 +158,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         params:
             headers=config['kb_pipeline']['headers'] # Does the feature barcodes file hasve headers
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_CMF, #allocate_mem_KBP,
             time_min=allocate_time_CMF
 
@@ -127,7 +189,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         params:
             k_mer_len=config['kb_pipeline']['k_mer_length']
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
             time_min=allocate_time_BKI
 
@@ -137,9 +203,9 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
         shell:
             """
-            ml kallisto
             kallisto index -i {output} -k {params.k_mer_len} {input}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule build_kallisto_index:
         input:
@@ -153,7 +219,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         params:
             k_mer_len=config['kb_pipeline']['k_mer_length']
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_BKI, #allocate_mem_KBP,
             time_min=allocate_time_BKI
 
@@ -163,7 +233,6 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         shell:
             """
-            ml kallisto
             kallisto index -i {output} -k {params.k_mer_len} {input}
             """
 
@@ -185,9 +254,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
             output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
             chemistry=config['kb_pipeline']['chemistry']
 
-        threads: 1
+        # For snakemake < v8
+        # threads: 1
 
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RK, #allocate_mem_KBP,
             time_min=allocate_time_RK
 
@@ -197,9 +268,9 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
         shell:
             """
-            ml kallisto
             kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule run_kallisto:
         input:
@@ -217,9 +288,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
             output_pref= lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_file']}", ''),
             chemistry=config['kb_pipeline']['chemistry']
 
-        threads: 1
+        # For snakemake < v8
+        # threads: 1
 
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RK, #allocate_mem_KBP,
             time_min=allocate_time_RK
 
@@ -229,7 +302,6 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         shell:
             """
-            ml kallisto
             kallisto bus -i {input[0]} -o {params.output_pref} -x {params.chemistry} -t 8 {input.fastq_files}
             """
 
@@ -247,7 +319,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         params:
             whitelist=config['whitelist']
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
             time_min=allocate_time_RBCor
 
@@ -257,9 +333,9 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
         shell:
             """
-            ml bustools
             bustools correct -w {params.whitelist} {input} -o {output}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule run_bustools_correct:
         input:
@@ -273,7 +349,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         params:
             whitelist=config['whitelist']
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBCor, #allocate_mem_KBP,
             time_min=allocate_time_RBCor
 
@@ -283,7 +363,6 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         shell:
             """
-            ml bustools
             bustools correct -w {params.whitelist} {input} -o {output}
             """
 
@@ -298,9 +377,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         output:
             f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['bus_file_sorted']}"
 
-        threads: 1
+        # For snakemake < v8
+        # threads: 1
 
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
             time_min=allocate_time_RBS
 
@@ -310,9 +391,9 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
         shell:
             """
-            ml bustools
             bustools sort -t 4 -o {output} {input}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':        
     rule run_bustools_sort:
         input:
@@ -323,9 +404,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         output:
             f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{{i}}{config['kb_pipeline']['bus_file_sorted']}"
 
-        threads: 1
+        # For snakemake < v8
+        # threads: 1
 
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBS, #allocate_mem_KBP,
             time_min=allocate_time_RBS
 
@@ -335,7 +418,6 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         shell:
             """
-            ml bustools
             bustools sort -t 4 -o {output} {input}
             """
 
@@ -358,7 +440,11 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         params:
             output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
             time_min=allocate_time_RBCnt
 
@@ -368,9 +454,9 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
 
         shell:
             """
-            ml bustools
             bustools count -o {params.output_pref} --genecounts -g {input[3]} -e {input[1]} -t {input[2]} {input[0]}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule run_bustools_count:
         input:
@@ -389,7 +475,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         params:
             output_pref=lambda wildcards, output: output[0].replace(f"{config['kb_pipeline']['bus_count_mtx']}", '')
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_RBCnt, #allocate_mem_KBP,
             time_min=allocate_time_RBCnt
 
@@ -399,7 +489,6 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
 
         shell:
             """
-            ml bustools
             bustools count -o {params.output_pref} --genecounts -g {input[3]} -e {input[1]} -t {input[2]} {input[0]}
             """
 
@@ -416,14 +505,21 @@ if config['hto_demux_type'] is not None and config['hto_demux_type'].lower() == 
         output:
             f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['bustools_h5ad']}"
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
             time_min=allocate_time_CHB
 
+        conda: "../envs/basic_sctools.yaml"
+        
         shell:
             """
             python3 helper_py_scripts/create_h5ad_from_bustools.py {input[0]} {input[1]} {input[2]} -o {output}
             """
+
 elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() != 'single':
     rule create_h5ad_bustools:
         input:
@@ -436,7 +532,11 @@ elif config['hto_demux_type'] is not None and config['hto_demux_type'].lower() !
         output:
             f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}_{{i}}{config['hashsolo_demux_pipeline']['bustools_h5ad']}"
 
+        # For snakemake < v8
+        # threads: 1
+
         resources:
+            cpus_per_task=1, # For snakemake > v8
             mem_mb=allocate_mem_CHB, #allocate_mem_KBP,
             time_min=allocate_time_CHB
 

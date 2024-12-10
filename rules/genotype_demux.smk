@@ -230,6 +230,74 @@ def ret_dons(wildcards) -> Union[None, int]:
 
 # Modify this rule's input to accomodate the basic filtering that 
 # is used for calico_solo's input
+
+
+# Resource Allocation ------------------
+def allocate_mem_CICS(wildcards, attempt):
+    return 2000+500*(attempt-1)
+
+
+def allocate_time_CICS(wildcards, attempt):
+    return 2*attempt+1
+
+
+def allocate_mem_cS(wildcards, attempt):
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 200+80*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 800+100*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 1300+200*(attempt-1)
+        else:
+            return 1500+200*(attempt-1)
+    else:
+        return 1500+200*(attempt-1)
+
+
+def allocate_time_cS(wildcards, attempt):
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 30+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 70+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 180+40*(attempt-1)
+        else:
+            return 240+60*(attempt-1)
+    else:
+        return 240+60*(attempt-1)
+
+
+def allocate_mem_vS(wildcards, attempt):
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 3000+100*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 5000+400*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 10000+600*(attempt-1)
+        else:
+            return 22000+500*(attempt-1)
+    else:
+        return 22000+500*(attempt-1)
+
+
+def allocate_time_vS(wildcards, attempt):
+    if 'vcf_type' in wildcards:
+        if wildcards.vcf_type.endswith('_max50k'):
+            return 10+5*(attempt-1)
+        elif wildcards.vcf_type.endswith('25pct'):
+            return 70+20*(attempt-1)
+        elif wildcards.vcf_type.endswith('gencode'):
+            return 180+40*(attempt-1)
+        else:
+            return 180+60*(attempt-1)
+    else:
+        return 180+60*(attempt-1)
+
+# --------------------------------------
+
 rule create_inp_cellSNP:
     input:
         get_filt_barcodes
@@ -253,11 +321,13 @@ rule create_inp_cellSNP:
         mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
 
     resources:
+        cpus_per_task=2, # For snakemake > v8
         mem_mb=allocate_mem_CICS,
         time_min=allocate_time_CICS
 
     # group: "genotype-demux"
-    threads: 2
+    # For snakemake < v8
+    # threads: 2
 
     output:
         f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
@@ -326,13 +396,17 @@ rule cellSNP:
         filt_vcf_dir=f"{config['gt_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_gt_demux']}"[:-1], # remove trailing forward slash
         threads=config['gt_demux_pipeline']['bcftools_thread']
 
-    threads: 8
+    # For snakemake < v8
+    # threads: 8
 
     resources:
+        cpus_per_task=8, # For snakemake > v8
         mem_mb=allocate_mem_cS,
         time_min=allocate_time_cS
     
     conda: "../envs/gt_demux.yaml"
+
+    envmodules: "bcftools/1.15.1"
 
     shell:
         """
@@ -345,7 +419,7 @@ rule cellSNP:
             do
                 cmd_str+="${{opts1[i]}} ${{array[i]}} "
             done
-            cmd_str=$(echo ${{cmd_str}} | awk '{$1=$1};1')
+            cmd_str=$(echo ${{cmd_str}} | awk '{{$1=$1}};1')
             set -x
             cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         else
@@ -353,9 +427,8 @@ rule cellSNP:
             do
                 cmd_str+="${{opts2[i]}} ${{array[i]}} "
             done
-            cmd_str=$(echo ${{cmd_str}} | awk '{$1=$1};1')
+            cmd_str=$(echo ${{cmd_str}} | awk '{{$1=$1}};1')
 
-            ml bcftools/1.15.1
             set -x
             bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
             cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
@@ -379,9 +452,11 @@ rule vireoSNP:
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['donors_classification']}", ''),
         n_donors=ret_dons
 
-    threads: 7
+    # For snakemake < v8
+    # threads: 7
 
     resources:
+        cpus_per_task=7, # For snakemake > v8
         mem_mb=allocate_mem_vS,
         time_min=allocate_time_vS
         

@@ -41,15 +41,15 @@ def get_mito(wildcards):
 
 
 def subset_to_chr(wildcards):
-    if config['chr_prefix'] == None or config['split_bams_pipeline_gt_demux']['subset_chr'].startswith(config['chr_prefix']):
-        return config['split_bams_pipeline_gt_demux']['subset_chr']
+    if config['chr_prefix'] == None or config['split_bams_pipeline']['subset_chr'].startswith(config['chr_prefix']):
+        return config['split_bams_pipeline']['subset_chr']
     else:
-        return config['chr_prefix'] + config['split_bams_pipeline_gt_demux']['subset_chr'] 
+        return config['chr_prefix'] + config['split_bams_pipeline']['subset_chr'] 
 
 
 def get_bam_to_split(wildcards):
     if config['gt_check']:
-        if config['split_bams_pipeline_gt_demux']['subset_chr'] is None:
+        if config['split_bams_pipeline']['subset_chr'] is None:
             return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
         else:
             return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
@@ -64,15 +64,26 @@ def get_mito_file(wildcards):
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['mito_reads_file']}"
 
 
-# defining local rules
-# localrules: create_bed
+# Resource Allocation ------------------
+def allocate_mem_FCB(wildcards, attempt):
+    return 150*attempt+150
+
+
+def allocate_time_FCB(wildcards, attempt):
+    return 20*attempt+20
+
+
+def allocate_mem_SB(wildcards, attempt):
+    return 75*attempt+75
+
+# --------------------------------------
 
 # FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.
 rule create_inp_splitBams:
     input:
         get_inp_splitBam
 
-    priority: 7
+    # priority: 7
 
     output:
         f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
@@ -80,17 +91,19 @@ rule create_inp_splitBams:
     params:
         # overwrite=config['split_bams_pipeline']['overwrite']
         conv=config['split_bams_pipeline']['donor_name_converter']['file'],
-        from_col=config['split_bams_pipeline']['donor_name_converter']['from_col'],
-        to_col=config['split_bams_pipeline']['donor_name_converter']['to_col'],
+        from_col=config['split_bams_pipeline']['donor_name_converter']['from_column'],
+        to_col=config['split_bams_pipeline']['donor_name_converter']['to_column'],
         demux_method=config['split_bams_pipeline']['split_by']['demux'],
         inp_ext=config['split_bams_pipeline']['split_by']['input'],
         # n_methods=len(config['split_bams_pipeline']['split_by']['demux']),
         # demux_suffixes=len(config['split_bams_pipeline']['split_by']['suffix']),
         h5ad_col=config['split_bams_pipeline']['split_by']['column']
 
-    threads: 2
+    # For snakemake < v8
+    # threads: 2
 
     resources:
+        cpus_per_task=2, # For snakemake > v8
         mem_mb=1000,
         time_min=10
 
@@ -126,19 +139,24 @@ rule bamfilt_by_CB:
         temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt"
 
 
-    threads: 1
+    # For snakemake < v8
+    # threads: 1
 
     resources:
+        cpus_per_task=1, # For snakemake > v8
         mem_mb=250,
         time_min=300
+
+    conda: "../envs/pysam.yaml"
+
+    envmodules:
+        "samtools"
 
     shell:
         """
         mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
-        ml samtools
         cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
         samtools view -q 255 -D CB:{params.temp_bc} {input[0]} -bho {output}
-        sleep 60
         samtools index {output}
         rm {params.temp_bc}
         sleep 10
@@ -155,10 +173,11 @@ rule filt_chr_bams:
     params:
         sub_chr=subset_to_chr
 
-
-    threads: 1
+    # For snakemake < v8
+    # threads: 1
 
     resources:
+        cpus_per_task=1, # For snakemake > v8
         mem_mb=allocate_mem_FCB,
         time_min=allocate_time_FCB
 
@@ -169,7 +188,6 @@ rule filt_chr_bams:
         
     shell:
         """
-        ml samtools
         samtools view {input} {params.sub_chr} -bho {output}
         """
 
@@ -187,7 +205,7 @@ rule create_bed:
     shell:
         """
         if [ ! -f "{output}" ] ; then 
-            grep -E "^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | awk 'BEGIN{{OFS="\\t"}}{{split(\$3,a,":");gsub(">", "", \$1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
+            grep -E r"^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | awk 'BEGIN{{OFS="\\t"}}{{split(\$3,a,":");gsub(">", "", \$1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
         fi
         sleep 10
         """
@@ -197,8 +215,6 @@ rule split_bams:
     input:
         filt_bam=get_bam_to_split,
         barcodes_vs_donor=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt" # with headers
-
-    priority: 7
 
     params:
         # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
@@ -213,9 +229,11 @@ rule split_bams:
         mito_info=get_mito_file,
         filter_bed=None if config['split_bams_pipeline']['gt_check'] else config['reg_chr_bed']
 
-    threads: 1
+    # For snakemake < v8
+    # threads: 1
 
     resources:
+        cpus_per_task=1, # For snakemake > v8
         mem_mb=allocate_mem_SB,
         time_min=30
 

@@ -113,7 +113,25 @@ def get_condn2(wildcards):
         return 'V'
     else:
         return None
-    
+
+
+# Resource Allocation ------------------
+def allocate_mem_DXP(wildcards, attempt):
+    return 3500*attempt+3500
+
+
+def allocate_time_DXP(wildcards, attempt):
+    return 15*attempt+15
+
+
+def allocate_mem_AOTFCM(wildcards, attempt):
+    return 2000+500*(attempt-1)
+
+
+def allocate_time_AOTFCM(wildcards, attempt):
+    return 15+10*(attempt-1)
+
+# --------------------------------------
 
 if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
     rule demux_samples:

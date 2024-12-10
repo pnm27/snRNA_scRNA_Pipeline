@@ -1,3 +1,4 @@
+# Support for Snakemake < v8
 __default__:
   - "-P acc_CommonMind"
   - "-W 48:00"
