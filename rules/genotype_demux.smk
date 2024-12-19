@@ -194,27 +194,64 @@ def get_vir_inputs(wildcards):
 #         except:
 #             raise ValueError("Expected a Number, if neither a file containing pools vs donors nor simply 'null'")
 
-
+# DEPRACATED
 # Set logic similar to vir inp function
-def ret_dons(wildcards) -> Union[None, int]:
+# def ret_dons(wildcards) -> Union[None, int]:
+#     col_set1 = ["pool", "n_dons", "vcf"]
+#     col_set2 = ["pool", "n_dons"]
+#     n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+#     # Make snakemake's wildcard same as the value in the "pool" column
+#     samp_name = '-'.join(wildcards.id1.split('-')[:-1])
+
+#     if n_cols == 3:
+#         temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
+#     elif n_cols == 2:
+#         temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set2)
+#     else:
+#         raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
+    
+#     try:
+#         return int(temp_df.loc[temp_df["pool"] == samp_name, "n_dons"].values[0])
+#     except:
+#         return None
+
+
+def get_cmd_str_csnp(wildcards, input):
+    ret_str = ""
+    for x,y in zip(["-b", "-s"], input):
+        ret_str+=f" {x} {y}"
+
+    return ret_str
+
+
+
+def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     col_set1 = ["pool", "n_dons", "vcf"]
     col_set2 = ["pool", "n_dons"]
-    n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+    # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+    n_cols = 3 if config['gt_demux_pipeline']['vcf_info_columns']['vcf'] is not None else 2
     # Make snakemake's wildcard same as the value in the "pool" column
     samp_name = '-'.join(wildcards.id1.split('-')[:-1])
-
-    if n_cols == 3:
-        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
-    elif n_cols == 2:
-        temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set2)
-    else:
-        raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
+    pool_col = config['gt_demux_pipeline']['vcf_info_columns']['pool']
+    don_col = config['gt_demux_pipeline']['vcf_info_columns']['n_dons']
+    ret_str = ""
     
-    try:
-        return int(temp_df.loc[temp_df["pool"] == samp_name, "n_dons"].values[0])
-    except:
-        return None
+    for x,y in zip(["-c", "-d"], input):
+        ret_str+=f" {x} {y}"
 
+    temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
+    # if n_cols == 3:
+    #     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set1)
+    # elif n_cols == 2:
+    #     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], names=col_set2)
+    # else:
+    #     raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
+    
+    if samp_name in temp_df[pool_col].values:
+        ret_str += " -N " + temp_df.loc[temp_df["pool"] == samp_name, "n_dons"].values[0]
+
+    return ret_str
+        
 
 # Multi_module branch related function
 # def multi_vcfs(wildcards):
@@ -234,7 +271,7 @@ def ret_dons(wildcards) -> Union[None, int]:
 
 # Resource Allocation ------------------
 def allocate_mem_CICS(wildcards, attempt):
-    return 2000+500*(attempt-1)
+    return 1000+500*(attempt-1)
 
 
 def allocate_time_CICS(wildcards, attempt):
@@ -252,7 +289,7 @@ def allocate_mem_cS(wildcards, attempt):
         else:
             return 1500+200*(attempt-1)
     else:
-        return 1500+200*(attempt-1)
+        return 200+200*(attempt-1)
 
 
 def allocate_time_cS(wildcards, attempt):
@@ -280,7 +317,7 @@ def allocate_mem_vS(wildcards, attempt):
         else:
             return 22000+500*(attempt-1)
     else:
-        return 22000+500*(attempt-1)
+        return 3000+500*(attempt-1)
 
 
 def allocate_time_vS(wildcards, attempt):
@@ -394,7 +431,8 @@ rule cellSNP:
         min_ct=config['gt_demux_pipeline']['min_aggr_count'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['cellsnp_cells']}", ''),
         filt_vcf_dir=f"{config['gt_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_gt_demux']}"[:-1], # remove trailing forward slash
-        threads=config['gt_demux_pipeline']['bcftools_thread']
+        threads=config['gt_demux_pipeline']['bcftools_thread'],
+        cmd_str=get_cmd_str_csnp
 
     # For snakemake < v8
     # threads: 8
@@ -411,27 +449,13 @@ rule cellSNP:
     shell:
         """
         read -r -a array <<< "{input}"
-        opts1=("-b" "-s" "-R")
-        opts2=("-b" "-s")
-        cmd_str=""
         if [[ "${{#array[@]}}" -lt 4 ]]; then
-            for i in {{0..3}}
-            do
-                cmd_str+="${{opts1[i]}} ${{array[i]}} "
-            done
-            cmd_str=$(echo ${{cmd_str}} | awk '{{$1=$1}};1')
             set -x
-            cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            cellsnp-lite {params.cmd_str} -R ${{array[2]}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         else
-            for i in {{0..1}}
-            do
-                cmd_str+="${{opts2[i]}} ${{array[i]}} "
-            done
-            cmd_str=$(echo ${{cmd_str}} | awk '{{$1=$1}};1')
-
             set -x
             bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
-            cellsnp-lite ${{cmd_str}} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            cellsnp-lite {params.cmd_str} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
         fi
         set +x
         """
@@ -450,7 +474,7 @@ rule vireoSNP:
         # donor_info=get_donor_info,
         geno_tag=config['gt_demux_pipeline']['donor_genotype'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['donors_classification']}", ''),
-        n_donors=ret_dons
+        cmd_str=get_cmd_str_vireo
 
     # For snakemake < v8
     # threads: 7
@@ -463,23 +487,9 @@ rule vireoSNP:
     conda: "../envs/gt_demux.yaml"
 
     shell:
-        """
-        opts=("-c" "-d")
-        cmd_str=""
-        read -r -a array <<< "{input}"
-        for i in "${{!array[@]}}";
-        do
-            d+="${{opts[i]}} ${{array[i]}} "
-        done
-        d="${{d:0:${{#d}}-1}}"
-        if [[ "{params.n_donors}" != "None" ]]; then
-            set -x
-            vireo ${{d}} -N {params.n_donors} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-        elif [[ "{params.n_donors}" == "None" ]]; then
-            set -x
-            vireo ${{d}} -o {params.output_prefix} -t {params.geno_tag} --noPlot --randSeed 100
-        else
-            echo "Nothing ran! Check the conditions in the rule vireoSNP!"
-        fi
+        """        
+        set -x
+        vireo {params.get_cmd_str_vireo} -o {params.output_prefix} -t {params.geno_tag} \
+        --noPlot --randSeed 100
         set +x
         """

@@ -70,77 +70,16 @@
     - snakemake_rules:
         - [ ] Simplify target functions.
     - scripts:
-- resources:
-    - scripts:
-    - [ ] Add conditions for time and mem
-- split_bams_gt*:
-    - new_config params:
-    - snakemake_rules:
-        - [ ] Remove run directive
-        - [ ] Input function that removes low mito cells.
-    - scripts:
-- split_bams*:
-    - new_config params:
-    - snakemake_rules:
-        - [ ] Remove run directive
-        - [ ] Input function that removes low mito cells.
-    - scripts:
 - STARsolo:
     - new_config params:
     - snakemake_rules:
         - [x] Remove run directive
         - [ ] WASP mode
-    - scripts:
-        - [ ] WASP mode
-- Changelog:
-    - Single wildcard is called now *pool* (Earlier mixed use of *num*, *id1* and *id2*).
-    - Retained use of double wildcards.
-    - Revised split_bams script:
-        - [x] Consolidated gt and non-gt versions.
-        - [x] Now, mito file is in params (earlier was an output)
-        - [x] Now, bed file is in params (earlier was an inputs)
-        - [x] Streamlined
-    - Major revisions to **create_per_donor_bams.bash** script
-        - [x] Consolidated gt and non-gt versions.
-        - [x] Handles saving mito_file much elegantly.
-        - [x] Supports argument parsing (with support for older positional args)
-        - [x] Doesn't expect directories, provided as inputs, to follow logic - dirs should end with '/.
-    - Changed name of workflow from **pheno_demux3.snkmk** to **genotype_demux.snkmk**
-    - The rule create_inp_splitBams now:
-      - [x] Uses a consolidated script to create the barcode files using both, h5ad and raw files.
-      - [x] Removed the option to overwrite the outputs as before (but still present in python script).
-      - [x] Rule supports single demux (while the script can handle multiple).
-      - [x] h5ad input alone support for calico_solo while vireo output is supported as is.
-    - Major revisions to **run_update_logs.sh** script
-      - [x] Builds command from input using asssociative arrays.
-      - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
-      - [x] Now support for STARsolo 2.7.10 with **Final_out_MAP_2_7_10a_latest.tsv**.
-    - Major revisions to **update_logs.py** script
-      - [x] All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes *None* in its absence (with no argument value other values are used).
-      - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
-      - [x] Missingness of *picard_dir* implies not collecting GCBias and RNASeq Metrics.
-      - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
-    - New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
-    - Changed the section name from *demux_pipeline* to *hashsolo_demux_pipeline* in **new_config.yaml** file.
-      - **calico_solo_demux.smk**: At lines numbered 3 and 9.
-      - **create_logs.smk**: At lines numbered 11 and 52.
-      - **demultiplex.smk**: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.
-      - **genotype_demux.smk**: At line numbered 45.
-      - **kite.smk**: At lines numbered 417 and 437.
-      - **produce_targets.smk**: At lines numbered 159-162.
-      - **split_bams.smk**: At lines numbered 10,16, and 18.
     - [ ] Issues with using wildcard **vcf_type** in the rule *demux_samples*.
     - [ ] Issues with output dir selection in the *demux_samples* i.e. automatically pick output dir.
-    - Consolidated the section name from *split_bams_pipeline_gt_demux* in *split_bams_pipeline_gt* (earlier used for calico_solo based split bams) in **new_config.yaml** file.
-      - **split_bams.smk**: At lines numbered 44,45,47 and 52.
-      - **produce_targets.smk**: At line numbered 111.
-      - **identify_swaps.smk**: At line numbered 3.
-    - Added support for Snakemake transition to version > 8.
-      - Added **workflow_profile/config.yaml** which gets reflected in **run_snakemake.sh**.
-      - To emulate previous behavior's for profile manually edited the **lsf_executor_plugin** and added ENV variable.
-      - *lsf.yaml* still is present for snakemake \< v8.
-      - Changed the *threads* directive and replaced with resources: *cpus_per_task*.
-    - Removed dependence on **resources.smk**. Instead all resource requirements are within each snakemake file.
+    - [ ] Revamp wildcards so that varying output dirs are corrected accordingly:
+      - [ ] Demux output i.e. if only one demux method needs to be used or simultaneously both.
+      - [ ] splitting bams is for finalizing or genotype purposes.
 
 
 
@@ -181,6 +120,59 @@ The highlights of the pipeline are:
   -  Make the functions similar for demultiplexing with any method.
   - Fix issue with reading old wet_lab_info file to update (extension issues).
   - Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)
+  - Single wildcard is called now *pool* (Earlier mixed use of *num*, *id1* and *id2*).
+  - Retained use of double wildcards.
+  - Revised split_bams script:
+    - [x] Consolidated gt and non-gt versions.
+    - [x] Now, mito file is in params (earlier was an output)
+    - [x] Now, bed file is in params (earlier was an inputs)
+    - [x] Streamlined
+  - Major revisions to **create_per_donor_bams.bash** script
+    - [x] Consolidated gt and non-gt versions.
+    - [x] Handles saving mito_file much elegantly.
+    - [x] Supports argument parsing (with support for older positional args)
+    - [x] Doesn't expect directories, provided as inputs, to follow logic - dirs should end with '/.
+  - Changed name of workflow from **pheno_demux3.snkmk** to **genotype_demux.snkmk**
+  - The rule create_inp_splitBams now:
+    - [x] Uses a consolidated script to create the barcode files using both, h5ad and raw files.
+    - [x] Removed the option to overwrite the outputs as before (but still present in python script).
+    - [x] Rule supports single demux (while the script can handle multiple).
+    - [x] h5ad input alone support for calico_solo while vireo output is supported as is.
+  - Major revisions to **run_update_logs.sh** script
+    - [x] Builds command from input using asssociative arrays.
+    - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
+    - [x] Now support for STARsolo 2.7.10 with **Final_out_MAP_2_7_10a_latest.tsv**.
+  - Major revisions to **update_logs.py** script
+    - [x] All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes *None* in its absence (with no argument value other values are used).
+    - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
+    - [x] Missingness of *picard_dir* implies not collecting GCBias and RNASeq Metrics.
+    - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
+  - New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
+  - Changed the section name from *demux_pipeline* to *hashsolo_demux_pipeline* in **new_config.yaml** file.
+  - **calico_solo_demux.smk**: At lines numbered 3 and 9.
+  - **create_logs.smk**: At lines numbered 11 and 52.
+  - **demultiplex.smk**: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.
+  - **genotype_demux.smk**: At line numbered 45.
+  - **kite.smk**: At lines numbered 417 and 437.
+  - **produce_targets.smk**: At lines numbered 159-162.
+  - **split_bams.smk**: At lines numbered 10,16, and 18.
+  - Consolidated the section name from *split_bams_pipeline_gt_demux* in *split_bams_pipeline_gt* (earlier used for calico_solo based split bams) in **new_config.yaml** file.
+    - **split_bams.smk**: At lines numbered 44,45,47 and 52.
+    - **produce_targets.smk**: At line numbered 111.
+    - **identify_swaps.smk**: At line numbered 3.
+  - Added support for Snakemake transition to version > 8.
+    - Added **workflow_profile/config.yaml** which gets reflected in **run_snakemake.sh**.
+    - To emulate previous behavior's for profile manually edited the **lsf_executor_plugin** and added ENV variable.
+    - *lsf.yaml* still is present for snakemake \< v8.
+    - Changed the *threads* directive and replaced with resources: *cpus_per_task*.
+  - Removed dependence on **resources.smk**. Instead all resource requirements are within each snakemake file.
+  - Simplified the rule *cellSNP* in **genotype_demux.smk**.
+    - Now a parameter *cmd_str_csnp* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
+    - Simplified the commandline for execution.
+  - Simplified the rule *vireoSNP* in **genotype_demux.smk**.
+    - Now a parameter *cmd_str_vireo* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
+    - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in **new_config.yaml** is expected to have headers.
+    - Simplified the commandline for execution.
   
   
 ## Requirements

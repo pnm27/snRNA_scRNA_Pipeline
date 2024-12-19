@@ -4,10 +4,10 @@ import os, pandas as pd
 def get_inp_splitBam(wildcards):
     if config['split_bams_pipeline']['split_by']['input'].lower() == 'raw':
         if config['split_bams_pipeline']['split_by']['demux'].lower() in ['vireo', 'vs']:
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
+            return f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
         elif config['split_bams_pipeline']['split_by']['demux'].lower() in \
             ["cs", "calico", "calico_solo", "hashsolo"]:
-            f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+            return f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
     else:
         # if len(config['split_bams_pipeline']['split_by']['demux']) == 1:
         #     if config['split_bams_pipeline']['split_by']['demux'][0].lower() in ['vireo', 'vs'] or \
@@ -48,7 +48,7 @@ def subset_to_chr(wildcards):
 
 
 def get_bam_to_split(wildcards):
-    if config['gt_check']:
+    if config['split_bams_pipeline']['gt_check']:
         if config['split_bams_pipeline']['subset_chr'] is None:
             return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
         else:

@@ -104,7 +104,8 @@ rule STARsolo_sort:
         star_def_log_out=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], "_Log.out"),
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
         out_pref=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], '_'),
-        count_matrix_dir=lambda wildcards, output: output[8][:-13]
+        count_matrix_dir=lambda wildcards, output: output[8][:-13],
+        threads=config['STARsolo_pipeline']['run_threads']
 
 
     output:
@@ -140,19 +141,21 @@ rule STARsolo_sort:
         """
         r1=$(echo "{input.R1}" | tr '[:blank:]' ',')
         r2=$(echo "{input.R2}" | tr '[:blank:]' ',')
+        ram_use=$(( {resources.mem_mb_per_cpu} * {resources.cpus_per_task} * 1000000 ))
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
         if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
         if [[ "{config[STARsolo_pipeline][extra_params]}" == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
             --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
-            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} &> {log}_{resources.attempt}
+            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
+            --limitBAMsortRAM ${{ram_use}} --outBAMsortingBinsN 50 &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
             --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
-            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN 12 --outFileNamePrefix {params.out_pref} \
-            {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
+            --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
+            --limitBAMsortRAM ${{ram_use}} --outBAMsortingBinsN 50 {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
         files=( {output[3]} {output[8]} {output[9]} )
         for i in ${{files[@]}}; do

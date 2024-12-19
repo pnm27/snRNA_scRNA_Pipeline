@@ -101,6 +101,7 @@ STARsolo_pipeline:
   genefull_summary: _Solo.out/GeneFull/Summary.csv
   # extra_params: "--clip3pNbases 0 122   --soloBarcodeReadLength 150" # Example of adding more STARsolo command-line options
   extra_params: "--outReadsUnmapped Fastx" # or valid extra parameters in STARsolo, as above
+  run_threads: 20
 
 
 # PICARD pipeline--------------------------------------------------------------
@@ -204,11 +205,12 @@ gt_demux_pipeline:
   - Orig_VCF_ID
   - Samples
   vcf_info_columns:
-  - SetNumber
-  - Gt_count
-  - pool_vcf
-  - pool_vcf_gencode
-  - pool_vcf_gencode_maf_25pct
+    pool: SetNumber
+    n_dons: Gt_count
+    vcf: # Can contain null, list of column names (multi-vcf) or column containing vcf
+    - pool_vcf
+    - pool_vcf_gencode
+    - pool_vcf_gencode_maf_25pct
   wet_lab_file_cols:
   - Set_number
   - unique_sample_ID
