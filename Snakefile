@@ -59,6 +59,7 @@ include: "rules/demultiplex.smk"
 include: "rules/split_bams.smk"
 include: "rules/identify_swaps.smk"
 include: "rules/deeptools.smk"
+include: "rules/cellranger.smk"
 
 
 rule all:
