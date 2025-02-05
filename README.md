@@ -169,10 +169,16 @@ The highlights of the pipeline are:
   - Simplified the rule *cellSNP* in **genotype_demux.smk**.
     - Now a parameter *cmd_str_csnp* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
     - Simplified the commandline for execution.
+    - Now the rule picks the biggest of given *n_proc* in **new_config.yaml** and twice of the number of cpus provided.
   - Simplified the rule *vireoSNP* in **genotype_demux.smk**.
     - Now a parameter *cmd_str_vireo* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
     - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in **new_config.yaml** is expected to have headers.
     - Simplified the commandline for execution.
+  - Usage of *pd.concat* now in concordance with [FutureWarning](https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492) in **update_logs.py**.
+  - In **new_config.yaml**, changed *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
+  - Simplified shell script in the rules *demux_samples* and *demux_samples* in **demultiplex.smk**
+  - Removed mode='w+' when creating outputs in **create_Feat_Barc.py**.
+  - Added *multiome_alignment* as a new module.
   
   
 ## Requirements

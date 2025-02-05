@@ -186,7 +186,9 @@ def main():
         t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
         t2g.index = t2g.gene_id
         t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
-        adata.var_names_make_unique()
+        # Remove version number if present in ENSG IDs
+        # ENSG00000290825.1
+        adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
         adata.var["gene_id"] = adata.var.index.values
         adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
         adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
@@ -198,7 +200,7 @@ def main():
         sc.pp.filter_cells(adata, min_genes=min_genes)
         sc.pp.filter_genes(adata, min_cells=min_cells)
         # Filter data wrt mito content
-        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix)
+        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix, na=False)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
         adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
 

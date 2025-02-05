@@ -34,19 +34,25 @@ def get_limitsjdbval_coll(wildcards, resources):
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000
     sj_collap = 1000000
+    limitbamsortram = 0
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
-                if line.startswith("SOLUTION") and "limitSjdbInsertNsj" in line and check_isnumber(line.split()[-1]):
+                if line.lower().startswith("solution") and "limitSjdbInsertNsj" in line \
+                    and check_isnumber(line.split()[-1]):
                     # print("Found an Error with the parameter limitSjdbInsertNsj. Changing defaulkt values of the parameters \
                         # \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the default value of 1000000 to {}".format(line.split()[-1]))
                     ins_nsj = int(line.split()[-1]) if int(line.split()[-1]) > ins_nsj else ins_nsj
                     sj_collap = ins_nsj
 
-                elif line.startswith("Solution") and "limitOutSJcollapsed" in line:
+                elif line.lower().startswith("solution") and "limitOutSJcollapsed" in line:
                     # print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
                     sj_collap = 1000000*(1+resources.attempt)
                     ins_nsj = sj_collap
+                
+                elif line.lower().startswith("solution") and "limitBAMsortRAM" in line:
+                    # print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
+                    limitbamsortram = int(re.search(r"--limitBAMsortRAM ([0-9]+) ", line).group(1))
 
                 else:
                     continue
@@ -63,13 +69,17 @@ def get_limitsjdbval_coll(wildcards, resources):
             with open("{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)) as fin: # wildcard
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
-                    temp_nsj = int(re.search("--limitSjdbInsertNsj ([0-9]+) ", line).group(1))
-                    temp_sj_coll = int(re.search("--limitOutSJcollapsed ([0-9]+) ", line).group(1))
+                    val = re.search(r"--limitSjdbInsertNsj ([0-9]+) ", line)
+                    temp_nsj = int(val.group(1)) if val is not None else 0
+                    val = re.search(r"--limitOutSJcollapsed ([0-9]+) ", line)
+                    temp_sj_coll = int(val.group(1)) if val is not None else 0
                     ins_nsj = max(temp_nsj, temp_sj_coll, ins_nsj, sj_collap)
                     sj_collap = ins_nsj
+                    val = re.search(r"--limitBAMsortRAM ([0-9]+) ", line)
+                    limitbamsortram = int(val.group(1)) if val is not None else 0
 
 
-    return [ins_nsj, sj_collap]
+    return [ins_nsj, sj_collap, limitbamsortram]
 
 
 # Resource Allocation ------------------
@@ -126,7 +136,7 @@ rule STARsolo_sort:
    
     resources:
         cpus_per_task=6, # For snakemake > v8
-        mem_mb=allocate_mem_SS,
+        mem_mb_per_cpu=allocate_mem_SS,
         time_min=allocate_time_SS,
         attempt=lambda wildcards, attempt: attempt
 
@@ -141,21 +151,20 @@ rule STARsolo_sort:
         """
         r1=$(echo "{input.R1}" | tr '[:blank:]' ',')
         r2=$(echo "{input.R2}" | tr '[:blank:]' ',')
-        ram_use=$(( {resources.mem_mb_per_cpu} * {resources.cpus_per_task} * 1000000 ))
-        echo "{params.opt_params[0]}, {params.opt_params[1]}, {resources.attempt}"
+        echo "{params.opt_params[0]}, {params.opt_params[1]}, {params.opt_params[2]}, {resources.attempt}"
         if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
         if [[ "{config[STARsolo_pipeline][extra_params]}" == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
             --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
-            --limitBAMsortRAM ${{ram_use}} --outBAMsortingBinsN 50 &> {log}_{resources.attempt}
+            --limitBAMsortRAM {params.opt_params[2]} --outBAMsortingBinsN 50 &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[0]} \
             --twopassMode Basic --readFilesCommand zcat --readFilesIn ${{r2}} ${{r1}} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[1]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
-            --limitBAMsortRAM ${{ram_use}} --outBAMsortingBinsN 50 {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
+            --limitBAMsortRAM {params.opt_params[2]} --outBAMsortingBinsN 50 {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
         files=( {output[3]} {output[8]} {output[9]} )
         for i in ${{files[@]}}; do

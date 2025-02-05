@@ -107,7 +107,7 @@ def get_vir_inputs(wildcards):
         # col_set2 = ["pool", "n_dons"]
         n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
         # Make snakemake's wildcard same as the value in the "pool" column
-        samp_name = '-'.join(wildcards.id1.split('-')[:-1])
+        samp_name = '-'.join(wildcards.pool.split('-')[:-1])
         # For condn. 1)
         if config['gt_demux_pipeline']['donors_per_pool_file'] is None \
             and n_cols == 3:
@@ -231,11 +231,11 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
     n_cols = 3 if config['gt_demux_pipeline']['vcf_info_columns']['vcf'] is not None else 2
     # Make snakemake's wildcard same as the value in the "pool" column
-    samp_name = '-'.join(wildcards.id1.split('-')[:-1])
+    samp_name = '-'.join(wildcards.pool.split('-')[:-1])
     pool_col = config['gt_demux_pipeline']['vcf_info_columns']['pool']
     don_col = config['gt_demux_pipeline']['vcf_info_columns']['n_dons']
     ret_str = ""
-    
+
     for x,y in zip(["-c", "-d"], input):
         ret_str+=f" {x} {y}"
 
@@ -248,7 +248,7 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     #     raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
     
     if samp_name in temp_df[pool_col].values:
-        ret_str += " -N " + temp_df.loc[temp_df["pool"] == samp_name, "n_dons"].values[0]
+        ret_str += " -N " + str(temp_df.loc[temp_df[pool_col] == samp_name, don_col].values[0])
 
     return ret_str
         
@@ -449,6 +449,7 @@ rule cellSNP:
     shell:
         """
         read -r -a array <<< "{input}"
+        n_procs=$(( {params.processors} >  ( {resources.cpus_per_task} * 2 ) ? {params.processors} : ( {resources.cpus_per_task} * 2 ) ))
         if [[ "${{#array[@]}}" -lt 4 ]]; then
             set -x
             cellsnp-lite {params.cmd_str} -R ${{array[2]}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
@@ -489,7 +490,7 @@ rule vireoSNP:
     shell:
         """        
         set -x
-        vireo {params.get_cmd_str_vireo} -o {params.output_prefix} -t {params.geno_tag} \
+        vireo {params.cmd_str} -o {params.output_prefix} -t {params.geno_tag} \
         --noPlot --randSeed 100
         set +x
         """

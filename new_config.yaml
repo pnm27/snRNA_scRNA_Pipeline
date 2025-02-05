@@ -1,3 +1,24 @@
+# Whitelists-------------------------------------------------------------------
+barcodes:
+  - &3v3 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-february-2018.txt
+  - &3v4 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-3pgex-may-2023_TRU.txt.gz
+  - &5v3 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-5pgex-jan-2023.txt.gz
+  - &3v2 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-august-2016.txt
+  - &3v1 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-april-2014_rc.txt
+  - &multiome /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-arc-v1.txt.gz
+  - &atac /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-february-2018.txt
+  - &3lt /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/9K-LT-march-2021.txt.gz
+  - &fixedrna /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-fixed-rna-profiling.txt.gz
+
+STARsolo_genome_dir:
+  - &gencode38o89 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_275b_gen_89o
+  - &gencode38o150 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_150o
+  - &gencode38o90 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_90o
+  - &gencode38o149 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_149o
+  - &gencode44o89 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_89o
+
+cellranger_arc_ref: /hpc/packages/minerva-centos7/cellranger-arc/2.0.0/refdata-cellranger-arc/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
+# -----------------------------------------------------------------------------
 # Common Params----------------------------------------------------------------
 # Select pipeline module
 last_step: STARsolo_kb_solo
@@ -13,19 +34,21 @@ wildcards_select: null # null when select_fastqs is not a dir otherwise provide 
 # Need to update this for multi_modules
 HTO_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 cDNA_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
+ATAC_fastqs_dir: /sc/arion/projects/psychAD/fastq_test_run/
 R1_suffix: .R1.fastq.gz
 R2_suffix: .R2.fastq.gz
+multiome_suffix: .fastq.gz
 
 
 wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
-gtf_file: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
-whitelist: /sc/arion/projects/psychAD/10x_vs_barcodes/3M-february-2018.txt  # 10x V3 chemistry
-genome_fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
-reg_chr_bed: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
+gtf_file: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
+whitelist: *3v3
+genome_fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
+reg_chr_bed: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
 chr_prefix: null
 mito: MT-
-gene_info_file: /sc/arion/projects/psychAD/pnm/Hs_allchr_MT.txt
-gt_conv: null # null, If no name changes are needed otherwise a file
+gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/Hs_allchr_MT.txt
+
 
 # Standard Filters for gene count matrix files
 max_mito_percentage: 5
@@ -63,9 +86,9 @@ fold_struct_deeptools: "Sample-{pool}"
 STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.9a
+cellranger-arc_version: cellranger-arc/2.0.2
 
 # Use this path if running hashsolo and vireoSNP simultaneously
-
 demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/ # Can be null or a path
 
 hto_demux_type: single
@@ -73,7 +96,7 @@ hto_demux_type: single
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
   bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
-  genome_dir: /sc/arion/projects/psychAD/star_275b_gen_89o
+  genome_dir: *gencode38o89
   star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
   sjdboverhang: 89
   umi_len: 12
@@ -104,6 +127,19 @@ STARsolo_pipeline:
   run_threads: 20
 
 
+# cellranger-arc count pipeline------------------------------------------------
+cellranger_arc_count:
+  ref: /hpc/packages/minerva-centos7/cellranger-arc/2.0.0/refdata-cellranger-arc/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
+  bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/cellranger_outputs/
+  # optional
+  atac_fragments: atac_fragments.tsv.gz
+  filtered_h5_matrix: filtered_feature_bc_matrix.h5
+  gex_bam: gex_possorted_bam.bam
+  gex_bai: gex_possorted_bam.bam.bai
+  atac_bam: atac_possorted_bam.bam
+  atac_bai: atac_possorted_bam.bam.bai
+  pipestance_struct: "{pool}.mri.tgz" # Pool represents the 'id' from the command line
+
 # PICARD pipeline--------------------------------------------------------------
 picard_pipeline:
   # PICARD GcBias Metrics
@@ -113,7 +149,7 @@ picard_pipeline:
   gc_summary_metrics: _summary_metrics.txt
 
   # PICARD RNAseq Metrics
-  flat_ref: /sc/arion/projects/psychAD/ref_GRCh38/refFlat_wo_chr.txt
+  flat_ref: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/refFlat_wo_chr.txt
   strand: NONE
   # Optional params
   rnaseq_metrics: _rnaseq_metrics.txt
@@ -125,9 +161,9 @@ kb_pipeline:
   k_mer_length: 15
   chemistry: 10xv3
   columns_to_pick:
-  - unique_sample_ID
-  - hashtag
-  - ab_barcode
+    - unique_sample_ID
+    - hashtag
+    - ab_barcode
   # Optional params
   feature_barcodes: FeatureBarcodes.csv
   headers: no
@@ -151,10 +187,10 @@ hashsolo_demux_pipeline:
   calico_solo_dir: /sc/arion/projects/psychAD/demultiplex/solo/
   hto_sep: null
   columns_to_pick:
-  - unique_sample_ID
-  - hashtag
-  - ab_barcode
-  - SubID
+    - unique_sample_ID
+    - hashtag
+    - ab_barcode
+    - SubID
   SubID_convert: False # If calico_solo SubID conversion needed (boolean)
   final_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/solo/
   demultiplex_info_dir: /sc/arion/projects/psychAD/demultiplex/info/solo/
@@ -181,6 +217,15 @@ gt_demux_pipeline:
   # top_genes_cs_filt_bed: /sc/arion/projects/psychAD/pnm/top1k_genes.bed
   # split_compiled_vcf: False
   # Optional params
+  # Donor Name conversion
+  donorName_conv: 
+    file: null # null, If no name changes are needed otherwise a file
+    header_lev: null # Specify the number of header levels
+    pool_col: null # Column containing matched pool names
+    donor_col: null # Column containing donor names (match demux output) to convert
+    convert_col: null # Column containing converted names (corresponding to donor_col)
+    new_h5ad_colname: null # New obs column
+
   demux_col: SubID_cs
   barcode_len: 16
   include_all_cells: yes
@@ -201,22 +246,22 @@ gt_demux_pipeline:
   donors_classification: donor_ids.tsv
   filt_vcf: filt.vcf.gz
   hash_columns:
-  - SubID
-  - Orig_VCF_ID
-  - Samples
+    - SubID
+    - Orig_VCF_ID
+    - Samples
   vcf_info_columns:
     pool: SetNumber
     n_dons: Gt_count
     vcf: # Can contain null, list of column names (multi-vcf) or column containing vcf
-    - pool_vcf
-    - pool_vcf_gencode
-    - pool_vcf_gencode_maf_25pct
+      - pool_vcf
+      - pool_vcf_gencode
+      - pool_vcf_gencode_maf_25pct
   wet_lab_file_cols:
-  - Set_number
-  - unique_sample_ID
+    - Set_number
+    - unique_sample_ID
   vireo_donor_file_cols:
-  - cell
-  - donor_id
+    - cell
+    - donor_id
   final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
 
 # Demultiplex info---------------------------------------------------------

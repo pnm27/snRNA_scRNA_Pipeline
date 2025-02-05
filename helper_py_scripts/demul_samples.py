@@ -67,6 +67,17 @@ assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 
 
+def int_or_none(val):
+    if not val or val.lower() == 'none' or val.lower() == 'false':
+        return None
+    return int(val)
+
+
+def string_or_none(val):
+    if not val or val.lower() == 'none' or val.lower() == 'false':
+        return None
+    return val
+
 
 def get_argument_parser():
     """Generate and return argument parser."""
@@ -74,62 +85,67 @@ def get_argument_parser():
     #Parse Command-Line arguments
     parser = argparse.ArgumentParser(description="Demultiplex pools "
     "(supports hashsolo and vireo). Note: poor cells are not removed but "
-    "they aren't included while demultiplexing"
+    "they aren't included while demultiplexing."
     )
     parser.add_argument('input_file', help="Path to matrix.mtx.gz or h5ad "
     "file. If an h5ad file is provided then it is expected that it "
     "has been already processed i.e. poor cells are already filtered out."
     )
     parser.add_argument('count_matrix', help="Path to store the final "
-    "count matrix(h5ad)"
+    "count matrix(h5ad)."
     )
     parser.add_argument('gene_info_file', help="Path to the file that "
-    "contains gene names and ids for annotation (tab-separated txt file)"
+    "contains gene names and ids for annotation (tab-separated txt file)."
     )
     parser.add_argument('--demux_info', help="Path to store demultiplexing "
-    "info (tab-separated txt file)"
+    "info (tab-separated txt file)."
+    )
+    parser.add_argument('-p', '--pool_name', help="Name of the pool. "
+    "This should be  in this script as well as the one in the wet_lab_file "
+    "and in the converter file, if present.",
     )
 
     # Input of mtx file
     add_redo_grp = parser.add_argument_group('START AFRESH', "Creating output "
     "for the first time."
     )
-    add_redo_grp.add_argument('-m', '--max_mito', type=int, nargs='?', 
+    add_redo_grp.add_argument('-m', '--max_mito', nargs='?', 
     help="Max mitochondrial genes(in percent) per cell. "
-    "If no given value to parameter, will default to 5 otherwise no filter", 
-    default=None, const=5,
+    "If no given value to parameter, will default to 5 otherwise no filter.", 
+    default=None, const=5, type=int_or_none,
     )
     add_redo_grp.add_argument('--mito_prefix', nargs='?', 
     help="Prefix for mitochondrial genes. If no given value to "
-    "parameter, will default to 'MT-' otherwise no filter", 
-    default=None, const="MT-",
+    "parameter, will default to 'MT-' otherwise no filter.", 
+    default=None, const="MT-", type=string_or_none,
     )
-    add_redo_grp.add_argument('-g', '--min_genes', nargs='?', type=int, 
+    add_redo_grp.add_argument('-g', '--min_genes', nargs='?', 
     help="Min #genes per cell. If no given value to parameter, will "
-    "default to 1000 otherwise no filter", default=None, const=1000,
+    "default to 1000 otherwise no filter.", default=None, const=1000,
+    type=int_or_none,
     )
-    add_redo_grp.add_argument('-c', '--min_cells', nargs='?', type=int, 
+    add_redo_grp.add_argument('-c', '--min_cells', nargs='?', 
     help="Min #cells expressing a gene for it to pass the filter. "
     "If no given value to parameter, will default to 10 otherwise "
-    "no filter", default=None, const=10,
+    "no filter.", default=None, const=10, type=int_or_none,
     )  
 
     # For calico_solo inputs
     cs = parser.add_argument_group('HASHSOLO DEMUX OPTIONS', "Add calico_solo "
-    " demultiplex to create final count matrix file")
+    " demultiplex to create final count matrix file.")
     cs.add_argument('-w', '--wet_lab_file', help="Path to file that "
-    "contains HTO info for each set (either csv or tsv file)"
+    "contains HTO info for each set (either csv or tsv file)."
     )
     cs.add_argument('--calico_solo', dest='hashsolo_out', help="Path "
     "to cached output of hashsolo(h5ad) file(s). If no given value to "
     "parameter, will default to not process hashsolo output otherwise ",
-    nargs='*', metavar="hashsolo.h5ad", default=None,
+    nargs='*', metavar="hashsolo.h5ad", default=None, type=string_or_none,
     )
     cs.add_argument('--hto_sep', nargs='?', help="If, per each pool in the "
     "wet lab file (6th positional argument to this script), HTOs are "
     "all present in one row separated by some SEP then specify it here. "
-    "NOTE: A value is also expected"
-    "Default: None", default="_", const=None,
+    "NOTE: A value is also expected. Default: None", 
+    default="_", const=None, type=string_or_none,
     )
     cs.add_argument('--columns', nargs=4, help="List of column names "
     "RESPECTIVELY to sample_ID (as present in the spreadsheets - "
@@ -137,13 +153,9 @@ def get_argument_parser():
     "and Donors/SubIDs (contains each multiplexed donors). If multiple HTOs "
     "are used per samples in a pool then use 'hto_sep' parameter "
     "to explain how the htos are present. Check 'hto_sep' description "
-    "for more info", 
+    "for more info.", 
     metavar=('pool_ID', 'HTO_name', 'HTO_barcode', 'donor_ID'),
-    default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID']
-    )
-    cs.add_argument('-p', '--pool_name', help="Name of the pool. "
-    "Check whether this name coincides with that in this script as well "
-    "as the one in the wet_lab_file"
+    default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'],
     )
     cs.add_argument('--no-demux-stats-cs', action='store_true', 
             dest="cs_stats",
@@ -151,30 +163,52 @@ def get_argument_parser():
 			)
     cs.add_argument('--no-subid_convert', action='store_true', 
             dest="subid_convert",
-			help="If flag is used no conversion to subID is needed."
-            "Also expected when used for multi-HTO setup",
+			help="If flag is used no conversion of subID is needed."
+            "Also expected when used for multi-HTO setup.",
 			)
     # Only for multi-HTO pools
     cs.add_argument('--pref', help="Prefix for each hashsolo "
     "run per pool. This should match the number of hashsolo files "
-    "provided as input and in the same sequence! ", nargs='*', metavar="prefix",
+    "provided as input and in the same sequence! ", nargs='*', 
+    metavar="prefix", type=string_or_none,
     )
 
     # For vireo inputs
     vs = parser.add_argument_group("VIREO DEMUX OPTIONS", "Add "
-    "genotype-based demultiplexing outputs to create final count matrix."
+    "genotype-based demultiplexing outputs to create final count matrix.", 
     )
-    vs.add_argument('--vireo_out', help="Path to donor_ids.tsv file",
-    metavar="donor_ids.tsv"
-    )
-    vs.add_argument('--converter_file', help="If names from vireo output "
-    "needs to be changed."
+    vs.add_argument('--vireo_out', help="Path to donor_ids.tsv file.",
+    metavar="donor_ids.tsv", type=string_or_none,
     )
     vs.add_argument('--no-demux-stats-vs', action='store_true',
             dest="vs_stats",
 			help="If flag is used no demux stats will be stored.",
 			)
-
+    vs.add_argument('--converter_file', help="If names from vireo output "
+    "needs to be changed.", type=string_or_none,
+    )
+    vs.add_argument('--converter_file_headerNlev', help="Number of headers "
+	"levels in the converter file.", dest="conv_header_level", 
+	default=1, type=int_or_none,
+	)
+    vs.add_argument('--conv_file_pool_column', help="Column with Pool names "
+    "in the converter file (Should match with that in the h5ad).", dest="pool_col",
+    metavar="pool_column", type=string_or_none,
+    )
+    vs.add_argument('--conv_file_donor_column', help="Column with donor names"
+    "in the converter file (Should match with that in the h5ad).", dest="donor_col",
+    metavar="donor_column", type=string_or_none,
+    )
+    vs.add_argument('--conv_file_conv_column', help="Column containing "
+    "converted donor names in the converter file.", dest="conv_col",
+    metavar="conv_column", type=string_or_none,
+    )
+    vs.add_argument('--h5ad_new_classify_colname', 
+    help="Obs column that will contain the converted donor names.", 
+    dest="h5ad_new_col", metavar="h5ad_new_col", default=None, 
+    type=string_or_none,
+    )
+    
     return parser
 
 
@@ -190,6 +224,13 @@ def main():
     sc.settings.autoshow = False
     sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
     sc.logging.print_version_and_date()
+
+    # Load converter file
+    if args.converter_file is not None:
+        conv_df = auto_read(args.converter_file, 
+            lev=args.conv_header_level)
+    else:
+        conv_df = None
 
     # DEPRACATED-------------------------------------------------------------
     # Adding demultiplex info or creating "new" final count matrix 
@@ -210,14 +251,16 @@ def main():
     # If an mtx file is provided then it is expected to be not-filtered
     # i.e. bad quality cells and genes exist
     # While an h5ad file is assumed to be rid of these issues
-    redo = True if args.input_file.endswith('.h5ad') else False
+    h5ad_inp = True if args.input_file.endswith('.h5ad') else False
 
     add_calico = args.hashsolo_out
     add_vireo = args.vireo_out
-
+    donor_col=args.donor_col
+    conv_col=args.conv_col
+    pool_col=args.pool_col
     multi_hto_setup = True if len(add_calico) > 1 else False
 
-    starsolo_mat = args.input_file[:-13] if not redo else None
+    starsolo_mat = args.input_file[:-13] if not h5ad_inp else None
 
     # Filtering stats
     filter_info = []
@@ -235,8 +278,10 @@ def main():
     # no_stats = True if args.cs_stats and args.vs_stats else False
     
     # For assigning gene names
-    t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),
-                    names=["gene_id", "gene_name"], sep="\t")
+    # t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),
+    #                 names=["gene_id", "gene_name"], sep="\t")
+    t2g = auto_read(args.gene_info_file, skiprows=1, usecols=range(2),
+                    names=["gene_id", "gene_name"])
     t2g.index = t2g.gene_id
     t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
     
@@ -249,9 +294,7 @@ def main():
         os.makedirs(op.replace(os.path.basename(op), ''))
 
     # Initial run of demultiplexing
-    if not redo:
-        # batch for wet lab file 
-        # samp=batch
+    if not h5ad_inp:
 
         # Parameters for filtering
         max_mito=args.max_mito
@@ -271,11 +314,14 @@ def main():
 
         
         print(adata)
+        # Remove version number if present in ENSG IDs
+        # ENSG00000290825.1
+        adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
         filter_info.append(( 'Started with cells', adata.n_obs))
         filter_info.append(( 'Started with genes', adata.n_vars))
-        adata.var_names_make_unique()
         adata.var["gene_id"] = adata.var.index.values
         adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
+        adata.var_names_make_unique()
         # Typically shows discrepancies in reference genome used for
         # alignemnt and that for annotation (here: gene_info file)
         geneids_w_gene_names = pd.notna(adata.var["gene_name"]) 
@@ -328,7 +374,7 @@ def main():
                             gene_subset.sum()))
 
         # Filter data wrt mito content
-        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix)
+        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix, na=False)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
         mito_QCpass = adata.obs["pct_counts_mito"]< max_mito
         # adata._inplace_subset_obs(cell_subset)
@@ -365,13 +411,14 @@ def main():
 
     # Batch info
     # This is the values that will be stored in the final h5ad file
-    # batch=args.pool_name.replace('-', '_')+'_cDNA'
     # Prepare for Extra Information
     replicate=args.pool_name.split('_')[2]
     # add few more annotations
     adata.obs['batch'] = args.pool_name
     adata.obs['rep'] = replicate
     adata.obs['set'] = '_'.join(args.pool_name.split('_')[:3])[:-1]
+
+    # Cell barcodes
     cell_bcs =  adata.obs_names.to_series()
 
     # For demultiplexing using calico_solo
@@ -505,6 +552,7 @@ def main():
         # If Subject IDs aren't 'string' then convert them
         if 'SubID_cs' in adata.obs.columns:
             adata.obs['SubID_cs']=adata.obs['SubID_cs'].apply(str)
+
     # To do
     if add_vireo is not None:
         print("Starting demultiplexing through vireoSNP's output")
@@ -515,8 +563,10 @@ def main():
             "Starting: Assigning cell classifications by"
             f"vireoSNP at: {ct}"
             )
-        vs_dons, temp_df = demux_by_vireo(
-            adata.obs_names.to_series(), add_vireo, args.converter_file
+        vs_dons, temp_df, conv_DonNames = demux_by_vireo(
+            adata.obs_names.to_series(), add_vireo, conv_df,
+            donor_col=donor_col,conv_col=conv_col,
+            pool_col=pool_col,pool_name=args.pool_name
             )
         
         ct = datetime.datetime.now()
@@ -524,8 +574,11 @@ def main():
             "Assigning demultiplexing info for vireo "
             f"at: {ct}"
             )
-
+        # vireo ID
         adata.obs['SubID_vs'] = vs_dons
+        # If converted, then save new name
+        if conv_df is not None:
+            adata.obs[args.h5ad_new_col] = conv_DonNames
 
         if not args.vs_stats:
             vir_dem_stats.extend(temp_df)

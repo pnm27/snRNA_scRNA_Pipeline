@@ -112,9 +112,9 @@ def main():
 
         df = pd.DataFrame(df_to_save)
     
-        df.to_csv(fout, sep=',', header=False, index=False, mode='w+')
+        df.to_csv(fout, sep=',', header=False, index=False)
     else:
-        a.to_csv(fout, sep=',', header=False, index=False, mode='w+')
+        a.to_csv(fout, sep=',', header=False, index=False)
 
 
 if __name__ == '__main__':

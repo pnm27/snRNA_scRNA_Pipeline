@@ -37,7 +37,7 @@ def check_same(ann_d, files_l = None, ann_d2 = None) -> "boolean":
 
 
 # Read tsv, csv, txt (space-separated and tab-separated)
-def read_files_ext(fname, lev) -> pd.DataFrame :
+def read_files_ext(fname, lev=1) -> pd.DataFrame :
 	if not os.path.isfile(fname):
 		raise OSError(f"The given file {fname} doesn't exist and annotations are impossible without this file!") 
 

@@ -2,22 +2,28 @@
 
 import pandas as pd, numpy as np, os, sys
 from collections import OrderedDict as ord_dict
-from typing import Union # Need verion > 3.5
+from typing import Union, Optional, Literal # Need verion > 3.5
 
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
 
 # Basic helper functions-----------------------------------------------------
-def auto_read(fname, **kwargs) -> pd.DataFrame :
+def auto_read(fname, lev=1, **kwargs) -> pd.DataFrame :
     if not os.path.isfile(fname):
         raise OSError(
             f"The given file {fname} doesn't exist and annotations are "
             "impossible without this file!"
             ) 
     if fname.endswith('.csv'):
-        return pd.read_csv(fname, **kwargs)
+        if lev == 1:
+            return pd.read_csv(fname, header=0, **kwargs)
+        else:
+            return pd.read_csv(fname, header=list(range(lev)), **kwargs)
     elif fname.endswith('.tsv'):
-        return pd.read_csv(fname, sep='\t', **kwargs)
+        if lev == 1:
+            return pd.read_csv(fname, sep='\t', header=0, **kwargs)
+        else:
+            return pd.read_csv(fname, sep='\t', header=list(range(lev)), **kwargs)
     else:
         raise OSError(
             f"The given file {fname} doen't have either csv or tsv "
@@ -222,7 +228,7 @@ def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame,
 
 # calico_solo demultiplexing function----------------------------------------
 def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
-    sep: Union[str, None], col_list: list[str, str], dem_cs: pd.Series, 
+    sep: Optional[str], col_list: list[str, str], dem_cs: pd.Series, 
     donor_convert: bool, hto_count: int, multi_hto_setp: bool
     ) -> list[pd.Series, pd.Series, int, int]:
     r"""Return HTO information and classification for each cell barcode.
@@ -256,6 +262,7 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
         in the sequence
     multi_hto_setp
         True for multi-HTO setup
+
     Returns
     -------
     pd.Series
@@ -422,9 +429,9 @@ def set_don_ids(x: str) -> str:
     #      
     # Var1	Freq
     # donor0	82
-    # A_xyzabc	4807
-    # A_qqqqqq	3229
-    # A_nnnnnn	2898
+    # xyzabc	4807
+    # qqqqqq	3229
+    # nnnnnn	2898
     # donor4	4047
     # donor5	3835
     # doublet	1542
@@ -437,9 +444,9 @@ def set_don_ids(x: str) -> str:
     # qqqqqq A1000
     # 
     # then this function can change the donors in vireo outputs as follows
-    # A_xyzabc -> xyzabc
-    # A_qqqqqq -> qqqqqq
-    # A_nnnnnn -> nnnnnn
+    # xyzabc -> A567
+    # qqqqqq -> A1000
+    # nnnnnn -> C1234
     # doublet -> Doublet
     # unassigned -> Negative
     # donor4 -> donor4
@@ -450,61 +457,56 @@ def set_don_ids(x: str) -> str:
         return 'Doublet'
     elif x == 'unassigned':
         return 'Negative'
-    elif x.startswith('donor'):
-        return x
-    # Project-specific
-    elif x.count('_') > 1:
-        return '_'.join(x.split('_')[1:])
     else:
         return x
 
 
 # Project-dependent
-def get_don_ids(x: str, t_df: pd.DataFrame) -> str:
-    r""" Coverting the donor names of vireo output
+# def get_don_ids(x: str, t_df: pd.DataFrame) -> str:
+#     r""" Coverting the donor names of vireo output
 
-    Parameters
-    ----------
-    x
-        A string representing a donor
-    t_df
-        A converter file that contains the donor and its converted
+#     Parameters
+#     ----------
+#     x
+#         A string representing a donor
+#     t_df
+#         A converter file that contains the donor and its converted
 
-    Returns
-    -------
-    str
-        String representing converted donor name
-    """
-    # Example:
-    # One of vireo output - summary.tsv (NOTE: we change it per cell
-    # from donor_ids.tsv)
-    #      
-    # Var1	Freq
-    # donor0	82
-    # A_xyzabc	4807
-    # A_qqqqqq	3229
-    # A_nnnnnn	2898
-    # donor4	4047
-    # donor5	3835
-    # doublet	1542
-    # unassigned	285
-    # 
-    # A conversion file that has:
-    # vir_out donor_name
-    # nnnnnn C1234
-    # xyzabc A567
-    # qqqqqq A1000
-    # 
-    # then this function will change the donors in vireo output
-    # NOTE: remember to clean with the function 'set_don_ids' 
-    # for this example
+#     Returns
+#     -------
+#     str
+#         String representing converted donor name
+#     """
+#     # Example:
+#     # One of vireo output - summary.tsv (NOTE: we change it per cell
+#     # from donor_ids.tsv)
+#     #      
+#     # Var1	Freq
+#     # donor0	82
+#     # A_xyzabc	4807
+#     # A_qqqqqq	3229
+#     # A_nnnnnn	2898
+#     # donor4	4047
+#     # donor5	3835
+#     # doublet	1542
+#     # unassigned	285
+#     # 
+#     # A conversion file that has:
+#     # vir_out donor_name
+#     # nnnnnn C1234
+#     # xyzabc A567
+#     # qqqqqq A1000
+#     # 
+#     # then this function will change the donors in vireo output
+#     # NOTE: remember to clean with the function 'set_don_ids' 
+#     # for this example
 
-    try:
-        return (
-            t_df.loc[t_df["primary_genotype"] == x, "SubID"].values[0]
-            )
-    except:
-        return x
+#     try:
+#         return (
+#             t_df.loc[t_df["primary_genotype"] == x, "SubID"].values[0]
+#             )
+#     except:
+#         return x
 
 
 def ret_subj_ids(ser: list, t_df: pd.DataFrame) -> pd.DataFrame:
@@ -542,7 +544,10 @@ def ret_subj_ids(ser: list, t_df: pd.DataFrame) -> pd.DataFrame:
 
 # Vireo execution------------------------------------------------------------
 def demux_by_vireo(bcs: pd.Series, vir_out_file: str, 
-    conv_df: pd.DataFrame = None) -> list[pd.Series, list[str]]:
+    conv_df: Optional[pd.DataFrame] = None, donor_col: Optional[str] = None,
+    conv_col: Optional[str] = None, pool_col: Optional[str] = None,
+    pool_name: Optional[str] = None, 
+    ) -> tuple[pd.Series, list[str], Optional[pd.Series]]:
     r"""Main function for classification by vireoSNP.
 
     This function assigns vireo classification. 
@@ -550,11 +555,19 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
     Paramters
     ---------
     bcs
-        A pd series of cell barcodes from gene count matrix
+        A pd series of cell barcodes from gene count matrix.
     vir_out_file
-        Path to donor_ids.tsv file produced by vireo
+        Path to donor_ids.tsv file produced by vireo.
     conv_df
-        A converter file to change donor names in the vireo output, if needed
+        A converter file to change donor names in the vireo output, if needed.
+    donor_col
+        Donor names containing column in the converter file that matches the vireo output.
+    conv_col
+        Column, in the converter file, containing the converted names.
+    pool_col
+        Column, in the converter file, containing the pool names.
+    pool_name
+        Pool name.
 
     Returns
     -------
@@ -562,7 +575,8 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
         Classification by vireo per cell
     list
         Demux stats
-
+    pd.Series
+        Converted donor names of classification by vireo per cell
     """
 
     # Will contain demultiplexing stats
@@ -572,27 +586,30 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
     vir_class = auto_read(vir_out_file)
 
     vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
-
+    vir_class["donor_id"] = vir_class["donor_id"].astype('category')
+    vir_class.rename(columns={"donor_id":"Subj_ID"}, inplace=True, 
+                        errors="raise")
+    
     # If conversion of donor names from vireo's output is needed.
     if conv_df is not None:
-        conv_df = auto_read(conv_df)
+        if pool_col is not None:
+            conv_df = conv_df.loc[ conv_df[pool_col] == pool_name, :]
 
-        # vir_class.rename(columns={"cell":"barcodes", 
-        # "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+        map_dict = pd.Series(conv_df[conv_col].values, index=conv_df[donor_col]).to_dict()
+			
+        # If conversion not found, keep old values
+        for v in vir_class["donor_id"].cat.categories:
+            if v not in map_dict:
+                map_dict[v] = v
         
-        conv_df = (
-            conv_df.loc[conv_df['primary_genotype']
-            .isin(vir_class['donor_id']
-            .unique()), ["SubID", "primary_genotype"]]
-            )
-        vir_class['Subj_ID'] = (
-            vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
-            )
-        del vir_class['donor_id']
-    else:
-        vir_class["donor_id"] = vir_class["donor_id"].apply(set_don_ids)
-        vir_class.rename(columns={"donor_id":"Subj_ID"}, inplace=True, 
-                        errors="raise")
+        vir_class['converted_ID'] = vir_class['Subj_ID'].map(map_dict)
+
+        # DEPRACATED
+        # vir_class['Subj_ID'] = (
+        #     vir_class['donor_id'].apply(get_don_ids, args=(conv_df,))
+        #     )
+        # del vir_class['donor_id']
+
 
     get_df = ret_subj_ids(bcs, vir_class)
 
@@ -611,5 +628,8 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
 
     temp_df.extend(demux_stats(get_df["Subj_ID"], "vs"))
 
-    return [get_df["Subj_ID"], temp_df]
+    if conv_df is not None:
+        return [get_df["Subj_ID"], temp_df, get_df["converted_ID"]]
+    else:
+        return [get_df["Subj_ID"], temp_df, None]
 # ---------------------------------------------------------------------------

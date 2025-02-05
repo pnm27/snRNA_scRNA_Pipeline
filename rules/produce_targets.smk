@@ -156,6 +156,16 @@ def targets_multibamsummaryPlotCorr(conf_f) -> list:
     return [f"{out_dir}{fs}{suff}"]
 
 
+def targets_multiome(conf_f, last_step) -> list:
+    
+    if last_step == 'alignment':
+        return expand(
+            f"{conf_f['cellranger_arc_count']['bams_dir']}/{{pool}}/"
+            f"filtered_feature_bc_matrix/{{name}}",
+            name=["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"],
+        )
+
+
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, progs=None) -> list:
     
@@ -394,6 +404,10 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             # global_vars.ONLY_SOLO = True
             target_files = targets_multibamsummary(conf_f=conf_f)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files[0]]
+
+        elif target_step == "multiome_alignment":
+            target_files = targets_multiome(conf_f=conf_f, last="alignment")
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         else:
             # print("Wrong inputs to produce_targets function!!")

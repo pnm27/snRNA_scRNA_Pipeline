@@ -476,7 +476,7 @@ def main():
 
 
     temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
-    combo_log = pd.concat([combo_log, temp_df], ignore_index=True)
+    combo_log = pd.concat([combo_log.astype(temp_df.dtypes), temp_df.astype(combo_log.dtypes)], ignore_index=True)
 
     # Conversions for easier divisons
     combo_log[("STARsolo", "DEMUX", "N_CELLS_START")] = [ 
