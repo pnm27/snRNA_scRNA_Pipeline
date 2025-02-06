@@ -156,14 +156,15 @@ def targets_multibamsummaryPlotCorr(conf_f) -> list:
     return [f"{out_dir}{fs}{suff}"]
 
 
-def targets_multiome(conf_f, last_step) -> list:
-    
-    if last_step == 'alignment':
-        return expand(
-            f"{conf_f['cellranger_arc_count']['bams_dir']}/{{pool}}/"
-            f"filtered_feature_bc_matrix/{{name}}",
-            name=["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"],
-        )
+def targets_multiome(conf_f, last) -> list:
+    out_dir = conf_f['cellranger_arc_count']['bams_dir']
+    if last == 'alignment':
+
+        return [
+            f"{out_dir}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
+            f"{out_dir}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
+            f"{out_dir}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
+        ]
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs

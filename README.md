@@ -80,6 +80,8 @@
     - [ ] Revamp wildcards so that varying output dirs are corrected accordingly:
       - [ ] Demux output i.e. if only one demux method needs to be used or simultaneously both.
       - [ ] splitting bams is for finalizing or genotype purposes.
+- cellranger:
+    - [] Support for cellranger.
 
 
 
@@ -178,7 +180,7 @@ The highlights of the pipeline are:
   - In **new_config.yaml**, changed *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
   - Simplified shell script in the rules *demux_samples* and *demux_samples* in **demultiplex.smk**
   - Removed mode='w+' when creating outputs in **create_Feat_Barc.py**.
-  - Added *multiome_alignment* as a new module.
+  - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
   
   
 ## Requirements

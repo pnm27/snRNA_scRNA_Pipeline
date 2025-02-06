@@ -19,3 +19,5 @@ set-resources:
   split_bams: 
     lsf_queue: premium
 
+  cellranger_arc_count:
+    lsf_queue: premium

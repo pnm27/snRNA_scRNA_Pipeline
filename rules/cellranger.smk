@@ -33,7 +33,7 @@ rule inp_cellranger_arc_count:
         get_fastqs
 
     params:
-        samp_id=wildcards.pool
+        samp_id=lambda wildcards: wildcards.pool
 
     output:
         "{pool}_metadata.csv"
@@ -69,28 +69,31 @@ rule cellranger_arc_count:
     params:
         ref=config['cellranger_arc_ref'],
         max_localcores=lambda wildcards, resources: resources.cpus_per_task*4,
-        max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task,
-        samp_id=wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"
+        max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task/1000,
+        samp_id=lambda wildcards: wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"
         outputdir=f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}"
 
     output:
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['gex_bam']}",
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['gex_bai']}",
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['atac_bam']}",
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['atac_bai']}",
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['atac_fragments']}",
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['filtered_h5_matrix']}",
-        expand(
-            f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/filtered_feature_bc_matrix/{name}",
-            name=["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"],
-        ),
-        pipestance=f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bam']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bai']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_bam']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_bai']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_fragments']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['filtered_h5_matrix']}",
+        # expand(
+        #     f"{config['cellranger_arc_count']['bams_dir']}/{{{pool}}}/filtered_feature_bc_matrix/{{name}}",
+        #     name=["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"],
+        # ),
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
+        pipestance=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
         outdir=protected(directory(
-            f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}"
+            f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
             ))
 
     log:
-        f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}/cellranger-arc-count.txt"
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/cellranger-arc-count.txt"
    
     resources:
         cpus_per_task=20, # For snakemake > v8
