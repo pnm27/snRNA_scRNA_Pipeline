@@ -203,9 +203,9 @@ rule create_bed:
         config['reg_chr_bed']
 
     shell:
-        """
+        r"""
         if [ ! -f "{output}" ] ; then 
-            grep -E r"^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | awk 'BEGIN{{OFS="\\t"}}{{split(\$3,a,":");gsub(">", "", \$1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
+            grep -E "^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | awk 'BEGIN{{OFS="\t"}}{{split($3,a,":");gsub(">", "", $1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
         fi
         sleep 10
         """

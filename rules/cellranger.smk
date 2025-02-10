@@ -71,7 +71,7 @@ rule cellranger_arc_count:
         max_localcores=lambda wildcards, resources: resources.cpus_per_task*4,
         max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task/1000,
         samp_id=lambda wildcards: wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"
-        outputdir=f"{config['cellranger_arc_count']['bams_dir']}/{{pool}}"
+        outputdir=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
 
     output:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bam']}",
@@ -109,9 +109,12 @@ rule cellranger_arc_count:
 
     shell:
         """
+        mkdir -p {params.outputdir}
         export MRO_DISK_SPACE_CHECK=disable
+        loc_mem=$( sed r"s#\.0##g" <<< "{params.max_localmem}")
         cellranger-arc count --id={params.samp_id} --libraries={input[0]} \
         --reference={params.ref} --localcores={params.max_localcores} \
-        --localmem={params.max_localmem} &> {log} && \
-        mv {params.samp_id}/outs/* {params.outputdir}/ 
+        --localmem=${{loc_mem}} &> {log} && \
+        mv {params.samp_id}/outs/* {params.outputdir}/ && \
+        mv {output.pipestance} {params.outputdir}/
         """

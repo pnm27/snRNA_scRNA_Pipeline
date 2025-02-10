@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
-"""Creates a list of effective barcodes for cellSNP run.
+"""Creates a metadata file that can be used for cellranger-arc count.
 
-This script takes a count matrix as an input and creates a list of 
-'effective' barcodes, dependent on the condition if some cells should 
-be removed or not (e.g. if already a demultiplexing tool was run with an
-h5ad column containing classifications and if some of the cells that
-have been classified as a doublet and/or negative cells have to be removed 
-then too this script can be used).
-
+This script takes as an input all the multiome fastqs (cDNA and ATAC) 
+and converts them into a metadata.csv file, which is required for the 
+'libraries' parameter in cellranger-arc count command line.
 """
 
 
