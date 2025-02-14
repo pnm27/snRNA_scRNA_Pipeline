@@ -71,7 +71,8 @@ rule cellranger_arc_count:
         max_localcores=lambda wildcards, resources: resources.cpus_per_task*4,
         max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task/1000,
         samp_id=lambda wildcards: wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"
-        outputdir=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
+        outputdir=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}",
+        pipestance=f"{config['cellranger_arc_count']['pipestance_struct']}"
 
     output:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bam']}",
@@ -87,7 +88,7 @@ rule cellranger_arc_count:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
-        pipestance=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
+        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
         outdir=protected(directory(
             f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
             ))
@@ -114,7 +115,8 @@ rule cellranger_arc_count:
         loc_mem=$( sed r"s#\.0##g" <<< "{params.max_localmem}")
         cellranger-arc count --id={params.samp_id} --libraries={input[0]} \
         --reference={params.ref} --localcores={params.max_localcores} \
-        --localmem=${{loc_mem}} &> {log} && \
+        --localmem=${{loc_mem}} &> {log}_{resources.attempt} && \
+        rm -r {params.samp_id}/SC_ATAC_GEX_COUNTER_CS/ && \
         mv {params.samp_id}/outs/* {params.outputdir}/ && \
-        mv {output.pipestance} {params.outputdir}/
+        mv {params.samp_id}/{params.pipestance} {params.outputdir}/
         """
