@@ -125,7 +125,7 @@ def targets_gt_demux2(conf_f, progs=None, multiome=False) -> list:
     return target_list
 
 # NEED TO WORK
-def targets_SplitBams(conf_f, progs=None, multiome=multiome) -> list:
+def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
     sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
     if config['split_bams_pipeline']['gt_check']:
@@ -176,6 +176,8 @@ def targets_multibamsummaryPlotCorr(conf_f) -> list:
     return [f"{out_dir}{fs}{suff}"]
 
 
+# Need to add support for PICARD metrics
+# and create h5ad
 def targets_multiome(conf_f, last, progs=None, 
     h5ad=False, multiome=False) -> list:
     out_dir = conf_f['cellranger_arc_count']['bams_dir']
@@ -187,8 +189,8 @@ def targets_multiome(conf_f, last, progs=None,
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
         ]
     elif last == 'vireo':
-        return targets_gt_demux(conf_f=conf_f, progs=metrics, 
-            h5ad=create_h5ad, multiome=multiome)
+        return targets_gt_demux(conf_f=conf_f, progs=None, 
+            h5ad=False, multiome=multiome)
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, progs=None) -> list:

@@ -109,7 +109,7 @@ rule cellranger_arc_count:
         f"{config['cellranger-arc_version']}"
 
     shell:
-        """
+        r"""
         mkdir -p {params.outputdir}
         export MRO_DISK_SPACE_CHECK=disable
         loc_mem=$( sed r"s#\.0##g" <<< "{params.max_localmem}")

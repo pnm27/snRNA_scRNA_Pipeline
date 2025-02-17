@@ -20,6 +20,18 @@ from collections import defaultdict
 from itertools import repeat
 
 
+def int_or_none(val):
+    if not val or val.lower() == 'none' or val.lower() == 'false':
+        return None
+    return int(val)
+
+
+def string_or_none(val):
+    if not val or val.lower() == 'none' or val.lower() == 'false':
+        return None
+    return val
+
+
 def get_argument_parser():
     """Generate and return argument parser."""
 
@@ -37,9 +49,14 @@ def get_argument_parser():
     "matrix (h5ad) or Path containing 10x mtx files.",
     )
     parser.add_argument('-b', '--barcode_len', nargs='?', 
-    type=int, help="Barcode length. For 10x, it is 16. When parameter "
+    type=int_or_none, help="Barcode length. For 10x, it is 16. When parameter "
     "present but no value provided: 16. Default: None", 
     const=16, default=None,
+    )
+    parser.add_argument('--keep_barcode_suffix', action='store_true',
+    help="Use this flag when you want to retain the suffix in cell "
+    "barcodes. Useful when 10x' cellranger is used.",
+    dest='keep-bc-suff'
     )
 
     prev_count_file = parser.add_argument_group('h5ad_file')
@@ -74,12 +91,14 @@ def get_argument_parser():
     " classification by hashsolo. If not used, use 'None'. "
     "Value when parameter present but no value provided: Doublet"
     ". Default: None", const='Doublet', default=None,
+    type=string_or_none,
     )
     prev_count_file.add_argument('-n', '--negative', nargs='?', 
     help="Classficiation used when a cell is a negative in the "
     "classification by hashsolo. If not used, use 'None'. "
     "Value when parameter present but no value provided: Negative. "
     "Default: None", const='Negative', default=None,
+    type=string_or_none,
     )
 
     starsolo_out_file = parser.add_argument_group('mtx_file_path')
@@ -87,23 +106,28 @@ def get_argument_parser():
     starsolo_out_file.add_argument('--id2name',
     help="File containing 2 columns with gene ids and gene names", 
     )
-    starsolo_out_file.add_argument('-m', '--max_mito', nargs='?', type=int,
+    starsolo_out_file.add_argument('-m', '--max_mito', nargs='?', 
+    type=int_or_none,
     help="Max mitochondrial genes(in percent) per cell. Value when "
     "parameter present but no value provided: 5. Default: None", const=5,
     default=None,
     )
-    starsolo_out_file.add_argument('-g', '--min_genes', nargs='?', type=int,
+    starsolo_out_file.add_argument('-g', '--min_genes', nargs='?', 
+    type=int_or_none,
     help="Min #genes per cell. Value when parameter present but no value "
     "provided: 1000. Default: None", const=1000, default=None,
     )
-    starsolo_out_file.add_argument('--min_cells', nargs='?', type=int, 
+    starsolo_out_file.add_argument('--min_cells', nargs='?', 
+    type=int_or_none 
     help="Min #cells expressing a gene for it to pass the filter"
     ". Value when parameter present but no value provided: 10"
     ". Default: None", const=10, default=None,
     )
-    starsolo_out_file.add_argument('--mito_prefix', nargs='?', help="How mitochondrial"
-    " genes can be identified from the gene_info_file. e.g. Value when parameter "
-    "present but no value provided'MT-'. Default: None.", const='MT-', default=None,
+    starsolo_out_file.add_argument('--mito_prefix', nargs='?', 
+    type=string_or_none, help="How mitochondrial genes can be identified "
+    "from the gene_info_file. e.g. Value when parameter "
+    "present but no value provided'MT-'. Default: None.", 
+    const='MT-', default=None,
     )
     
     return parser
@@ -206,7 +230,8 @@ def main():
 
     with open(op, 'w') as f:
         for item in adata.obs_names.tolist():
-            item=item[:args.barcode_len] # To remove the suffixes used to make barcodes unique, if present
+            if not args.keep_bc_suff:
+                item=item[:args.barcode_len] # To remove the suffixes used to make barcodes unique, if present
             f.write("%s\n" % item)
 
 

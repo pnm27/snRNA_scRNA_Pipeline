@@ -44,7 +44,19 @@ def get_filt_barcodes(wildcards):
     elif global_vars.ADD_VIREO:
         return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
     elif global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
-        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}"
+        if 'multiome' in config['last_step'].lower():
+            return (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}"
+                "/filtered_feature_bc_matrix/matrix.mtx.gz"
+            ).format(pool=wildcards.pool.split('/')[0])
+
+        else:
+            return (
+                f"{config['STARsolo_pipeline']['bams_dir']}"
+                f"{config['fold_struct']}"
+                f"{config['STARsolo_pipeline']['genefull_matrix']}"
+            )
     else:
         raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
 
@@ -58,13 +70,28 @@ def get_inp_type(wildcards, input):
 
 
 def get_cellsnp_inputs(wildcards):
-    ret_list=[]
-    ret_list.extend(
-        [
-        f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt", 
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}", 
-        ]
-    )
+    ret_list=[
+        f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}"
+        f"{config['fold_struct_filt_bc']}.txt"
+    ]
+    if 'multiome' in config['last_step'].lower():
+        if 'cdna' in wildcards.pool.lower():
+            ret_list.append((
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+                ).format(pool=wildcards.pool.split('/')[0])
+            )
+        else:
+            ret_list.append((
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+                ).format(pool=wildcards.pool.split('/')[0])
+            )
+    else:
+        ret_list.append((
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        ))
     
     # 'cellsnp_ref_snps' is useful when per-Pool vcfs need to subset for SNVs
     if config['gt_demux_pipeline']['cellsnp_ref_snps'] is not None:
@@ -231,7 +258,7 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
     n_cols = 3 if config['gt_demux_pipeline']['vcf_info_columns']['vcf'] is not None else 2
     # Make snakemake's wildcard same as the value in the "pool" column
-    samp_name = '-'.join(wildcards.pool.split('-')[:-1])
+    samp_name = '-'.join(wildcards.pool.split('-')[:-1]) # WILDCARDS
     pool_col = config['gt_demux_pipeline']['vcf_info_columns']['pool']
     don_col = config['gt_demux_pipeline']['vcf_info_columns']['n_dons']
     ret_str = ""
@@ -253,6 +280,14 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     return ret_str
         
 
+
+def get_umiTag(wildcards):
+    # For ATAC return None
+    if 'multiome' in config['last_step'].lower() and \
+     'cdna' not in wildcards.pool.lower():
+        return None
+    else:
+        config['gt_demux_pipeline']['umi_tag']
 # Multi_module branch related function
 # def multi_vcfs(wildcards):
 #     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
@@ -424,7 +459,7 @@ rule cellSNP:
 
     params:
         # ref_snps=config['gt_demux_pipeline']['ref_snps'],
-        umi_tag=config['gt_demux_pipeline']['umi_tag'],
+        umi_tag=get_umiTag,
         cell_tag=config['gt_demux_pipeline']['cell_tag'],
         processors=config['gt_demux_pipeline']['n_proc'],
         min_maf=config['gt_demux_pipeline']['min_maf'],

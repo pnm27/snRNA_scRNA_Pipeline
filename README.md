@@ -186,7 +186,8 @@ The highlights of the pipeline are:
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:
   - genotype_demux
-    - 
+    - Fixed UMItag selection in *cellSNP* for multiome-ATAC.
+    - Fixed issues for multiome in *create_inp_cellSNP* (to add -1 in cell barcodes as bam by cellranger has "-1" suffix)
   - demultiplex
   - Change 'vcf_type' wildcard to support both multi-vcf and multiome setup.
   
