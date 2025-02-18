@@ -59,16 +59,15 @@ def targets_PICARD(conf_f, progs='all') -> list:
 def targets_cellSNP(conf_f, progs=None, multiome=False) -> list:
     sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
+    out_dir = conf_f['gt_demux_pipeline']['cellsnp_dir']
+    fs_gt = conf_f['fold_struct_gt_demux']
+    cells_suff = conf_f['gt_demux_pipeline']['cellsnp_cells']
+    base_suff = conf_f['gt_demux_pipeline']['cellsnp_base']
     for d in sub_dir:
-        out_dir = conf_f['gt_demux_pipeline']['cellsnp_dir']
-        fs_gt = conf_f['fold_struct_gt_demux']
-        cells_suff = conf_f['gt_demux_pipeline']['cellsnp_cells']
-        base_suff = conf_f['gt_demux_pipeline']['cellsnp_base']
-
         # target_list = [f"{out_dir}{fs_gt}{cells_suff}", f"{out_dir}{fs_gt}{base_suff}"]
         target_list.extend([
-            os.path.join(f"{out_dir}", d, f"{fs_gt}{cells_suff}"), 
-            os.path.join(f"{out_dir}", d, f"{fs_gt}{base_suff}")
+            os.path.join(f"{out_dir}{fs_gt}", d, f"{cells_suff}"), 
+            os.path.join(f"{out_dir}{fs_gt}", d, f"{base_suff}")
             ])
 
     # STARsolo* + PICARD (any) progs
@@ -98,7 +97,7 @@ def targets_gt_demux(conf_f, progs=None, h5ad=False, multiome=False) -> list:
 
             # target_list = [f"{out_dir}{fs_gt}{suff}"]
 
-        target_list.append(os.path.join(f"{out_dir}", d ,f"{fs_gt}{suff}"))
+        target_list.append(os.path.join(f"{out_dir}{fs_gt}", d ,f"{suff}"))
 
 
     # STARsolo* + PICARD (any) progs

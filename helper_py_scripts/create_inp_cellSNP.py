@@ -118,7 +118,7 @@ def get_argument_parser():
     "provided: 1000. Default: None", const=1000, default=None,
     )
     starsolo_out_file.add_argument('--min_cells', nargs='?', 
-    type=int_or_none 
+    type=int_or_none,
     help="Min #cells expressing a gene for it to pass the filter"
     ". Value when parameter present but no value provided: 10"
     ". Default: None", const=10, default=None,
