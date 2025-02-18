@@ -3,6 +3,7 @@
 ## TODO
 
 - Miscellaneous:
+  - [ ] Simplified shell script in the rules *demux_samples* and *add_obs_to_final_count_matrix* in **demultiplex.smk**
   - [x] Add PICARD option in new_config file.
   - [ ] Write down schemas.
   - Add tutorials.
@@ -180,8 +181,9 @@ The highlights of the pipeline are:
   - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in **new_config.yaml** is expected to have headers.
   - Simplified the commandline for execution.
 - Usage of *pd.concat* now in concordance with [FutureWarning](https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492) in **update_logs.py**.
-- In **new_config.yaml**, changed *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
-- Simplified shell script in the rules *demux_samples* and *demux_samples* in **demultiplex.smk**
+- In **new_config.yaml**, changed 
+  - *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
+  - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
 - Removed mode='w+' when creating outputs in **create_Feat_Barc.py**.
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:

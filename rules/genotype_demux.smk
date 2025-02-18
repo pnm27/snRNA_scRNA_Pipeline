@@ -62,11 +62,42 @@ def get_filt_barcodes(wildcards):
 
 
 # Parameter option
-def get_inp_type(wildcards, input):
+# DEPRACATED
+# def get_inp_type(wildcards, input):
+#     if global_vars.ADD_SOLO or global_vars.ADD_VIREO or input[0].endswith('.h5ad'):
+#         return 'prev'
+#     else:
+#         return 'star'
+
+def get_params(wildcards, input):
+    params_dict = {
+        "col_name": [config['gt_demux_pipeline']['demux_col'], "-c"],
+        "bc_len": [config['gt_demux_pipeline']['barcode_len'], "-b"],
+        "doub": [config['gt_demux_pipeline']['doublet'], "-d"],
+        "neg": [config['gt_demux_pipeline']['negative'], "-n"],
+        "na": [config['gt_demux_pipeline']['na'], "-e"],
+        "max_mito": [config['max_mito_percentage'], "-m"],
+        "min_genes": [config['min_genes_per_cell'], "-g"],
+        "min_cells": [config['min_cells_per_gene'], "--min_cells"],
+        "genes_info": [config['gene_info_file'], "id2name"],
+        "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
+ 
+    }
+    ret_str = ''
+
+    for k, v in params_dict:
+        ret_str += f'{v[1]} {v[0]} '
+
     if global_vars.ADD_SOLO or global_vars.ADD_VIREO or input[0].endswith('.h5ad'):
-        return 'prev'
-    else:
-        return 'star'
+        ret_str += '--prev '
+    
+    if 'multiome' in config['last_step'].lower():
+        ret_str += '--keep_barcode_suffix '
+    
+    if config['gt_demux_pipeline']['include_all_cells']:
+        ret_str += '--keep_all_cells '
+
+    return ret_str
 
 
 def get_cellsnp_inputs(wildcards):
@@ -378,19 +409,21 @@ rule create_inp_cellSNP:
 
     params:
         inp_type=get_inp_type, 
+        # DEPRACATED
         # When a run of calico_solo exists
-        col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
-        bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length
-        keep_all_cells=config['gt_demux_pipeline']['include_all_cells'], # Include all cells (don't remove cells prev classified as doublets, etc.)
-        doub=config['gt_demux_pipeline']['doublet'], # Doublets named as
-        neg=config['gt_demux_pipeline']['negative'], # Negatives named as
-        na=config['gt_demux_pipeline']['na'], # Cells not present in hashsolo named as
+        # col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
+        # bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length
+        # keep_all_cells=config['gt_demux_pipeline']['include_all_cells'], # Include all cells (don't remove cells prev classified as doublets, etc.)
+        # doub=config['gt_demux_pipeline']['doublet'], # Doublets named as
+        # neg=config['gt_demux_pipeline']['negative'], # Negatives named as
+        # na=config['gt_demux_pipeline']['na'], # Cells not present in hashsolo named as
         # When no previous runs of calico_solo exists
-        mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        min_genes=config['min_genes_per_cell'], # Min #genes per cell
-        min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
-        genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
+        # mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        # min_genes=config['min_genes_per_cell'], # Min #genes per cell
+        # min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+        # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
+        # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
+        extra=get_params
 
     resources:
         cpus_per_task=2, # For snakemake > v8
@@ -408,25 +441,8 @@ rule create_inp_cellSNP:
 
     shell:
         """
-        if [[ "{params.inp_type}" == "prev" ]]; then
-            if [[ "{params.keep_all_cells}" == "yes" ]] || [[ "{params.keep_all_cells}" == "True" ]]; then
-                python3 helper_py_scripts/create_inp_cellSNP.py {input} \
-                -o {output} -c {params.col_name} -b {params.bc_len} \
-                --mito_prefix {params.mito_prefix} \
-                --keep_all_cells --prev
-            else
-                python3 helper_py_scripts/create_inp_cellSNP.py {input} \
-                -o {output} -c {params.col_name} -e {params.na} \
-                -d {params.doub} -n {params.neg} -b {params.bc_len} \
-                --mito_prefix {params.mito_prefix} \
-                --prev
-            fi
-        else
-            python3 helper_py_scripts/create_inp_cellSNP.py {input} \
-            -o {output} -m {params.mito} -g {params.min_genes} \
-            --min_cells {params.min_cells} --id2name {params.genes_info} \
-            --mito_prefix {params.mito_prefix}
-        fi
+        python3 helper_py_scripts/create_inp_cellSNP.py {input} \
+            -o {output} {params.extra}
         sleep 60
         """
 
@@ -487,11 +503,19 @@ rule cellSNP:
         n_procs=$(( {params.processors} >  ( {resources.cpus_per_task} * 2 ) ? {params.processors} : ( {resources.cpus_per_task} * 2 ) ))
         if [[ "${{#array[@]}}" -lt 4 ]]; then
             set -x
-            cellsnp-lite {params.cmd_str} -R ${{array[2]}} -O {params.output_prefix} -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            cellsnp-lite {params.cmd_str} -R ${{array[2]}} -O {params.output_prefix} \
+                -p {params.processors} --minMAF {params.min_maf} \
+                --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} \
+                --UMItag {params.umi_tag} --genotype --gzip
         else
             set -x
-            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
-            cellsnp-lite {params.cmd_str} -O {params.output_prefix} -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} --minMAF {params.min_maf} --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} --UMItag {params.umi_tag} --genotype --gzip
+            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' \
+                -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
+            cellsnp-lite {params.cmd_str} -O {params.output_prefix} \
+                -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} \
+                --minMAF {params.min_maf} --minCOUNT {params.min_ct} \
+                --cellTAG {params.cell_tag} --UMItag {params.umi_tag} \
+                --genotype --gzip
         fi
         set +x
         """
@@ -526,6 +550,6 @@ rule vireoSNP:
         """        
         set -x
         vireo {params.cmd_str} -o {params.output_prefix} -t {params.geno_tag} \
-        --noPlot --randSeed 100
+            --noPlot --randSeed 100
         set +x
         """

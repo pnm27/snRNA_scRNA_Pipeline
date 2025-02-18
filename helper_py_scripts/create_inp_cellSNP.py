@@ -207,26 +207,33 @@ def main():
             e = sys.exc_info()[0]
             print(f"Error encountered while loading the mtx file!\nError message: {e}") 
 
-        t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
-        t2g.index = t2g.gene_id
-        t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
-        # Remove version number if present in ENSG IDs
-        # ENSG00000290825.1
-        adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
-        adata.var["gene_id"] = adata.var.index.values
-        adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
-        adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
-        adata = adata[:, pd.notna(adata.var["gene_name"])] # Removed gene_ids that don't have an associated gene name
+        if args.id2name is not None:
+            t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
+            t2g.index = t2g.gene_id
+            t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
+            # Remove version number if present in ENSG IDs
+            # ENSG00000290825.1
+            adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
+            adata.var["gene_id"] = adata.var.index.values
+            adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
+            adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
+            adata = adata[:, pd.notna(adata.var["gene_name"])] # Removed gene_ids that don't have an associated gene name
+        else:
+            print("Since no gene info file was provided, skipped adding "
+                "gene names! Thus, can't filter for mito contents."
+            )
         adata.var_names_make_unique()
         adata.X = adata.X.astype('float64')
+        # Remove version names from gene names 
         adata.obs_names = adata.obs_names.to_series().map(lambda x: re.sub('-.*', '', x))
         
         sc.pp.filter_cells(adata, min_genes=min_genes)
         sc.pp.filter_genes(adata, min_cells=min_cells)
         # Filter data wrt mito content
-        adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix, na=False)
-        sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
-        adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
+        if args.id2name is not None:
+            adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix, na=False)
+            sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
+            adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
 
     with open(op, 'w') as f:
         for item in adata.obs_names.tolist():

@@ -151,7 +151,7 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
             genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
             pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
             hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
-            mito_prefix=config['mito'], # Mitochondrial genes' (names') prefix
+            mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
             condn=get_condn,
             subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
 

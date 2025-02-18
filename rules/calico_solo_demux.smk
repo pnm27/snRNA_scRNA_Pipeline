@@ -23,7 +23,7 @@ rule run_calico_solo:
         min_genes=config['min_genes_per_cell'], # Min #genes per cell
         min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
         genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        mito_prefix=config['mito'] # Mitochondrial genes' (names') prefix
+        mito_prefix=config['mito_prefix'] # Mitochondrial genes' (names') prefix
 
     # For snakemake < v8
     # threads: 2
@@ -37,6 +37,8 @@ rule run_calico_solo:
 
     shell: 
         """
-        python3 helper_py_scripts/create_h5ad_from_calico_solo.py {input[0]} {input[1]} {output} {params.genes_info} -m {params.mito} -g {params.min_genes} -c {params.min_cells} --mito_prefix {params.mito}
+        python3 helper_py_scripts/create_h5ad_from_calico_solo.py {input[0]} {input[1]} {output} \
+            {params.genes_info} -m {params.mito} -g {params.min_genes} \
+            -c {params.min_cells} --mito_prefix {params.mito_prefix}
         sleep 100
         """

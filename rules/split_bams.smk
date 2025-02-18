@@ -31,11 +31,11 @@ def get_chr_pref(wildcards):
 
 
 def get_mito(wildcards):
-    if config['chr_prefix'] == None or config['mito'].startswith(config['chr_prefix']):
-        ret_val = config['mito'] if not config['mito'].endswith('-') else config['mito'][:-1]
+    if config['chr_prefix'] == None or config['mito_prefix'].startswith(config['chr_prefix']):
+        ret_val = config['mito_prefix'] if not config['mito_prefix'].endswith('-') else config['mito_prefix'][:-1]
         return ret_val
     else:
-        ret_val = config['chr_prefix'] + config['mito']
+        ret_val = config['chr_prefix'] + config['mito_prefix']
         ret_val =  ret_val if not ret_val.endswith('-') else ret_val[:-1]
         return ret_val
 

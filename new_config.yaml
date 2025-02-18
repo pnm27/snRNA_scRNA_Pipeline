@@ -46,7 +46,7 @@ whitelist: *3v3
 genome_fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
 reg_chr_bed: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
 chr_prefix: null
-mito: MT-
+mito_prefix: MT-
 gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/Hs_allchr_MT.txt
 
 
