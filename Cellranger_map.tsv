@@ -1,0 +1,49 @@
+Header				
+Sample ID	SAMPLE	CELLRANGER	REG	
+Genome	GENOME	CELLRANGER	REG	
+Pipeline version	VERSION	CELLRANGER	REG	
+Estimated number of cells	N_CELLS_EST	CELLRANGER	MULTIOME	The number of barcodes associated with cell-containing partitions.
+Feature linkages detected	FEATURE_LINKAGE	CELLRANGER	MULTIOME	Total number of gene-to-peak and peak-to-peak linkages detected.
+Linked genes	LINKED_GENES	CELLRANGER	MULTIOME	Total number of genes that are linked to peaks.
+Linked peaks	LINKED_PEAKS	CELLRANGER	MULTIOME	Total number of peaks that are linked to genes or other peaks.
+ATAC Confidently mapped read pairs	N_READ_PAIRS	CELLRANGER	ATAC	Fraction of sequenced read pairs with mapping quality > 30.
+ATAC Fraction of genome in peaks	FRAC_GENOME_IN_PEAKS	CELLRANGER	ATAC	Fraction of bases in primary contigs (contigs containing genes) that are defined as peaks.
+ATAC Fraction of high-quality fragments in cells	FRAC_FRAG_IN_CELLS	CELLRANGER	ATAC	Fraction of high-quality fragments with a valid barcode that are associated with cell-containing partitions. High-quality fragments are defined as read pairs with a valid barcode that map to the nuclear genome with mapping quality > 30, are not chimeric and not duplicate.
+ATAC Fraction of high-quality fragments overlapping TSS	FRAC_FRAG_IN_CELLS_OVERLAP_TSS	CELLRANGER	ATAC	Fraction of high-quality fragments in cell barcodes that overlap transcription start sites (TSS).
+ATAC Fraction of high-quality fragments overlapping peaks	FRAC_FRAG_IN_CELLS_OVERLAP_PEAKS	CELLRANGER	ATAC	Fraction of high-quality fragments in cell barcodes that overlap called peaks.
+ATAC Fraction of transposition events in peaks in cells	FRAC_TRANSPOSON_IN_PEAKS_IN_CELLS	CELLRANGER	ATAC	Fraction of transposition events that are associated with cell-containing partitions and fall within peaks. Transposition events are located at both ends of all high-quality fragments. This metric measures the percentage of such events that overlap with peaks.
+ATAC Mean raw read pairs per cell	MEAN_RAW_READS_PER_CELL	CELLRANGER	ATAC	Total number of read pairs divided by the number of cell barcodes.
+ATAC Median high-quality fragments per cell	MEDIAN_FRAGS_PER_CELL	CELLRANGER	ATAC	The median number of high-quality fragments per cell barcode.
+ATAC Non-nuclear read pairs	VALID_READ_PAIRS_IN_NONNUCLEAR	CELLRANGER	ATAC	Fraction of sequenced read pairs that have a valid barcode and map to non-nuclear genome contigs, including mitochondria, with mapping quality > 30.
+ATAC Number of peaks	N_PEAKS	CELLRANGER	ATAC	Total number of peaks on primary contigs either detected by the pipeline or input by the user.
+ATAC Percent duplicates	PERC_PCR_DUPLICATES	CELLRANGER	ATAC	Fraction of high-quality read pairs that are deemed to be PCR duplicates. This metric is a measure of sequencing saturation and is a function of library complexity and sequencing depth. More specifically, this is the fraction of high-quality fragments with a valid barcode that align to the same genomic position as another read pair in the library.
+ATAC Q30 bases in barcode	FRAC_Q30_I5_READS	CELLRANGER	ATAC	Fraction of barcode read (i5 index read) bases with Q-score ≥ 30.
+ATAC Q30 bases in read 1	FRAC_Q30_READ1	CELLRANGER	ATAC	Fraction of read 1 bases with Q-score ≥ 30.
+ATAC Q30 bases in read 2	FRAC_Q30_READ2	CELLRANGER	ATAC	Fraction of read 2 bases with Q-score ≥ 30.
+ATAC Q30 bases in sample index i1	FRAC_Q30_I7_READS	CELLRANGER	ATAC	Fraction of sample index read (i7 index read) bases with Q-score ≥ 30.
+ATAC Sequenced read pairs	N_READS	CELLRANGER	ATAC	Total number of sequenced read pairs assigned to the sample.
+ATAC TSS enrichment score	MAX_TSS_ENRICH_SCORE	CELLRANGER	ATAC	Maximum value of the transcription-start-site (TSS) profile.The TSS profile is the summed accessibility signal (defined as number of cut sites per base) in a window of 2,000 bases around all the annotated TSSs, normalized by the minimum signal in the window.
+ATAC Unmapped read pairs	FRAC_UNMAP_VALID_READ_PAIRS	CELLRANGER	ATAC	Fraction of sequenced read pairs that have a valid barcode but could not be mapped to the genome.
+ATAC Valid barcodes	FRAC_READS_VALID_BARCODES	CELLRANGER	ATAC	Fraction of read pairs with barcodes that match the inclusion list after error correction.
+GEX Fraction of transcriptomic reads in cells	FRAC_TOTAL_READS_IN_CELLS	CELLRANGER	GEX	Fraction of transcriptomic reads with a valid barcode that are associated with cell-containing partitions. Transcriptomic reads are defined as reads with mapping quality = 255 that map to a unique gene, including intronic alignments (default mode). When excluding introns the transcriptome is restricted to alignments that are consistent with annotated splice junctions. Note that transcriptomic reads include UMI reads, duplicate reads, and reads marked as low-support molecules.
+GEX Mean raw reads per cell	MEAN_RAW_READS_PER_CELL	CELLRANGER	GEX	Total number of reads divided by the number of cell barcodes.
+GEX Median UMI counts per cell	MEDIAN_UMI_PER_CELL	CELLRANGER	GEX	The median number of UMI counts per cell barcode.
+GEX Median genes per cell	MEDIAN_GENES_PER_CELL	CELLRANGER	GEX	The median number of genes detected per cell barcode. Detection is defined as the presence of at least one UMI count.
+GEX Percent duplicates	PERC_PCR_DUPLICATES	CELLRANGER	GEX	The fraction of reads originating from an already-observed UMI. This is a function of library complexity and sequencing depth. More specifically, this is the fraction of confidently mapped, valid barcode, valid UMI reads that have a non-unique (barcode, UMI, gene).
+GEX Q30 bases in UMI	FRAC_Q30_UMI	CELLRANGER	GEX	Fraction of UMI bases with Q-score ≥ 30, excluding very low quality/no-call (Q ≤ 2) bases from the denominator.
+GEX Q30 bases in barcode	FRAC_Q30_BC	CELLRANGER	GEX	Fraction of barcode bases with Q-score ≥ 30, excluding very low quality/no-call (Q ≤ 2) bases from the denominator.
+GEX Q30 bases in read 2	FRAC_Q30_READ2	CELLRANGER	GEX	Fraction of RNA read bases with Q-score ≥ 30, excluding very low quality/no-call (Q ≤ 2) bases from the denominator.
+GEX Q30 bases in sample index i1	FRAC_Q30_I7_READS	CELLRANGER	GEX	Fraction of sample index bases (i7 index read) with Q-score ≥ 30, excluding very low quality/no-call (Q ≤ 2) bases from the denominator.
+GEX Q30 bases in sample index i2	FRAC_Q30_I5_READS	CELLRANGER	GEX	Fraction of sample index bases (i5 index read) with Q-score ≥ 30, excluding very low quality/no-call (Q ≤ 2) bases from the denominator.
+GEX Reads mapped antisense to gene	FRAC_MAP_ANTISENSE_2_GENE	CELLRANGER	GEX	Fraction of reads that map to the transcriptome with MAPQ 255, but on the opposite strand of one or more overlapping annotated genes.
+GEX Reads mapped confidently to exonic regions	FRAC_MAP_EXONIC	CELLRANGER	GEX	Fraction of sequenced reads that map uniquely to an exonic region of the genome.
+GEX Reads mapped confidently to genome	FRAC_MAP_GENOME	CELLRANGER	GEX	Fraction of sequenced reads that map uniquely to the genome. If a gene mapped to an exonic loci from a single gene and also to a non-exonic loci, it is considered uniquely mapped to one of the exonic loci.
+GEX Reads mapped confidently to intergenic regions	FRAC_MAP_INTERGENIC	CELLRANGER	GEX	Fraction of sequenced reads that map uniquely to an intergenic region of the genome.
+GEX Reads mapped confidently to intronic regions	FRAC_MAP_INTRONIC	CELLRANGER	GEX	Fraction of sequenced reads that map uniquely to an intronic region of the genome.
+GEX Reads mapped confidently to transcriptome	FRAC_MAP_TRANSCRIPTOME	CELLRANGER	GEX	Fraction of sequenced reads that map to a unique gene in the transcriptome with mapping quality = 255. In the default mode the transcriptome includes intronic alignments. When excluding introns the transcriptome is restricted to alignments that are consistent with annotated splice junctions. Note that transcriptomic reads include UMI reads, duplicate reads, and reads marked as low-support UMIs.
+GEX Reads mapped to genome	FRAC_MAP_GENOME_ALL	CELLRANGER	GEX	Fraction of sequenced reads that map to the genome.
+GEX Reads with TSO	FRAC_READS_TSO	CELLRANGER	GEX	Fraction of reads with an alignment score of ≥ 20 for the template switch oligo (TSO) sequence.
+GEX Sequenced read pairs	N_READS	CELLRANGER	GEX	Total number of sequenced read pairs assigned to the sample.
+GEX Total genes detected	N_GENES_TOTAL	CELLRANGER	GEX	The number of genes with at least one UMI count in any cell barcode.
+GEX Valid UMIs	N_VALID_UMI	CELLRANGER	GEX	Fraction of read pairs with valid UMIs i.e. without Ns and are not homopolymers.
+GEX Valid barcodes	N_VALID_BC	CELLRANGER	GEX	Fraction of read pairs with barcodes that match the inclusion list after error correction.
