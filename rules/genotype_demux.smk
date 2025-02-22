@@ -79,14 +79,17 @@ def get_params(wildcards, input):
         "max_mito": [config['max_mito_percentage'], "-m"],
         "min_genes": [config['min_genes_per_cell'], "-g"],
         "min_cells": [config['min_cells_per_gene'], "--min_cells"],
-        "genes_info": [config['gene_info_file'], "id2name"],
+        "genes_info": [config['gene_info_file'], "--id2name"],
         "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
  
     }
     ret_str = ''
 
-    for k, v in params_dict:
-        ret_str += f'{v[1]} {v[0]} '
+    for k, v in params_dict.items():
+        if k == "na" or k == "mito_prefix":
+            ret_str += f'{v[1]} \'{v[0]}\' '
+        else:
+            ret_str += f'{v[1]} {v[0]} '
 
     if global_vars.ADD_SOLO or global_vars.ADD_VIREO or input[0].endswith('.h5ad'):
         ret_str += '--prev '
@@ -383,7 +386,7 @@ def allocate_mem_vS(wildcards, attempt):
         else:
             return 22000+500*(attempt-1)
     else:
-        return 3000+500*(attempt-1)
+        return 35000+500*(attempt-1)
 
 
 def allocate_time_vS(wildcards, attempt):
@@ -408,8 +411,8 @@ rule create_inp_cellSNP:
     priority: 8
 
     params:
-        inp_type=get_inp_type, 
         # DEPRACATED
+        # inp_type=get_inp_type, 
         # When a run of calico_solo exists
         # col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
         # bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length

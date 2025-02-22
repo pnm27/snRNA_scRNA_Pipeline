@@ -56,7 +56,7 @@ def get_argument_parser():
     parser.add_argument('--keep_barcode_suffix', action='store_true',
     help="Use this flag when you want to retain the suffix in cell "
     "barcodes. Useful when 10x' cellranger is used.",
-    dest='keep-bc-suff'
+    dest='keep_bc_suff'
     )
 
     prev_count_file = parser.add_argument_group('h5ad_file')
@@ -225,7 +225,7 @@ def main():
         adata.var_names_make_unique()
         adata.X = adata.X.astype('float64')
         # Remove version names from gene names 
-        adata.obs_names = adata.obs_names.to_series().map(lambda x: re.sub('-.*', '', x))
+        # adata.obs_names = adata.obs_names.to_series().map(lambda x: re.sub(r'\.*', '', x))
         
         sc.pp.filter_cells(adata, min_genes=min_genes)
         sc.pp.filter_genes(adata, min_cells=min_cells)

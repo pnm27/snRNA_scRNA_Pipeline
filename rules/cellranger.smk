@@ -112,7 +112,7 @@ rule cellranger_arc_count:
         r"""
         mkdir -p {params.outputdir}
         export MRO_DISK_SPACE_CHECK=disable
-        loc_mem=$( sed r"s#\.0##g" <<< "{params.max_localmem}")
+        loc_mem=$( sed "s#\.0##g" <<< "{params.max_localmem}")
         cellranger-arc count --id={params.samp_id} --libraries={input[0]} \
         --reference={params.ref} --localcores={params.max_localcores} \
         --localmem=${{loc_mem}} &> {log}_{resources.attempt} && \
