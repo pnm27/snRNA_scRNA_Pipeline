@@ -24,8 +24,8 @@ def get_inputs_demux(wildcards):
                 f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}"
                 )
-        if config['gt_conv'] is not None:
-            ret_list.append(config['gt_conv'])
+        if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+            ret_list.append(config['gt_demux_pipeline']['donorName_conv']['file'])
 
     elif global_vars.BOTH_DEMUX:
         ret_list.append(
@@ -45,8 +45,8 @@ def get_inputs_demux(wildcards):
                 f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}"
                 )
-        if config['gt_conv'] is not None:
-            ret_list.append(config['gt_conv'])
+        if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+            ret_list.append(config['gt_demux_pipeline']['donorName_conv']['file'])
     else:
         raise ValueError(
             "Unexpected inputs to the rule 'demux_samples'! Please "
@@ -56,15 +56,72 @@ def get_inputs_demux(wildcards):
     return ret_list
 
 
-def get_condn(wildcards):
-    if global_vars.ONLY_SOLO:
-        return 'S'
-    elif global_vars.ONLY_VIREO:
-        return 'V'
+def get_params(wildcards, input, output):
+    params_dict = {
+        "demux_info": [output[1], "--demux_info"],
+        "cols": [config['hashsolo_demux_pipeline']['columns_to_pick'], "--columns"],
+        "wet_lab_file": [config['wet_lab_info'], "--wet_lab_file"],
+        "hto_sep": [config['hashsolo_demux_pipeline']['hto_sep'], "--hto_sep"],
+        "na": [config['gt_demux_pipeline']['na'], "-e"],
+        "max_mito": [config['max_mito_percentage'], "-m"],
+        "min_genes": [config['min_genes_per_cell'], "-g"],
+        "min_cells": [config['min_cells_per_gene'], "--min_cells"],
+        "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
+        "cs_conv": [config['hashsolo_demux_pipeline']['SubID_convert'], "--no-subid_convert"],
+        "conv_f_nheaders": [
+            config['gt_demux_pipeline']['donorName_conv']['header_lev'], 
+            "--converter_file_headerNlev"],
+        "conv_f_pool_col": [
+            config['gt_demux_pipeline']['donorName_conv']['pool_col'], 
+            "--conv_file_pool_column"],
+        "conv_f_donor_col": [
+            config['gt_demux_pipeline']['donorName_conv']['donor_col'], 
+            "--conv_file_donor_column"],
+        "conv_f_conv_col": [
+            config['gt_demux_pipeline']['donorName_conv']['convert_col'], 
+            "--conv_file_conv_column"],
+        "new_h5ad_col": [
+            config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname'], 
+            "--h5ad_new_classify_colname"],
+ 
+    }
+    gene_info_file = config['gene_info_file']
+    solo_inp = ["--calico_solo"]
+    vireo_inp = ["--vireo_out", "--converter_file"]
+    inp_files = [""] # Keep first value empty as input[0] is positional arg
+
+    ret_str = ''
+    pos_args = ''
+
+    for k, v in params_dict.items():
+        if k == "hto_sep" or k == "mito_prefix":
+            ret_str += f'{v[1]} \'{v[0]}\' '
+        elif k == 'cs_conv' and not v[0]:
+            ret_str += f'{v[1]} '
+        elif k == 'cs_conv' and v[0]:
+            continue
+        else:
+            ret_str += f'{v[1]} {v[0]} '
+
+    if global_vars.ONLY_SOLO or global_vars.ADD_SOLO:
+        inp_files = solo_inp
+    elif global_vars.ONLY_VIREO or global_vars.ADD_VIREO:
+        inp_files = vireo_inp
     elif global_vars.BOTH_DEMUX:
-        return 'B'
-    else:
-        return None
+        inp_files = solo_inp + vireo_inp
+
+    for k, v in zip(inp_files, input):
+        if k == "":
+            pos_args += f'{v} '
+        else:
+            ret_str += f'{k} {v}'
+
+    pos_args+= f'{output[0]} {gene_info_file} '
+
+    # Append positional args at the end of optional args
+    ret_str+=pos_args
+
+    return ret_str
 
 
 def get_inputs_add_demux(wildcards):
@@ -93,8 +150,8 @@ def get_inputs_add_demux(wildcards):
                 f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}"
                 )
-        if config['gt_conv'] is not None:
-            ret_list.append(config['gt_conv'])
+        if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+            ret_list.append(config['gt_demux_pipeline']['donorName_conv']['file'])
 
     else:
         raise ValueError(
@@ -106,13 +163,14 @@ def get_inputs_add_demux(wildcards):
     return ret_list
 
 
-def get_condn2(wildcards):
-    if global_vars.ADD_SOLO:
-        return 'S'
-    elif global_vars.ADD_VIREO:
-        return 'V'
-    else:
-        return None
+# DEPRACATED
+# def get_condn2(wildcards):
+#     if global_vars.ADD_SOLO:
+#         return 'S'
+#     elif global_vars.ADD_VIREO:
+#         return 'V'
+#     else:
+#         return None
 
 
 # Resource Allocation ------------------
@@ -143,17 +201,18 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
             f"{config['hashsolo_demux_pipeline']['demultiplex_info_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['demultiplex_info']}"
 
         params:
-            mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-            min_genes=config['min_genes_per_cell'], # Min #genes per cell
-            min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
-            samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-            cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
-            genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-            pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
-            hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
-            mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
-            condn=get_condn,
-            subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
+            # mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
+            # min_genes=config['min_genes_per_cell'], # Min #genes per cell
+            # min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+            # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
+            # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+            # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
+            pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+            # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
+            # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
+            # condn=get_condn,
+            # subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
+            extra=get_params
 
         resources:
             mem_mb=allocate_mem_DXP,
@@ -162,167 +221,8 @@ if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
         conda: "../envs/basic_sctools.yaml"
         
         shell: 
-            """
-            read -r -a array <<< "{input}"
-            opts_cs=("--calico_solo")
-            opts_vs=("--vireo_out" "-converter_file")
-            opts_both=(${{opts_cs[@]}} ${{opts_vs[@]}})
-            cmd_str=""
-            if [ "{params.condn}" == "S" ] && \
-               [ "{params.subid_convert}" == "True" ]; then
-                if [ "{params.hto_sep}" != "None" ]; then
-                    for i in $(seq 1 $((${{#array[@]}}-1)) )
-                    do
-                        cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                    done
-                    cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --demux_info {output[1]} \
-                    -m {params.mito} -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                else
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --demux_info {output[1]} \
-                    -m {params.mito} -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                fi
-            elif [ "{params.condn}" == "S" ] && \
-                 [ "{params.subid_convert}" != "True" ]; then
-                if [ "{params.hto_sep}" != "None" ]; then
-                    for i in $(seq 1 $((${{#array[@]}}-1)) )
-                    do
-                        cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                    done
-                    cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --demux_info {output[1]} \
-                    -m {params.mito} -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                else
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --demux_info {output[1]} \
-                    -m {params.mito} -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                fi
-            elif [ "{params.condn}" == "V" ]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_vs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                python3 helper_py_scripts/demul_samples.py \
-                {input[0]} {output[0]} {params.genes_info} \
-                --demux_info {output[1]} \
-                -m {params.mito} -g {params.min_genes} -c {params.min_cells} \
-                --mito_prefix {params.mito_prefix} ${{cmd_str}} \
-                --pool_name {params.pool_name}
-
-            elif [ "{params.condn}" == "B" ]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_both[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                if [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
-                [[ "{params.subid_convert}" == "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
-                [[ "{params.subid_convert}" != "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
-                [[ "{params.subid_convert}" == "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                elif [[ "${{#array[@]}}" -lt 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
-                [[ "{params.subid_convert}" != "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
-                [[ "{params.subid_convert}" == "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" != "None" ]] && \
-                [[ "{params.subid_convert}" != "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
-                [[ "{params.subid_convert}" == "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-                elif [[ "${{#array[@]}}" -eq 4 ]] && [[ "{params.hto_sep}" == "None" ]] && \
-                [[ "{params.subid_convert}" != "True" ]]; then
-                    python3 helper_py_scripts/demul_samples.py {input[0]} {output[0]} \
-                    {params.genes_info} --demux_info {output[1]} -m {params.mito} \
-                    -g {params.min_genes} \
-                    -c {params.min_cells} --mito_prefix {params.mito_prefix} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-                fi
-            else
-                echo "Nothing happened! Check 'condn' in params!"
-            fi
+            """  
+            python3 helper_py_scripts/demul_samples.py {params.extra}
             """
 
 
@@ -342,88 +242,18 @@ if global_vars.ADD_VIREO or global_vars.ADD_SOLO:
             time_min=allocate_time_AOTFCM
     
         params:
-            samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
-            cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
-            genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-            pool_name=lambda wildcards: wildcards.id1.replace('-', '_')+'_cDNA',
-            hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
-            condn=get_condn2,
-            subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
+            # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
+            # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
+            # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
+            pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+            # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
+            # condn=get_condn2,
+            # subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']
+            extra=get_params
 
         conda: "../envs/basic_sctools.yaml"
 
         shell: 
             """
-            read -r -a array <<< "{input}"
-            opts_cs=("--calico_solo")
-            opts_vs=("--vireo_out" "-converter_file")
-            cmd_str=""
-            if [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" != "None" ]] && \
-            [[ "{params.subid_convert}" == "True" ]]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-            elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" != "None" ]] && \
-            [[ "{params.subid_convert}" != "True" ]]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --wet_lab_file {params.samples_info} --hto_sep "{params.hto_sep}" \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-            elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" == "None" ]] && \
-            [[ "{params.subid_convert}" == "True" ]]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name}
-            elif [[ "{params.condn}" == "S" ]] && [[ "{params.hto_sep}" == "None" ]] && \
-            [[ "{params.subid_convert}" != "True" ]]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_cs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    --wet_lab_file {params.samples_info} \
-                    --columns {params.cols} ${{cmd_str}} \
-                    --pool_name {params.pool_name} \
-                    --no-subid_convert
-            elif [[ "{params.condn}" == "V" ]]; then
-                for i in $(seq 1 $((${{#array[@]}}-1)) )
-                do
-                    cmd_str+="${{opts_vs[((i-1))]}} ${{array[i]}} "
-                done
-                cmd_str="${{cmd_str:0:${{#cmd_str}}-1}}"
-                if [[ "${{#array[@]}}" -lt 3 ]]; then
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    ${{cmd_str}} --pool_name {params.pool_name}
-                else
-                    python3 helper_py_scripts/demul_samples.py \
-                    {input[0]} {output[0]} {params.genes_info} \
-                    ${{cmd_str}} --pool_name {params.pool_name}
-                fi
-            else
-                echo "Nothing happened! Check 'condn' in params!"
-            fi
+            python3 helper_py_scripts/demul_samples.py {params.extra}
             """

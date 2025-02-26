@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def get_r1_hto_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    temp_fold=f"{config['fold_struct']}".format(**wildcards).replace('-cDNA', '-HTO')
     r1_files = sorted((
         glob2.glob("{parent_dir}{fs}*{suff}"
         .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix']))
@@ -12,7 +12,7 @@ def get_r1_hto_fastqs(wildcards):
 
 
 def get_r2_hto_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    temp_fold=f"{config['fold_struct']}".format(**wildcards).replace('-cDNA', '-HTO')
     r2_files = sorted((
         glob2.glob("{parent_dir}{fs}*{suff}"
         .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R2_suffix']))
@@ -22,7 +22,7 @@ def get_r2_hto_fastqs(wildcards):
 
 
 def get_hto_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(id1=wildcards.id1).replace('-cDNA', '-HTO')
+    temp_fold=f"{config['fold_struct']}".format(**wildcards).replace('-cDNA', '-HTO')
     all_files = sorted((
         glob2.glob("{parent_dir}{fs}*{suff}"
         .format(parent_dir=config['HTO_fastqs_dir'], fs=temp_fold, suff=config['R1_suffix'].replace('1', '*')))
@@ -93,7 +93,7 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        sample_name=lambda wildcards: wildcards.id1.replace('-', '_') + '_cDNA'
+        sample_name=lambda wildcards: wildcards.pool.replace('-', '_') + '_cDNA' #WILDCARDS
 
     # For snakemake < v8
     # threads: 1

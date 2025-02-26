@@ -3,8 +3,6 @@
 ## TODO
 
 - Miscellaneous:
-  - [ ] Simplified shell script in the rules *demux_samples* and *add_obs_to_final_count_matrix* in **demultiplex.smk**
-  - [x] Add PICARD option in new_config file.
   - [ ] Write down schemas.
   - Add tutorials.
     - pooled snRNA seq
@@ -192,6 +190,8 @@ The highlights of the pipeline are:
     - Fixed issues for multiome in *create_inp_cellSNP* (to add -1 in cell barcodes as bam by cellranger has "-1" suffix)
   - demultiplex
   - Change 'vcf_type' wildcard to support both multi-vcf and multiome setup.
+- Simplified shell script in the rules *demux_samples* and *add_obs_to_final_count_matrix* in **demultiplex.smk**
+- Added PICARD option in new_config file.
   
 ## Requirements
 
