@@ -35,36 +35,39 @@ def get_inputs_demux_vireo(wildcards):
         )
 
     elif global_vars.ONLY_VIREO:
-        ret_list.append(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['STARsolo_pipeline']['genefull_matrix']}"
-        )
-
-    if config['last_step'].lower().endswith('multi_vcf'):
-        ret_list.append(
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
-            f"{config['gt_demux_pipeline']['donors_classification']}"
+        if all([ m in config['last_step'].lower() for m in multi_module]):
+            ret_list.extend([
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}ATAC/"
+                f"{config['gt_demux_pipeline']['donors_classification']}",
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}cDNA/"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+            ])
+        else:
+            ret_list.append(
+                f"{config['STARsolo_pipeline']['bams_dir']}"
+                f"{config['fold_struct']}"
+                f"{config['STARsolo_pipeline']['genefull_matrix']}"
             )
-    elif all([ m in config['last_step'].lower() for m in multi_module]):
-        ret_list.append(
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}ATAC/"
-            f"{config['gt_demux_pipeline']['donors_classification']}",
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}cDNA/"
-            f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
-    else:
-        ret_list.append(
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}"
-            f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
+            if config['last_step'].lower().endswith('multi_vcf'):
+                ret_list.append(
+                    f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                    f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+                    f"{config['gt_demux_pipeline']['donors_classification']}"
+                    )
+            else:
+                ret_list.append(
+                    f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                    f"{config['fold_struct_gt_demux']}"
+                    f"{config['gt_demux_pipeline']['donors_classification']}"
+                    )
     if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
         ret_list.append(config['gt_demux_pipeline']['donorName_conv']['file'])
 
+    return ret_list
 
 def get_inputs_demux_both(wildcards):
     

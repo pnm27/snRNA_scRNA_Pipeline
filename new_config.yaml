@@ -108,13 +108,13 @@ STARsolo_pipeline:
   bam: _Aligned.sortedByCoord.out.bam
   STAR_log_final: _Log.final.out
   barcodes_stats: _Solo.out/Barcodes.stats
-  gene_features: _Solo.out/Gene/Features.stats
+  gene_features_stats: _Solo.out/Gene/Features.stats
   gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
   gene_features: _Solo.out/Gene/filtered/features.tsv
   gene_matrix: _Solo.out/Gene/filtered/matrix.mtx
   gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
   gene_summary: _Solo.out/Gene/Summary.csv
-  genefull_features: _Solo.out/GeneFull/Features.stats
+  genefull_features_stats: _Solo.out/GeneFull/Features.stats
   genefull_barcodes: _Solo.out/GeneFull/filtered/barcodes.tsv.gz
   genefull_features: _Solo.out/GeneFull/filtered/features.tsv.gz
   genefull_matrix: _Solo.out/GeneFull/filtered/matrix.mtx.gz
@@ -261,9 +261,11 @@ gt_demux_pipeline:
     - cell
     - donor_id
   final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
+  demultiplex_info: _STARsolo_vS_info.tsv
 
 # Demultiplex info---------------------------------------------------------
-# Use this path if running hashsolo and vireoSNP simultaneously
+# Use this path if running hashsolo and vireoSNP simultaneously or
+# For multiome
 demultiplex:
   demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/both/ # Can be null or a path
   final_count_matrix_h5ad: _both_vS_out.h5ad
