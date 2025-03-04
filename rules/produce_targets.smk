@@ -81,23 +81,25 @@ def targets_cellSNP(conf_f, progs=None, multiome=False) -> list:
 def targets_gt_demux(conf_f, progs=None, h5ad=False, multiome=False) -> list:
     sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
-    for d in sub_dir:
-        if not h5ad:
+    if not h5ad:
+        for d in sub_dir:
+        
             out_dir = conf_f['gt_demux_pipeline']['vireosnp_dir']
             fs_gt = conf_f['fold_struct_gt_demux']
             suff = config['gt_demux_pipeline']['donors_classification']
-            
-            # target_list = [f"{out_dir}{fs_gt}{suff}"]
-        # This Produces multiple h5ad per each modality
-        # i.e. one h5ad for ATAC and one h5ad for RNA
-        else:
-            out_dir = conf_f['gt_demux_pipeline']['final_count_matrix_dir']
-            fs_gt = conf_f['fold_struct_demux']
-            suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
 
+            target_list.append(os.path.join(f"{out_dir}{fs_gt}", d ,f"{suff}"))
             # target_list = [f"{out_dir}{fs_gt}{suff}"]
+    # For multiome combine cDNA and ATAC based demultiplexing into
+    # a single h5ad
+    else:
+        out_dir = conf_f['gt_demux_pipeline']['final_count_matrix_dir']
+        fs_gt = conf_f['fold_struct_demux']
+        suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
 
-        target_list.append(os.path.join(f"{out_dir}{fs_gt}", d ,f"{suff}"))
+        # target_list = [f"{out_dir}{fs_gt}{suff}"]
+
+        target_list.append(os.path.join(f"{out_dir}{fs_gt}{suff}"))
 
 
     # STARsolo* + PICARD (any) progs
@@ -127,7 +129,7 @@ def targets_gt_demux2(conf_f, progs=None, multiome=False) -> list:
 def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
     sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
-    if config['split_bams_pipeline']['gt_check']:
+    if config['gt_check']:
         out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir2']
     else:
         out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
@@ -189,7 +191,8 @@ def targets_multiome(conf_f, last, progs=None,
         ]
     elif last == 'vireo':
         return targets_gt_demux(conf_f=conf_f, progs=None, 
-            h5ad=False, multiome=multiome)
+            h5ad=h5ad, multiome=multiome)
+
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
 def targets_all(conf_f, progs=None) -> list:
@@ -225,7 +228,7 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
     
     if last_step is not None:
         target_step = last_step.lower()
-        create_h5ad = conf_f['create_final_h5ad'] if 'gt_demux' in target_step else None
+        create_h5ad = conf_f['create_final_h5ad'] if 'gt_demux' in target_step else False
         multiome = True if 'multiome' in target_step else False
         # 'all' is only for the modules: STARsolo, PICARD (both) and calico_solo
         # and vireo (demux) *
@@ -440,8 +443,10 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             target_files = targets_multiome(conf_f=conf_f, last="alignment")
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
-        elif target_step == "multiome_gt_demux":
-            target_files = targets_multiome(conf_f=conf_f, last="vireo", multiome=multiome)
+        # Support creation of h5ad or not
+        elif "multiome_gt_demux" in target_step:
+            target_files = targets_multiome(conf_f=conf_f, last="vireo", multiome=multiome,
+                h5ad=create_h5ad)
             # target_files = targets_gt_demux(conf_f=conf_f, progs=metrics, 
             #                 h5ad=create_h5ad, multiome=multiome)
             # global_vars.ONLY_VIREO = True

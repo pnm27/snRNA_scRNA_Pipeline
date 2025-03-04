@@ -48,7 +48,7 @@ def subset_to_chr(wildcards):
 
 
 def get_bam_to_split(wildcards):
-    if config['split_bams_pipeline']['gt_check']:
+    if config['gt_check']:
         if config['split_bams_pipeline']['subset_chr'] is None:
             return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
         else:
@@ -58,9 +58,9 @@ def get_bam_to_split(wildcards):
 
 
 def get_mito_file(wildcards):
-    if config['split_bams_pipeline']['gt_check']:
+    if config['gt_check']:
         return False
-    elif not config['split_bams_pipeline']['gt_check']:
+    elif not config['gt_check']:
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['mito_reads_file']}"
 
 
@@ -205,7 +205,8 @@ rule create_bed:
     shell:
         r"""
         if [ ! -f "{output}" ] ; then 
-            grep -E "^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | awk 'BEGIN{{OFS="\t"}}{{split($3,a,":");gsub(">", "", $1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
+            grep -E "^>{params.chr_prefix}[0-9]+|X|Y|MT" "{input}" | \
+            awk 'BEGIN{{OFS="\t"}}{{split($3,a,":");gsub(">", "", $1);printf("%s\\t0\\t%s\\n",\$1,a[5]);}}' > "{output}"
         fi
         sleep 10
         """
@@ -225,9 +226,9 @@ rule split_bams:
         per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir'],
         time_limit_per_donor=config['split_bams_pipeline']['time_per_donor'],
         chr_mito=get_mito,
-        gt_check=config['split_bams_pipeline']['gt_check'],
+        gt_check=config['gt_check'],
         mito_info=get_mito_file,
-        filter_bed=None if config['split_bams_pipeline']['gt_check'] else config['reg_chr_bed']
+        filter_bed=None if config['gt_check'] else config['reg_chr_bed']
 
     # For snakemake < v8
     # threads: 1
@@ -256,7 +257,12 @@ rule split_bams:
                     job_name_l.append(jname)
                     shell("""
                         if [ ! -d "{params.per_donor_log_dir}" ]; then mkdir -p {params.per_donor_log_dir}; fi
-                        jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} {params.split_bams_dir} {input.filt_bam} ")
+                        jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] \
+                            -R rusage[mem=200] -W {params.time_limit_per_donor} \
+                            -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr \
+                            -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash {i} \
+                            {input.barcodes_vs_donor} {params.temp_bam_per_cell_dir} \
+                            {params.split_bams_dir} {input.filt_bam} ")
                         jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                         echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output[0]}
                         sleep 10
@@ -279,16 +285,24 @@ rule split_bams:
                                 cmd_str+="None {params.mito_info} {params.chr_mito} "
                             fi
                         fi
-                        jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] -R rusage[mem=200] -W {params.time_limit_per_donor} -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash ${{cmd_str}} ")
+                        jid=$(bsub -J {j} -P acc_CommonMind -q express -n 1 -R span[hosts=1] \
+                            -R rusage[mem=200] -W {params.time_limit_per_donor} \
+                            -oo {params.per_donor_log_dir}{j}.stdout -eo {params.per_donor_log_dir}{j}.stderr \
+                            -L /bin/bash "bash helper_sh_scripts/create_per_donor_bams.bash ${{cmd_str}} ")
                         jid=$(echo $jid | head -n1 | cut -d '<' -f2 | cut -d '>' -f1)
                         echo "Submitted script for donor {i} with jobid: ${{jid}}" >> {output[0]}
                         sleep 10
                     """, i=donor, j=jname)
 
             with open(output[0], "a") as fout:
-                fout.write(f"Number of 'new' bam files expected at the completion of all the scripts for the bam file {input.filt_bam} is {len(job_name_l)}")
+                fout.write(f"Number of 'new' bam files expected at the completion of all the "
+                    f"scripts for the bam file {input.filt_bam} is {len(job_name_l)}"
+                )
 
         else:
             with open(output[0], "a") as fout:
-                fout.write(f"Skipped bam file {input.filt_bam} as all {len(hash_file.iloc[:, 0].unique())} donor file(s) was(were) already present in the given output_folder {params.split_bams_dir}")
+                fout.write(f"Skipped bam file {input.filt_bam} as all "
+                f"{len(hash_file.iloc[:, 0].unique())} donor file(s) was(were) "
+                f"already present in the given output_folder {params.split_bams_dir}"
+                )
 

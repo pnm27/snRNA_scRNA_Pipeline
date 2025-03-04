@@ -4,6 +4,7 @@
 
 - Miscellaneous:
   - [ ] Write down schemas.
+  - [ ] Add support for multiome in **update_logs.py**.
   - Add tutorials.
     - pooled snRNA seq
       - [ ] single wildcard
@@ -18,7 +19,7 @@
     - [ ] Search Ranking of readthedocs (using config file for this too).
   - [ ] Might incorporate git submodules for repos on git that I use.
   - [ ] Add new Picard metrics.
-  - [ ] Add options in config file to allow adding extra params for every software:
+  - [x] Add options in config file to allow adding extra params for every software:
   - [ ] For reruns of vireo, provide a way to retain those information in update logs file.
   - [ ] Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.
   - [ ] Simplify structure of wildcards.
@@ -182,6 +183,8 @@ The highlights of the pipeline are:
 - In **new_config.yaml**, changed 
   - *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
   - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
+  - *gt_check* in *gt_check* to *gt_check*. Reflected in **split_bams.smk** and **produce_targets.smk**.
+  - Added *demultiplex* section for the rule *demux_samples_both*. 
 - Removed mode='w+' when creating outputs in **create_Feat_Barc.py**.
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:
@@ -192,6 +195,11 @@ The highlights of the pipeline are:
   - Change 'vcf_type' wildcard to support both multi-vcf and multiome setup.
 - Simplified shell script in the rules *demux_samples* and *add_obs_to_final_count_matrix* in **demultiplex.smk**
 - Added PICARD option in new_config file.
+- In the module **demultiplex.smk**, changed logic of the rules *demux_samples* and *add_obs_to_final_count_matrix*:
+  - 3 new rules reflect 3 different output types i.e. demux_samples_solo, demux_samples_vireo, and demux_samples_both.
+  - Reflected in **produce_targets.smk**.
+  - Now, support for multiome through the rule **demux_samples_vireo** (set global *ONLY_VIREO*).
+  - Added support for multiome in **demul_samples.py** through append mode for vireo.
   
 ## Requirements
 

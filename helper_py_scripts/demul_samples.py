@@ -104,6 +104,13 @@ def get_argument_parser():
     "This should be  in this script as well as the one in the wet_lab_file "
     "and in the converter file, if present.",
     )
+    # Only for multi-HTO pools
+    parser.add_argument('--suffix', help="Suffix for each hashsolo "
+    "run per pool or each vireo run (e.g. multiome). This should match "
+    "the number of hashsolo or vireo files provided as input and in "
+    "the same sequence! ", nargs='*', 
+    metavar="suffix", type=string_or_none,
+    )
 
     # Input of mtx file
     add_redo_grp = parser.add_argument_group('START AFRESH', "Creating output "
@@ -139,7 +146,8 @@ def get_argument_parser():
     cs.add_argument('--calico_solo', dest='hashsolo_out', help="Path "
     "to cached output of hashsolo(h5ad) file(s). If no given value to "
     "parameter, will default to not process hashsolo output otherwise ",
-    nargs='*', metavar="hashsolo.h5ad", default=None, type=string_or_none,
+    action='append', metavar="hashsolo.h5ad", 
+    default=None, type=string_or_none,
     )
     cs.add_argument('--hto_sep', nargs='?', help="If, per each pool in the "
     "wet lab file (6th positional argument to this script), HTOs are "
@@ -166,19 +174,13 @@ def get_argument_parser():
 			help="If flag is used no conversion of subID is needed."
             "Also expected when used for multi-HTO setup.",
 			)
-    # Only for multi-HTO pools
-    cs.add_argument('--pref', help="Prefix for each hashsolo "
-    "run per pool. This should match the number of hashsolo files "
-    "provided as input and in the same sequence! ", nargs='*', 
-    metavar="prefix", type=string_or_none,
-    )
 
     # For vireo inputs
     vs = parser.add_argument_group("VIREO DEMUX OPTIONS", "Add "
     "genotype-based demultiplexing outputs to create final count matrix.", 
     )
     vs.add_argument('--vireo_out', help="Path to donor_ids.tsv file.",
-    metavar="donor_ids.tsv", type=string_or_none,
+    metavar="donor_ids.tsv", type=string_or_none, action='append',
     )
     vs.add_argument('--no-demux-stats-vs', action='store_true',
             dest="vs_stats",
@@ -259,6 +261,8 @@ def main():
     conv_col=args.conv_col
     pool_col=args.pool_col
     multi_hto_setup = True if len(add_calico) > 1 else False
+    multiome_setup = True if len(add_vireo) > 1 else False
+    suffixes = [''] if args.suffix is None else args.suffix
 
     starsolo_mat = args.input_file[:-13] if not h5ad_inp else None
 
@@ -451,13 +455,11 @@ def main():
             assert args.subid_convert == False, "'no-subid-convert' flag " \
             "is not expected as multiple calico_solo outputs are " \
             "provided per pool!"
-            assert len(add_calico) == len(args.pref), "Prefix options " \
-            "given to 'pref' parameter should be equal to number of " \
+            assert len(add_calico) == len(args.pref), "Suffix options " \
+            "given to 'suffix' parameter should be equal to number of " \
             "hashsolo inputs!"
 
-        for c in add_calico:
-            # For use in column names
-            suff = args.pref
+        for c, suff in zip(add_calico, suffixes):
 
             print(
                 f"Loading file {c}"
@@ -563,25 +565,40 @@ def main():
             "Starting: Assigning cell classifications by"
             f"vireoSNP at: {ct}"
             )
-        vs_dons, temp_df, conv_DonNames = demux_by_vireo(
-            adata.obs_names.to_series(), add_vireo, conv_df,
-            donor_col=donor_col,conv_col=conv_col,
-            pool_col=pool_col,pool_name=args.pool_name
-            )
-        
-        ct = datetime.datetime.now()
-        print(
-            "Assigning demultiplexing info for vireo "
-            f"at: {ct}"
-            )
-        # vireo ID
-        adata.obs['SubID_vs'] = vs_dons
-        # If converted, then save new name
-        if conv_df is not None:
-            adata.obs[args.h5ad_new_col] = conv_DonNames
+        # If more than 1 vireo outputs are given then it means
+        # more than 1 vireo is used for sample identification
+        if multiome_setup:
+            assert len(add_vireo) == len(args.suffix), "Suffix options " \
+            "given to 'suffix' parameter should be equal to number of " \
+            "vireo inputs!"
 
-        if not args.vs_stats:
-            vir_dem_stats.extend(temp_df)
+        for v, suff in zip(add_vireo, suffixes):
+            vs_dons, temp_df, conv_DonNames = demux_by_vireo(
+                adata.obs_names.to_series(), v, conv_df,
+                donor_col=donor_col,conv_col=conv_col,
+                pool_col=pool_col,pool_name=args.pool_name
+                )
+            
+            ct = datetime.datetime.now()
+            print(
+                "Assigning demultiplexing info for vireo "
+                f"at: {ct}"
+                )
+            # vireo ID and if converted, then save new name
+            if not multiome_setup and conv_df is not None:
+                adata.obs['SubID_vs'] = vs_dons
+                adata.obs[args.h5ad_new_col] = conv_DonNames
+            elif not multiome_setup and conv_df is None:
+                adata.obs['SubID_vs'] = vs_dons
+            elif multiome_setup and conv_df is not None:
+                adata.obs['SubID_vs_' + suff] = vs_dons
+                adata.obs[args.h5ad_new_col + '_' + suff] = conv_DonNames
+            else:
+                adata.obs['SubID_vs_' + suff] = vs_dons
+            
+
+            if not args.vs_stats:
+                vir_dem_stats.extend(temp_df)
         
         
  

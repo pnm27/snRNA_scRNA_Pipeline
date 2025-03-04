@@ -24,6 +24,7 @@ cellranger_arc_ref: /hpc/packages/minerva-centos7/cellranger-arc/2.0.0/refdata-c
 last_step: STARsolo_kb_solo
 picard_metrics: all # can be null, all, rnaseq or gc
 create_final_h5ad: True # can be True, False or null
+gt_check: yes # yes or no
 hto_demux_type: single # Can be single, multiple or null
 
 # Limit processing to the files present in
@@ -87,9 +88,6 @@ STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.9a
 cellranger-arc_version: cellranger-arc/2.0.2
-
-# Use this path if running hashsolo and vireoSNP simultaneously
-demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/ # Can be null or a path
 
 hto_demux_type: single
 
@@ -265,18 +263,16 @@ gt_demux_pipeline:
   final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
 
 # Demultiplex info---------------------------------------------------------
+# Use this path if running hashsolo and vireoSNP simultaneously
 demultiplex:
-  final_demultiplex_info: null
-  final_demultiplex_info_poolCol: null
-  final_demultiplex_info_donorCol: null
-  final_demultiplex_info_donorSep: null
-
-
+  demux_count_matrix_dir: /sc/arion/projects/psychAD/final_count_matrix/both/ # Can be null or a path
+  final_count_matrix_h5ad: _both_vS_out.h5ad
+  demultiplex_info_dir: /sc/arion/projects/psychAD/demultiplex/info/both/
+  demultiplex_info: _both_info.tsv
 
 # Split bams pipeline------------------------------------------------------
 
 split_bams_pipeline:
-  gt_check: yes # yes or no
   split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
     demux: vireo
     input: raw # Accepts 'h5ad' or 'raw' (output of vireo or solo)
