@@ -105,7 +105,6 @@ def get_params(wildcards, input, output):
         "cols": [config['hashsolo_demux_pipeline']['columns_to_pick'], "--columns"],
         "wet_lab_file": [config['wet_lab_info'], "--wet_lab_file"],
         "hto_sep": [config['hashsolo_demux_pipeline']['hto_sep'], "--hto_sep"],
-        "na": [config['gt_demux_pipeline']['na'], "-e"],
         "max_mito": [config['max_mito_percentage'], "-m"],
         "min_genes": [config['min_genes_per_cell'], "-g"],
         "min_cells": [config['min_cells_per_gene'], "--min_cells"],
@@ -131,7 +130,7 @@ def get_params(wildcards, input, output):
     solo_inp = ["--calico_solo"]
     vireo_inp = ["--vireo_out", "--converter_file"]
     multiome_inp = ["--vireo_out", "--vireo_out", "--converter_file"]
-    multiome_suffix = "--suffix atac cdna "
+    multiome_suffix = " --suffix atac cdna "
     inp_files = [""] # Keep first value empty as input[0] is positional arg
     multi_module = ['multiome', 'gt_demux']
     multi_module = all([ m in config['last_step'].lower() for m in multi_module])
@@ -149,20 +148,20 @@ def get_params(wildcards, input, output):
             ret_str += f'{v[1]} {v[0]} '
 
     if global_vars.ONLY_SOLO or global_vars.ADD_SOLO:
-        inp_files = solo_inp
+        inp_files += solo_inp
     elif global_vars.ONLY_VIREO or global_vars.ADD_VIREO:
         if multi_module:
-            inp_files = multiome_inp
+            inp_files += multiome_inp
         else:
-            inp_files = vireo_inp
+            inp_files += vireo_inp
     elif global_vars.BOTH_DEMUX:
-        inp_files = solo_inp + vireo_inp
+        inp_files += solo_inp + vireo_inp
 
     for k, v in zip(inp_files, input):
         if k == "":
             pos_args += f'{v} '
         else:
-            ret_str += f'{k} {v}'
+            ret_str += f'{k} {v} '
 
     if multi_module:
         ret_str += multiome_suffix
@@ -170,9 +169,9 @@ def get_params(wildcards, input, output):
     pos_args+= f'{output[0]} {gene_info_file} '
 
     # Append positional args at the end of optional args
-    ret_str+=pos_args
+    pos_args+=ret_str
 
-    return ret_str
+    return pos_args
 
 
 # DEPRACATED
@@ -274,7 +273,7 @@ rule demux_samples_solo:
     
     shell: 
         """  
-        python3 helper_py_scripts/demul_samples.py {params.extra}
+        python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
         """
 
 
@@ -308,7 +307,7 @@ rule demux_samples_vireo:
     
     shell: 
         """  
-        python3 helper_py_scripts/demul_samples.py {params.extra}
+        python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
         """
 
 
@@ -342,7 +341,7 @@ rule demux_samples_both:
     
     shell: 
         """  
-        python3 helper_py_scripts/demul_samples.py {params.extra}
+        python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
         """
 
 

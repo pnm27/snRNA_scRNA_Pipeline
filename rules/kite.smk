@@ -84,8 +84,7 @@ def allocate_time_CHB(wildcards, attempt):
 rule create_FB:
     input:
         R1=get_r1_hto_fastqs,
-        R2=get_r2_hto_fastqs,
-        sample_sheet=config['wet_lab_info']
+        R2=get_r2_hto_fastqs
         
     # priority: 10
 
@@ -93,7 +92,8 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        sample_name=lambda wildcards: wildcards.pool.replace('-', '_') + '_cDNA' #WILDCARDS
+        sample_name=lambda wildcards: wildcards.pool.replace('-', '_') + '_cDNA', #WILDCARDS
+        sample_sheet=config['wet_lab_info']
 
     # For snakemake < v8
     # threads: 1
@@ -105,7 +105,7 @@ rule create_FB:
 
     shell: 
         """
-        python3 helper_py_scripts/create_Feat_Barc.py {input.sample_sheet} \
+        python3 helper_py_scripts/create_Feat_Barc.py {params.sample_sheet} \
         -o {output} -s {params.sample_name} -c {config[kb_pipeline][columns_to_pick]}
         """
   

@@ -19,7 +19,7 @@ def auto_read(fname, lev=1, **kwargs) -> pd.DataFrame :
             return pd.read_csv(fname, header=0, **kwargs)
         else:
             return pd.read_csv(fname, header=list(range(lev)), **kwargs)
-    elif fname.endswith('.tsv'):
+    elif fname.endswith('.tsv') or fname.endswith('.txt'):
         if lev == 1:
             return pd.read_csv(fname, sep='\t', header=0, **kwargs)
         else:

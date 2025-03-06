@@ -260,8 +260,8 @@ def main():
     donor_col=args.donor_col
     conv_col=args.conv_col
     pool_col=args.pool_col
-    multi_hto_setup = True if len(add_calico) > 1 else False
-    multiome_setup = True if len(add_vireo) > 1 else False
+    multi_hto_setup = False if add_calico is None else len(add_calico) > 1
+    multiome_setup = False if add_vireo is None else len(add_vireo) > 1
     suffixes = [''] if args.suffix is None else args.suffix
 
     starsolo_mat = args.input_file[:-13] if not h5ad_inp else None
