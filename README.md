@@ -13,6 +13,7 @@
       - [ ] single wildcard
       - [ ] multiple wildcards
     - Double HTOs
+  - Generalize Outputs for split bam pipeline (whole of **split_bams.smk**).
   - [ ] Remove dependency on STARsolo as an aligner.
   - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
   - [x] Combine sub-workflows split_bams and split_bams_gt.
@@ -140,7 +141,7 @@ The highlights of the pipeline are:
   - [x] Now, mito file is in params (earlier was an output)
   - [x] Now, bed file is in params (earlier was an inputs)
   - [x] Streamlined
-- Major revisions to **create_per_donor_bams.bash** script
+- Major revisions to *create_per_donor_bams.bash* script
   - [x] Consolidated gt and non-gt versions.
   - [x] Handles saving mito_file much elegantly.
   - [x] Supports argument parsing (with support for older positional args)
@@ -151,16 +152,16 @@ The highlights of the pipeline are:
   - [x] Removed the option to overwrite the outputs as before (but still present in python script).
   - [x] Rule supports single demux (while the script can handle multiple).
   - [x] h5ad input alone support for calico_solo while vireo output is supported as is.
-- Major revisions to **run_update_logs.sh** script
+- Major revisions to *run_update_logs.sh* script
   - [x] Builds command from input using asssociative arrays.
   - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
-  - [x] Now support for STARsolo 2.7.10 with **Final_out_MAP_2_7_10a_latest.tsv**.
-- Major revisions to **update_logs.py** script
+  - [x] Now support for STARsolo 2.7.10 with *Final_out_MAP_2_7_10a_latest.tsv*.
+- Major revisions to *update_logs.py* script
   - [x] All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes *None* in its absence (with no argument value other values are used).
   - [x] To emulate missingness (picard and/or demultiplexing) just use *empty* values.
   - [x] Missingness of *picard_dir* implies not collecting GCBias and RNASeq Metrics.
   - [x] Similarly, missingness of *demul_dir* implies not demultiplexing info.
-- New file - **Final_out_MAP_2_7_10a_latest_info.xlsx** - contains more info related to **Final_out_MAP_2_7_10a_latest.tsv**.
+- New file - *Final_out_MAP_2_7_10a_latest_info.xlsx* - contains more info related to *Final_out_MAP_2_7_10a_latest.tsv*.
 - Changed the section name from *demux_pipeline* to *hashsolo_demux_pipeline* in **new_config.yaml** file.
 - **calico_solo_demux.smk**: At lines numbered 3 and 9.
 - **create_logs.smk**: At lines numbered 11 and 52.
@@ -174,26 +175,26 @@ The highlights of the pipeline are:
   - **produce_targets.smk**: At line numbered 111.
   - **identify_swaps.smk**: At line numbered 3.
 - Added support for Snakemake transition to version > 8.
-  - Added **workflow_profile/config.yaml** which gets reflected in **run_snakemake.sh**.
-  - To emulate previous behavior's for profile manually edited the **lsf_executor_plugin** and added ENV variable.
+  - Added *workflow_profile/config.yaml* which gets reflected in *run_snakemake.sh*.
+  - To emulate previous behavior's for profile manually edited the *lsf_executor_plugin* and added ENV variable.
   - *lsf.yaml* still is present for snakemake \< v8.
   - Changed the *threads* directive and replaced with resources: *cpus_per_task*.
 - Removed dependence on **resources.smk**. Instead all resource requirements are within each snakemake file.
 - Simplified the rule *cellSNP* in **genotype_demux.smk**.
   - Now a parameter *cmd_str_csnp* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
   - Simplified the commandline for execution.
-  - Now the rule picks the biggest of given *n_proc* in **new_config.yaml** and twice of the number of cpus provided.
+  - Now the rule picks the biggest of given *n_proc* in *new_config.yaml* and twice of the number of cpus provided.
 - Simplified the rule *vireoSNP* in **genotype_demux.smk**.
   - Now a parameter *cmd_str_vireo* function to replace the use of indexed arrays in shell (was working Snakemake \< 8).
-  - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in **new_config.yaml** is expected to have headers.
+  - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in *new_config.yaml* is expected to have headers.
   - Simplified the commandline for execution.
-- Usage of *pd.concat* now in concordance with [FutureWarning](https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492) in **update_logs.py**.
+- Usage of *pd.concat* now in concordance with [FutureWarning](https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492) in *update_logs.py*.
 - In **new_config.yaml**, changed 
   - *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
   - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
   - *gt_check* in *gt_check* to *gt_check*. Reflected in **split_bams.smk** and **produce_targets.smk**.
-  - Added *demultiplex* section for the rule *demux_samples_both*. 
-- Removed mode='w+' when creating outputs in **create_Feat_Barc.py**.
+  - Added *demultiplex* section for the rule *demux_samples_both*.
+- Removed mode='w+' when creating outputs in *create_Feat_Barc.py*.
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:
   - genotype_demux
@@ -208,7 +209,7 @@ The highlights of the pipeline are:
   - 3 new rules reflect 3 different output types i.e. demux_samples_solo, demux_samples_vireo, and demux_samples_both.
   - Reflected in **produce_targets.smk**.
   - Now, support for multiome through the rule **demux_samples_vireo** (set global *ONLY_VIREO*).
-  - Added support for multiome in **demul_samples.py** through append mode for vireo.
+  - Added support for multiome in *demul_samples.py* through append mode for vireo.
   
 ## Requirements
 

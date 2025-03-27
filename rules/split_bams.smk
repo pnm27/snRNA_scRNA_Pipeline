@@ -66,25 +66,57 @@ def subset_to_chr(wildcards):
 
 
 def get_bam_to_split(wildcards):
-    ret_fullBam = (
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}" \
-        if 'multiome' in config['last_step'].lower() \
-        else \
-
+    fullBam = ""
+    subBam = ""
+    filtBam = ""
+    if 'multiome' in config['last_step'].lower():
+        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+            fullBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0])
+            subBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['short_bam']) # WILDCARDS
+            filtBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['filt_bam']) # WILDCARDS
+        else:
+            fullBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+            subBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['short_bam']) # WILDCARDS
+            filtBam += (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['filt_bam']) # WILDCARDS
+    else:
+        fullBam += (
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+            )
+        subBam += (
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
         )
-    ret_subBam = (
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" \
-        if 'multiome' in config['last_step'].lower() \
-        else \
-
-    )
+        filtBam + = (
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
+        )
+        
     if config['gt_check']:
         if config['split_bams_pipeline']['subset_chr'] is None:
-            return ret_fullBam
+            return fullBam
         else:
-            return 
+            return subBam
     else:
-        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
+        return 
 
 
 def get_mito_file(wildcards):
@@ -154,7 +186,7 @@ rule create_inp_splitBams:
         sleep 60
         """
 
-
+# Generalize Output
 rule bamfilt_by_CB:
     input:
         bam=get_bam,

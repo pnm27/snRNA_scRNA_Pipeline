@@ -197,8 +197,7 @@ def targets_multiome(conf_f, last, progs=None,
 
     elif last == 'splitBams':
 
-        return target_files = targets_SplitBams(conf_f=conf_f, progs=metrics,
-            multiome=multiome)
+        return targets_SplitBams(conf_f=conf_f, progs=metrics, multiome=multiome)
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
