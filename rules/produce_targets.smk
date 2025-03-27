@@ -16,7 +16,7 @@ def targets_STARsolo(conf_f) -> list:
     return target_list
 
 
-
+# Add CollectInsertSizeMetrics for ATAC part of multiome
 def targets_PICARD(conf_f, progs='all') -> list:
     
     inp_pref = conf_f['STARsolo_pipeline']['bams_dir']
@@ -129,17 +129,19 @@ def targets_gt_demux2(conf_f, progs=None, multiome=False) -> list:
 def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
     sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
-    if config['gt_check']:
-        out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir2']
-    else:
-        out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
-    op = conf_f['fold_struct_bam_split1']
+    for d in sub_dir:
+        if config['gt_check']:
+            out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir2']
+        else:
+            out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
+        op = conf_f['fold_struct_bam_split1']
 
-    target_list = [f"{out_dir}{op}"]
+        target_list.append(os.path.join(f"{out_dir}", f"{op}", d))
     
     # STARsolo* + PICARD (any) progs
     if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
-        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs))
+        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs, 
+            multiome=multiome))
     
     return target_list
 
@@ -192,6 +194,11 @@ def targets_multiome(conf_f, last, progs=None,
     elif last == 'vireo':
         return targets_gt_demux(conf_f=conf_f, progs=None, 
             h5ad=h5ad, multiome=multiome)
+
+    elif last == 'splitBams':
+
+        return target_files = targets_SplitBams(conf_f=conf_f, progs=metrics,
+            multiome=multiome)
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
@@ -367,7 +374,6 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             # Add final steps for split_bams
             target_files = targets_SplitBams(conf_f=conf_f, progs=metrics)
             suff = ".txt"
-            # global_vars.ONLY_VIREO = True
             # If multiple vcfs per sample needs to be run or not
             if isinstance(VCF_TYPE, list):
                 
@@ -384,8 +390,8 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 raise ValueError("The wildcard used to test multi_vcf input (VCF_TYPE) is of unexpected type! Please check")
 
             # Add final steps for gt_demux
-            target_files = targets_gt_demux2(conf_f=conf_f, progs=metrics)
-            suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
+            # target_files = targets_gt_demux2(conf_f=conf_f, progs=metrics)
+            # suff = config['gt_demux_pipeline']['final_count_matrix_h5ad']
             # ONLY_VIREO = True # Set this or ADD_VIREO by figuring out or asking user input
 
             # If multiple vcfs per sample needs to be run
@@ -395,7 +401,10 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 for id, target in enumerate(target_files):
                     if id == 0:
                         temp_list = [expand(f"{target}", zip, **wc_d)]
-                        final_target_list.extend([expand(f"{t}_{{vcf_type}}{suff}", vcf_type=VCF_TYPE) for t in temp_list])
+                        final_target_list.extend(
+                            [expand(os.path.join(f"{t}", f"{{vcf_type}}{suff}"), vcf_type=VCF_TYPE) \
+                            for t in temp_list]
+                        )
                     else:
                         final_target_list.extend(expand(f"{target}", zip, **wc_d))
                 # temp_list= [expand(f"{target}", **wc_d) for target in target_files][0] # Single wildcard
@@ -407,7 +416,9 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
                 for id, target in enumerate(target_files):
                     if id == 0:
                         temp_list = expand(f"{target}", zip, **wc_d)
-                        final_target_list.extend([expand(f"{target}_{VCF_TYPE}{suff}", zip, **wc_d) for t in temp_list])
+                        final_target_list.extend([
+                            os.path.join(f"{target}", f"{VCF_TYPE}{suff}") \
+                            for t in temp_list])
                     else:
                         final_target_list.extend(expand(f"{target}", zip, **wc_d))
 
@@ -447,11 +458,22 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
         elif "multiome_gt_demux" in target_step:
             target_files = targets_multiome(conf_f=conf_f, last="vireo", multiome=multiome,
                 h5ad=create_h5ad)
-            # target_files = targets_gt_demux(conf_f=conf_f, progs=metrics, 
-            #                 h5ad=create_h5ad, multiome=multiome)
-            # global_vars.ONLY_VIREO = True
-            # if not create_h5ad:
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
+
+        elif "multiome_split_bams_gt_demux" in target_step:
+            target_files = targets_multiome(conf_f=conf_f, last="splitBams", multiome=multiome,
+                h5ad=create_h5ad)
+            suff = ".txt"
+            # global_vars.ONLY_VIREO = True
+            # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
+            # final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
+            
+            final_target_list = []
+            for id, target in enumerate(target_files):
+                if id == 0:
+                    final_target_list.extend(expand(f"{target}{suff}", zip, **wc_d))
+                else:
+                    final_target_list.extend(expand(f"{target}", zip, **wc_d))
 
         else:
             # print("Wrong inputs to produce_targets function!!")

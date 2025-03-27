@@ -21,6 +21,13 @@
   - [ ] Add new Picard metrics.
   - [x] Add options in config file to allow adding extra params for every software:
   - [ ] For reruns of vireo, provide a way to retain those information in update logs file.
+  - [ ] Retain information from log runs:
+    - [ ] Use command like following to extract *variants matched to genotype VCF out of total variants piledup for the pool*.
+  
+      ```shell
+      find -mindepth 1 -maxdepth 1 -type d -exec sh -c 'a=$(sed "s#\./##g" <<< {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d " " -f1 | rev); grep "variants matched to donor VCF" ${a}/${b}' \;
+      ```
+
   - [ ] Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.
   - [ ] Simplify structure of wildcards.
     - Folder structure should include
@@ -67,6 +74,7 @@
 - picard_metrics:
   - new_config params:
   - snakemake_rules:
+    - [ ] Add CollectInsertSizeMetrics for ATAC part of multiome.
   - scripts:
 - produce_targets:
   - new_config params:
@@ -193,6 +201,7 @@ The highlights of the pipeline are:
     - Fixed issues for multiome in *create_inp_cellSNP* (to add -1 in cell barcodes as bam by cellranger has "-1" suffix)
   - demultiplex
   - Change 'vcf_type' wildcard to support both multi-vcf and multiome setup.
+- Added multiome support for splitting bams (using both cDNA and ATAC modalities).
 - Simplified shell script in the rules *demux_samples* and *add_obs_to_final_count_matrix* in **demultiplex.smk**
 - Added PICARD option in new_config file.
 - In the module **demultiplex.smk**, changed logic of the rules *demux_samples* and *add_obs_to_final_count_matrix*:

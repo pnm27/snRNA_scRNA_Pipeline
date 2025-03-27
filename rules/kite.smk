@@ -92,7 +92,7 @@ rule create_FB:
         f"{config['kb_pipeline']['kallisto_bustools_dir']}{config['fold_struct_kb']}{config['kb_pipeline']['feature_barcodes']}"
 
     params:
-        sample_name=lambda wildcards: wildcards.pool.replace('-', '_') + '_cDNA', #WILDCARDS
+        sample_name=lambda wildcards: wildcards.pool.replace('-', '_') + '_cDNA', # WILDCARDS
         sample_sheet=config['wet_lab_info']
 
     # For snakemake < v8

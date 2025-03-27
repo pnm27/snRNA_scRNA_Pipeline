@@ -49,7 +49,7 @@ def get_filt_barcodes(wildcards):
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}"
                 "/filtered_feature_bc_matrix/matrix.mtx.gz"
-            ).format(pool=wildcards.pool.split('/')[0])
+            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
 
         else:
             return (
@@ -109,17 +109,17 @@ def get_cellsnp_inputs(wildcards):
         f"{config['fold_struct_filt_bc']}.txt"
     ]
     if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower():
+        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
             ret_list.append((
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0])
+                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
             )
         else:
             ret_list.append((
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0])
+                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
             )
     else:
         ret_list.append((
@@ -168,7 +168,7 @@ def get_vir_inputs(wildcards):
         # col_set2 = ["pool", "n_dons"]
         n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
         # Make snakemake's wildcard same as the value in the "pool" column
-        samp_name = '-'.join(wildcards.pool.split('-')[:-1])
+        samp_name = '-'.join(wildcards.pool.split('-')[:-1]) # WILDCARDS
         # For condn. 1)
         if config['gt_demux_pipeline']['donors_per_pool_file'] is None \
             and n_cols == 3:
@@ -309,7 +309,7 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     #     raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
     
     if samp_name in temp_df[pool_col].values:
-        ret_str += " -N " + str(temp_df.loc[temp_df[pool_col] == samp_name, don_col].values[0])
+        ret_str += " -N " + str(temp_df.loc[temp_df[pool_col].str.lower() == samp_name.lower(), don_col].values[0])
 
     return ret_str
         
@@ -347,7 +347,7 @@ def allocate_time_CICS(wildcards, attempt):
     return 2*attempt+1
 
 
-def allocate_mem_cS(wildcards, attempt):
+def allocate_mem_cS(wildcards, attempt): # WILDCARDS
     if 'vcf_type' in wildcards:
         if wildcards.vcf_type.endswith('_max50k'):
             return 200+80*(attempt-1)
@@ -361,7 +361,7 @@ def allocate_mem_cS(wildcards, attempt):
         return 200+200*(attempt-1)
 
 
-def allocate_time_cS(wildcards, attempt):
+def allocate_time_cS(wildcards, attempt): # WILDCARDS
     if 'vcf_type' in wildcards:
         if wildcards.vcf_type.endswith('_max50k'):
             return 30+20*(attempt-1)
@@ -375,7 +375,7 @@ def allocate_time_cS(wildcards, attempt):
         return 240+60*(attempt-1)
 
 
-def allocate_mem_vS(wildcards, attempt):
+def allocate_mem_vS(wildcards, attempt): # WILDCARDS
     if 'vcf_type' in wildcards:
         if wildcards.vcf_type.endswith('_max50k'):
             return 3000+100*(attempt-1)
@@ -389,7 +389,7 @@ def allocate_mem_vS(wildcards, attempt):
         return 35000+500*(attempt-1)
 
 
-def allocate_time_vS(wildcards, attempt):
+def allocate_time_vS(wildcards, attempt): # WILDCARDS
     if 'vcf_type' in wildcards:
         if wildcards.vcf_type.endswith('_max50k'):
             return 10+5*(attempt-1)
@@ -512,8 +512,10 @@ rule cellSNP:
                 --UMItag {params.umi_tag} --genotype --gzip
         else
             set -x
-            bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' \
-                -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
+            if [ ! -f {params.filt_vcf_dir}"/0002.vcf.gz" ]; then
+                bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' \
+                    -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
+            fi
             cellsnp-lite {params.cmd_str} -O {params.output_prefix} \
                 -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} \
                 --minMAF {params.min_maf} --minCOUNT {params.min_ct} \

@@ -85,7 +85,7 @@ def get_limitsjdbval_coll(wildcards, resources):
 # Resource Allocation ------------------
 
 def allocate_mem_SS(wildcards, attempt):
-    return 25000+1000*(attempt-1)
+    return 15000+1000*(attempt-1)
 
 def allocate_time_SS(wildcards, attempt):
     return 1440
@@ -110,23 +110,22 @@ rule STARsolo_sort:
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
         SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
         features=config['STARsolo_pipeline']['features'],
-        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{pool}}-cDNA.txt",  # wildcard
-        star_def_log_out=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], "_Log.out"),
+        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{pool}}-cDNA.txt",  # WILDCARDS
+        star_def_log_out=lambda wildcards, output: output.bam.replace(config['STARsolo_pipeline']['bam'], "_Log.out"),
         solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
-        out_pref=lambda wildcards, output: output[0].replace(config['STARsolo_pipeline']['bam'], '_'),
-        count_matrix_dir=lambda wildcards, output: output[8][:-13],
+        out_pref=lambda wildcards, output: output.bam.replace(config['STARsolo_pipeline']['bam'], '_'),
         threads=config['STARsolo_pipeline']['run_threads']
 
 
     output:
-        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
-        gf_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
+        gf_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
+        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
         gf_mat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}",
         gf_bc=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}"
 
@@ -136,7 +135,7 @@ rule STARsolo_sort:
    
     resources:
         cpus_per_task=6, # For snakemake > v8
-        mem_mb_per_cpu=allocate_mem_SS,
+        mem_mb=allocate_mem_SS,
         time_min=allocate_time_SS,
         attempt=lambda wildcards, attempt: attempt
 

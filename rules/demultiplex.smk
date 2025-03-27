@@ -55,7 +55,7 @@ def get_inputs_demux_vireo(wildcards):
             if config['last_step'].lower().endswith('multi_vcf'):
                 ret_list.append(
                     f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                    f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+                    f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/" # WILDCARDS
                     f"{config['gt_demux_pipeline']['donors_classification']}"
                     )
             else:
@@ -83,7 +83,7 @@ def get_inputs_demux_both(wildcards):
     if config['last_step'].lower().endswith('multi_vcf')  :
         ret_list.append(
             f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/"
+            f"{config['fold_struct_gt_demux']}{wildcards.vcf_type}/" # WILDCARDS
             f"{config['gt_demux_pipeline']['donors_classification']}"
             )
     else:
@@ -258,7 +258,7 @@ rule demux_samples_solo:
         # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
         # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', # WILDCARDS
         # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
         # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
         # condn=get_condn,
@@ -292,7 +292,7 @@ rule demux_samples_vireo:
         # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
         # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', # WILDCARDS
         # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
         # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
         # condn=get_condn,
@@ -326,7 +326,7 @@ rule demux_samples_both:
         # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
         # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
         # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+        pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', # WILDCARDS
         # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
         # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
         # condn=get_condn,
@@ -365,7 +365,7 @@ rule demux_samples_both:
 #             # samples_info=config['wet_lab_info'], # File containing multiplexing info of each set
 #             # cols=config['hashsolo_demux_pipeline']['columns_to_pick'],  # Columns of the wet lab info file correspond RESPECTIVELY to cDNA_ID(should correspond to the name of the processed file), HTO numbers and Donors/SubIDs (Header names and not numbers)
 #             # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-#             pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', #WILDCARDS
+#             pool_name=lambda wildcards: wildcards.pool.replace('-', '_')+'_cDNA', # WILDCARDS
 #             # hto_sep=config['hashsolo_demux_pipeline']['hto_sep'],
 #             # condn=get_condn2,
 #             # subid_convert=config['hashsolo_demux_pipeline']['SubID_convert']

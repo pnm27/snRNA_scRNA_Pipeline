@@ -17,10 +17,28 @@ def get_inp_splitBam(wildcards):
         # else:
         return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
 
+def get_bam(wildcards):
+    if 'multiome' in config['last_step'].lower():
+        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+            return (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+                
+        else:
+            return (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+    else:
+        return (
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        )
+
 
 def get_h5ad_cols(wildcards):
     return ' '.join()
-
 
 
 def get_chr_pref(wildcards):
@@ -48,11 +66,23 @@ def subset_to_chr(wildcards):
 
 
 def get_bam_to_split(wildcards):
+    ret_fullBam = (
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}" \
+        if 'multiome' in config['last_step'].lower() \
+        else \
+
+        )
+    ret_subBam = (
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" \
+        if 'multiome' in config['last_step'].lower() \
+        else \
+
+    )
     if config['gt_check']:
         if config['split_bams_pipeline']['subset_chr'] is None:
-            return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+            return ret_fullBam
         else:
-            return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
+            return 
     else:
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
 
@@ -127,8 +157,8 @@ rule create_inp_splitBams:
 
 rule bamfilt_by_CB:
     input:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
+        bam=get_bam,
+        hash_file=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
 
     output:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
@@ -136,7 +166,7 @@ rule bamfilt_by_CB:
 
     params:
         # NUM = pool, ID1=donor
-        temp_bc=f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt"
+        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt"
 
 
     # For snakemake < v8
@@ -155,8 +185,8 @@ rule bamfilt_by_CB:
     shell:
         """
         mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
-        cut -f2 <(tail -n +2 {input[1]}) > {params.temp_bc}
-        samtools view -q 255 -D CB:{params.temp_bc} {input[0]} -bho {output}
+        cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
+        samtools view -q 255 -D CB:{params.temp_bc} {input.bam} -bho {output}
         samtools index {output}
         rm {params.temp_bc}
         sleep 10
@@ -165,7 +195,7 @@ rule bamfilt_by_CB:
 
 rule filt_chr_bams:
     input:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        get_bam
 
     output:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
