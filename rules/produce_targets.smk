@@ -16,6 +16,7 @@ def targets_STARsolo(conf_f) -> list:
     return target_list
 
 
+# Add support for multiome
 # Add CollectInsertSizeMetrics for ATAC part of multiome
 def targets_PICARD(conf_f, progs='all') -> list:
     
@@ -141,7 +142,7 @@ def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
     # STARsolo* + PICARD (any) progs
     if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
         target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs, 
-            multiome=multiome))
+            ))
     
     return target_list
 
@@ -155,12 +156,17 @@ def targets_resolve_swaps_gt_demux(conf_f) -> list:
     return [f"{out_dir}{fs}{suff}"]
 
 
-def targets_gt_demux_identify_swaps(conf_f) -> list:
+def targets_gt_demux_identify_swaps(conf_f, multiome=False) -> list:
+
     out_dir = conf_f['identify_swaps']['mbv_out_dir']
     fs = conf_f['fold_struct_swaps_check']
     suff = conf_f['identify_swaps']['mbv_suffix']
-    
-    return [f"{out_dir}{fs}{suff}"]
+    sub_dir = ["ATAC", "cDNA"] if multiome else ['']
+    target_list = []
+    for d in sub_dir:    
+        target_list.append(os.path.join(f"{out_dir}", d, f"{fs}{suff}"))
+
+    return target_list
 
 
 def targets_multibamsummary(conf_f) -> list:
@@ -185,7 +191,6 @@ def targets_multiome(conf_f, last, progs=None,
     h5ad=False, multiome=False) -> list:
     out_dir = conf_f['cellranger_arc_count']['bams_dir']
     if last == 'alignment':
-
         return [
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
@@ -196,8 +201,10 @@ def targets_multiome(conf_f, last, progs=None,
             h5ad=h5ad, multiome=multiome)
 
     elif last == 'splitBams':
+        return targets_SplitBams(conf_f=conf_f, progs=progs, multiome=multiome)
 
-        return targets_SplitBams(conf_f=conf_f, progs=metrics, multiome=multiome)
+    elif last == 'identifySwaps':
+        return targets_gt_demux_identify_swaps(conf_f=conf_f, multiome=multiome)
 
 
 # To run STARsolo* + kb pipeline + (optional)PICARD progs
@@ -455,24 +462,30 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
 
         # Support creation of h5ad or not
         elif "multiome_gt_demux" in target_step:
-            target_files = targets_multiome(conf_f=conf_f, last="vireo", multiome=multiome,
-                h5ad=create_h5ad)
+            target_files = targets_multiome(conf_f=conf_f, last="vireo", progs=metrics, 
+            multiome=multiome, h5ad=create_h5ad)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         elif "multiome_split_bams_gt_demux" in target_step:
-            target_files = targets_multiome(conf_f=conf_f, last="splitBams", multiome=multiome,
-                h5ad=create_h5ad)
+            target_files = targets_multiome(conf_f=conf_f, last="splitBams", progs=metrics,
+            multiome=multiome, h5ad=create_h5ad)
             suff = ".txt"
             # global_vars.ONLY_VIREO = True
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
             # final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
             
             final_target_list = []
+
             for id, target in enumerate(target_files):
-                if id == 0:
+                if id <= 1:
                     final_target_list.extend(expand(f"{target}{suff}", zip, **wc_d))
                 else:
                     final_target_list.extend(expand(f"{target}", zip, **wc_d))
+
+        elif target_step == "multiome_gt_demux_identify_swaps":
+            target_files = targets_multiome(conf_f=conf_f, last="identifySwaps", progs=metrics,
+            multiome=multiome, h5ad=create_h5ad)
+            final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         else:
             # print("Wrong inputs to produce_targets function!!")

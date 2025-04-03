@@ -1,6 +1,18 @@
 def get_bam_inputs(wildcards):
+    
     if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
-        return f"{config['split_bams_pipeline']['split_bams_dir2']}{config['fold_struct_bam_split2']}{config['fold_struct_gt_demux_redo']}.bam"
+        if 'multiome' in config['last_step'].lower():
+            return (
+                f"{config['split_bams_pipeline']['split_bams_dir2']}"
+                f"{config['fold_struct_bam_split2']}"
+                f"{config['fold_struct_gt_demux_redo']}.bam"
+            ).format(**wildcards)
+        else:
+            return (
+                f"{config['split_bams_pipeline']['split_bams_dir2']}"
+                f"{config['fold_struct_bam_split2']}"
+                f"{config['fold_struct_gt_demux_redo']}.bam"
+            )
     else:
         return config['identify_swaps']['mbv_inp']
 
@@ -37,6 +49,9 @@ rule qtltools_mbv:
 
     envmodules:
         "qtltools/1.3"
+
+    wildcard_constraints:
+        donor=r"[^_]" #WILDCARDS
 
     shell:
         """

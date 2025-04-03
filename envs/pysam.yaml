@@ -5,7 +5,8 @@ channels:
   - anaconda
   - defaults
 dependencies:
-  - python ==3.9
-  - pysam ==0.16
+  - python==3.11
+  - pysam==0.23
+  - pip
   - pip:
       - anndata==0.8.0

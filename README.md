@@ -13,11 +13,13 @@
       - [ ] single wildcard
       - [ ] multiple wildcards
     - Double HTOs
-  - Generalize Outputs for split bam pipeline (whole of **split_bams.smk**).
+  - Generalize outputs to accommodate multiome.
+    - [ ] split bam pipeline (whole of **split_bams.smk**).
+    - [ ] filt_chr_bams (filt_chr_bams_multiome)
   - [ ] Remove dependency on STARsolo as an aligner.
   - [ ] For rules that use **genefull_matrices** make input function that take either *Gene* or *GeneFull* dependent on the project.
   - [x] Combine sub-workflows split_bams and split_bams_gt.
-    - [ ] Search Ranking of readthedocs (using config file for this too).
+  - [ ] Search Ranking of readthedocs (using config file for this too).
   - [ ] Might incorporate git submodules for repos on git that I use.
   - [ ] Add new Picard metrics.
   - [x] Add options in config file to allow adding extra params for every software:
@@ -29,9 +31,9 @@
       find -mindepth 1 -maxdepth 1 -type d -exec sh -c 'a=$(sed "s#\./##g" <<< {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d " " -f1 | rev); grep "variants matched to donor VCF" ${a}/${b}' \;
       ```
 
+  - [ ] Permanent fix for the rule *filt_chr_bams_multiome*. 
   - [ ] Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.
-  - [ ] Simplify structure of wildcards.
-    - Folder structure should include
+  - [ ] Simplify structure of wildcards. Folder structure should include them
 - analyse_vireo:
   - new_config params:
   - snakemake_rules:

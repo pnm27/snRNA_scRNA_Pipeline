@@ -117,7 +117,8 @@ def main():
 
     # USEFUL FOR MULTI DEMUX METHOD CASE
     file_ext = re.search(r'(\.[^.]+)$', fout)
-    file_basename = fout.replace(file_ext.group(1), '') if file_ext is not None else fout
+    file_ext = file_ext.group(0) if file_ext is not None else None
+    file_basename = fout.replace(file_ext, '') if file_ext is not None else fout
 
     # Call the respective functions
     # args.func(args)

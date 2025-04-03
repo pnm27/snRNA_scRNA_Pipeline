@@ -59,10 +59,10 @@ def get_mito(wildcards):
 
 
 def subset_to_chr(wildcards):
-    if config['chr_prefix'] == None or config['split_bams_pipeline']['subset_chr'].startswith(config['chr_prefix']):
+    if config['chr_prefix'] == None or str(config['split_bams_pipeline']['subset_chr']).startswith(config['chr_prefix']):
         return config['split_bams_pipeline']['subset_chr']
     else:
-        return config['chr_prefix'] + config['split_bams_pipeline']['subset_chr'] 
+        return config['chr_prefix'] + str(config['split_bams_pipeline']['subset_chr'])
 
 
 def get_bam_to_split(wildcards):
@@ -105,7 +105,7 @@ def get_bam_to_split(wildcards):
             f"{config['STARsolo_pipeline']['bams_dir']}"
             f"{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
         )
-        filtBam + = (
+        filtBam += (
             f"{config['STARsolo_pipeline']['bams_dir']}"
             f"{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
         )
@@ -116,7 +116,7 @@ def get_bam_to_split(wildcards):
         else:
             return subBam
     else:
-        return 
+        return filtBam
 
 
 def get_mito_file(wildcards):
@@ -172,7 +172,7 @@ rule create_inp_splitBams:
     shell:
         """
         cmd_str="{input} {output} --split_by {params.demux_method} "
-        if [[ "{params.conv}" != "None" || "{params.conv}" != "False" ]]; then
+        if [[ "{params.conv}" != "None" && "{params.conv}" != "False" ]]; then
             cmd_str+="--conv_file {params.conv} "
             cmd_str+="--conv_file_from_col {params.from_col} "
             cmd_str+="--conv_file_to_col {params.to_col} "
@@ -251,6 +251,37 @@ rule filt_chr_bams:
     shell:
         """
         samtools view {input} {params.sub_chr} -bho {output}
+        samtools index {output}
+        """
+
+
+rule filt_chr_bams_multiome:
+    input:
+        get_bam
+
+    output:
+        f"{config['cellranger_arc_count']['bams_dir']}{config['fold_struct']}{{bam}}{config['split_bams_pipeline']['short_bam']}" # generalize this
+
+    params:
+        sub_chr=subset_to_chr
+
+    # For snakemake < v8
+    # threads: 1
+
+    resources:
+        cpus_per_task=1, # For snakemake > v8
+        mem_mb=allocate_mem_FCB,
+        time_min=allocate_time_FCB
+
+    conda: "../envs/pysam.yaml"
+
+    envmodules:
+        "samtools"
+
+    shell:
+        """
+        samtools view {input} {params.sub_chr} -bho {output}
+        samtools index {output}
         """
 
 

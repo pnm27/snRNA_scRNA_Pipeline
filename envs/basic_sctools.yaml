@@ -5,11 +5,12 @@ channels:
   - anaconda
   - defaults
 dependencies:
-  - python==3.9
-  - anndata==0.8.0
+  - python==3.11
+  - anndata==0.11.0
   - scanpy==1.9.3
   - pandas
   - numpy
+  - pip
   - pip:
     - regex
     - glob2

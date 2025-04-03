@@ -89,13 +89,18 @@ rule cellranger_arc_count:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
-        outdir=protected(directory(
+        outdir=directory(
             f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
-            ))
+            )
 
     log:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/cellranger-arc-count.txt"
-   
+    
+    # Restrict wildcards so that ATAC and cDNA filt or subset bams 
+    # (from split_bams.smk) won't get triggerred
+    wildcard_constraints:
+        pool=r"[^/]" #WILDCARDS
+
     resources:
         cpus_per_task=20, # For snakemake > v8
         mem_mb=allocate_mem_CAC,
