@@ -395,6 +395,7 @@ def main():
         
         # Assign 'QC_pass' observation according to the selected filters
         adata.obs['QC_pass'] = qc_pass_cells
+        adata.var['QC_pass'] = gene_subset.astype('bool')
         print(adata)
     
     else:

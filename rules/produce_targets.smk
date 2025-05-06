@@ -161,10 +161,10 @@ def targets_gt_demux_identify_swaps(conf_f, multiome=False) -> list:
     out_dir = conf_f['identify_swaps']['mbv_out_dir']
     fs = conf_f['fold_struct_swaps_check']
     suff = conf_f['identify_swaps']['mbv_suffix']
-    sub_dir = ["ATAC", "cDNA"] if multiome else ['']
+    # sub_dir = ["ATAC", "cDNA"] if multiome else ['']
     target_list = []
-    for d in sub_dir:    
-        target_list.append(os.path.join(f"{out_dir}", d, f"{fs}{suff}"))
+    # for d in sub_dir:    
+    target_list.append(os.path.join(f"{out_dir}", f"{fs}{suff}"))
 
     return target_list
 
@@ -189,8 +189,8 @@ def targets_multibamsummaryPlotCorr(conf_f) -> list:
 # and create h5ad
 def targets_multiome(conf_f, last, progs=None, 
     h5ad=False, multiome=False) -> list:
-    out_dir = conf_f['cellranger_arc_count']['bams_dir']
     if last == 'alignment':
+        out_dir = conf_f['cellranger_arc_count']['bams_dir']
         return [
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
@@ -461,12 +461,12 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
         # Support creation of h5ad or not
-        elif "multiome_gt_demux" in target_step:
+        elif target_step == "multiome_gt_demux":
             target_files = targets_multiome(conf_f=conf_f, last="vireo", progs=metrics, 
             multiome=multiome, h5ad=create_h5ad)
             final_target_list= [expand(f"{target}", zip, **wc_d) for target in target_files]
 
-        elif "multiome_split_bams_gt_demux" in target_step:
+        elif target_step == "multiome_split_bams_gt_demux":
             target_files = targets_multiome(conf_f=conf_f, last="splitBams", progs=metrics,
             multiome=multiome, h5ad=create_h5ad)
             suff = ".txt"

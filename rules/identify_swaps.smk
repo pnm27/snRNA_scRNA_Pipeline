@@ -6,7 +6,7 @@ def get_bam_inputs(wildcards):
                 f"{config['split_bams_pipeline']['split_bams_dir2']}"
                 f"{config['fold_struct_bam_split2']}"
                 f"{config['fold_struct_gt_demux_redo']}.bam"
-            ).format(**wildcards)
+            )
         else:
             return (
                 f"{config['split_bams_pipeline']['split_bams_dir2']}"
@@ -50,8 +50,10 @@ rule qtltools_mbv:
     envmodules:
         "qtltools/1.3"
 
+    # Use one of the below
     wildcard_constraints:
-        donor=r"[^_]" #WILDCARDS
+        # donor=r"(?<=cDNA_|ATAC_).+" #WILDCARDS # For multiome
+        donor=r"(?:.*)(?<=\/)([^/]*)" #WILDCARDS # Match everything except the last '/'
 
     shell:
         """

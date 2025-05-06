@@ -212,6 +212,10 @@ The highlights of the pipeline are:
   - Reflected in **produce_targets.smk**.
   - Now, support for multiome through the rule **demux_samples_vireo** (set global *ONLY_VIREO*).
   - Added support for multiome in *demul_samples.py* through append mode for vireo.
+- Added wildcard constraint for the rule **qtltools_mbv** so that it is applicable for:
+  - *Multiome* : For cases like \<path_dir\>/BD2-Set-4-a/cDNA_Pitt-DNA-PFC-694.bamstat.txt *donor* = Pitt-DNA-PFC-694 and *pool* = BD2-Set-4-a/cDNA
+  - *Rest* : For cases like BD2-Set-10-a/donor4.bamstat.txt *donor* = donor4 and *pool* = BD2-Set-10-a
+- The script *demul_samples.py* will now save QC failed genes in the final h5ad in var column called **QC_pass**.
   
 ## Requirements
 
