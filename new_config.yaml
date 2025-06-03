@@ -3,12 +3,12 @@ barcodes:
   - &3v3 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-february-2018.txt
   - &3v4 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-3pgex-may-2023_TRU.txt.gz
   - &5v3 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-5pgex-jan-2023.txt.gz
-  - &3v2 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-august-2016.txt
-  - &3v1 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-april-2014_rc.txt
-  - &multiome /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-arc-v1.txt.gz
+  - &3v2 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737K-august-2016.txt
+  - &3v1 /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737K-april-2014_rc.txt
+  - &multiome /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737K-arc-v1.txt.gz
   - &atac /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/3M-february-2018.txt
   - &3lt /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/9K-LT-march-2021.txt.gz
-  - &fixedrna /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737k-fixed-rna-profiling.txt.gz
+  - &fixedrna /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737K-fixed-rna-profiling.txt.gz
 
 STARsolo_genome_dir:
   - &gencode38o89 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_275b_gen_89o

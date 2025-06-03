@@ -22,6 +22,6 @@
 # For snakemake > v8
 source /sc/arion/work/prashf01/conda/envs/new_snakemake/etc/profile.d/conda.sh
 conda activate new_snakemake
-export SNAKEMAKE_LSF_MEMFMT="perjob"
+# export SNAKEMAKE_LSF_MEMFMT="perjob"
 snakemake --profile prachu_lsf_smk8 --workflow-profile workflow_profile \
  --rerun-triggers input software-env mtime # code params

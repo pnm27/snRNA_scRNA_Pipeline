@@ -32,9 +32,9 @@ def get_limitsjdbval_coll(wildcards, resources):
     # This is to check the log file produced after each attempt for the error value
     file_p_temp = f"{config['fold_struct']}".format(**wildcards)
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
-    ins_nsj = 1000000
-    sj_collap = 1000000
-    limitbamsortram = 0
+    ins_nsj = 1000000 # DEFAULT
+    sj_collap = 1000000 # DEFAULT
+    limitbamsortram = resources.mem_mb * resources.cpus_per_task * 1000000 # DEFAULT
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
@@ -85,7 +85,7 @@ def get_limitsjdbval_coll(wildcards, resources):
 # Resource Allocation ------------------
 
 def allocate_mem_SS(wildcards, attempt):
-    return 15000+1000*(attempt-1)
+    return 150000+1000*(attempt-1)
 
 def allocate_time_SS(wildcards, attempt):
     return 1440
