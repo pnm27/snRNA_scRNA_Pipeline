@@ -52,7 +52,8 @@ def get_limitsjdbval_coll(wildcards, resources):
                 
                 elif line.lower().startswith("solution") and "limitBAMsortRAM" in line:
                     # print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
-                    limitbamsortram = int(re.search(r"--limitBAMsortRAM ([0-9]+) ", line).group(1))
+                    val = re.search(r"--limitBAMsortRAM ([0-9]+) ", line)
+                    limitbamsortram = int(val.group(1)) if val is not None else limitbamsortram
 
                 else:
                     continue
