@@ -137,7 +137,9 @@ def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
             out_dir = conf_f['split_bams_pipeline']['split_bams_proxy_dir']
         op = conf_f['fold_struct_bam_split1']
 
-        target_list.append(os.path.join(f"{out_dir}", f"{op}", d))
+        f = os.path.join(f"{out_dir}", f"{op}") if d == '' \
+            else os.path.join(f"{out_dir}", f"{op}", d)
+        target_list.append(f)
     
     # STARsolo* + PICARD (any) progs
     if progs == 'all' or progs == 'rnaseq' or progs == 'gc':

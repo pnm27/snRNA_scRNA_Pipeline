@@ -181,7 +181,7 @@ rule create_inp_splitBams:
             fi
         fi
 
-        python3 helper_py_scripts/create_inp_splitBam_consolidated.py {input} {output} ${{cmd_str}}
+        python3 helper_py_scripts/create_inp_splitBam_consolidated.py ${{cmd_str}}
 
         sleep 60
         """
@@ -313,7 +313,7 @@ rule split_bams:
     params:
         # split_at=config['split_bams_pipeline']['bc_per_donor'], # Split barcodes if more than this number belonging to the same donor (can't merge files more than what specified by `ulimit -n`)
         # temp_dir=f"{config['split_bams_pipeline']['temp_dir']}",
-        temp_bam=f"{config['split_bams_pipeline']['new_temp_dir']}{config['fold_struct_bam_split2']}{{pool}}_{{donor}}.bam", # wildcards
+        # temp_bam=f"{config['split_bams_pipeline']['new_temp_dir']}{config['fold_struct_bam_split2']}{{pool}}_{{donor}}.bam", # wildcards
         temp_bam_per_cell_dir=f"{config['split_bams_pipeline']['new_temp_dir']}{config['fold_struct_bam_split2']}",
         split_bams_dir=f"{config['split_bams_pipeline']['split_bams_dir']}{config['fold_struct_bam_split2']}",
         per_donor_log_dir=config['split_bams_pipeline']['per_donor_split_log_dir'],
@@ -342,7 +342,7 @@ rule split_bams:
         # If proc_donors is not empty then run
         if proc_donors:
             with open(output[0], "a") as fout:
-                fout.write("Going to process donor(s): {}".format(','.join(proc_donors)))
+                fout.write("Going to process donor(s): {}\n".format(','.join(proc_donors)))
 
             if params.gt_check:
                 for donor in proc_donors:
@@ -389,13 +389,13 @@ rule split_bams:
 
             with open(output[0], "a") as fout:
                 fout.write(f"Number of 'new' bam files expected at the completion of all the "
-                    f"scripts for the bam file {input.filt_bam} is {len(job_name_l)}"
+                    f"scripts for the bam file {input.filt_bam} is {len(job_name_l)}\n"
                 )
 
         else:
             with open(output[0], "a") as fout:
                 fout.write(f"Skipped bam file {input.filt_bam} as all "
                 f"{len(hash_file.iloc[:, 0].unique())} donor file(s) was(were) "
-                f"already present in the given output_folder {params.split_bams_dir}"
+                f"already present in the given output_folder {params.split_bams_dir}\n"
                 )
 

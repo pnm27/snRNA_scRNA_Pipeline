@@ -4,7 +4,7 @@ import glob2, os
 def get_BC_input(wildcards):
     # WILDCARDS
     all_bams = sorted(glob2.glob(
-        f"{config['multiBamSummary']['bams_dir']}{config['fold_struct_deeptools']}*{config['R1_suffix']}/".format(id2=wildcards.id2) + \ 
+        f"{config['multiBamSummary']['bams_dir']}{config['fold_struct_deeptools']}*{config['R1_suffix']}/".format(id2=wildcards.id2) + 
         f"{config['fold_struct_deeptools']}*{config['multiBamSummary']['bam']}".format(id2=wildcards.id2)))
 
     return all_bams

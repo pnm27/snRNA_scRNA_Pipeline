@@ -216,6 +216,10 @@ The highlights of the pipeline are:
   - *Multiome* : For cases like \<path_dir\>/BD2-Set-4-a/cDNA_Pitt-DNA-PFC-694.bamstat.txt *donor* = Pitt-DNA-PFC-694 and *pool* = BD2-Set-4-a/cDNA
   - *Rest* : For cases like BD2-Set-10-a/donor4.bamstat.txt *donor* = donor4 and *pool* = BD2-Set-10-a
 - The script *demul_samples.py* will now save QC failed genes in the final h5ad in var column called **QC_pass**.
+- Fixed issue with some packages in *basic_sctools.yaml*.
+- Fixed some issues with wrong inputs in **split_bams.smk**
+- Fixed logic issue in **produce_targets.smk** for single-cell/nucleus processing.
+- Now the lines will be sorted when accessing through path in *input_processing.smk*.
   
 ## Requirements
 
