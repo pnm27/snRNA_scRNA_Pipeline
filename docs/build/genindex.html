@@ -8,14 +8,14 @@
   <title>Index &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css?v=7bc2f056" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css?v=37217874" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css?v=6227e517" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css?v=94669e23" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css?v=21a39f42" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css?v=a18b2449" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css?v=dbff53e4" />
-      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css?v=d7bf34ee" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css" />
       <link rel="stylesheet" type="text/css" href="_static/css/sphinx_rtd_theme.css?v=3234e928" />
       <link rel="stylesheet" type="text/css" href="_static/css/tables.css" />
       <link rel="stylesheet" type="text/css" href="_static/css/page_style.css" />
@@ -26,9 +26,9 @@
       <script src="_static/documentation_options.js?v=2709fde1"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script src="_static/js/hoverxref.js?v=ef0cf3f7"></script>
-      <script src="_static/js/tooltipster.bundle.min.js?v=18bf091b"></script>
-      <script src="_static/js/micromodal.min.js?v=04d6302d"></script>
+      <script src="_static/js/hoverxref.js"></script>
+      <script src="_static/js/tooltipster.bundle.min.js"></script>
+      <script src="_static/js/micromodal.min.js"></script>
       <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.2.0/dist/mermaid.esm.min.mjs"></script>
       <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.1.4/dist/mermaid-layout-elk.esm.min.mjs"></script>
@@ -119,6 +119,7 @@ window.addEventListener("load", () => mermaid.run());
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -246,8 +247,6 @@ window.addEventListener("load", () => mermaid.run());
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="update_logs.html#update_logs.get_df">get_df() (in module update_logs)</a>
 </li>
-      <li><a href="demultiplex_helper_funcs.html#demultiplex_helper_funcs.get_don_ids">get_don_ids() (in module demultiplex_helper_funcs)</a>
-</li>
       <li><a href="demultiplex_helper_funcs.html#demultiplex_helper_funcs.get_donor_info">get_donor_info() (in module demultiplex_helper_funcs)</a>
 </li>
       <li><a href="split_seth5ad_to_samph5ad.html#split_seth5ad_to_samph5ad.get_donors">get_donors() (in module split_seth5ad_to_samph5ad)</a>
@@ -264,6 +263,18 @@ window.addEventListener("load", () => mermaid.run());
 </li>
       <li><a href="create_wet_lab_info.html#create_wet_lab_info.get_subid">get_subid() (in module create_wet_lab_info)</a>
 </li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="create_inp_cellSNP.html#create_inp_cellSNP.int_or_none">int_or_none() (in module create_inp_cellSNP)</a>
+
+      <ul>
+        <li><a href="demul_samples.html#demul_samples.int_or_none">(in module demul_samples)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -355,13 +366,19 @@ window.addEventListener("load", () => mermaid.run());
 </li>
       <li><a href="demultiplex_helper_funcs.html#demultiplex_helper_funcs.set_don_ids">set_don_ids() (in module demultiplex_helper_funcs)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     split_seth5ad_to_samph5ad
 
       <ul>
         <li><a href="split_seth5ad_to_samph5ad.html#module-split_seth5ad_to_samph5ad">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="create_inp_cellSNP.html#create_inp_cellSNP.string_or_none">string_or_none() (in module create_inp_cellSNP)</a>
+
+      <ul>
+        <li><a href="demul_samples.html#demul_samples.string_or_none">(in module demul_samples)</a>
 </li>
       </ul></li>
   </ul></td>

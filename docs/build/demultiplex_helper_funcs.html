@@ -109,7 +109,7 @@
 <span id="demultiplex-helper-funcs-module"></span><h1>demultiplex_helper_funcs module<a class="headerlink" href="#module-demultiplex_helper_funcs" title="Link to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="demultiplex_helper_funcs.auto_read">
-<span class="sig-name descname"><span class="pre">auto_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.auto_read" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">auto_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.auto_read" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -122,17 +122,25 @@ function <a class="reference internal" href="#demultiplex_helper_funcs.ret_htos_
 
 <dl class="py function">
 <dt class="sig sig-object py" id="demultiplex_helper_funcs.demux_by_vireo">
-<span class="sig-name descname"><span class="pre">demux_by_vireo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vir_out_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.demux_by_vireo" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">demux_by_vireo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vir_out_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">donor_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Series</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Series</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.demux_by_vireo" title="Link to this definition"></a></dt>
 <dd><p>Main function for classification by vireoSNP.</p>
 <p>This function assigns vireo classification.</p>
 <section id="paramters">
 <h2>Paramters<a class="headerlink" href="#paramters" title="Link to this heading"></a></h2>
 <dl class="simple">
-<dt>bcs</dt><dd><p>A pd series of cell barcodes from gene count matrix</p>
+<dt>bcs</dt><dd><p>A pd series of cell barcodes from gene count matrix.</p>
 </dd>
-<dt>vir_out_file</dt><dd><p>Path to donor_ids.tsv file produced by vireo</p>
+<dt>vir_out_file</dt><dd><p>Path to donor_ids.tsv file produced by vireo.</p>
 </dd>
-<dt>conv_df</dt><dd><p>A converter file to change donor names in the vireo output, if needed</p>
+<dt>conv_df</dt><dd><p>A converter file to change donor names in the vireo output, if needed.</p>
+</dd>
+<dt>donor_col</dt><dd><p>Donor names containing column in the converter file that matches the vireo output.</p>
+</dd>
+<dt>conv_col</dt><dd><p>Column, in the converter file, containing the converted names.</p>
+</dd>
+<dt>pool_col</dt><dd><p>Column, in the converter file, containing the pool names.</p>
+</dd>
+<dt>pool_name</dt><dd><p>Pool name.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -140,6 +148,7 @@ function <a class="reference internal" href="#demultiplex_helper_funcs.ret_htos_
 <dd class="field-odd"><ul class="simple">
 <li><p><em>pd.Series</em> – Classification by vireo per cell</p></li>
 <li><p><em>list</em> – Demux stats</p></li>
+<li><p><em>pd.Series</em> – Converted donor names of classification by vireo per cell</p></li>
 </ul>
 </dd>
 </dl>
@@ -150,26 +159,6 @@ function <a class="reference internal" href="#demultiplex_helper_funcs.ret_htos_
 <dt class="sig sig-object py" id="demultiplex_helper_funcs.demux_stats">
 <span class="sig-name descname"><span class="pre">demux_stats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">demux_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demux_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.demux_stats" title="Link to this definition"></a></dt>
 <dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="demultiplex_helper_funcs.get_don_ids">
-<span class="sig-name descname"><span class="pre">get_don_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#demultiplex_helper_funcs.get_don_ids" title="Link to this definition"></a></dt>
-<dd><p>Coverting the donor names of vireo output</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> – A string representing a donor</p></li>
-<li><p><strong>t_df</strong> – A converter file that contains the donor and its converted</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>String representing converted donor name</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="demultiplex_helper_funcs.get_donor_info">

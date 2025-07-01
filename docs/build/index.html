@@ -9,14 +9,14 @@
   <title>snRNA_scRNA_Pipeline Introduction &mdash; snRNAseq scRNAseq Pipeline 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css?v=7bc2f056" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css?v=37217874" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css?v=6227e517" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css?v=94669e23" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css?v=21a39f42" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css?v=a18b2449" />
-      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css?v=dbff53e4" />
-      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css?v=d7bf34ee" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.custom.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster.bundle.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-shadow.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-punk.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-noir.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-light.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/tooltipster-sideTip-borderless.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/micromodal.css" />
       <link rel="stylesheet" type="text/css" href="_static/css/sphinx_rtd_theme.css?v=3234e928" />
       <link rel="stylesheet" type="text/css" href="_static/css/tables.css" />
       <link rel="stylesheet" type="text/css" href="_static/css/page_style.css" />
@@ -27,9 +27,9 @@
       <script src="_static/documentation_options.js?v=2709fde1"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-      <script src="_static/js/hoverxref.js?v=ef0cf3f7"></script>
-      <script src="_static/js/tooltipster.bundle.min.js?v=18bf091b"></script>
-      <script src="_static/js/micromodal.min.js?v=04d6302d"></script>
+      <script src="_static/js/hoverxref.js"></script>
+      <script src="_static/js/tooltipster.bundle.min.js"></script>
+      <script src="_static/js/micromodal.min.js"></script>
       <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -113,14 +113,14 @@
 <section id="snrna-scrna-pipeline-introduction">
 <h1>snRNA_scRNA_Pipeline Introduction<a class="headerlink" href="#snrna-scrna-pipeline-introduction" title="Link to this heading"></a></h1>
 <section id="todo">
-<h2>TODO:<a class="headerlink" href="#todo" title="Link to this heading"></a></h2>
-<ul class="simple">
+<h2>TODO<a class="headerlink" href="#todo" title="Link to this heading"></a></h2>
+<ul>
 <li><p>Miscellaneous:</p>
 <ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Add PICARD option in new_config file.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Write down schemas.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add support for multiome in <strong>update_logs.py</strong>.</p></li>
 <li><p>Add tutorials.</p>
-<ul class="contains-task-list">
+<ul class="simple">
 <li><p>pooled snRNA seq</p>
 <ul class="contains-task-list">
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> single wildcard</p></li>
@@ -133,39 +133,53 @@
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> multiple wildcards</p></li>
 </ul>
 </li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Double HTOs</p></li>
+<li><p>Double HTOs</p></li>
+</ul>
+</li>
+<li><p>Generalize outputs to accommodate multiome.</p>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> split bam pipeline (whole of <strong>split_bams.smk</strong>).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> filt_chr_bams (filt_chr_bams_multiome)</p></li>
 </ul>
 </li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Remove dependency on STARsolo as an aligner.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> For rules that use <strong>genefull_matrices</strong> make input function that take either <em>Gene</em> or <em>GeneFull</em> dependent on the project.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Combine sub-workflows split_bams and split_bams_gt.</p>
-<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Combine sub-workflows split_bams and split_bams_gt.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Search Ranking of readthedocs (using config file for this too).</p></li>
-</ul>
-</li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Might incorporate git submodules for repos on git that I use.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add new Picard metrics.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add options in config file to allow adding extra params for every software:</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Add options in config file to allow adding extra params for every software:</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> For reruns of vireo, provide a way to retain those information in update logs file.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Retain information from log runs:</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Use command like following to extract <em>variants matched to genotype VCF out of total variants piledup for the pool</em>.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>find<span class="w"> </span>-mindepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-maxdepth<span class="w"> </span><span class="m">1</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-exec<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;a=$(sed &quot;s#\./##g&quot; &lt;&lt;&lt; {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d &quot; &quot; -f1 | rev); grep &quot;variants matched to donor VCF&quot; ${a}/${b}&#39;</span><span class="w"> </span><span class="se">\;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Permanent fix for the rule <em>filt_chr_bams_multiome</em>.</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Simplify structure of wildcards. Folder structure should include them</p></li>
 </ul>
 </li>
 <li><p>analyse_vireo:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>calico_solo_demux:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>demultiplex:</p>
-<ul class="contains-task-list">
+<ul class="contains-task-list simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Employ a strategy for final count matrix dir (file dir in config file) for the cases:</p>
@@ -183,28 +197,28 @@
 </ul>
 </li>
 <li><p>helper_functions:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>identify_swaps:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>input_processing:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p></li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>kite:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p>
 <ul class="contains-task-list">
@@ -215,7 +229,7 @@
 </ul>
 </li>
 <li><p>pheno_demux3:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p>
 <ul class="contains-task-list">
@@ -227,14 +241,18 @@
 </ul>
 </li>
 <li><p>picard_metrics:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
-<li><p>snakemake_rules:</p></li>
+<li><p>snakemake_rules:</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add CollectInsertSizeMetrics for ATAC part of multiome.</p></li>
+</ul>
+</li>
 <li><p>scripts:</p></li>
 </ul>
 </li>
 <li><p>produce_targets:</p>
-<ul>
+<ul class="simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p>
 <ul class="contains-task-list">
@@ -244,38 +262,8 @@
 <li><p>scripts:</p></li>
 </ul>
 </li>
-<li><p>resources:</p>
-<ul class="contains-task-list">
-<li><p>scripts:</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add conditions for time and mem</p></li>
-</ul>
-</li>
-<li><p>split_bams_gt*:</p>
-<ul>
-<li><p>new_config params:</p></li>
-<li><p>snakemake_rules:</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Remove run directive</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Input function that removes low mito cells.</p></li>
-</ul>
-</li>
-<li><p>scripts:</p></li>
-</ul>
-</li>
-<li><p>split_bams*:</p>
-<ul>
-<li><p>new_config params:</p></li>
-<li><p>snakemake_rules:</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Remove run directive</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Input function that removes low mito cells.</p></li>
-</ul>
-</li>
-<li><p>scripts:</p></li>
-</ul>
-</li>
 <li><p>STARsolo:</p>
-<ul>
+<ul class="contains-task-list simple">
 <li><p>new_config params:</p></li>
 <li><p>snakemake_rules:</p>
 <ul class="contains-task-list">
@@ -283,58 +271,28 @@
 <li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> WASP mode</p></li>
 </ul>
 </li>
-<li><p>scripts:</p>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Issues with using wildcard <strong>vcf_type</strong> in the rule <em>demux_samples</em>.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Issues with output dir selection in the <em>demux_samples</em> i.e. automatically pick output dir.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Revamp wildcards so that varying output dirs are corrected accordingly:</p>
 <ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> WASP mode</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Demux output i.e. if only one demux method needs to be used or simultaneously both.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> splitting bams is for finalizing or genotype purposes.</p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><p>Changelog:</p>
+<li><p>cellranger:</p>
+<ul class="contains-task-list simple">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Support for cellranger.</p>
 <ul>
-<li><p>Single wildcard is called now <em>pool</em> (Earlier mixed use of <em>num</em>, <em>id1</em> and <em>id2</em>).</p></li>
-<li><p>Retained use of double wildcards.</p></li>
-<li><p>Revised split_bams script:</p>
+<li><p>Support for cellranger-arc count.</p>
 <ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Consolidated gt and non-gt versions.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now, mito file is in params (earlier was an output)</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now, bed file is in params (earlier was an inputs)</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Streamlined</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Add support for alignment.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="disabled" type="checkbox"> Add support for ATAC-based vireo demultiplexing.</p></li>
 </ul>
 </li>
-<li><p>Major revisions to <strong>create_per_donor_bams.bash</strong> script</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Consolidated gt and non-gt versions.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Handles saving mito_file much elegantly.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Supports argument parsing (with support for older positional args)</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Doesn’t expect directories, provided as inputs, to follow logic - dirs should end with ‘/.</p></li>
 </ul>
 </li>
-<li><p>Changed name of workflow from <strong>pheno_demux3.snkmk</strong> to <strong>genotype_demux.snkmk</strong></p></li>
-<li><p>The rule create_inp_splitBams now:</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Uses a consolidated script to create the barcode files using both, h5ad and raw files.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Removed the option to overwrite the outputs as before (but still present in python script).</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Rule supports single demux (while the script can handle multiple).</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> h5ad input alone support for calico_solo while vireo output is supported as is.</p></li>
-</ul>
-</li>
-<li><p>Major revisions to <strong>run_update_logs.sh</strong> script</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Builds command from input using asssociative arrays.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> To emulate missingness (picard and/or demultiplexing) just use <em>empty</em> values.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now support for STARsolo 2.7.10 with <strong>Final_out_MAP_2_7_10a_latest.tsv</strong>.</p></li>
-</ul>
-</li>
-<li><p>Major revisions to <strong>update_logs.py</strong> script</p>
-<ul class="contains-task-list">
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes <em>None</em> in its absence (with no argument value other values are used).</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> To emulate missingness (picard and/or demultiplexing) just use <em>empty</em> values.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Missingness of <em>picard_dir</em> implies not collecting GCBias and RNASeq Metrics.</p></li>
-<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Similarly, missingness of <em>demul_dir</em> implies not demultiplexing info.</p></li>
-</ul>
-</li>
-<li><p>New file - <strong>Final_out_MAP_2_7_10a_latest_info.xlsx</strong> - contains more info related to <strong>Final_out_MAP_2_7_10a_latest.tsv</strong>.</p></li>
 </ul>
 </li>
 </ul>
@@ -342,16 +300,16 @@
 <p>It also supports various software/pipeline for scRNA seq pre-processing.</p>
 <p>The highlights of the pipeline are:</p>
 <ul>
-	<li> Streamlined processes to modify parameters for each program through a single yaml file </li>
-	<li> Easily modifiable to accomodate more rules </li>
-	<li> Can be used for both individual samples as well as multiplexed pools </li>
-	<li> Preserve folder structures (mirroring fastqs' folder structures) </li>
-	<li> Organize outputs from each module </li>
-	<li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
+  <li> Streamlined processes to modify parameters for each program through a single yaml file </li>
+  <li> Easily modifiable to accomodate more rules </li>
+  <li> Can be used for both individual samples as well as multiplexed pools </li>
+  <li> Preserve folder structures (mirroring fastqs' folder structures) </li>
+  <li> Organize outputs from each module </li>
+  <li> Select multiple pre-set modules that simplifies usage across multiple projects </li>
 </ul>
 </section>
 <section id="changelog">
-<h2>Changelog:<a class="headerlink" href="#changelog" title="Link to this heading"></a></h2>
+<h2>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h2>
 <ul class="simple">
 <li><p>Changed param name in demultiplex info from <em>Unique genes</em> to <em>gene_ids with an associated gene_name</em>.</p></li>
 <li><p>Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.</p></li>
@@ -376,6 +334,132 @@
 <li><p>Make the functions similar for demultiplexing with any method.</p></li>
 <li><p>Fix issue with reading old wet_lab_info file to update (extension issues).</p></li>
 <li><p>Some issue with create_wet_lab_info.py file (it misses to add some lines from certain files - try AMP ones)</p></li>
+<li><p>Single wildcard is called now <em>pool</em> (Earlier mixed use of <em>num</em>, <em>id1</em> and <em>id2</em>).</p></li>
+<li><p>Retained use of double wildcards.</p></li>
+<li><p>Revised split_bams script:</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Consolidated gt and non-gt versions.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now, mito file is in params (earlier was an output)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now, bed file is in params (earlier was an inputs)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Streamlined</p></li>
+</ul>
+</li>
+<li><p>Major revisions to <em>create_per_donor_bams.bash</em> script</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Consolidated gt and non-gt versions.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Handles saving mito_file much elegantly.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Supports argument parsing (with support for older positional args)</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Doesn’t expect directories, provided as inputs, to follow logic - dirs should end with ‘/.</p></li>
+</ul>
+</li>
+<li><p>Changed name of workflow from <strong>pheno_demux3.snkmk</strong> to <strong>genotype_demux.snkmk</strong></p></li>
+<li><p>The rule create_inp_splitBams now:</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Uses a consolidated script to create the barcode files using both, h5ad and raw files.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Removed the option to overwrite the outputs as before (but still present in python script).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Rule supports single demux (while the script can handle multiple).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> h5ad input alone support for calico_solo while vireo output is supported as is.</p></li>
+</ul>
+</li>
+<li><p>Major revisions to <em>run_update_logs.sh</em> script</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Builds command from input using asssociative arrays.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> To emulate missingness (picard and/or demultiplexing) just use <em>empty</em> values.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Now support for STARsolo 2.7.10 with <em>Final_out_MAP_2_7_10a_latest.tsv</em>.</p></li>
+</ul>
+</li>
+<li><p>Major revisions to <em>update_logs.py</em> script</p>
+<ul class="contains-task-list">
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> All optional parameters (except map_file, output_file, and bam_dir) expects one value or becomes <em>None</em> in its absence (with no argument value other values are used).</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> To emulate missingness (picard and/or demultiplexing) just use <em>empty</em> values.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Missingness of <em>picard_dir</em> implies not collecting GCBias and RNASeq Metrics.</p></li>
+<li class="task-list-item"><p><input class="task-list-item-checkbox" checked="checked" disabled="disabled" type="checkbox"> Similarly, missingness of <em>demul_dir</em> implies not demultiplexing info.</p></li>
+</ul>
+</li>
+<li><p>New file - <em>Final_out_MAP_2_7_10a_latest_info.xlsx</em> - contains more info related to <em>Final_out_MAP_2_7_10a_latest.tsv</em>.</p></li>
+<li><p>Changed the section name from <em>demux_pipeline</em> to <em>hashsolo_demux_pipeline</em> in <strong>new_config.yaml</strong> file.</p></li>
+<li><p><strong>calico_solo_demux.smk</strong>: At lines numbered 3 and 9.</p></li>
+<li><p><strong>create_logs.smk</strong>: At lines numbered 11 and 52.</p></li>
+<li><p><strong>demultiplex.smk</strong>: At lines numbered 10,12,32,34,72,74,78,80,124,125,132,135,138,328,331, and 333.</p></li>
+<li><p><strong>genotype_demux.smk</strong>: At line numbered 45.</p></li>
+<li><p><strong>kite.smk</strong>: At lines numbered 417 and 437.</p></li>
+<li><p><strong>produce_targets.smk</strong>: At lines numbered 159-162.</p></li>
+<li><p><strong>split_bams.smk</strong>: At lines numbered 10,16, and 18.</p></li>
+<li><p>Consolidated the section name from <em>split_bams_pipeline_gt_demux</em> in <em>split_bams_pipeline_gt</em> (earlier used for calico_solo based split bams) in <strong>new_config.yaml</strong> file.</p>
+<ul>
+<li><p><strong>split_bams.smk</strong>: At lines numbered 44,45,47 and 52.</p></li>
+<li><p><strong>produce_targets.smk</strong>: At line numbered 111.</p></li>
+<li><p><strong>identify_swaps.smk</strong>: At line numbered 3.</p></li>
+</ul>
+</li>
+<li><p>Added support for Snakemake transition to version &gt; 8.</p>
+<ul>
+<li><p>Added <em>workflow_profile/config.yaml</em> which gets reflected in <em>run_snakemake.sh</em>.</p></li>
+<li><p>To emulate previous behavior’s for profile manually edited the <em>lsf_executor_plugin</em> and added ENV variable.</p></li>
+<li><p><em>lsf.yaml</em> still is present for snakemake &lt; v8.</p></li>
+<li><p>Changed the <em>threads</em> directive and replaced with resources: <em>cpus_per_task</em>.</p></li>
+</ul>
+</li>
+<li><p>Removed dependence on <strong>resources.smk</strong>. Instead all resource requirements are within each snakemake file.</p></li>
+<li><p>Simplified the rule <em>cellSNP</em> in <strong>genotype_demux.smk</strong>.</p>
+<ul>
+<li><p>Now a parameter <em>cmd_str_csnp</em> function to replace the use of indexed arrays in shell (was working Snakemake &lt; 8).</p></li>
+<li><p>Simplified the commandline for execution.</p></li>
+<li><p>Now the rule picks the biggest of given <em>n_proc</em> in <em>new_config.yaml</em> and twice of the number of cpus provided.</p></li>
+</ul>
+</li>
+<li><p>Simplified the rule <em>vireoSNP</em> in <strong>genotype_demux.smk</strong>.</p>
+<ul>
+<li><p>Now a parameter <em>cmd_str_vireo</em> function to replace the use of indexed arrays in shell (was working Snakemake &lt; 8).</p></li>
+<li><p>Now file specified in <em>vcf_info</em> (relates to the rule <em>vireoSNP</em>) in <em>new_config.yaml</em> is expected to have headers.</p></li>
+<li><p>Simplified the commandline for execution.</p></li>
+</ul>
+</li>
+<li><p>Usage of <em>pd.concat</em> now in concordance with <a class="reference external" href="https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492">FutureWarning</a> in <em>update_logs.py</em>.</p></li>
+<li><p>In <strong>new_config.yaml</strong>, changed</p>
+<ul>
+<li><p><em>gt_conv</em> to <em>file</em> in <em>donorName_conv</em> in <em>gt_demux_pipeline</em>.</p></li>
+<li><p><em>mito</em> to <em>mito_prefix</em>. Reflected in <strong>demultiplex.smk</strong>, <strong>split_bams.smk</strong> and <strong>calico_solo_demux.smk</strong></p></li>
+<li><p><em>gt_check</em> in <em>gt_check</em> to <em>gt_check</em>. Reflected in <strong>split_bams.smk</strong> and <strong>produce_targets.smk</strong>.</p></li>
+<li><p>Added <em>demultiplex</em> section for the rule <em>demux_samples_both</em>.</p></li>
+</ul>
+</li>
+<li><p>Removed mode=’w+’ when creating outputs in <em>create_Feat_Barc.py</em>.</p></li>
+<li><p>Added <em>multiome_alignment</em> as a new module. Created <strong>cellranger.smk</strong>, which currently support cellranger arc count only.</p></li>
+<li><p>Added multiome demultiplexing support for the following rules:</p>
+<ul>
+<li><p>genotype_demux</p>
+<ul>
+<li><p>Fixed UMItag selection in <em>cellSNP</em> for multiome-ATAC.</p></li>
+<li><p>Fixed issues for multiome in <em>create_inp_cellSNP</em> (to add -1 in cell barcodes as bam by cellranger has “-1” suffix)</p></li>
+</ul>
+</li>
+<li><p>demultiplex</p></li>
+<li><p>Change ‘vcf_type’ wildcard to support both multi-vcf and multiome setup.</p></li>
+</ul>
+</li>
+<li><p>Added multiome support for splitting bams (using both cDNA and ATAC modalities).</p></li>
+<li><p>Simplified shell script in the rules <em>demux_samples</em> and <em>add_obs_to_final_count_matrix</em> in <strong>demultiplex.smk</strong></p></li>
+<li><p>Added PICARD option in new_config file.</p></li>
+<li><p>In the module <strong>demultiplex.smk</strong>, changed logic of the rules <em>demux_samples</em> and <em>add_obs_to_final_count_matrix</em>:</p>
+<ul>
+<li><p>3 new rules reflect 3 different output types i.e. demux_samples_solo, demux_samples_vireo, and demux_samples_both.</p></li>
+<li><p>Reflected in <strong>produce_targets.smk</strong>.</p></li>
+<li><p>Now, support for multiome through the rule <strong>demux_samples_vireo</strong> (set global <em>ONLY_VIREO</em>).</p></li>
+<li><p>Added support for multiome in <em>demul_samples.py</em> through append mode for vireo.</p></li>
+</ul>
+</li>
+<li><p>Added wildcard constraint for the rule <strong>qtltools_mbv</strong> so that it is applicable for:</p>
+<ul>
+<li><p><em>Multiome</em> : For cases like &lt;path_dir&gt;/BD2-Set-4-a/cDNA_Pitt-DNA-PFC-694.bamstat.txt <em>donor</em> = Pitt-DNA-PFC-694 and <em>pool</em> = BD2-Set-4-a/cDNA</p></li>
+<li><p><em>Rest</em> : For cases like BD2-Set-10-a/donor4.bamstat.txt <em>donor</em> = donor4 and <em>pool</em> = BD2-Set-10-a</p></li>
+</ul>
+</li>
+<li><p>The script <em>demul_samples.py</em> will now save QC failed genes in the final h5ad in var column called <strong>QC_pass</strong>.</p></li>
+<li><p>Fixed issue with some packages in <em>basic_sctools.yaml</em>.</p></li>
+<li><p>Fixed some issues with wrong inputs in <strong>split_bams.smk</strong></p></li>
+<li><p>Fixed logic issue in <strong>produce_targets.smk</strong> for single-cell/nucleus processing.</p></li>
+<li><p>Now the lines will be sorted when accessing through path in <em>input_processing.smk</em>.</p></li>
 </ul>
 </section>
 <section id="requirements">
