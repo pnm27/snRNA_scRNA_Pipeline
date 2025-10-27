@@ -308,7 +308,7 @@ def get_cmd_str_vireo(wildcards, input) -> Union[None, int]:
     # else:
     #     raise ValueError("Unexpected number of columns for 'vcf_info' file in 'gt_demux_pipeline'!!!")
     
-    if samp_name in temp_df[pool_col].values:
+    if samp_name.lower() in temp_df[pool_col].str.lower().values:
         ret_str += " -N " + str(temp_df.loc[temp_df[pool_col].str.lower() == samp_name.lower(), don_col].values[0])
 
     return ret_str

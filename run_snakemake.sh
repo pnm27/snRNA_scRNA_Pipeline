@@ -22,6 +22,8 @@
 # For snakemake > v8
 source /sc/arion/work/prashf01/conda/envs/new_snakemake/etc/profile.d/conda.sh
 conda activate new_snakemake
-# export SNAKEMAKE_LSF_MEMFMT="perjob"
-snakemake --profile prachu_lsf_smk8 --workflow-profile workflow_profile \
+# WHEN THE export LINE IS COMMENTED OUT
+# MEM PROVIDED IS THE TOTAL FOR EACH RULE OTHERWISE IT IS PER CPU USED
+# export SNAKEMAKE_LSF_MEMFMT="perjob" 
+snakemake --profile prachu_lsf_smk8 --workflow-profile workflow_profile --ri \
  --rerun-triggers input software-env mtime # code params

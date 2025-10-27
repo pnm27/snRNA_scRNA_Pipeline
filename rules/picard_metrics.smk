@@ -1,18 +1,18 @@
 # Resource Allocation ------------------
 def allocate_mem_PGCB(wildcards, attempt):
-    return 2500*attempt+2500
+    return 7500+2500*(attempt-1)
 
 
 def allocate_time_PGCB(wildcards, attempt):
-    return 60*attempt+60
+    return 360+60*(attempt-1)
 
 
 def allocate_mem_PRNA(wildcards, attempt):
-    return 2500*attempt+2500
+    return 2500+2500*(attempt-1)
 
 
 def allocate_time_PRNA(wildcards, attempt):
-    return 210*attempt+210
+    return 210+30*(attempt-1)
 
 # --------------------------------------
 

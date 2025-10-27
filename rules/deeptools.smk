@@ -87,3 +87,4 @@ rule plotCorrelation:
         """
         plotCorrelation -in {input} -c {params.correlation_method} -p {params.plot_type} -o {output} --outFileCorMatrix {params.corr_matrix}
         """
+        
