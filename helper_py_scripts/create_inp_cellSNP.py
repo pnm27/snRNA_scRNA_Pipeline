@@ -18,6 +18,7 @@ from collections import Counter
 from collections import defaultdict
 # using datetime module
 from itertools import repeat
+from demultiplex_helper_funcs import auto_read
 
 
 def int_or_none(val):
@@ -208,15 +209,24 @@ def main():
             print(f"Error encountered while loading the mtx file!\nError message: {e}") 
 
         if args.id2name is not None:
-            t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
-            t2g.index = t2g.gene_id
-            t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
+            # t2g = pd.read_csv(args.id2name, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
+            # t2g.index = t2g.gene_id
+            # t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
+
+            t2g = auto_read(args.id2name, skiprows=1, usecols=range(3),
+                    names=["gene_id", "gene_name", "chromosome_name"])
+
+            accept_chr = list(map(lambda x: str(x), range(1,23))) + ['MT', 'X', 'Y']
+            accept_chr = accept_chr + list(map(lambda x: 'chr' + x, accept_chr))
+            t2g['chromosome_name'] = t2g["chromosome_name"].astype(str)
+            id2name_conv = pd.Series(t2g['gene_name'].values, index=t2g['gene_id']).to_dict()
+
             # Remove version number if present in ENSG IDs
             # ENSG00000290825.1
             adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
             adata.var["gene_id"] = adata.var.index.values
-            adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
-            adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
+            adata.var["gene_name"] = adata.var.gene_id.map(id2name_conv)
+            # adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
             adata = adata[:, pd.notna(adata.var["gene_name"])] # Removed gene_ids that don't have an associated gene name
         else:
             print("Since no gene info file was provided, skipped adding "

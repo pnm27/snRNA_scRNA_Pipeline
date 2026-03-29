@@ -1,4 +1,4 @@
-import os, pandas as pd
+import os, uuid,pandas as pd
 
 
 def get_inp_splitBam(wildcards):
@@ -198,7 +198,8 @@ rule bamfilt_by_CB:
 
     params:
         # NUM = pool, ID1=donor
-        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt"
+        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt",
+        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
 
 
     # For snakemake < v8
@@ -218,7 +219,7 @@ rule bamfilt_by_CB:
         """
         mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
         cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
-        samtools view -q 255 -D CB:{params.temp_bc} {input.bam} -bho {output}
+        samtools view -@ {params.threads} -q 255 -D CB:{params.temp_bc} {input.bam} -bho {output}
         samtools index {output}
         rm {params.temp_bc}
         sleep 10
@@ -233,7 +234,8 @@ rule filt_chr_bams:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
 
     params:
-        sub_chr=subset_to_chr
+        sub_chr=subset_to_chr,
+        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
 
     # For snakemake < v8
     # threads: 1
@@ -250,7 +252,7 @@ rule filt_chr_bams:
         
     shell:
         """
-        samtools view {input} {params.sub_chr} -bho {output}
+        samtools view -@ {params.threads} {input} {params.sub_chr} -bho {output}
         samtools index {output}
         """
 
@@ -263,7 +265,8 @@ rule filt_chr_bams_multiome:
         f"{config['cellranger_arc_count']['bams_dir']}{config['fold_struct']}{{bam}}{config['split_bams_pipeline']['short_bam']}" # generalize this
 
     params:
-        sub_chr=subset_to_chr
+        sub_chr=subset_to_chr,
+        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
 
     # For snakemake < v8
     # threads: 1
@@ -280,7 +283,7 @@ rule filt_chr_bams_multiome:
 
     shell:
         """
-        samtools view {input} {params.sub_chr} -bho {output}
+        samtools view -@ {params.threads} {input} {params.sub_chr} -bho {output}
         samtools index {output}
         """
 
@@ -346,7 +349,8 @@ rule split_bams:
 
             if params.gt_check:
                 for donor in proc_donors:
-                    jname=f"{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
+                    # jname=f"{samp_num}_" + list(shell("uuidgen", iterable=True))[0]
+                    jname=f"{samp_num}_{uuid.uuid4().hex}"
                     job_name_l.append(jname)
                     shell("""
                         if [ ! -d "{params.per_donor_log_dir}" ]; then mkdir -p {params.per_donor_log_dir}; fi

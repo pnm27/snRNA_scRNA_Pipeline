@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "H5AD Column Transformation Schema",
+  "type": "object",
+  "properties": {
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source_value"],
+        "properties": {
+          "name": { "type": "string" },
+          "source_value": { "type": "string"},
+          "value_column": { "type": "string"},
+          "lookup_column": { "type": "string"},
+          "transformations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "oneOf": [
+
+                {
+                  "title": "Pythonic String Manipulation",
+                  "type": "object",
+                  "required": ["type", "operation"],
+                  "properties": {
+                    "type": { "const": "pythonic" },
+                    "operation": {
+                      "type": "string",
+                      "enum": [
+                        "lower",
+                        "upper",
+                        "title",
+                        "strip",
+                        "rstrip",
+                        "lstrip",
+                        "replace",
+                        "split",
+                        "join",
+                        "select_n"
+                      ]
+                    },
+                    "args": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "Arguments for operations such as replace(old, new)"
+                    },
+                    "start_n": {
+                      "type": "integer"
+                    },
+                    "end_n": {
+                      "type": "integer"
+                    },
+                    "at": {
+                      "type": "integer"
+                    }
+                  }
+                },
+
+                {
+                  "title": "Regex Transformation",
+                  "type": "object",
+                  "required": ["type", "pattern", "replacement"],
+                  "properties": {
+                    "type": { "const": "regex" },
+                    "pattern": { "type": "string" },
+                    "replacement": { "type": "string" },
+                    "flags": {
+                      "type": "string",
+                      "description": "Optional regex flags"
+                    }
+                  }
+                }
+              ],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "operation": { "const": "select_n" }
+                    },
+                    "required": ["operation"]
+                  },
+                  "then": {
+                    "anyOf": [
+                      { "required": ["start_n"] },
+                      { "required": ["end_n"] },
+                      { "required": ["at"] }
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "operation": { "enum": ["split", "join"] }
+                    },
+                    "required": ["operation"]
+                  },
+                  "then": {
+                    "properties": {
+                      "by": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["by"]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["columns"]
+}

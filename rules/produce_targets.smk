@@ -149,6 +149,29 @@ def targets_SplitBams(conf_f, progs=None, multiome=False) -> list:
     return target_list
 
 
+# TRIAL
+def targets_SplitBams_trial(conf_f, progs=None, multiome=False) -> list:
+    sub_dir = ["ATAC", "cDNA"] if multiome else ['']
+    target_list = []
+    for d in sub_dir:
+        if config['gt_check']:
+            out_dir = conf_f['split_bams_pipeline']['split_bams_dir2']
+        else:
+            out_dir = conf_f['split_bams_pipeline']['split_bams_dir']
+        op = conf_f['fold_struct_bam_split2']
+
+        f = os.path.join(f"{out_dir}", f"{op}") if d == '' \
+            else os.path.join(f"{out_dir}", f"{op}", d)
+        target_list.append(f)
+    
+    # STARsolo* + PICARD (any) progs
+    if progs == 'all' or progs == 'rnaseq' or progs == 'gc':
+        target_list.extend(targets_PICARD(conf_f=conf_f, progs=progs, 
+            ))
+    
+    return target_list
+
+
 def targets_resolve_swaps_gt_demux(conf_f) -> list:
     out_dir = conf_f['finalize_demux']['out_dir']
     fs = conf_f['fold_struct_gt_demux_redo']
@@ -363,6 +386,20 @@ def produce_targets(conf_f: pd.DataFrame, last_step: str, wc_d: dict) -> list:
 
         elif target_step == "starsolo_split_bams_gt_demux":
             target_files = targets_SplitBams(conf_f=conf_f, progs=metrics)
+            suff = ".txt"
+            # global_vars.ONLY_VIREO = True
+            # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example
+            # final_target_list= [expand(f"{target}{suff}", zip, **wc_d) for target in target_files][0] # Single wildcard
+            
+            final_target_list = []
+            for id, target in enumerate(target_files):
+                if id == 0:
+                    final_target_list.extend(expand(f"{target}{suff}", zip, **wc_d))
+                else:
+                    final_target_list.extend(expand(f"{target}", zip, **wc_d))
+
+        elif target_step == "starsolo_split_bams_gt_demux_new":
+            target_files = targets_SplitBams_trial(conf_f=conf_f, progs=metrics)
             suff = ".txt"
             # global_vars.ONLY_VIREO = True
             # temp_list= [expand(f"{target}", zip, num=round_num, **wc_d) for target in target_files][0] # Multiple wildcards example

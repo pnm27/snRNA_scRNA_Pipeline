@@ -34,7 +34,7 @@ def get_limitsjdbval_coll(wildcards, resources):
     log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
     ins_nsj = 1000000 # DEFAULT
     sj_collap = 1000000 # DEFAULT
-    limitbamsortram = resources.mem_mb * resources.cpus_per_task * 1000000 # DEFAULT
+    limitbamsortram = resources.mem_mb * (resources.cpus_per_task - 1) * 1000000 # DEFAULT
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
@@ -86,7 +86,7 @@ def get_limitsjdbval_coll(wildcards, resources):
 # Resource Allocation ------------------
 
 def allocate_mem_SS(wildcards, attempt):
-    return 150000+1000*(attempt-1)
+    return 45000+1000*(attempt-1)
 
 def allocate_time_SS(wildcards, attempt):
     return 1440
@@ -119,7 +119,6 @@ rule STARsolo_sort:
 
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
@@ -135,7 +134,7 @@ rule STARsolo_sort:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
    
     resources:
-        cpus_per_task=6, # For snakemake > v8
+        cpus_per_task=10, # For snakemake > v8
         mem_mb=allocate_mem_SS,
         time_min=allocate_time_SS,
         attempt=lambda wildcards, attempt: attempt
@@ -144,11 +143,10 @@ rule STARsolo_sort:
     # threads: 6
 
     envmodules:
-        f"{config['STAR_version']}",
-        "samtools/1.21"
+        f"{config['STAR_version']}"
 
     shell:
-        """
+        r"""
         r1=$(echo "{input.R1}" | tr '[:blank:]' ',')
         r2=$(echo "{input.R2}" | tr '[:blank:]' ',')
         echo "{params.opt_params[0]}, {params.opt_params[1]}, {params.opt_params[2]}, {resources.attempt}"
@@ -168,16 +166,55 @@ rule STARsolo_sort:
         fi
         files=( {output.gf_feat} {output.gf_mat} {output.gf_bc} )
         for i in ${{files[@]}}; do
-            [ ! -f ${{i}} ] && gzip ${{i%".gz"}}
+            base=${{i%".gz"}}
+            if [ -f "${{base}}" ] && [ ! -f "${{i}}" ]; then
+                gzip "${{base}}"
+            fi
         done
         a=$(grep -n "^##### Final effective command line" {params.star_def_log_out} | cut -d ":" -f1)
         a=$((a+1))
         if [ ! -f "{params.save_params}" ]; then 
-               tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}
+            sed -n "${{a}}p" {params.star_def_log_out} > {params.save_params}
         else 
-               tail -n +${{a}} {params.star_def_log_out} | head -1 > {params.save_params}_{resources.attempt}
-               cmp --silent {params.save_params} {params.save_params}_{resources.attempt} && rm {params.save_params}_{resources.attempt} \
-               || (rm {params.save_params} && mv {params.save_params}_{resources.attempt} {params.save_params})
+            sed -n "${{a}}p" {params.star_def_log_out} > {params.save_params}_{resources.attempt}
+            if cmp --silent {params.save_params} {params.save_params}_{resources.attempt}; then
+                rm {params.save_params}_{resources.attempt}
+            else
+                rm {params.save_params}
+                mv {params.save_params}_{resources.attempt} {params.save_params}
+            fi
         fi
-        samtools index {output.bam}
+        op_dir={output.bam}
+        op_dir=$(dirname ${{op_dir}})
+        find ${{op_dir}} -type f -name '*mate*' -print0 | \
+        tar --null --remove-files -zcvf {params.out_pref}Unmapped_fastqs.tar.gz --files-from=-
+        """
+
+
+rule samtools_index:
+    input:
+        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+
+    params:
+        threads=lambda wildcards, resources: resources.cpus_per_task*6-2
+
+    output:
+        bai=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
+
+    resources:
+        cpus_per_task=4, # For snakemake > v8
+        mem_mb=5000,
+        time_min=720,
+        attempt=lambda wildcards, attempt: attempt
+    
+    log:
+        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_samtools_index_log.txt"
+
+    envmodules:
+        "samtools/1.21"
+
+    shell:
+        """
+        mem_per_thread=$((resources.mem_mb/params.threads))
+        samtools index -@ {params.threads} {output.bam} &>> {log}
         """

@@ -18,7 +18,8 @@ def allocate_time_PRNA(wildcards, attempt):
 
 rule Picard_GC_bias_metrics:
     input:
-        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
+        bais=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
 
     # priority: 9
 
@@ -53,7 +54,8 @@ rule Picard_GC_bias_metrics:
 
 rule Picard_RNAseq_metrics:
     input:
-        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
+        bais=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
 
     # priority: 9
 

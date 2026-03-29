@@ -5,16 +5,18 @@
 from typing import Union # Need verion > 3.5
 import anndata as ad
 import scanpy as sc, pandas as pd, numpy as np
-import os, sys, argparse, itertools
+import os, sys, argparse, itertools, json
 from collections import Counter
 from collections import defaultdict, OrderedDict as ord_dict
 import datetime
 from time import sleep
+from jsonschema import validate, Draft202012Validator
 from demultiplex_helper_funcs import (
     auto_read, 
     demux_by_calico_solo, 
     demux_by_vireo,
-    get_donor_info, 
+    get_donor_info,
+    process_columns 
     )
 
 
@@ -104,12 +106,42 @@ def get_argument_parser():
     "This should be  in this script as well as the one in the wet_lab_file "
     "and in the converter file, if present.",
     )
+    parser.add_argument('--common_annotations', help="json file that has "
+    "extra annotations. By default, it will get these options from "
+    "the file called annotate_h5ad.json in the root folder. They will "
+    "be validated against the schema present in the schema dir.",
+    default="demul_samples_annotate_h5ad.json"
+    )
+    parser.add_argument('-w', '--wet_lab_file', help="Path to file that "
+    "contains either/all of: HTO info for each set, annotations, etc."
+    )
+
     # Only for multi-HTO pools
     parser.add_argument('--suffix', help="Suffix for each hashsolo "
     "run per pool or each vireo run (e.g. multiome). This should match "
     "the number of hashsolo or vireo files provided as input and in "
     "the same sequence! ", nargs='*', 
     metavar="suffix", type=string_or_none,
+    )
+    parser.add_argument('--remove_qc_pass', action='store_true', 
+    dest="no_qc_col",
+    help="If flag is used, remove the 'QC_pass' column."
+    )
+    parser.add_argument('--gene_name_as_index', action='store_true', 
+    dest="index_gene_name",
+    help="If flag is used, use gene name as index."
+    )
+    parser.add_argument('--remove_geneids_w_no_name', action='store_true', 
+    dest="remove_unnamed_geneids",
+    help="If flag is used, remove those genes that don't have an HGNC name. "
+    "This flag is 'on', when using the '--gene_name_as_index'."
+    )
+    parser.add_argument(
+    '--keep_only',
+    choices=['genes', 'cells', 'both', 'none'], default='both',
+    help="Select whether to keep QC_pass cells or QC_pass genes or "
+    "keep all cells and genes or keep none. DEFAULT: 'both' - "
+    "keep all cells and genes", type=string_or_none,
     )
 
     # Input of mtx file
@@ -135,14 +167,11 @@ def get_argument_parser():
     help="Min #cells expressing a gene for it to pass the filter. "
     "If no given value to parameter, will default to 10 otherwise "
     "no filter.", default=None, const=10, type=int_or_none,
-    )  
+    ) 
 
     # For calico_solo inputs
     cs = parser.add_argument_group('HASHSOLO DEMUX OPTIONS', "Add calico_solo "
     " demultiplex to create final count matrix file.")
-    cs.add_argument('-w', '--wet_lab_file', help="Path to file that "
-    "contains HTO info for each set (either csv or tsv file)."
-    )
     cs.add_argument('--calico_solo', dest='hashsolo_out', help="Path "
     "to cached output of hashsolo(h5ad) file(s). If no given value to "
     "parameter, will default to not process hashsolo output otherwise ",
@@ -166,14 +195,14 @@ def get_argument_parser():
     default=['unique_sample_ID', 'hashtag', 'ab_barcode', 'SubID'],
     )
     cs.add_argument('--no-demux-stats-cs', action='store_true', 
-            dest="cs_stats",
-			help="If flag is used no demux stats will be stored.",
-			)
+    dest="cs_stats",
+    help="If flag is used no demux stats will be stored.",
+    )
     cs.add_argument('--no-subid_convert', action='store_true', 
-            dest="subid_convert",
-			help="If flag is used no conversion of subID is needed."
-            "Also expected when used for multi-HTO setup.",
-			)
+    dest="subid_convert",
+    help="If flag is used no conversion of subID is needed."
+    "Also expected when used for multi-HTO setup.",
+    )
 
     # For vireo inputs
     vs = parser.add_argument_group("VIREO DEMUX OPTIONS", "Add "
@@ -183,16 +212,16 @@ def get_argument_parser():
     metavar="donor_ids.tsv", type=string_or_none, action='append',
     )
     vs.add_argument('--no-demux-stats-vs', action='store_true',
-            dest="vs_stats",
-			help="If flag is used no demux stats will be stored.",
-			)
+    dest="vs_stats",
+    help="If flag is used no demux stats will be stored.",
+    )
     vs.add_argument('--converter_file', help="If names from vireo output "
     "needs to be changed.", type=string_or_none,
     )
     vs.add_argument('--converter_file_headerNlev', help="Number of headers "
-	"levels in the converter file.", dest="conv_header_level", 
-	default=1, type=int_or_none,
-	)
+    "levels in the converter file.", dest="conv_header_level", 
+    default=1, type=int_or_none,
+    )
     vs.add_argument('--conv_file_pool_column', help="Column with Pool names "
     "in the converter file (Should match with that in the h5ad).", dest="pool_col",
     metavar="pool_column", type=string_or_none,
@@ -219,6 +248,9 @@ def main():
 
     parser = get_argument_parser()
     args = parser.parse_args()
+
+    # Wet Lab file, Filter wet lab file's columns, if needed
+    df = auto_read(args.wet_lab_file)
 
     sc.settings.set_figure_params(dpi_save=400, format='png', 
                                 color_map = 'viridis_r')
@@ -273,21 +305,26 @@ def main():
     vir_dem_stats = []
 
     # Both calico_solo and vireo can't be None
-    if add_calico is None and add_vireo is None:
-        raise ValueError(
-            "For this script provide either a VALID calico_solo h5ad "
-            "or vireoSNP's donor file"
-            )
+    # if add_calico is None and add_vireo is None:
+    #     raise ValueError(
+    #         "For this script provide either a VALID calico_solo h5ad "
+    #         "or vireoSNP's donor file"
+    #         )
     
     # no_stats = True if args.cs_stats and args.vs_stats else False
     
     # For assigning gene names
     # t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),
     #                 names=["gene_id", "gene_name"], sep="\t")
-    t2g = auto_read(args.gene_info_file, skiprows=1, usecols=range(2),
-                    names=["gene_id", "gene_name"])
-    t2g.index = t2g.gene_id
-    t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
+    t2g = auto_read(args.gene_info_file, skiprows=1, usecols=range(3),
+                    names=["gene_id", "gene_name", "chromosome_name"])
+    
+    accept_chr = list(map(lambda x: str(x), range(1,23))) + ['MT', 'X', 'Y']
+    accept_chr = accept_chr + list(map(lambda x: 'chr' + x, accept_chr))
+    t2g['chromosome_name'] = t2g["chromosome_name"].astype(str)
+    # t2g.index = t2g.gene_id
+    # t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
+    id2name = pd.Series(t2g['gene_name'].values, index=t2g['gene_id']).to_dict()
     
 
     # Store output_file and Create necessary folders
@@ -310,7 +347,7 @@ def main():
         print(f"Processing STARsolo's (or mtx files) output at: {ct}")
         try:
             adata = sc.read_10x_mtx(starsolo_mat, make_unique=True, 
-            var_names= "gene_ids", cache=True)
+                var_names= "gene_ids", cache=True)
         except:
             e = sys.exc_info()[0]
             print("Error encountered while loading the mtx files!\nError "
@@ -321,17 +358,18 @@ def main():
         # Remove version number if present in ENSG IDs
         # ENSG00000290825.1
         adata.var.index = adata.var.index.to_series().apply(lambda x: x.split('.')[0])
+        adata.var["gene_id"] = adata.var.index.values
+        adata.var["gene_name"] = adata.var.gene_id.map(id2name)
         filter_info.append(( 'Started with cells', adata.n_obs))
         filter_info.append(( 'Started with genes', adata.n_vars))
-        adata.var["gene_id"] = adata.var.index.values
-        adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
-        adata.var_names_make_unique()
+
         # Typically shows discrepancies in reference genome used for
         # alignemnt and that for annotation (here: gene_info file)
+        # Don't consider gene_ids that don't have an associated gene name  
         geneids_w_gene_names = pd.notna(adata.var["gene_name"]) 
-        adata.var_names = (
-            adata.var_names.to_series().map(lambda x: x + '_index')
-            )
+        # adata.var_names = (
+        #     adata.var_names.to_series().map(lambda x: x + '_index')
+        #     )
         total_umi_lost = adata[:, ~ geneids_w_gene_names].X.sum()
         # avg_umis_per_cell_before = (
         #     adata.X.sum(axis=1)
@@ -349,12 +387,11 @@ def main():
             adata[:, ~ geneids_w_gene_names].X.sum(axis=0)
             .mean()
             )
-        
-        # Don't consider gene_ids that don't have an associated gene name      
+            
         adata.var_names_make_unique()
         adata.X = adata.X.astype('float64')
         filter_info.append(( 'gene_ids with an associated gene_name', 
-                            adata.n_vars))
+                            geneids_w_gene_names.sum()))
         filter_info.append(( 'avg UMI counts lost per cell', 
                             avg_umis_lost_per_cell))
         filter_info.append(( 'avg UMI counts lost per gene', 
@@ -377,6 +414,7 @@ def main():
         filter_info.append(( 'Remaining genes after previous filter', 
                             gene_subset.sum()))
 
+
         # Filter data wrt mito content
         adata.var["mito"] = adata.var["gene_name"].str.startswith(args.mito_prefix, na=False)
         sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
@@ -393,11 +431,14 @@ def main():
         filter_info.append(( 'Cells passing mito and basic filter threshold', 
                             qc_pass_cells.sum()))
         
-        # Assign 'QC_pass' observation according to the selected filters
+        # if args.remove_unnamed_geneids:
+        #     qc_pass_genes = gene_subset.astype('bool') & geneids_w_gene_names
+        # else:
+        #     qc_pass_genes = gene_subset.astype('bool')
+
         adata.obs['QC_pass'] = qc_pass_cells
-        adata.var['QC_pass'] = gene_subset.astype('bool')
-        print(adata)
-    
+        adata.var['QC_pass'] = gene_subset.astype('bool') # qc_pass_genes
+        
     else:
         ct = datetime.datetime.now()
         print(f"Reading given h5ad input file at: {ct}")
@@ -413,23 +454,58 @@ def main():
         print("Successfully loaded the input file!")
 
 
-
+    # DEPRACATED
     # Batch info
     # This is the values that will be stored in the final h5ad file
     # Prepare for Extra Information
-    replicate=args.pool_name.split('_')[2]
+    # replicate=args.pool_name.split('_')[2]
     # add few more annotations
-    adata.obs['batch'] = args.pool_name
-    adata.obs['rep'] = replicate
-    adata.obs['set'] = '_'.join(args.pool_name.split('_')[:3])[:-1]
+    # adata.obs['batch'] = args.pool_name
+    # adata.obs['rep'] = replicate
+    # adata.obs['set'] = '_'.join(args.pool_name.split('_')[:3])[:-1]
+
+    # New way to add extra annotations
+    if args.common_annotations is None:
+        print("Opted to add no extra annotations! If annotations "
+            "are needed then either update the json file called "
+            "annotate_h5ad.json in the parent dir or provide a "
+            "new path such file."
+        )
+    else:
+        # Load the user config
+        with open(args.common_annotations) as f:
+            data = json.load(f)
+
+        # Load your schema (replace with your actual JSON schema file)
+        with open("schema/demul_samples_annotate_h5ad.schema.json") as f:
+            schema = json.load(f)
+        # Validate
+        validator = Draft202012Validator(schema)
+        errors = sorted(validator.iter_errors(data), key=lambda e: e.path)
+
+        if errors:
+            for err in errors:
+                print("Validation error:", err.message)
+        else:
+            print("Validation successful!")
+
+        # PROCESS THE DATA
+        processed = process_columns(data, args.pool_name, df)
+
+        # OLD STYLE
+        # Add the above annotations
+        # for i, j in processed.items():
+        #     adata.obs.loc[:, i] = j
+        # NEW STYLE
+        for p in processed:
+            adata.obs.loc[:, p.column_header_h5ad] = p.column_value
 
     # Cell barcodes
     cell_bcs =  adata.obs_names.to_series()
 
     # For demultiplexing using calico_solo
     if add_calico is not None:
-        # Wet Lab file, Filter wet lab file's columns, if needed
-        df = auto_read(args.wet_lab_file)
+        
         if df.loc[df[cols[0]].str.lower() == args.pool_name.lower()].empty:
             raise ValueError("Check dtypes!\nSample (variable name 'var'"
             f", data type {type(args.pool_name)}, with value "
@@ -627,6 +703,24 @@ def main():
                                     columns=['Observations', 'Vals'])
         
         solo_run_df.to_csv(args.demux_info, sep = "\t", index=False)
+
+    if args.index_gene_name or args.remove_unnamed_geneids:
+        adata = adata[:, geneids_w_gene_names].copy()
+        if args.index_gene_name:
+            adata.var.index = adata.var['gene_name'].values
+            del adata.var['gene_name']
+
+    if args.keep_only is None:
+        adata = adata[adata.obs['QC_pass'], adata.var['QC_pass']].copy()
+    elif args.keep_only == 'genes':
+        adata = adata[:, adata.var['QC_pass']].copy()
+    elif args.keep_only == 'cells':
+        adata = adata[adata.obs['QC_pass'], :].copy()
+    
+    if args.no_qc_col:
+        # Assign 'QC_pass' observation according to the selected filters
+        del adata.obs['QC_pass']
+        print(adata)
 
     adata.write(op)
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import pandas as pd, numpy as np, os, sys
+import pandas as pd, warnings, os, sys, regex
 from collections import OrderedDict as ord_dict
-from typing import Union, Optional, Literal # Need verion > 3.5
+from typing import Union, Optional, Any, Literal # Need verion > 3.5
 
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
@@ -632,4 +632,422 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
         return [get_df["Subj_ID"], temp_df, get_df["converted_ID"]]
     else:
         return [get_df["Subj_ID"], temp_df, None]
+    
+
 # ---------------------------------------------------------------------------
+
+# Adding Annotations & validating them --------------------------------------
+
+# EXTRA ANNOTATIONS: TRANSFORMATION
+# OLD STYLE
+# def apply_pythonic(value, operation, old, new, start, end, by, index):
+#     """Apply built-in string methods with optional args."""
+#     if operation == "join" and (by is None or by == ' '):
+#         method = getattr(' ', operation)
+#         return method(value)
+#     elif operation == "join" and by is not None:
+#         method = getattr(by, operation)
+#         return method(value)
+#     elif operation == "select_index":
+#         if index is not None:
+#             return value[index]
+#     elif operation == "select_range":
+#         if start is None:
+#             return value[:end]
+#         elif end is None:
+#             return value[start:]
+#         else:
+#             return value[start:end]
+#     elif operation == "split":
+#         method = getattr(value, operation)
+#         return method(' ') if (by is None or by == ' ') else method(by)
+#     elif operation == "replace":
+#         method = getattr(value, operation)
+#         return method(old, new)
+
+from dataclasses import dataclass
+# from typing import List, Any
+
+
+@dataclass
+class ColumnResult:
+    column_header_h5ad: str
+    column_value: str
+    column_header_logs: list[str]
+
+
+from functools import cached_property
+
+
+class ParsedColumns:
+    def __init__(self, results: list[ColumnResult]):
+        self.results = results
+
+    @cached_property
+    def by_h5ad(self) -> dict[str, str]:
+        return {
+            r.column_header_h5ad: r.column_value
+            for r in self.results
+        }
+
+    @cached_property
+    def by_logs(self) -> dict[str, str]:
+        return {
+            tuple(r.column_header_logs): r.column_value
+            for r in self.results
+        }
+    
+    
+
+def apply_pythonic(value, t):
+    r"""Apply regex substitution.
+    
+    Paramters
+    ---------
+    value
+        Any value on which python operation(s) needs to be applied
+    t
+        A dict containing different set of values for different
+        python operations
+
+    Returns
+    -------
+    str
+        Output of regex operation
+    """
+
+    op = t["operation"]
+
+    if op == "split":
+        return value.split(t.get("by", " "))
+
+    elif op == "join":
+        return t.get("by", " ").join(value)
+
+    elif op == "select_index":
+        return value[t["index"]]
+
+    elif op == "select_range":
+        return value[t.get("start"): t.get("end")]
+
+    elif op == "replace":
+        return value.replace(t["old"], t["new"])
+    
+
+def apply_regex(value: Any, t: dict[str, Any]) -> str:
+    r"""Apply regex substitution.
+    
+    Paramters
+    ---------
+    value
+        Any value on which the regex pattern needs to be applied
+    t
+        A dict containing 'pattern' and 'replacement' (including flags)
+
+    Returns
+    -------
+    str
+        Output of regex operation
+    """
+    pattern = t["pattern"]
+    replacement = t["replacement"]
+    flags = t.get("flags")
+    if flags:
+        return regex.sub(pattern, replacement, value, flags=flags)
+    return regex.sub(pattern, replacement, value)
+
+
+# EXTRA ANNOTATIONS: PROCESS EACH COLUMN
+def process_columns(config: dict[str, Any], 
+    pool_name: str, df: pd.DataFrame) -> ParsedColumns:
+    r"""Process annotations by reading a JSON recipe.
+
+    This function provides an output, which can be used to 
+    annotate sample-level (pool-level) metrics using a template (JSON)
+    and parsing a file containing relevant information.
+
+    Paramters
+    ---------
+    config
+        A dict formed from JSON parsing containing recipes for adding 
+        annotations.
+    pool_name
+        Pool name. 
+    df
+        A pandas dataframe containing relevant annotations.
+    Returns
+    -------
+    ParsedColumns
+        An instance containing the results
+
+    See Also
+    --------
+    :func: ~apply_regex : Regex function can be used, if JSON input needs it.
+    :func: ~apply_pythonic : Python function can be used, if JSON input needs it.
+    """
+    result = []
+
+    for col in config["columns"]:
+        current_value = col["source_value"]
+        current_value = pool_name if current_value == 'args.p' else current_value
+        # Use Wet lab spreadsheet
+        if "lookup_column" in col and 'wet_lab.' in col["lookup_column"]:
+            col2use = col["value_column"].split('.')[1]
+            lookup_column = col["lookup_column"].split('.')[1]
+            current_value = df.loc[df[lookup_column] == current_value, col2use].values[0]
+
+        if "transformations" in col:
+            for t in col["transformations"]:
+                if t["type"] == "pythonic":
+                    current_value = apply_pythonic(current_value, t)
+                elif t["type"] == "regex":
+                    current_value = apply_regex(current_value, t)
+
+        result.append(
+            ColumnResult(
+                column_header_h5ad=col["name"],
+                column_value=current_value,
+                column_header_logs=col.get("columnInLogs", [])
+            )
+        )
+
+    return ParsedColumns(result)
+
+
+# get demultiplex_paths
+def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
+    r""" Function that returns directories with demultiplex results
+
+    This function extracts all the directories containing demultiplexing
+    data and returns them.
+
+    Paramters
+    ---------
+    config
+        A dict formed from JSON parsing containing recipes for adding 
+        annotations.
+
+    Returns
+    -------
+    dict
+        A dict containing all directories that contain demultiplexed 
+        info.
+    """
+    
+    result = {}
+    if 'demultiplex_paths' not in config:
+        raise warnings.warn("No demultiplex paths provided! "
+            "Can't write swap corrected statistics!!!", UserWarning)
+    else:
+        result.update(config['demultiplex_paths'])
+
+    return result
+
+
+# PROCESS SWAP CORRECTION
+def process_swap_correction(config: dict[str, Any], 
+    swap_df: pd.DataFrame, pool_name: str, 
+    demux_paths: dict[str, str]) -> str:
+    r"""This function returns the location of demultiplexing data
+
+    This function uses a swap correction file to look up specific
+    pools and extract the relevant directory containing the correct
+    version of demultiplexing run.
+
+    Paramters
+    ---------
+    config
+        A dict formed from JSON parsing containing recipes for adding 
+        annotations.
+    swap_df
+        A pandas dataframe containing swap corrected results.
+    pool_name
+        Pool name. 
+    df
+        A pandas dataframe containing relevant annotations.
+
+    Returns
+    -------
+    str
+        A string returning demultiplexing directory.
+
+    See Also
+    --------
+    :func: ~get_demux_paths : This is utilized to get all possible
+    demultiplex output containing directories.
+    """
+
+    result = ""
+    lookup_columns = [
+        'pool_column', 
+        'demultiplex_version_column'   
+    ]
+    
+    if 'swap_correction_df' not in config:
+        raise warnings.warn("No swap_correction metrics provided! "
+            "Can't write swap corrected statistics!!!", UserWarning)
+    else:
+        if all( f in config['swap_correction_df'] for f in lookup_columns ):
+            pool_col = config['swap_correction_df']['pool_column']
+            dem_col = config['swap_correction_df']['demultiplex_version_column']
+            dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
+            result = demux_paths[dem_val]
+            
+        else:
+            raise warnings.warn("Given columns not douns in the swap_correction DF! "
+            "Check their names!!!", UserWarning)
+    
+    return result
+
+# ---------------------------------------------------------------------------
+
+# UPDATED write_logs from update_logs.py
+
+import logging
+import pandas as pd
+
+# ---------------------------------------------------------------------------
+# File-loading strategies, keyed by sub_prog prefix.
+# Each loader receives all_files_dict and returns a DataFrame ready for lookup.
+# ---------------------------------------------------------------------------
+_LOADERS = {
+    "REG": lambda d: pd.read_csv(
+        d["STAR_final"],
+        names=["cols", "vals"],
+        delimiter=r"|",
+        skiprows=[7, 22, 27, 34],
+    ).assign(
+        cols=lambda df: df["cols"].str.strip(),
+        vals=lambda df: df["vals"].str.strip(),
+    ),
+    "GC": lambda d: pd.read_csv(
+        d["PICARD_GC"], sep="\t", skiprows=6
+    ),
+    "RNASEQMETRIC": lambda d: pd.read_csv(
+        d["PICARD_RNASeq"], sep="\t", nrows=1, skiprows=6
+    ),
+    "GENE_FEATURE":     lambda d: get_df(d["Gene_Features"]),
+    "GENE_SUMM":        lambda d: pd.read_csv(d["Gene_Summary"],    names=["cols", "vals"]),
+    "GENEFULL_FEATURE": lambda d: get_df(d["GeneFull_Features"]),
+    "GENEFULL_SUMM":    lambda d: pd.read_csv(d["GeneFull_Summary"], names=["cols", "vals"]),
+    "BARCODE_STATS":    lambda d: get_df(d["Barcodes_stats"]),
+    "DEMUX":            lambda d: pd.read_csv(
+        d["Demultiplex_stats"], names=["cols", "vals"], skiprows=1, sep="\t"
+    ),
+}
+
+# sub_progs that share the DEMUX loader
+_DEMUX_PREFIXES = {"DEMUX", "DEMUX_CS", "DEMUX_VS"}
+
+
+def _load_file(sub_prog, all_files_dict, cache):
+    """
+    Return (and cache) the DataFrame for a given sub_prog.
+    Raises RuntimeError if the underlying file cannot be read.
+    """
+    loader_key = "DEMUX" if sub_prog in _DEMUX_PREFIXES else sub_prog
+    if loader_key not in cache:
+        if loader_key not in _LOADERS:
+            raise ValueError(
+                f"No file loader defined for sub_prog '{sub_prog}'. "
+                "Add an entry to _LOADERS or check your map file."
+            )
+        try:
+            cache[loader_key] = _LOADERS[loader_key](all_files_dict)
+        except (FileNotFoundError, pd.errors.ParserError, pd.errors.EmptyDataError) as e:
+            raise RuntimeError(
+                f"Could not read source file for sub_prog='{sub_prog}': {e}"
+            ) from e
+    return cache[loader_key]
+
+
+def _lookup_value(temp_df, sub_prog, val, mapper):
+    """
+    Look up a single value from a loaded DataFrame using the mapper.
+    Returns the value, or "" if the mapper entry or column is absent.
+    Trailing commas are stripped (demux legacy format).
+    """
+    try:
+        mask = (mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog)
+        mapped_col = mapper.loc[mask, "val_in_log"].values[0]
+    except IndexError:
+        logging.warning("No mapper entry for sub_prog=%s val=%s — writing empty", sub_prog, val)
+        return ""
+
+    try:
+        # Key/col-based lookup (GC, RNASEQMETRIC)
+        if sub_prog in {"GC", "RNASEQMETRIC"}:
+            result = temp_df.loc[0, mapped_col]
+        # Row-based lookup: find the row whose 'cols' column matches mapped_col
+        else:
+            result = temp_df.loc[temp_df["cols"] == mapped_col, "vals"].values[0]
+    except (KeyError, IndexError):
+        logging.warning(
+            "Mapper entry found but value absent in file: sub_prog=%s val=%s mapped_col=%s — writing empty",
+            sub_prog, val, mapped_col,
+        )
+        return ""
+
+    # Normalise: strip trailing commas, clean up floats
+    if isinstance(result, str) and result.endswith(","):
+        result = result[:-1]
+    elif isinstance(result, float) and not result.is_integer():
+        result = round(result, 3)
+
+    # REG values use '/' as a separator
+    if sub_prog == "REG" and isinstance(result, str):
+        result = result.replace(" ", "/")
+
+    return result
+
+
+def write_logs(big_df, mapper, all_files_dict, no_progs, *args):
+    """
+    Build one output row for a single sample.
+
+    Parameters
+    ----------
+    big_df         : DataFrame with MultiIndex columns (prog, sub_prog, val)
+    mapper         : DataFrame mapping curr_val -> val_in_log
+    all_files_dict : dict of {key: filepath} for all input files
+    no_progs       : list of sub_prog prefixes to skip
+    *args          : leading annotation values (e.g. sample name)
+
+    Returns
+    -------
+    list of values in column order
+    """
+    new_row = list(args)
+    file_cache = {}   # Populated lazily; one DataFrame per loader key
+    empty_count = 0
+
+    for prog, sub_prog, val in big_df.columns.tolist():
+
+        # LAB columns are annotation placeholders — already handled via *args
+        if prog == "LAB":
+            continue
+
+        # Skip excluded sub_progs (exact match or prefix match)
+        if sub_prog in no_progs or any(sub_prog.startswith(p) for p in no_progs):
+            new_row.append("")
+            continue
+
+        temp_df = _load_file(sub_prog, all_files_dict, file_cache)
+        add_value = _lookup_value(temp_df, sub_prog, val, mapper)
+
+        if add_value == "":
+            empty_count += 1
+
+        new_row.append(add_value)
+
+    if empty_count:
+        logging.warning(
+            "Sample '%s': %d/%d values were empty — check mapper and input files.",
+            args[0] if args else "unknown",
+            empty_count,
+            len(big_df.columns),
+        )
+
+    return new_row
+
+# -------------------------------------------------------------------

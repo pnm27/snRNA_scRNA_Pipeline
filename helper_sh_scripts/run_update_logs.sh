@@ -14,6 +14,10 @@ params["OUTPUT_FILE"]="-o"
 params["BAM_STRUCT"]="--bam_struct"
 params["PICARD_STRUCT"]="--pc_struct"
 params["DEMUX_STRUCT"]="--dem_struct"
+params["WET_LAB_FILE"]="-w"
+params["ANNOT"]="--common_annotations"
+params["SWAP_CORRECT_DF"]="--swap_correct"
+
 
 # CHANGE THIS ACCORDING TO PROJECT REQUIREMENTS
 INPUT_FILE="/sc/arion/projects/psychAD/pnm/fastq_files.txt"
@@ -25,6 +29,9 @@ args["OUTPUT_FILE"]="/sc/arion/projects/psychAD/pnm/All_logs.tsv" # REQUIRED
 args["BAM_STRUCT"]="Sample_<sample>*/" # REQUIRED
 args["PICARD_STRUCT"]="Sample_<sample>*/"
 args["DEMUX_STRUCT"]="Sample_<sample>*/"
+args["WET_LAB_FILE"]=""
+args["ANNOT"]=""
+args["SWAP_CORRECT_DF"]=""
 
 
 samp_list=""
@@ -34,7 +41,7 @@ do
     if ! grep -q "^#" <<< ${l}; then
         # Remove 'cDNA' at the end of the names
         # glob can add cDNA or HTO as required
-        samp_name=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "-" -f2- | rev )
+        samp_name=$(rev <<< ${l} | cut -d "/" -f1 | rev | sed "s#[-_][cC][dD][nN][aA]##g" )
         samp_list=${samp_list}" "${samp_name}
     fi
 }
@@ -52,7 +59,7 @@ date
 echo
 set -x
 # Restrict glob expansion
-python3 ../helper_py_scripts/update_logs.py ${cmd_str} ${samp_list} \
+python3 ../helper_py_scripts/update_logs.py ${samp_list} ${cmd_str} \
     --ss_l --ss_g_f --ss_gf_f --ss_g_s --ss_gf_s --ss_bc --pc_gc --pc_rs --dem_info
     
 set +x

@@ -1,6 +1,14 @@
 import os, yaml
 from snakemake.utils import validate
+from lib.utils import read_files_ext, ret_cols
 
+
+# Columns for a vcf_info file when provided with a vcf per pool
+col_set = [
+    "pool", 
+    "n_dons", 
+    "vcf"
+]
 
 # Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
@@ -16,8 +24,6 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
                 line_sp = line.split('/')
                 pool.append(line_sp[0].strip().replace('-cDNA', ''))
 
-    # Create a dict of wildcards
-    wildcards_list={'pool':pool}
 
     # EXAMPLE: 2 WILDCARDS for FASTQs
     # round_num=[] # wildcard 'num'
@@ -36,6 +42,31 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
     # Create a dict of wildcards
     # wildcards_list={'num':round_num, 'id1':sample_name}
 
+    if any([ f in config['select_fastqs'].lower() for f in ['split_bams', 'identify_swaps']]):
+        # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
+        if n_cols == 2:
+            cols = col_set[:-1]
+            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
+                        names=cols, usecols=range(2)
+                    )
+            for p in pool:
+                # Repeat rows according to n_dons
+                temp_df_expanded = temp_df.loc[temp_df.index.repeat(temp_df["n_dons"])].copy()
+
+                # Create donor labels per pool
+                temp_df_expanded["donors"] = temp_df_expanded.groupby("pool").cumcount()
+
+                # Final dict
+                result = {
+                    "pool": temp_df_expanded["pool"].tolist(),
+                    "donors": temp_df_expanded["donors"].apply(lambda x: f"donor{x}").tolist()
+                }
+        elif n_cols > 2:
+        samp_name = '-'.join(wildcards.pool.split('-')[:-1]) # WILDCARDS
+
+    else:
+        # Create a dict of wildcards
+        wildcards_list={'pool':pool}
 
 # If the input is yaml file then validate it and process it
 # The example in here is for more than one wildcards
@@ -143,7 +174,8 @@ elif os.path.isdir(config['select_fastqs']):
     assert config['wildcards_select'] is not None, "if 'select_fastqs' option in the yaml file is a dir then 'wildcards_select' can't be 'None'!"
     # Example for one wildcard extraction
     # ID1, = glob_wildcards(config['select_fastqs'])
-    ID1, DONOR = sorted(glob_wildcards(os.path.join(config['select_fastqs'], config['wildcards_select'])))
+    # REMOVED sorted as it behaves weirdly: it sorts the tuples rather the values it contains
+    ID1, DONOR = glob_wildcards(os.path.join(config['select_fastqs'], config['wildcards_select']))
     
     # Example of how to filter out a list of files
     # In here some of the values in ID1 (wildcard)

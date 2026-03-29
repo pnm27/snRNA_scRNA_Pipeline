@@ -220,6 +220,24 @@ The highlights of the pipeline are:
 - Fixed some issues with wrong inputs in **split_bams.smk**
 - Fixed logic issue in **produce_targets.smk** for single-cell/nucleus processing.
 - Now the lines will be sorted when accessing through path in *input_processing.smk*.
+- Now samtools index is a separate rule so that any error in indexing doesn't result in deletion of STARsolo_sort outputs.
+- *vcf_info* file EXPECTED TO BE WITH HEADERS.
+- Now DEPRACATED *vcf_info_columns*. Can be any column names with the order: Pool, number_of_donors[, path2vcf].
+- Major changes to *demultiplex_helper_funcs.py*:
+  - Add support for adding annotations using JSON file
+  - Created dataclass to support custom outputs along with views.
+- Major changes to *update_logs.py* :
+  - Support annotations through the JSON file used for annotating in the *demul_samples.py* file.
+  - 1 loop for conversion
+  - 1 loop for calculations
+  - Fully vectorized (pd.to_numeric)
+  - No duplicated code
+  - Easier to extend (just add another mode)
+  - Created structured outputs
+  - Removed backward support (not completely but advised to create new file)
+- Major changes to *run_update_logs.sh*:
+  - Parameters and arguments are arranged as arrays.
+  - Accepts new parameters for annotations &mdash wet_lab file and annotations.
   
 ## Requirements
 

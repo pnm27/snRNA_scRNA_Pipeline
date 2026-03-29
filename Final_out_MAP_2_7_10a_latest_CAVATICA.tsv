@@ -156,8 +156,8 @@ avg UMI counts lost per gene	AVG_UMI_COUNTS_LOST_PER_GENE	STARsolo	DEMUX	Avg UMI
 min #genes expressed per cell	THRESH_N_GENES_PER_CELL	STARsolo	DEMUX	min no. of genes to be expressed by a cell to pass filter (Basic Filter)
 min #cells expressing per gene	THRESH_N_CELLS_EXPRESS_GENE	STARsolo	DEMUX	min no. of cells required to express a gene for it to pass filter (Basic Filter)
 total UMI counts lost to gene ids wo names	TOTAL_UMI_COUNTS_LOST_WO_NAMES	STARsolo	DEMUX	Total UMI counts that will be lost to genes without a name, if removed
-Retained cells after previous filter	N_CELLS_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining cells after applying Basic Filter
-Retained genes after previous filter	N_GENES_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining genes after applying Basic Filter
+Remaining cells after previous filter	N_CELLS_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining cells after applying Basic Filter
+Remaining genes after previous filter	N_GENES_AFTER_BASIC_FILT	STARsolo	DEMUX	Remaining genes after applying Basic Filter
 max percent mito content per cell	THRESH_MAX_MITO_PERCENT	STARsolo	DEMUX	max. mitochondrial genes percent per cell
 cells with low mito percent	N_CELLS_LOW_MITO_PERCENT	STARsolo	DEMUX	cells that pass the mitochondrial content filter
 Doublets #cells_cs	N_DOUBLET_CELLS_CS	STARsolo	DEMUX_CS	doublet cells as identified by calico solo

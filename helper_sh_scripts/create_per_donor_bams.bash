@@ -134,25 +134,25 @@ fi
 if [[ ! -f "${tempdir%/}/${donor}.bam.bai" ]]; then
     awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir%/}/${donor}.txt
     # samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
-    samtools view -D CB:${tempdir%/}/${donor}.txt ${pooled_bam} -bho "${tempdir%/}/${donor}.bam"
+    samtools view -@ 10 -D CB:${tempdir%/}/${donor}.txt ${pooled_bam} -bho "${tempdir%/}/${donor}.bam"
     sleep 20
     samtools index "${tempdir%/}/${donor}.bam" &> /dev/null
     sleep 20
 fi
 
 echo "IGNORE [main_samview], if seen here!"
-mito_reads=$(samtools view -c "${tempdir%/}/${donor}.bam" "${mito_pref}")
+mito_reads=$(samtools view -@ 10 -c "${tempdir%/}/${donor}.bam" "${mito_pref}")
 echo "Number of mito reads for the donor ${donor}: ${mito_reads}" >> ${mito_file}
 
 # If bedfile is provided to filter the per-donor bams
 if [[ ${bedfile} != "None" ]]; then
     # Remove unwanted contigs and secondary alignments
-    samtools view -L "${bedfile}" -F 0x100 -o "${outdir%/}/${donor}.bam" "${tempdir%/}/${donor}.bam"
+    samtools view -@ 10 -L "${bedfile}" -F 0x100 -o "${outdir%/}/${donor}.bam" "${tempdir%/}/${donor}.bam"
     sleep 20
     samtools index "${outdir%/}/${donor}.bam" &> /dev/null && \
         ( rm "${tempdir%/}/${donor}.bam" "${tempdir%/}/${donor}.bam.bai"; \
         echo -n "Number of reads after filtering mito reads for the donor ${donor}: " >> ${mito_file}; \
-            samtools view -c "${outdir%/}/${donor}.bam" >> ${mito_file} ) && exit 0 || exit 1
+            samtools view -@ 10 -c "${outdir%/}/${donor}.bam" >> ${mito_file} ) && exit 0 || exit 1
 else
     mv "${tempdir%/}/${donor}.bam" "${outdir%/}/${donor}.bam"
     mv "${tempdir%/}/${donor}.bam.bai" "${outdir%/}/${donor}.bam.bai"

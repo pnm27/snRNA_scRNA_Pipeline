@@ -6,11 +6,7 @@ import numpy as np
 import glob2
 from time import sleep
 import argparse, warnings # errno
-from demultiplex_helper_funcs import (
-    process_columns, auto_read, 
-    get_demux_paths, process_swap_correction,
-    ColumnResult, ParsedColumns
-)
+from demultiplex_helper_funcs import process_columns, auto_read
 from jsonschema import validate, Draft202012Validator
 
 
@@ -74,130 +70,157 @@ def calc_ratio(numer, denom):
 
 
 # Main function to write rows of samples into a df
-def write_logs(df_all_cols, mapper, all_files_dict, no_progs, more_data: dict): # had **kwargs
+def write_logs(output_df_cols, mapper, all_files_dict, no_progs, more_data): # had **kwargs
    
+    new_row = []
+    # Extra Annotations through kwargs
+    # Reproduce the sequence of how the new_columns were set
+    # OLD STYLE
+    # new_row.append(kwargs["sample"])
+    # new_row.append(kwargs["set_num"])
+    # new_row.append(kwargs["prep"])
+    # new_row.append(kwargs["rep"])
+    new_row.extend([ f.column_value for f in more_data ])
+    # NEW STYLE
+    
 
-    new_row = {}
-
+    # Store Barcode.stats and Feature.stats files as DF in a list for easy access
+    # Seq is Feature.stats for Gene, Feature.stats for GeneFull, Barcode.stats
+    # stats_file = [x for k, x in all_files_dict.items() if '.stats' in x ]
+    # list_df = [get_df(x) for x in stats_file ]
+    
+    
     # Add values to a list in the same sequence as the final output file/dataframe
-    for prog, sub_prog, val in df_all_cols:
+    for prog, sub_prog, val in output_df_cols:
         add_value=""
-        # First, check in USER-added columns
-        if (prog, sub_prog, val) in more_data:
-            add_value = more_data[(prog, sub_prog, val)]
-            
-        elif prog != "LAB" and (sub_prog not in no_progs and
+        if prog != "LAB" and (sub_prog not in no_progs and
                         not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
                         ):
             if sub_prog == "REG":
                 temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
-                temp_df = temp_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
+                temp_df["vals"] = temp_df.vals.str.strip()
+                temp_df["cols"] = temp_df.cols.str.strip()
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
-                    temp_value = temp_value.replace(" ","/") # Used to resolve time based values
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value.replace(" ","/"))
 
             elif sub_prog == "GC":
                 temp_df = pd.read_csv(all_files_dict["PICARD_GC"], sep='\t', skiprows=6)
                 try:
-                    temp_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
                
             elif sub_prog == "RNASEQMETRIC":
                 temp_df = pd.read_csv(all_files_dict["PICARD_RNASeq"], sep='\t', nrows=1, skiprows=6)
                 try:
-                    temp_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
 
             elif sub_prog == "GENE_FEATURE":
                 temp_df = get_df(all_files_dict["Gene_Features"]) 
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
 
             elif sub_prog == "GENE_SUMM":
                 temp_df = pd.read_csv(all_files_dict["Gene_Summary"], names=['cols', 'vals'])
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
 
             elif sub_prog == "GENEFULL_FEATURE":
                 temp_df = get_df(all_files_dict["GeneFull_Features"])
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
 
             elif sub_prog == "GENEFULL_SUMM":
                 temp_df = pd.read_csv(all_files_dict["GeneFull_Summary"], names=['cols', 'vals'])
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
 
             elif sub_prog == "BARCODE_STATS":
                 temp_df = get_df(all_files_dict["Barcodes_stats"])
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
+                except:
+                    add_value = ""
+                new_row.append(add_value)
            
             elif sub_prog.startswith("DEMUX"):
                 temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
                 try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog), "val_in_log"].values[0], "vals"].values[0]
-                    if isinstance(temp_value, str) and temp_value.endswith(','):
-                        temp_value = temp_value[:-1]
-                    elif isinstance(temp_value, float):
-                        temp_value = (
-                                    temp_value if float(temp_value).is_integer
-                                    else round(temp_value, 3)
-                                )
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value      
+                    add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog), "val_in_log"].values[0], "vals"].values[0]
+                    if isinstance(add_value, str) and add_value.endswith(','):
+                        new_row.append(add_value[:-1])
+                    elif isinstance(add_value, float):
+                        new_row.append(add_value if float(add_value).is_integer else round(add_value, 3))
+                    else:
+                        new_row.append(add_value)
+                except:
+                    # print("FIND VALUE: ")
+                    # print(f"current_val: {val}, sub_prog: {sub_prog}")
+                    add_value = ""
+                    new_row.append(add_value)
+                    
+                # DEPRACATED WITH ADVENT OF NEW SUB_PROG 'DEMUX_CS' AND 'DEMUX_VS'
+                # if val == "N_CELLS_AFTER_DEMUX_CS" and add_value.endswith(','):
+                #     new_row.append(add_value[:-1])
+
+                # # Compatibility with older-style of producing demux_info file
+                # elif val == "N_CELLS_AFTER_DEMUX_CS" and 'Name:' in add_value:
+                #    add_value = add_value[:add_value.find('Name:')]
+                #    add_value= re.sub('[^\S\r\n]+', ':', add_value)
+                #    add_value = add_value[:-1]
+                #    add_value = re.sub('\n', ',', add_value)
+                #    new_row.append(add_value)
+
+                # else:
+                #     new_row.append(add_value)
+
+
+            # elif sub_prog == "DEMUX_CS":
+            #     temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+            #     add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_CS"), "val_in_log"].values[0], "vals"].values[0]
+            #     if add_value.endswith(','):
+            #         new_row.append(add_value[:-1])
+            #     else:
+            #          new_row.append(add_value)        
+
+            # elif sub_prog == "DEMUX_VS":
+            #     temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
+            #     add_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "DEMUX_VS"), "val_in_log"].values[0], "vals"].values[0]
+            #     if add_value.endswith(','):
+            #         new_row.append(add_value[:-1])
+            #     else:
+            #          new_row.append(add_value)          
 
             else:
                 raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
 
-        # elif prog != "LAB" and not (sub_prog not in no_progs and
-        #                 not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
-        #                 ):
-        #     add_value = ""
+        elif prog != "LAB" and not (sub_prog not in no_progs and
+                        not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
+                        ):
+            new_row.append("")
 
+        else:
+            continue
 
-        new_row[(prog, sub_prog, val)] = add_value
 
     return new_row
 
@@ -212,13 +235,16 @@ def write_logs(df_all_cols, mapper, all_files_dict, no_progs, more_data: dict): 
 # ]
 
 
-def get_all_columns(map_df: pd.DataFrame, new_cols_to_add: list[list[str]]):
+# NOT NEEDED
+# Function to conditionally run this script through Snakemake if the current file has fewer columns that the last version of this script
+# def get_latest_extra_columns():
+#     global new_cols_to_add
+#     return len(new_cols_to_add)
 
-    # Skip description (as present in the OG log files)
-    # Reorder columns
-    cols = map_df.iloc[:, [2, 3, 1]] 
+def get_all_columns(map_df: pd.DataFrame, new_cols_to_add: list[list[str]]):
+    cols = map_df.iloc[:, 1:-1]
     if new_cols_to_add:
-        cl = pd.DataFrame(new_cols_to_add, columns=list(cols.columns.values))
+        cl = pd.DataFrame(new_cols_to_add, columns=list(map_df.columns.values)[1:-1])
         # cl = cl.append(cols, ignore_index=True) # DEPRACATED
         cl = pd.concat([cl, cols], ignore_index=True, axis=0)
 
@@ -231,9 +257,9 @@ def get_all_columns(map_df: pd.DataFrame, new_cols_to_add: list[list[str]]):
         #STARsolo
         #GENE_SUMM
         #N_READS
-        return cl
+        return cl.iloc[:, [1, 2, 0]]
     else:
-        return cols
+        return cols.iloc[:, [1, 2, 0]]
 
 
 
@@ -260,22 +286,16 @@ def get_argument_parser():
         nargs="*",  # makes it optional
         help=argparse.SUPPRESS  # hide from help output
     )
-    # Old deprecated optional argument
-    parser.add_argument('-d', '--demul_dir', nargs='*',
-        # nargs='?', 
-        # help="Directory (comma-sep) containing demultiplexing stats. DEFAULT: current working directory",
-        help=argparse.SUPPRESS, 
-        # const=os.getcwd(), default=None
-        )
 
     # Optional parameters
     parser.add_argument('-m', '--map_file', help="Mapping file that contains info on the headers in the output. DEFAULT: <current working directory>/Final_out_MAP_2.tsv", 
-        default=os.path.join(os.getcwd(),"Final_out_MAP_2.tsv"))
-    parser.add_argument('-o', '--output_file', help="output file. DEFAULT: <current working directory>/All_logs.tsv", default=os.path.join(os.getcwd(),"All_logs.tsv"))
+        default=os.path.join(os.getcwd()+"Final_out_MAP_2.tsv"))
+    parser.add_argument('-o', '--output_file', help="output file. DEFAULT: <current working directory>/All_logs.tsv", default=os.path.join(os.getcwd()+"All_logs.tsv"))
     parser.add_argument('-b', '--bam_dir', help="Directory containing bam file(s). DEFAULT: current working directory", default=os.getcwd())
     parser.add_argument('-p', '--picard_dir', nargs='?', help="Directoy containing PICARD outputs. DEFAULT: current working directory", 
         const=os.getcwd(), default=None)
-    
+    parser.add_argument('-d', '--demul_dir', nargs='?', help="Directory (comma-sep) containing demultiplexing stats. DEFAULT: current working directory", 
+        const=os.getcwd(), default=None)
     parser.add_argument('--bam_struct', help="Regex to identify bam file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
         provided to this script. DEFAULT: \"<current_working_dir>/<sample>/\"", default=os.path.join(os.getcwd(), "<sample>/"))
     parser.add_argument('--pc_struct', nargs='?', help="Regex to identify picard file(s) for the give sample(s). NOTE: In the regex, <sample> denotes where to insert the sample name(s) \
@@ -305,9 +325,6 @@ def get_argument_parser():
     parser.add_argument('--common_annotations', nargs='?', help="json file that has extra annotations. By default, it will get these options from the file called annotate_h5ad.json in the root folder. \
     They will be validated against the schema present in the schema dir.", const="demul_samples_annotate_h5ad.json", default=None
     )
-    parser.add_argument('--swap_correct', nargs='?', help="A csv or tsv file containing final swap corrected information. Will utilize info from here to figure which version of demultiplexing \
-    was finally used for confirming donor assignments.", const="final_swap_correction.csv", default=None
-    )
     parser.add_argument('-w', '--wet_lab_file', help="Path to file that contains either/all of: HTO info for each set, annotations, etc."
     )
 
@@ -321,11 +338,10 @@ def main():
     parser = get_argument_parser()
     args = parser.parse_args()
     
-    # Parse all values
+    # Parse directory values
     bam_dir = args.bam_dir
     pic_dir = args.picard_dir
-    dem_dir = args.demul_dir # DEPRACATED
-    samples = args.samples if args.samples else args.samples_deprecated
+    dem_dir = args.demul_dir
 
     # Resolve which one to use
     if args.samples and args.samples_deprecated:
@@ -336,13 +352,14 @@ def main():
             "Positional 'samples' is deprecated. Use --samples instead.",
             DeprecationWarning
         )
-  
+
+    samples = args.samples if args.samples else args.samples_deprecated
 
     # If annotations is needed then provide the wet lab file
     if args.common_annotations is not None and args.wet_lab_file is None:
         warnings.warn(
             "Annotations are expected as json was provided but Wet lab file was NOT provided. \
-            Annotations might be missing!",
+            No extra annotations will be added!",
             UserWarning
         )
 
@@ -375,8 +392,6 @@ def main():
     # Extension test for files and dir exists for directories (only for BAM)
     # If these parameters are present, they should have appropriate extensions
     for k, v in vars(args).items():
-        if k == 'demul_dir':
-            continue
         if k in opt_file_params and v != None and not v.endswith(opt_file_params[k][0]):
             raise ValueError(f"The file extension in {v} for the parameter {k} is unexpected!")
         elif k == 'bam_dir' and ( v == None or not os.path.isdir(v)):
@@ -405,12 +420,11 @@ def main():
         # if combo_log.shape[1] != cl.shape[0]:
         #     combo_log = pd.DataFrame(columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
 
-    except Exception as e:
-        # Catch any other potential exceptions
-        print(f"Will create a new file: {out}")
 
-    if args.swap_correct is not None:
-        swap_corr_df = auto_read(args.swap_correct)
+    except:
+        #with open(snakemake.output[0], 'w+') as fout:
+        # combo_log = pd.DataFrame(columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
+        combo_log = []
 
     if args.common_annotations is not None:
         # Wet Lab file, Filter wet lab file's columns, if needed
@@ -436,16 +450,12 @@ def main():
     # Get all columns for the output df
     extra_cols = [ col.get("columnInLogs", []) for col in data["columns"] ]
     cols_list = get_all_columns(map_names, extra_cols)
-    demul_dirs = get_demux_paths(data)
 
     # Process each sample -----------------------------------------------------------------------------------------------------------------------------------------------
     # List containing per sample values as lists (list of lists)
     row_list = []
     for sample in samples:
         skip_sample = False # By default, don't skip any sample
-        # NEW STYLE ANNOTIONS
-        # PROCESS THE DATA
-        processed_data = process_columns(data, sample, df).by_logs
 
         # create per sample copy of exclude_prog list
         samp_excl_progs = exclude_progs.copy()
@@ -455,11 +465,9 @@ def main():
         pc_st = args.pc_struct.replace("<sample>", sample) if args.pc_struct is not None else ""
         dem_st = args.dem_struct.replace("<sample>", sample) if args.dem_struct is not None else ""
         
-
-        dem_dir = process_swap_correction(data, swap_df=swap_corr_df,
-                pool_name=sample, demux_paths=demul_dirs)
-        
+        # print("Entered loop")
         # Get full filenames if user requires them to be tabulated
+
         ss_log_final = get_filename(bam_dir, bam_st, sample, args.ss_l)
         ss_gene_summary = get_filename(bam_dir, bam_st, sample, args.ss_g_s)
         ss_genefull_summary = get_filename(bam_dir, bam_st, sample, args.ss_gf_s)
@@ -475,7 +483,9 @@ def main():
         # preparer = sample.split('-')[2][0] if len(sample.split('-')[2]) > 1 else "NA"
         # replicate = sample.split('-')[2][1] if len(sample.split('-')[2]) > 1 else sample.split('-')[2][0]
         # set_val = '-'.join(sample.split('-')[:2]) + '-' + preparer if preparer != 'NA' else '-'.join(sample.split('-')[:2])
-        
+        # NEW STYLE ANNOTIONS
+        # PROCESS THE DATA
+        processed_data = process_columns(data, sample, df)
 
         
         # Test if at least one of the input files exists
@@ -534,100 +544,136 @@ def main():
             )
             continue
            
-        # OLD STYLE
-        # if isinstance(combo_log, list) or \
-        #     (isinstance(combo_log, pd.DataFrame) and \
-        #         not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any())
-        #     ):
+        if isinstance(combo_log, list) or \
+            (isinstance(combo_log, pd.DataFrame) and \
+                not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any())
+            ):
 
-        #     # Add a kwargs style input for extra annotations
-        #     row_list.append(write_logs(
-        #         cols_list, map_names, files_dict, 
-        #         samp_excl_progs, processed_data
-        #         # sample=sample, 
-        #         # prep=preparer, rep=replicate, 
-        #         # set_num=set_val
-        #         )
-        #     )
-        
-        # else:
-        #     old_val = combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample), :].to_numpy().flatten().tolist()
-        #     new_val = write_logs(
-        #                 cols_list, map_names, files_dict, 
-        #                 samp_excl_progs, processed_data
-        #                 # sample=sample, 
-        #                 # prep=preparer, rep=replicate, 
-        #                 # set_num=set_val
-        #             )
-            
-        #     # If the new_val is different than the old value, replace it 
-        #     if old_val != new_val:
-        #         combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample)] = [new_val]
-        #     else:
-        #         print(
-        #             f"Skipping {sample} as the output file already "
-        #             "contains the same value for all columns!!"
-        #         )
-        #         continue
-        row_list.append(write_logs(
-            cols_list.to_numpy().tolist(), map_names, files_dict, 
-            samp_excl_progs, processed_data
+            # Add a kwargs style input for extra annotations
+            row_list.append(write_logs(
+                map_names.iloc[:, [2, 3, 1]].to_numpy().tolist(), map_names, files_dict, 
+                samp_excl_progs, processed_data
+                # sample=sample, 
+                # prep=preparer, rep=replicate, 
+                # set_num=set_val
+                )
             )
-        )
+        
+        else:
+            old_val = combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample), :].to_numpy().flatten().tolist()
+            new_val = write_logs(
+                        map_names.iloc[:, [2, 3, 1]].to_numpy().tolist(), map_names, files_dict, 
+                        samp_excl_progs, processed_data
+                        # sample=sample, 
+                        # prep=preparer, rep=replicate, 
+                        # set_num=set_val
+                    )
+            
+            # If the new_val is different than the old value, replace it 
+            if old_val != new_val:
+                combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample)] = [new_val]
+            else:
+                print(
+                    f"Skipping {sample} as the output file already "
+                    "contains the same value for all columns!!"
+                )
+                continue
+
         print(f"Finished adding {sample} to the file")
 
     
     temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cols_list, names=["prog", "sub_prog", "curr_val"]))
-    try:
-        combo_log = pd.concat([combo_log.astype(temp_df.dtypes), temp_df.astype(combo_log.dtypes)], ignore_index=True, sort=False)
-    except:
-        combo_log = temp_df
-    # resolve duplicates (keep latest)
-    combo_log = combo_log.drop_duplicates(keep="last")
+    combo_log = pd.concat([combo_log.astype(temp_df.dtypes), temp_df.astype(combo_log.dtypes)], ignore_index=True)
 
-    # --- Convert columns to numeric ---
-    cols_to_convert = [
-        ("STARsolo", "DEMUX", "N_CELLS_START"),
-        ("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT"),
-        ("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS"),
-        ("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS"),
-        ("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS"),
-        ("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS"),
-    ]
-
-    for col in cols_to_convert:
-        combo_log[col] = pd.to_numeric(combo_log[col], errors="coerce")
+    # Conversions for easier divisons
+    combo_log[("STARsolo", "DEMUX", "N_CELLS_START")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX", "N_CELLS_START")]
+        ]
+    combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")]
+        ]
+    combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")] = [ 
+        np.nan if i == '' or i == 'None' else float(i) for i in combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")]
+        ]
 
     # If the demux file is not used for compilation then skip these steps
     if args.dem_info != None:
-        base = combo_log[("STARsolo", "DEMUX", "N_CELLS_START")]
-        mito = combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")]
+        try:
+            # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            # combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].astype(int)/combo_log[("STARsolo", "DEMUX", "N_CELLS_START")].astype(int)
+            combo_log[("STARsolo", "DEMUX_CS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate Doublet ratio! Check output file for more info!")
 
-        for mode in ["DEMUX_CS", "DEMUX_VS"]:
-            try:
-                doublets = combo_log[("STARsolo", mode, f"N_DOUBLET_CELLS_{mode.split('_')[-1]}")]
-                negatives = combo_log[("STARsolo", mode, f"N_NEGATIVE_CELLS_{mode.split('_')[-1]}")]
+        try:
+            # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX_CS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate Negative ratio! Check output file for more info!")
 
-                # Ratios
-                combo_log[("STARsolo", mode, "DOUBLET_PCT")] = doublets.divide(base)
-                combo_log[("STARsolo", mode, "NEGATIVE_PCT")] = negatives.divide(base)
+        try:
+            combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].subtract(combo_log[("STARsolo", "DEMUX_CS", "N_DOUBLET_CELLS_CS")])
+                        ).subtract(combo_log[("STARsolo", "DEMUX_CS", "N_NEGATIVE_CELLS_CS")])
 
-                # Derived counts
-                demuxed = mito.subtract(doublets).subtract(negatives)
-                combo_log[("STARsolo", mode, "N_DEMUXED_CELLS")] = demuxed
+        except:
+            print("Can't calculate final demultiplexed cells from calico_solo run!")
 
-                # Retention
-                combo_log[("STARsolo", mode, "CELL_RENTENTION")] = demuxed.divide(base)
+        try:
+            combo_log[("STARsolo", "DEMUX_CS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_CS", "N_DEMUXED_CELLS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate percentage of cells retained after calico_solo demultiplexing")
 
-            except Exception as e:
-                print(f"Error processing {mode}: {e}")
+        try:
+            # combo_log[("STARsolo", "DEMUX", "DOUBLET_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_DOUBLET_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX_VS", "DOUBLET_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate Doublet ratio! Check output file for more info!")
+
+        try:
+            # combo_log[("STARsolo", "DEMUX", "NEGATIVE_PCT")] = calc_ratio(combo_log["STARsolo"]["DEMUX"]["N_NEGATIVE_CELLS_CS"], combo_log["STARsolo"]["DEMUX"]["N_CELLS_START"])
+            combo_log[("STARsolo", "DEMUX_VS", "NEGATIVE_PCT")] = combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate Negative ratio! Check output file for more info!")
+
+        try:
+            combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")] = (combo_log[("STARsolo", "DEMUX", "N_CELLS_LOW_MITO_PERCENT")].subtract(combo_log[("STARsolo", "DEMUX_VS", "N_DOUBLET_CELLS_VS")])
+                        ).subtract(combo_log[("STARsolo", "DEMUX_VS", "N_NEGATIVE_CELLS_VS")])
+
+        except:
+            print("Can't calculate final demultiplexed cells from vireo run")
+
+        try:
+            combo_log[("STARsolo", "DEMUX_VS", "CELL_RENTENTION")] = combo_log[("STARsolo", "DEMUX_VS", "N_DEMUXED_CELLS")].divide(combo_log[("STARsolo", "DEMUX", "N_CELLS_START")])
+        except:
+            print("Can't calculate percentage of cells retained after vireo demultiplexing")
 
 
     combo_log.replace([np.inf, -np.inf], np.nan, inplace=True)
     combo_log.to_csv(out, sep = "\t", index=False)
 
 
-    sleep(30) # Allow Snakemake to sync output before rule completes
+    sleep(30)
     
 
 # Run this only when executed through Snakemake

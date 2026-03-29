@@ -1,3 +1,20 @@
+def get_inputs_create_h5ad(wildcards):
+    ret_list = []
+    # Means there's a final count matrix in vireo
+    if ( 
+        not global_vars.ADD_SOLO and not global_vars.ONLY_SOLO and \
+        not global_vars.ADD_VIREO and not global_vars.ONLY_VIREO and \
+        not global_vars.BOTH_DEMUX
+        ):
+        ret_list.append(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        )
+
+    return ret_list
+
+
 def get_inputs_demux_solo(wildcards):
     ret_list = []
     # Means there's a final count matrix in vireo
@@ -241,6 +258,29 @@ def allocate_time_DXP(wildcards, attempt):
 #     return 15+10*(attempt-1)
 
 # --------------------------------------
+rule create_h5ad_only:
+    input:
+        get_inputs_create_h5ad
+
+    output:
+        f"{config['gt_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct']}{config['gt_demux_pipeline']['final_count_matrix_h5ad']}".replace("_vS", ""),
+        f"{config['gt_demux_pipeline']['demultiplex_info_dir']}{config['fold_struct']}{config['gt_demux_pipeline']['demultiplex_info']}".replace("_vS", "")
+
+    params:
+        pool_name=lambda wildcards: wildcards.pool, # WILDCARDS
+        extra=get_params
+
+    resources:
+        mem_mb=allocate_mem_DXP,
+        time_min=allocate_time_DXP
+
+    conda: "../envs/basic_sctools.yaml"
+
+    shell:
+        """
+        python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
+        """
+
 
 # if global_vars.ONLY_SOLO or global_vars.ONLY_VIREO or global_vars.BOTH_DEMUX:
 rule demux_samples_solo:
@@ -272,7 +312,8 @@ rule demux_samples_solo:
     conda: "../envs/basic_sctools.yaml"
     
     shell: 
-        """  
+        """
+        trap 'echo "Received SIGTERM, killing children"; kill 0; wait' SIGTERM
         python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
         """
 

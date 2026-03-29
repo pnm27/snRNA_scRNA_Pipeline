@@ -15,15 +15,14 @@ Further Plans:
 
 
 
-import os
-import glob2, re, math
-import pandas as pd
+import sys
 from snakemake.utils import validate
-from itertools import repeat
 from snakemake.utils import min_version
 
 
-min_version("6.4.0")
+min_version("8.25.0")
+
+assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!"
 
 
 configfile: "new_config.yaml"
@@ -38,7 +37,7 @@ configfile: "new_config.yaml"
 class global_vars():
   ONLY_SOLO = False
   ONLY_VIREO = False
-  BOTH_DEMUX = False # Not yet implemented the rule
+  BOTH_DEMUX = False 
   ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
   ADD_VIREO = False # When a demultiplex run with calico_solo has been done
   SPLIT_BY_SOLO = False # When subset pooled bams by output of calico_solo

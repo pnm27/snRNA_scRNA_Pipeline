@@ -1,0 +1,57 @@
+{
+  "columns": [
+    {
+      "name": "Batch",
+      "source_value": "args.p",
+      "columnInLogs": [ "LAB", "SAMPLE", "SAMPLE"]
+
+    },
+    {
+      "name": "replicate",
+      "source_value": "args.p",
+      "transformations": [
+        {
+          "type": "pythonic",
+          "operation": "split",
+          "by": "-"
+        },
+        {
+          "type": "pythonic",
+          "operation": "select_index",
+          "index": -1
+        }
+      ],
+      "columnInLogs": [ "LAB", "BATCH", "REP"]
+    },
+    {
+      "name": "set",
+      "source_value": "args.p",
+      "transformations": [
+        {
+          "type": "pythonic",
+          "operation": "split",
+          "by": "-"
+        },
+        {
+          "type": "pythonic",
+          "operation": "select_range",
+          "end": -1
+        },
+        {
+          "type": "pythonic",
+          "operation": "join",
+          "by": "-"
+        }
+      ],
+      "columnInLogs": [ "LAB", "BATCH", "SET"]
+    }
+  ],
+  "swap_correction_df": {
+    "pool_column": "Sample",
+    "demultiplex_version_column": "Version_used"
+  },
+  "demultiplex_paths": {
+    "w_gt":  "/path/to/final_count_matrix_w_gt/",
+    "wo_gt": "/path/to/final_count_matrix/"
+  }
+}

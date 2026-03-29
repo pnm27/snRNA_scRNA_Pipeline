@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "H5AD Column Transformation Schema and Annotations for Log File",
+  "type": "object",
+  "required": ["columns"],
+  "properties": {
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source_value"],
+        "properties": {
+          "name": { "type": "string" },
+          "source_value": { "type": "string" },
+          "value_column": { "type": "string" },
+          "lookup_column": { "type": "string" },
+          "transformations": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                { "$ref": "#/$defs/pythonic_step" },
+                { "$ref": "#/$defs/regex_step" }
+              ]
+            }
+          },
+          "columnInLogs": { 
+            "type": "array", 
+            "items" : {"type": "string"},
+            "maxItems": 3,
+            "minItems": 3
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+
+    "pythonic_step": {
+      "title": "Pythonic Transformation",
+      "type": "object",
+      "required": ["type", "operation"],
+      "properties": {
+        "type": { "const": "pythonic" },
+
+        "operation": {
+          "type": "string",
+          "enum": [
+            "lower",
+            "upper",
+            "title",
+            "strip",
+            "rstrip",
+            "lstrip",
+            "replace",
+            "split",
+            "join",
+            "select_index",
+            "select_range"
+          ]
+        },
+
+        "by": {
+          "type": "string",
+          "description": "Delimiter used for split or join"
+        },
+
+        "index": {
+          "type": "integer",
+          "description": "Index used for select_index"
+        },
+
+        "start": {
+          "type": "integer",
+          "description": "Start index for select_range"
+        },
+
+        "end": {
+          "type": "integer",
+          "description": "End index for select_range"
+        },
+
+        "old": {
+          "type": "string",
+          "description": "Old substring for replace"
+        },
+
+        "new": {
+          "type": "string",
+          "description": "Replacement substring"
+        }
+      },
+
+      "allOf": [
+
+        {
+          "if": {
+            "properties": { "operation": { "const": "split" } }
+          },
+          "then": { "required": ["by"] }
+        },
+
+        {
+          "if": {
+            "properties": { "operation": { "const": "join" } }
+          },
+          "then": { "required": ["by"] }
+        },
+
+        {
+          "if": {
+            "properties": { "operation": { "const": "select_index" } }
+          },
+          "then": { "required": ["index"] }
+        },
+
+        {
+          "if": {
+            "properties": { "operation": { "const": "select_range" } }
+          },
+          "then": {
+            "anyOf": [
+              { "required": ["start"] },
+              { "required": ["end"] }
+            ]
+          }
+        },
+
+        {
+          "if": {
+            "properties": { "operation": { "const": "replace" } }
+          },
+          "then": {
+            "required": ["old", "new"]
+          }
+        }
+
+      ]
+    },
+
+    "regex_step": {
+      "title": "Regex Transformation",
+      "type": "object",
+      "required": ["type", "pattern", "replacement"],
+      "properties": {
+
+        "type": { "const": "regex" },
+
+        "pattern": {
+          "type": "string"
+        },
+
+        "replacement": {
+          "type": "string"
+        },
+
+        "flags": {
+          "type": "string",
+          "description": "Regex flags such as IGNORECASE"
+        }
+
+      }
+    }
+
+  }
+}

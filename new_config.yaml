@@ -10,13 +10,44 @@ barcodes:
   - &3lt /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/9K-LT-march-2021.txt
   - &fixedrna /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/whitelists/737K-fixed-rna-profiling.txt
 
+genome_builds:
+  gencode38: &gen38
+    gtf: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf
+    fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa
+  gencode44: &gen44
+    gtf: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/gencode.v44.primary_assembly.annotation.gtf
+    fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/GRCh38_gencode44.primary_assembly.genome.fa
+
 STARsolo_genome_dir:
-  - &gencode38o89 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_275b_gen_89o
-  - &gencode38o150 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_150o
-  - &gencode38o90 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_90o
-  - &gencode38o149 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_149o
-  - &gencode44o89 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_89o
-  - &gencode44o149 /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_149o
+  gencode38o150: &gencode38o150
+    <<: *gen38
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_150o
+    
+  gencode38o89: &gencode38o89
+    <<: *gen38
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_275b_gen_89o
+
+  gencode38o90: &gencode38o90
+    <<: *gen38
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_90o
+
+  gencode38o149: &gencode38o149
+    <<: *gen38
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_149o
+    
+  gencode44o89: &gencode44o89
+    <<: *gen44
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_89o
+
+  gencode44o149: &gencode44o149
+    <<: *gen44
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_149o
+
+  gencode38o90: &gencode38o90
+    <<: *gen38
+    genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gen_90_CAVATICA
+
+
 
 cellranger_arc_ref: /hpc/packages/minerva-centos7/cellranger-arc/2.0.0/refdata-cellranger-arc/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
 # -----------------------------------------------------------------------------
@@ -100,8 +131,6 @@ STAR_version: star/2.7.9a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.9a
 cellranger-arc_version: cellranger-arc/2.0.2
-
-hto_demux_type: single
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
@@ -216,7 +245,7 @@ hashsolo_demux_pipeline:
 gt_demux_pipeline:
   cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/cellSNP/
   inp_for_cellsnp_dir: /sc/arion/projects/psychAD/demultiplex/inp_for_cellsnp/
-  cellsnp_ref_snps: /path/to/ref_SNPs/for/subsetting
+  cellsnp_ref_snps: null #/path/to/ref_SNPs/for/subsetting
   vcf_info: /sc/arion/projects/psychAD/pnm/pool_info.tsv
   vireosnp_dir: /sc/arion/projects/psychAD/demultiplex/vireoSNP/
   filt_vcf_dir: /sc/arion/projects/psychAD/pnm/isec_reruns/ # when subsetting SNPs wrt ref SNVs (from a source like 1kGP)
