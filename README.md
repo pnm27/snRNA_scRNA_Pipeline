@@ -31,7 +31,7 @@
       find -mindepth 1 -maxdepth 1 -type d -exec sh -c 'a=$(sed "s#\./##g" <<< {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d " " -f1 | rev); grep "variants matched to donor VCF" ${a}/${b}' \;
       ```
 
-  - [ ] Permanent fix for the rule *filt_chr_bams_multiome*. 
+  - [ ] Permanent fix for the rule *filt_chr_bams_multiome*.
   - [ ] Fix demultiplex_helper_funcs.py for double HTOs in function parse_file.
   - [ ] Simplify structure of wildcards. Folder structure should include them
 - analyse_vireo:
@@ -99,8 +99,9 @@
     - Support for cellranger-arc count.
       - [x] Add support for alignment.
       - [ ] Add support for ATAC-based vireo demultiplexing.
+- Will be adding Agentic AI support for genotype based demultiplexing using Ollama (with support for public vLLMs too).
 
-This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options). 
+This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options).
 
 It also supports various software/pipeline for scRNA seq pre-processing.
 
@@ -191,7 +192,7 @@ The highlights of the pipeline are:
   - Now file specified in *vcf_info* (relates to the rule *vireoSNP*) in *new_config.yaml* is expected to have headers.
   - Simplified the commandline for execution.
 - Usage of *pd.concat* now in concordance with [FutureWarning](https://github.com/pandas-dev/pandas/blob/a0babcb2c63dd721ea47e75f6229c5fe727b2395/pandas/core/internals/concat.py#L492) in *update_logs.py*.
-- In **new_config.yaml**, changed 
+- In **new_config.yaml**:
   - *gt_conv* to *file* in *donorName_conv* in *gt_demux_pipeline*.
   - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
   - *gt_check* in *gt_check* to *gt_check*. Reflected in **split_bams.smk** and **produce_targets.smk**.
@@ -221,7 +222,13 @@ The highlights of the pipeline are:
 - Fixed logic issue in **produce_targets.smk** for single-cell/nucleus processing.
 - Now the lines will be sorted when accessing through path in *input_processing.smk*.
 - Now samtools index is a separate rule so that any error in indexing doesn't result in deletion of STARsolo_sort outputs.
-- *vcf_info* file EXPECTED TO BE WITH HEADERS.
+- *vcf_info* file:
+  - EXPECTED TO BE WITH HEADERS.
+  - Should be one of the following cases:
+    - demultiplex without genotypes: 2 columns (in the order: pool, n_donors)
+    - demultiplex with genotypes (partial or complete): minimum of 4 columns (in the order: pool, n_donors, donor_names, vcf[, vcf2, vcf3,..etc])
+- precursor_to_perPoolVcf.ipynb (from A16) now templates vcf_info file.
+- Now a modelled approach to resource consumption is present for STARsolo.
 - Now DEPRACATED *vcf_info_columns*. Can be any column names with the order: Pool, number_of_donors[, path2vcf].
 - Major changes to *demultiplex_helper_funcs.py*:
   - Add support for adding annotations using JSON file
@@ -243,14 +250,14 @@ The highlights of the pipeline are:
 
 This pipeline depends on the following packages/programs:
 <ul>
-	<li><a href="https://scanpy.readthedocs.io/en/stable/" name="sc">Scanpy Manual</a></li>
-	<li><a href="https://snakemake.readthedocs.io/en/stable/" name="snk">Snakemake Manual</a></li>
-	<li><a href="https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md" name="sts">STARsolo Manual</a> </li>
-	<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectGcBiasMetrics" name="gcb">GC bias metrics (PICARD)</a></li>
-	<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics" name="rna">RNA seq metrics (PICARD)</a></li>
-	<li><a href="https://github.com/pachterlab/kite"name="kite">KITE <i>(kallisto indexing and tag extraction)</i></a></li>
-	<li><a href="https://cellsnp-lite.readthedocs.io/en/latest/manual.html" name="csp">cellSNP Manual</a></li>
-	<li><a href="https://vireosnp.readthedocs.io/en/latest/manual.html" name="cir">vireoSNP Manual</a></li>
-	<li><a href="https://github.com/calico/solo#how-to-demultiplex-cell-hashing-data-using-hashsolo-cli" name="hsolo">hashsolo Info</a></li>
-	<li><a href="https://qtltools.github.io/qtltools/pages/QTLtools-mbv.1.html" name="mbv">QTLtools-mbv</a></li>
+<li><a href="https://scanpy.readthedocs.io/en/stable/" name="sc">Scanpy Manual</a></li>
+<li><a href="https://snakemake.readthedocs.io/en/stable/" name="snk">Snakemake Manual</a></li>
+<li><a href="https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md" name="sts">STARsolo Manual</a> </li>
+<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectGcBiasMetrics" name="gcb">GC bias metrics (PICARD)</a></li>
+<li><a href="https://broadinstitute.github.io/picard/command-line-overview.html#CollectRnaSeqMetrics" name="rna">RNA seq metrics (PICARD)</a></li>
+<li><a href="https://github.com/pachterlab/kite"name="kite">KITE <i>(kallisto indexing and tag extraction)</i></a></li>
+<li><a href="https://cellsnp-lite.readthedocs.io/en/latest/manual.html" name="csp">cellSNP Manual</a></li>
+<li><a href="https://vireosnp.readthedocs.io/en/latest/manual.html" name="cir">vireoSNP Manual</a></li>
+<li><a href="https://github.com/calico/solo#how-to-demultiplex-cell-hashing-data-using-hashsolo-cli" name="hsolo">hashsolo Info</a></li>
+<li><a href="https://qtltools.github.io/qtltools/pages/QTLtools-mbv.1.html" name="mbv">QTLtools-mbv</a></li>
 </ul>

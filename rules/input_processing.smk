@@ -7,7 +7,8 @@ from lib.utils import read_files_ext, ret_cols
 col_set = [
     "pool", 
     "n_dons", 
-    "vcf"
+    "donors", # NEW ADDITION
+    "vcf",
 ]
 
 # Limitting Step for the run of Snakemake, creating wildcards
@@ -45,7 +46,7 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
     if any([ f in config['select_fastqs'].lower() for f in ['split_bams', 'identify_swaps']]):
         # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
         if n_cols == 2:
-            cols = col_set[:-1]
+            cols = col_set[:-2]
             temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
                         names=cols, usecols=range(2)
                     )
@@ -57,12 +58,28 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
                 temp_df_expanded["donors"] = temp_df_expanded.groupby("pool").cumcount()
 
                 # Final dict
-                result = {
+                wildcards_list = {
                     "pool": temp_df_expanded["pool"].tolist(),
                     "donors": temp_df_expanded["donors"].apply(lambda x: f"donor{x}").tolist()
                 }
         elif n_cols > 2:
-        samp_name = '-'.join(wildcards.pool.split('-')[:-1]) # WILDCARDS
+            cols = col_set[:-2]
+            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
+                        names=cols, usecols=range(3)
+                    )
+            # create a list of donors from a comma-sep string (remove extra spaces)
+            temp_df['donors'] = temp_df['donors'].apply(
+                        lambda x: [ i.strip() for i in x.split(',') ]
+                    )
+
+            # explode donors in the list
+            temp_df_expanded = temp_df.explode('donors', ignore_index=True)
+
+            # Final dict
+            wildcards_list = {
+                "pool": temp_df_expanded["pool"].tolist(),
+                "donors": temp_df_expanded["donors"].tolist()
+            }
 
     else:
         # Create a dict of wildcards
