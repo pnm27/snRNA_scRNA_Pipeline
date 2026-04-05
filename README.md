@@ -2,6 +2,11 @@
 
 ## TODO
 
+- Move logic of pools calculation from **input_processing.smk** to config (inspirations from **downloadFromSynapse.py** - config part of it).
+- Make the new pipeline compatible for:
+  - [ ] multiome
+  - [ ] multi-module
+  - [ ] multi-vcf
 - Miscellaneous:
   - [ ] Write down schemas.
   - [ ] Add support for multiome in **update_logs.py**.
@@ -100,6 +105,8 @@
       - [x] Add support for alignment.
       - [ ] Add support for ATAC-based vireo demultiplexing.
 - Will be adding Agentic AI support for genotype based demultiplexing using Ollama (with support for public vLLMs too).
+- Change how different variants of dir are handled i.e. don't have separate dir in config for different runs of demultiplexing like wo_gt, w_gt, etc. INSTEAD add it as suffix by setting it up top of the config file.
+- Simplify the demultiplex rule to just 1: combine all 4 rules inside it.
 
 This pipeline intends to not only make complex {term}`preprocessing` workflows easy (e.g. snRNA seq with pooled samples, double HTOs, etc.) but also to facilitate the use of common workflows used for preprocessing by providing *readymade* different combinations of softwares/tools (see {ref}`selectable <selectable-modules>` modules for more options).
 
@@ -117,6 +124,10 @@ The highlights of the pipeline are:
 
 ## Changelog
 
+- Following input styles are now accepted for the pipeline (NOTE: no headers for text files):
+  - only pools
+  - pools, STARsolo memory needed per each pool (empty means use default)
+  - multi-module setup (yaml): check schema
 - Changed param name in demultiplex info from *Unique genes* to *gene_ids with an associated gene_name*.
 - Added new param in demultiplex info file to add more stats when remove gene IDs without an associated gene name.
 - Added an option to run cellSNP without any ref vcfs (1000 Genomes Project vcf is min requirement)
@@ -197,6 +208,11 @@ The highlights of the pipeline are:
   - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
   - *gt_check* in *gt_check* to *gt_check*. Reflected in **split_bams.smk** and **produce_targets.smk**.
   - Added *demultiplex* section for the rule *demux_samples_both*.
+  - Fixed issues of incompatible gtf, fasta and genome dir issue for STARsolo by making anchors and references. Now just select 'genome_pick' in 'STARsolo_pipeline' and the following is automatically setup and read through the rule:
+    - gtf now selected through 'gtf' from the above heirarchy (earlier 'gtf_file').
+    - fasta now selected through 'fasta' from the above heirarchy (earlier 'genome_fasta').
+    - genome directory now selected through 'genome' from the above heirarchy (earlier 'genome_dir').
+    - overhang now selected through 'overhang' from the above heirarchy (earlier 'sjdboverhang').
 - Removed mode='w+' when creating outputs in *create_Feat_Barc.py*.
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:
@@ -245,6 +261,29 @@ The highlights of the pipeline are:
 - Major changes to *run_update_logs.sh*:
   - Parameters and arguments are arranged as arrays.
   - Accepts new parameters for annotations &mdash wet_lab file and annotations.
+- Simplified the cellsnp rule. Now it just runs cellsnp-lite (filtering of snps is trial and error method - better suited outside the pipeline).
+- To accommodate checkpointed split_bams, the following modules are moved to a new function in **produce_targets.smk**:
+  - starsolo_split_bams
+  - starsolo_split_bams_gt_demux
+  - starsolo_split_bams_gt_demux_multi_vcf
+  - starsolo_gt_demux_identify_swaps
+- Dead code removed:
+  - targets_resolve_swaps_gt_demux
+  - targets_multibamsummary
+  - targets_multibamsummaryPlotCorr
+  - targets_all
+  The related last_step branches (multibamsummaryplotcorr, multibamsummary, starsolo_resolve_swaps_gt_demux) are removed from both dispatcher functions.
+- wc_d eliminated: Every expand(..., zip, **wc_d) call now replaced with either:
+  - _expand_pools(template) (static, pool-only expansion)
+  - _expand_pools_donors(template, wildcards) (runtime, pool+donor expansion).
+  Only these places I need to meddle with if I change the wildcard structure.
+- Target builders now consistently return list.
+- _picard_targets extracted: Both targets_PICARD and the _with_picard helper call it, eliminating the duplicated config key lookups that previously appeared in both targets_PICARD and inline in produce_targets.
+- targets_multiome now uses a dispatch dict instead of an if/elif chain, so adding a new stage is one line.
+Both dispatcher functions raise on unrecognised steps rather than silently returning an empty list, which would cause confusing downstream failures.
+- Now, dependent on input type (), rule STARsolo_sort can utilize per-pool (wildcards.pool) memory.
+- Removed unused sub-snakefiles called **helper_functions.smk** and **analyse_vireo.smk**.
+
   
 ## Requirements
 

@@ -1,18 +1,18 @@
 # This rule will create multiple runs of cellSNP and vireoSNP for each sample
 # Provided a file that contains multiple vcfs per each sample
 # present as config['gt_demux_pipeline']['vcf_info']
-from lib.utils import read_files_ext, ret_cols
 from lib.io import (
     get_filt_barcodes, 
     get_cellsnp_inputs,
     get_vir_inputs
 )
 from lib.params import (
-    get_params, 
-    get_cmd_str_csnp, 
+    get_params_cics, 
+    get_procs_csnp, 
     get_cmd_str_vireo, 
     get_umiTag
 )
+from functools import partial
 
 
 
@@ -34,7 +34,7 @@ from lib.params import (
 
 # Resource Allocation ------------------
 def allocate_mem_CICS(wildcards, attempt):
-    return 1000+500*(attempt-1)
+    return 2000+500*(attempt-1)
 
 
 def allocate_time_CICS(wildcards, attempt):
@@ -100,27 +100,12 @@ def allocate_time_vS(wildcards, attempt): # WILDCARDS
 
 rule create_inp_cellSNP:
     input:
-        lambda wc: get_filt_barcodes(wc, config, global_vars)
+        partial(get_filt_barcodes, config=config)
 
     priority: 8
 
     params:
-        # DEPRACATED
-        # inp_type=get_inp_type, 
-        # When a run of calico_solo exists
-        # col_name=config['gt_demux_pipeline']['demux_col'], # Name of the anndata's obs column that contains classification of cells
-        # bc_len=config['gt_demux_pipeline']['barcode_len'], # Barcode length
-        # keep_all_cells=config['gt_demux_pipeline']['include_all_cells'], # Include all cells (don't remove cells prev classified as doublets, etc.)
-        # doub=config['gt_demux_pipeline']['doublet'], # Doublets named as
-        # neg=config['gt_demux_pipeline']['negative'], # Negatives named as
-        # na=config['gt_demux_pipeline']['na'], # Cells not present in hashsolo named as
-        # When no previous runs of calico_solo exists
-        # mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        # min_genes=config['min_genes_per_cell'], # Min #genes per cell
-        # min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
-        # genes_info=config['gene_info_file'], # File containing gene names and gene ids for annotations
-        # mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
-        extra=lambda wc, input: get_params(wc, input, config, global_vars)
+        extra=partial(get_params_cics, config=config, input=input)
 
     resources:
         cpus_per_task=2, # For snakemake > v8
@@ -149,7 +134,7 @@ rule create_inp_cellSNP:
 # UMI tag is turned on. Therefore, PCR duplicates are included
 rule cellSNP:
     input:
-        lambda wc: get_cellsnp_inputs(wc, config)
+        unpack(partial(get_cellsnp_inputs, config=config))
 
     # group: "genotype-demux"
 
@@ -159,15 +144,15 @@ rule cellSNP:
 
     params:
         # ref_snps=config['gt_demux_pipeline']['ref_snps'],
-        umi_tag=lambda wc: get_umiTag(wc, config),
+        umi_tag=partial(get_umiTag, config=config),
         cell_tag=config['gt_demux_pipeline']['cell_tag'],
-        processors=config['gt_demux_pipeline']['n_proc'],
+        processors=partial(get_procs_csnp, config=config),
         min_maf=config['gt_demux_pipeline']['min_maf'],
         min_ct=config['gt_demux_pipeline']['min_aggr_count'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['cellsnp_cells']}", ''),
         filt_vcf_dir=f"{config['gt_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_gt_demux']}"[:-1], # remove trailing forward slash
-        threads=config['gt_demux_pipeline']['bcftools_thread'],
-        cmd_str=lambda wc, input: get_cmd_str_csnp(wc, input)
+        threads=config['gt_demux_pipeline']['bcftools_thread']
+
 
     # For snakemake < v8
     # threads: 8
@@ -183,44 +168,30 @@ rule cellSNP:
 
     shell:
         """
-        read -r -a array <<< "{input}"
-        n_procs=$(( {params.processors} >  ( {resources.cpus_per_task} * 2 ) ? {params.processors} : ( {resources.cpus_per_task} * 2 ) ))
-        if [[ "${{#array[@]}}" -lt 4 ]]; then
-            set -x
-            cellsnp-lite {params.cmd_str} -R ${{array[2]}} -O {params.output_prefix} \
-                -p {params.processors} --minMAF {params.min_maf} \
-                --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} \
-                --UMItag {params.umi_tag} --genotype --gzip
-        else
-            set -x
-            if [ ! -f {params.filt_vcf_dir}"/0002.vcf.gz" ]; then
-                bcftools isec --threads {params.threads} -e- -i'INFO/AF>0.25' \
-                    -Oz -p {params.filt_vcf_dir} ${{array[@]: -2:2}}
-            fi
-            cellsnp-lite {params.cmd_str} -O {params.output_prefix} \
-                -R {params.filt_vcf_dir}"/0002.vcf.gz" -p {params.processors} \
-                --minMAF {params.min_maf} --minCOUNT {params.min_ct} \
-                --cellTAG {params.cell_tag} --UMItag {params.umi_tag} \
-                --genotype --gzip
-        fi
-        set +x
+        cellsnp-lite -b {input.barcodesFile} -s {input.bam} \
+            -R {input.regionsFile} -O {params.output_prefix} \
+            -p {params.processors} --minMAF {params.min_maf} \
+            --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} \
+            --UMItag {params.umi_tag} --genotype --gzip
         """
 
 
 rule vireoSNP:
     input:
-        lambda wc: get_vir_inputs(wc, config)
+        unpack(partial(get_vir_inputs, config=config))
         
     output:
-        f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
-
-    # group: "genotype-demux"
+        (
+            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+            f"{config['fold_struct_gt_demux']}"
+            f"{config['gt_demux_pipeline']['donors_classification']}"
+        )
 
     params:
         # donor_info=get_donor_info,
         geno_tag=config['gt_demux_pipeline']['donor_genotype'],
         output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['donors_classification']}", ''),
-        cmd_str=lambda wc, input: get_cmd_str_vireo(wc, input, config)
+        cmd_str=partial(get_cmd_str_vireo, config=config)
 
     # For snakemake < v8
     # threads: 7
@@ -235,7 +206,7 @@ rule vireoSNP:
     shell:
         """        
         set -x
-        vireo {params.cmd_str} -o {params.output_prefix} -t {params.geno_tag} \
-            --noPlot --randSeed 100
+        vireo -c {input.cellsnpCells} -o {params.output_prefix} \
+        -t {params.geno_tag} --noPlot --randSeed 100 {params.cmd_str}
         set +x
         """

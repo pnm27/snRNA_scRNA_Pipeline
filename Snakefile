@@ -28,20 +28,16 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 configfile: "new_config.yaml"
 #validate(config, "config.schema.json")  # Path to the specific schema
 
-# REMOVE THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# Set few global variables (DON'T CHANGE FOR INITIAL RUNS (FOR EACH PROJECT)!)
-# FOr subsequent runs on the same project i.e. when there exist previous
-# outputs of either demultiplex runs: CHECK THE DOCUMENTATION FOR HOW TO 
-# CHANGE THESE VARS
 
-class global_vars():
-  ONLY_SOLO = False
-  ONLY_VIREO = False
-  BOTH_DEMUX = False 
-  ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
-  ADD_VIREO = False # When a demultiplex run with calico_solo has been done
-  SPLIT_BY_SOLO = False # When subset pooled bams by output of calico_solo
-  SPLIT_BY_VIREO = True # When subset pooled bams by output of vireo
+# DEPRACATED - USE new_config.yaml 'demux_type'
+# class global_vars():
+#   ONLY_SOLO = False
+#   ONLY_VIREO = False
+#   BOTH_DEMUX = False 
+#   ADD_SOLO = False # When a demultiplex run with vireoSNP has been done
+#   ADD_VIREO = False # When a demultiplex run with calico_solo has been done
+#   SPLIT_BY_SOLO = False # When subset pooled bams by output of calico_solo
+#   SPLIT_BY_VIREO = True # When subset pooled bams by output of vireo
 
 
 include: "rules/input_processing.smk"
@@ -63,7 +59,19 @@ include: "rules/cellranger.smk"
 
 rule all:
     input:
-        produce_targets(conf_f=config, last_step=config['last_step'], wc_d=wildcards_list)
+        produce_targets
+
+
+# dummy rule to accommodate checkpoints output
+# Gets triggered by presence of any of 'split_bams' or 
+# 'identify_swaps' in last_step
+rule resolve_pool_targets:
+    input:
+        produce_targets_dynamic
+    output:
+        "resolved/{pool}.done"
+    shell:
+        "touch {output}"
         
 
 

@@ -12,8 +12,8 @@ barcodes:
 
 genome_builds:
   gencode38: &gen38
-    gtf: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf
-    fasta: /sc/arion/projects/psychAD/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa
+    gtf: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf
+    fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa
   gencode44: &gen44
     gtf: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/gencode.v44.primary_assembly.annotation.gtf
     fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/GRCh38_gencode44.primary_assembly.genome.fa
@@ -22,32 +22,37 @@ STARsolo_genome_dir:
   gencode38o150: &gencode38o150
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_150o
+    overhang: 150
     
   gencode38o89: &gencode38o89
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_275b_gen_89o
+    overhang: 89
 
   gencode38o90: &gencode38o90
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_90o
+    overhang: 90
 
   gencode38o149: &gencode38o149
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_279a_gen_149o
+    overhang: 149
     
   gencode44o89: &gencode44o89
     <<: *gen44
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_89o
+    overhang: 89
 
   gencode44o149: &gencode44o149
     <<: *gen44
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_149o
+    overhang: 149
 
   gencode38o90: &gencode38o90
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gen_90_CAVATICA
-
-
+    overhang: 90
 
 cellranger_arc_ref: /hpc/packages/minerva-centos7/cellranger-arc/2.0.0/refdata-cellranger-arc/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
 # -----------------------------------------------------------------------------
@@ -57,6 +62,8 @@ last_step: STARsolo_kb_solo
 picard_metrics: all # can be null, all, rnaseq or gc
 create_final_h5ad: True # can be True, False or null
 gt_check: yes # yes or no
+demux_type: solo # can be solo, vireo, both, add_solo, add_vireo
+demux_run_type: wo_gt # can be wo_gt, w_gt, w_gt_2, etc.
 hto_demux_type: single # Can be single, multiple or null
 
 # Limit processing to the files present in
@@ -74,9 +81,9 @@ multiome_suffix: .fastq.gz
 
 
 wet_lab_info: /sc/arion/projects/psychAD/snakemake_pipeline/wet_lab_info.tsv
-gtf_file: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
+# gtf_file: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf  # Same gtf used in STARsolo genome generation
 whitelist: *3v3
-genome_fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
+# genome_fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa # Same fasta used in STARsolo genome generation
 reg_chr_bed: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
 chr_prefix: null
 mito_prefix: MT-
@@ -135,9 +142,9 @@ cellranger-arc_version: cellranger-arc/2.0.2
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
   bams_dir: /sc/arion/projects/psychAD/snakemake_pipeline/STARsolo_bams/
-  genome_dir: *gencode38o89
+  genome_pick: *gencode38o89
   star_params_dir: /sc/arion/projects/psychAD/snakemake_pipeline/dual_test/STARsolo_params/
-  sjdboverhang: 89
+  # sjdboverhang: 89
   umi_len: 12
   soloType: CB_UMI_Simple
   solo_cell_filter: EmptyDrops_CR
@@ -320,7 +327,7 @@ split_bams_pipeline:
     demux: vireo
     input: raw # Accepts 'h5ad' or 'raw' (output of vireo or solo)
     column: null # ONLY for 'h5ad' otherwise null
-
+  min_cells_per_donor: 200
   subset_chr: 1 # Subset BAM files
   inp_split_bams_dir: /sc/arion/projects/psychAD/inp_split_filt_bams/
   bams_per_barcode_dir: /sc/arion/projects/psychAD/pnm/temp_split_filt_bams/

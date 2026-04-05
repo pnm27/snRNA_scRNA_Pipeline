@@ -30,7 +30,7 @@ rule Picard_GC_bias_metrics:
     params:
         output_pref=lambda wildcards, output: output[0].replace(f"{config['picard_pipeline']['gc_bias_metrics']}", '_'),
         window_size=config['picard_pipeline']["window_size"],
-        genome_fasta=config["genome_fasta"]
+        genome_fasta=config['STARsolo_pipeline']['genome_pick']['fasta'] # config["genome_fasta"]
 
     resources:
         cpus_per_task=2, # For snakemake > v8

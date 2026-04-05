@@ -1,130 +1,16 @@
-import os, uuid,pandas as pd
-
-
-def get_inp_splitBam(wildcards):
-    if config['split_bams_pipeline']['split_by']['input'].lower() == 'raw':
-        if config['split_bams_pipeline']['split_by']['demux'].lower() in ['vireo', 'vs']:
-            return f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
-        elif config['split_bams_pipeline']['split_by']['demux'].lower() in \
-            ["cs", "calico", "calico_solo", "hashsolo"]:
-            return f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
-    else:
-        # if len(config['split_bams_pipeline']['split_by']['demux']) == 1:
-        #     if config['split_bams_pipeline']['split_by']['demux'][0].lower() in ['vireo', 'vs'] or \
-        #       config['split_bams_pipeline']['split_by']['demux'][0].lower() in \
-        #       ["cs", "calico", "calico_solo", "hashsolo"]:
-        #         return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
-        # else:
-        return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
-
-def get_bam(wildcards):
-    if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
-            return (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-                
-        else:
-            return (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-    else:
-        return (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
-        )
-
-
-def get_h5ad_cols(wildcards):
-    return ' '.join()
-
-
-def get_chr_pref(wildcards):
-    if config['chr_prefix'] is None:
-        return ''
-    else:
-        return config['chr_prefix']
-
-
-def get_mito(wildcards):
-    if config['chr_prefix'] == None or config['mito_prefix'].startswith(config['chr_prefix']):
-        ret_val = config['mito_prefix'] if not config['mito_prefix'].endswith('-') else config['mito_prefix'][:-1]
-        return ret_val
-    else:
-        ret_val = config['chr_prefix'] + config['mito_prefix']
-        ret_val =  ret_val if not ret_val.endswith('-') else ret_val[:-1]
-        return ret_val
-
-
-def subset_to_chr(wildcards):
-    if config['chr_prefix'] == None or str(config['split_bams_pipeline']['subset_chr']).startswith(config['chr_prefix']):
-        return config['split_bams_pipeline']['subset_chr']
-    else:
-        return config['chr_prefix'] + str(config['split_bams_pipeline']['subset_chr'])
-
-
-def get_bam_to_split(wildcards):
-    fullBam = ""
-    subBam = ""
-    filtBam = ""
-    if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
-            fullBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0])
-            subBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['short_bam']) # WILDCARDS
-            filtBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['filt_bam']) # WILDCARDS
-        else:
-            fullBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-            subBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['short_bam']) # WILDCARDS
-            filtBam += (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-            ).format(pool=wildcards.pool.split('/')[0]).replace('.bam', config['split_bams_pipeline']['filt_bam']) # WILDCARDS
-    else:
-        fullBam += (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
-            )
-        subBam += (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}"
-        )
-        filtBam += (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
-        )
-        
-    if config['gt_check']:
-        if config['split_bams_pipeline']['subset_chr'] is None:
-            return fullBam
-        else:
-            return subBam
-    else:
-        return filtBam
-
-
-def get_mito_file(wildcards):
-    if config['gt_check']:
-        return False
-    elif not config['gt_check']:
-        return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['mito_reads_file']}"
-
+# import os, uuid
+import pandas as pd
+from lib.io import (
+    get_inp_splitBam, 
+    get_bam,
+    get_bam_to_split
+)
+from lib.params import (
+    get_mito, 
+    subset_to_chr, 
+    get_mito_file,
+)
+from functools import partial
 
 
 # Resource Allocation ------------------
@@ -142,24 +28,24 @@ def allocate_mem_SB(wildcards, attempt):
 # --------------------------------------
 
 # FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.
-rule create_inp_splitBams:
+checkpoint create_inp_splitBams:
     input:
-        get_inp_splitBam
+        partial(get_inp_splitBam, config=config)
 
     # priority: 7
 
     output:
-        f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
+        (
+            f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
+            f"{config['fold_struct_bam_split1']}_bc_hash.txt"
+        )
 
     params:
-        # overwrite=config['split_bams_pipeline']['overwrite']
         conv=config['split_bams_pipeline']['donor_name_converter']['file'],
         from_col=config['split_bams_pipeline']['donor_name_converter']['from_column'],
         to_col=config['split_bams_pipeline']['donor_name_converter']['to_column'],
         demux_method=config['split_bams_pipeline']['split_by']['demux'],
         inp_ext=config['split_bams_pipeline']['split_by']['input'],
-        # n_methods=len(config['split_bams_pipeline']['split_by']['demux']),
-        # demux_suffixes=len(config['split_bams_pipeline']['split_by']['suffix']),
         h5ad_col=config['split_bams_pipeline']['split_by']['column']
 
     # For snakemake < v8
@@ -190,17 +76,27 @@ rule create_inp_splitBams:
 # Generalize Output
 rule bamfilt_by_CB:
     input:
-        bam=get_bam,
-        hash_file=f"{config['split_bams_pipeline']['inp_split_bams_dir']}{config['fold_struct_bam_split1']}_bc_hash.txt"
+        unpack(partial(get_bam, config=config)),
+        hash_file=(
+            f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
+            f"{config['fold_struct_bam_split1']}_bc_hash.txt"
+            )
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['filt_bam']}"
-        
+        bam=(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['split_bams_pipeline']['filt_bam']}"
+        ),
+        bai=(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['split_bams_pipeline']['filt_bam']}.bai"
+        )
 
     params:
-        # NUM = pool, ID1=donor
         temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt",
-        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
+        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
 
     # For snakemake < v8
@@ -217,11 +113,12 @@ rule bamfilt_by_CB:
         "samtools"
 
     shell:
-        """
+        r"""
         mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
         cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
-        samtools view -@ {params.threads} -q 255 -D CB:{params.temp_bc} {input.bam} -bho {output}
-        samtools index {output}
+        samtools view -@ {params.threads} -q 255 -D CB:{params.temp_bc} \
+            {input.bam} -bho {output.bam}
+        samtools index -@ {params.threads} {output.bam}
         rm {params.temp_bc}
         sleep 10
         """
@@ -229,14 +126,23 @@ rule bamfilt_by_CB:
 
 rule filt_chr_bams:
     input:
-        get_bam
+        unpack(partial(get_bam, config=config))
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['split_bams_pipeline']['short_bam']}" # generalize this
+        bam=(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['split_bams_pipeline']['short_bam']}"
+        ), # generalize this
+        bai=(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['split_bams_pipeline']['short_bam']}.bai"
+        )
 
     params:
-        sub_chr=subset_to_chr,
-        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
+        sub_chr=partial(subset_to_chr, config=config),
+        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
     # For snakemake < v8
     # threads: 1
@@ -253,21 +159,30 @@ rule filt_chr_bams:
         
     shell:
         """
-        samtools view -@ {params.threads} {input} {params.sub_chr} -bho {output}
-        samtools index {output}
+        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
+        samtools index -@ {params.threads} {output.bam}
         """
 
 
 rule filt_chr_bams_multiome:
     input:
-        get_bam
+        unpack(partial(get_bam, config=config))
 
     output:
-        f"{config['cellranger_arc_count']['bams_dir']}{config['fold_struct']}{{bam}}{config['split_bams_pipeline']['short_bam']}" # generalize this
+        bam=(
+            f"{config['cellranger_arc_count']['bams_dir']}"
+            f"{config['fold_struct']}{{bam}}"
+            f"{config['split_bams_pipeline']['short_bam']}"
+        ), # generalize this
+        bai=(
+            f"{config['cellranger_arc_count']['bams_dir']}"
+            f"{config['fold_struct']}{{bam}}"
+            f"{config['split_bams_pipeline']['short_bam']}.bai"
+        ) 
 
     params:
-        sub_chr=subset_to_chr,
-        threads=lambda wildcards, resources: max(resources.cpus_per_task*6, 10)
+        sub_chr=partial(subset_to_chr, config=config),
+        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
     # For snakemake < v8
     # threads: 1
@@ -284,17 +199,20 @@ rule filt_chr_bams_multiome:
 
     shell:
         """
-        samtools view -@ {params.threads} {input} {params.sub_chr} -bho {output}
-        samtools index {output}
+        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
+        samtools index -@ {params.threads} {output.bam}
         """
 
 
 rule create_bed:
     input:
-        config['genome_fasta']
+        config['STARsolo_pipeline']['genome_pick']['fasta'] # config['genome_fasta']
 
     params:
-        chr_prefix=get_chr_pref
+        chr_prefix= lambda _: (
+            '' if config['chr_prefix'] is None 
+            else config['chr_prefix']
+        )
 
     output:
         config['reg_chr_bed']
@@ -307,6 +225,23 @@ rule create_bed:
         fi
         sleep 10
         """
+
+
+def get_real_donors(wildcards):
+    import pandas as pd
+    from itertools import repeat
+
+    ckpt = checkpoints.create_inp_splitBams.get(**wildcards)
+    demux_out = ckpt.output[0]
+    min_cells_threshold = config['split_bams_pipeline']['min_cells_per_donor']
+
+    df = pd.read_csv(demux_out, sep="\t")
+
+    # filter donors with meaningful data
+    df = df.groupby('Subj_ID')['barcodes'].count()
+    donors = df[df>min_cells_threshold].index.tolist()
+
+    return {'pool': list(repeat(wildcards['pool'], len(donors))) , 'donor': donors}
 
 
 # rule split_bams:
@@ -411,21 +346,21 @@ rule create_bed:
 
 rule split_bams:
     input:
-        filt_bam = get_bam_to_split,
+        unpack(partial(get_bam_to_split, config=config)),
         barcodes_vs_donor = (
             f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
             f"{config['fold_struct_bam_split1']}_bc_hash.txt"
         )
     output:
-        bam = os.path.join(
+        bam = (
             f"{config['split_bams_pipeline']['split_bams_dir']}"
-            f"{config['fold_struct_bam_split2']}",
-            "{donor}.bam",
+            f"{config['fold_struct_bam_split2']}"
+            "{donor}.bam"
         ),
-        bai = os.path.join(
+        bai = (
             f"{config['split_bams_pipeline']['split_bams_dir']}"
-            f"{config['fold_struct_bam_split2']}",
-            "{donor}.bam.bai",
+            f"{config['fold_struct_bam_split2']}"
+            "{donor}.bam.bai"
         )
     params:
         temp_dir      = (
@@ -433,8 +368,8 @@ rule split_bams:
             f"{config['fold_struct_bam_split2']}"
         ),
         gt_check      = config["gt_check"],
-        chr_mito      = get_mito,
-        mito_info     = get_mito_file,
+        chr_mito      = partial(get_mito, config=config),
+        mito_info     = partial(get_mito_file, config=config),
         filter_bed    = lambda _: (
             None if config["gt_check"]
             else config.get("reg_chr_bed")
@@ -445,8 +380,9 @@ rule split_bams:
         mem_mb        = allocate_mem_SB,
         time_min      = 30
     log:
-        os.path.join(
-            config["split_bams_pipeline"]["per_donor_split_log_dir"],
+        (
+            f"{config["split_bams_pipeline"]["per_donor_split_log_dir"]}"
+            f"{config['fold_struct_bam_split2']}"
             "{donor}.log",
         )
     shell:
@@ -471,7 +407,7 @@ rule split_bams:
             --hash_file    {input.barcodes_vs_donor} \
             --temp_dir     {params.temp_dir}         \
             --out_dir      $(dirname {output.bam})   \
-            --bam          {input.filt_bam}          \
+            --bam          {input.bam}          \
             ${{EXTRA_ARGS}}                          \
             > {log} 2>&1
         """

@@ -1,4 +1,4 @@
-import os, yaml
+import os, yaml, warnings
 from snakemake.utils import validate
 from lib.utils import read_files_ext, ret_cols
 
@@ -7,110 +7,54 @@ from lib.utils import read_files_ext, ret_cols
 col_set = [
     "pool", 
     "n_dons", 
-    "donors", # NEW ADDITION
+    "donors", # NEW ADDITION (comma-sep donor list)
     "vcf",
 ]
-
+POOLS = []
+SS_MEM = {}
 # Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
 if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
 
     #Lists that will contain wildcards
-    pool=[] # wildcard 'pool'
     # If fastq files are called Sample_xxxxx-cDNA/xxxxx-cDNA_R1.fastq.gz
 
     with open(config['select_fastqs']) as fq:
         for line in fq:
             if not line.startswith('#'):
-                line_sp = line.split('/')
-                pool.append(line_sp[0].strip().replace('-cDNA', ''))
+                line_sp = line.split('\t')
+                pool_name = line_sp[0].strip().replace('-cDNA', '')
+                POOLS.append(pool_name)
+                if len(line_sp) == 2:
+                    mem = line_sp[1].strip()
+                    if mem == ''
+                        SS_MEM[pool_name] = 0 # Default in SS resources
+                        continue
+                    try:
+                        SS_MEM[pool_name] = int(mem)
+                    except ValueError:
+                        warnings.warn(
+                            "The second column is not an integer. The"
+                            " second column, if present, should have "
+                            "max RAM requirement to run STAR! "
+                            "For default, don't specify anything. Now"
+                            f" using the default for the pool: {pool_name}"
+                        )
 
-
-    # EXAMPLE: 2 WILDCARDS for FASTQs
-    # round_num=[] # wildcard 'num'
-    # sample_name=[] # wildcard 'id1'
-    # for eg. round5/Sample_xxxxx-cDNA/xxxxx-cDNA
-    # round_num = round5
-    # sample_name = xxxxx
-    # 
-    # with open(config['select_fastqs']) as fq:
-    #     for line in fq:
-    #         if not line.startswith('#'):
-    #             line_sp = line.split('/')
-    #             round_num.append(line_sp[0])
-    #             sample_name.append(line_sp[1].strip().replace('-cDNA', ''))
-
-    # Create a dict of wildcards
-    # wildcards_list={'num':round_num, 'id1':sample_name}
-
-    if any([ f in config['select_fastqs'].lower() for f in ['split_bams', 'identify_swaps']]):
-        # n_cols = ret_cols(config['gt_demux_pipeline']['vcf_info'])
-        if n_cols == 2:
-            cols = col_set[:-2]
-            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
-                        names=cols, usecols=range(2)
-                    )
-            for p in pool:
-                # Repeat rows according to n_dons
-                temp_df_expanded = temp_df.loc[temp_df.index.repeat(temp_df["n_dons"])].copy()
-
-                # Create donor labels per pool
-                temp_df_expanded["donors"] = temp_df_expanded.groupby("pool").cumcount()
-
-                # Final dict
-                wildcards_list = {
-                    "pool": temp_df_expanded["pool"].tolist(),
-                    "donors": temp_df_expanded["donors"].apply(lambda x: f"donor{x}").tolist()
-                }
-        elif n_cols > 2:
-            cols = col_set[:-2]
-            temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'], 
-                        names=cols, usecols=range(3)
-                    )
-            # create a list of donors from a comma-sep string (remove extra spaces)
-            temp_df['donors'] = temp_df['donors'].apply(
-                        lambda x: [ i.strip() for i in x.split(',') ]
-                    )
-
-            # explode donors in the list
-            temp_df_expanded = temp_df.explode('donors', ignore_index=True)
-
-            # Final dict
-            wildcards_list = {
-                "pool": temp_df_expanded["pool"].tolist(),
-                "donors": temp_df_expanded["donors"].tolist()
-            }
-
-    else:
-        # Create a dict of wildcards
-        wildcards_list={'pool':pool}
 
 # If the input is yaml file then validate it and process it
 # The example in here is for more than one wildcards
+# RE-EVALUTE
 elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml')):
     # Validating config['select_fastqs']
     # with open(config['select_fastqs']) as fout:
     #     samples_df = pd.json_normalize(yaml.load(fout, Loader=yaml.SafeLoader))
     # validate(samples_df, "samples.schema.json")
 
-    # Value of last_step should be regulated by the json schema
-    if not isinstance(config['last_step'], str) and not (config['last_step'].endswith('.yaml') and not config['last_step'].endswith('.yml')):
-        raise ValueError("Value in last_step should be one of the modules names!")
-
-
-    # File exists or not
-    # if not os.path.isfile(config['select_fastqs']):
-    #     raise OSError("The provided file doesn't exists! Check the path.")
 
     # Parse the samples containing yaml file
     with open(config['select_fastqs']) as fout:
         sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
-
-    # contains the keys that categorizes multiple
-    # modules (same names should be present in the modules_yaml file)
-    # sample_set_names = [] 
-    # files_list = [] # List of list
-    # modules_list = [] # List of list
 
 
     # Yaml file can't be a mix of dirs and folder structures
@@ -187,6 +131,7 @@ elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswi
 
 # If the input is a dir containing all the fastqs or files
 # Extract the required wildcards here
+# RE-EVALUATE
 elif os.path.isdir(config['select_fastqs']):
     assert config['wildcards_select'] is not None, "if 'select_fastqs' option in the yaml file is a dir then 'wildcards_select' can't be 'None'!"
     # Example for one wildcard extraction

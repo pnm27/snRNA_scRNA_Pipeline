@@ -31,10 +31,14 @@ def get_limitsjdbval_coll(wildcards, resources):
     '''
     # This is to check the log file produced after each attempt for the error value
     file_p_temp = f"{config['fold_struct']}".format(**wildcards)
-    log_list = glob2.glob("{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], file_p_temp))
+    log_list = glob2.glob(
+        "{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], 
+            file_p_temp)
+        )
     ins_nsj = 1000000 # DEFAULT
     sj_collap = 1000000 # DEFAULT
-    limitbamsortram = resources.mem_mb * (resources.cpus_per_task - 1) * 1000000 # DEFAULT
+    limitbamsortram = 5000000000
+    # limitbamsortram = int(resources.mem_mb * 0.5 * 1000000) # resources.mem_mb * (resources.cpus_per_task - 1) * 1000000 # DEFAULT
     for log_file in log_list: 
         with open(log_file) as fin:
             for line in fin:
@@ -86,7 +90,10 @@ def get_limitsjdbval_coll(wildcards, resources):
 # Resource Allocation ------------------
 
 def allocate_mem_SS(wildcards, attempt):
-    return 45000+1000*(attempt-1)
+    if not SS_MEM or wildcards.pool not in SS_MEM:
+        return 45000+1000*(attempt-1) # DEFAULT
+    else:
+        return SS_MEM[wildcards.pool] +4000*(attempt-1)
 
 def allocate_time_SS(wildcards, attempt):
     return 1440
@@ -102,9 +109,10 @@ rule STARsolo_sort:
     # priority: 10
 
     params:
-        gtf=config['gtf_file'],
-        genome_dir=config['STARsolo_pipeline']['genome_dir'],
-        overhang=config['STARsolo_pipeline']['sjdboverhang'],
+        # gtf=config['gtf_file'],
+        gtf=config['STARsolo_pipeline']['genome_pick']['gtf'], # USED to be ['gtf_file']
+        genome_dir=config['STARsolo_pipeline']['genome_pick']['genome'], # USED to be ['STARsolo_pipeline']['genome_dir']
+        overhang=config['STARsolo_pipeline']['genome_pick']['overhang'], # USED to be ['STARsolo_pipeline']['sjdboverhang']
         opt_params=get_limitsjdbval_coll,
         chemistry=config['STARsolo_pipeline']['soloType'], # For STARsolo
         whitelist=config['whitelist'], # V3 whitelist
@@ -128,7 +136,6 @@ rule STARsolo_sort:
         bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
         gf_mat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}",
         gf_bc=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}"
-
 
     log:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
@@ -196,7 +203,7 @@ rule samtools_index:
         bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
 
     params:
-        threads=lambda wildcards, resources: resources.cpus_per_task*6-2
+        threads=lambda wildcards, resources: resources.cpus_per_task*4-2
 
     output:
         bai=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
@@ -215,6 +222,5 @@ rule samtools_index:
 
     shell:
         """
-        mem_per_thread=$((resources.mem_mb/params.threads))
-        samtools index -@ {params.threads} {output.bam} &>> {log}
+        samtools index -@ {params.threads} {input.bam} &>> {log}
         """
