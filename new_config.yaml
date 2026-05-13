@@ -14,9 +14,11 @@ genome_builds:
   gencode38: &gen38
     gtf: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.104.gtf
     fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens.GRCh38.dna.primary_assembly.fa
+    gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/Hs_allchr_MT.txt
   gencode44: &gen44
     gtf: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/gencode.v44.primary_assembly.annotation.gtf
     fasta: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/GRCh38_gencode44.primary_assembly.genome.fa
+    gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/all_genes_EnsemblInfo_110.csv
 
 STARsolo_genome_dir:
   gencode38o150: &gencode38o150
@@ -49,7 +51,7 @@ STARsolo_genome_dir:
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gencode44_149o
     overhang: 149
 
-  gencode38o90: &gencode38o90
+  gencode38o90: &CAVgencode38o90
     <<: *gen38
     genome: /sc/arion/projects/roussp01b/resources/databases/STAR_genome_dirs/Hs_GRCh38/star_2710a_gen_90_CAVATICA
     overhang: 90
@@ -87,7 +89,7 @@ whitelist: *3v3
 reg_chr_bed: /sc/arion/projects/roussp01b/resources/databases/ref_GRCh38/Homo_sapiens_GRCh38_reg_chr.bed
 chr_prefix: null
 mito_prefix: MT-
-gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/Hs_allchr_MT.txt
+# gene_info_file: /sc/arion/projects/roussp01b/resources/databases/processing_pipeline_misc_files/gene_annotations/Hs_allchr_MT.txt
 
 
 # Standard Filters for gene count matrix files
@@ -134,9 +136,9 @@ fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
 fold_struct_swaps_check: "{pool}_{donor}" # for qtltools-mbv
 fold_struct_deeptools: "Sample-{pool}"
 
-STAR_version: star/2.7.9a
+STAR_version: star/2.7.10a
 featuremap_script: /sc/arion/projects/psychAD/pnm/kite/featuremap/featuremap.py
-STAR_snv_aware_version: star/2.7.9a
+STAR_snv_aware_version: star/2.7.10a
 cellranger-arc_version: cellranger-arc/2.0.2
 
 # BAM processing pipeline----------------------------------------------------

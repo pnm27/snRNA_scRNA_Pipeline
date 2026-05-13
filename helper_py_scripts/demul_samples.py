@@ -12,7 +12,7 @@ import datetime
 from time import sleep
 from jsonschema import validate, Draft202012Validator
 from demultiplex_helper_funcs import (
-    auto_read, 
+    auto_read, has_wet_lab_value_column, 
     demux_by_calico_solo, 
     demux_by_vireo,
     get_donor_info,
@@ -103,7 +103,7 @@ def get_argument_parser():
     "info (tab-separated txt file)."
     )
     parser.add_argument('-p', '--pool_name', help="Name of the pool. "
-    "This should be  in this script as well as the one in the wet_lab_file "
+    "This should be in this script as well as the one in the wet_lab_file "
     "and in the converter file, if present.",
     )
     parser.add_argument('--common_annotations', help="json file that has "
@@ -114,6 +114,12 @@ def get_argument_parser():
     )
     parser.add_argument('-w', '--wet_lab_file', help="Path to file that "
     "contains either/all of: HTO info for each set, annotations, etc."
+    )
+    parser.add_argument('--swap_correct', nargs='?', help="A csv or tsv "
+    "file containing final swap corrected information. Will utilize "
+    "info from here to figure which version of demultiplexing was "
+    "finally used for confirming donor assignments.", 
+    const="final_swap_correction.csv", default=None
     )
 
     # Only for multi-HTO pools
@@ -249,8 +255,8 @@ def main():
     parser = get_argument_parser()
     args = parser.parse_args()
 
-    # Wet Lab file, Filter wet lab file's columns, if needed
-    df = auto_read(args.wet_lab_file)
+    df = None # Default - Wet Lab File is not provided
+    swap_corr_df = None # Default - Swap Correction File is not provided
 
     sc.settings.set_figure_params(dpi_save=400, format='png', 
                                 color_map = 'viridis_r')
@@ -454,15 +460,8 @@ def main():
         print("Successfully loaded the input file!")
 
 
-    # DEPRACATED
-    # Batch info
-    # This is the values that will be stored in the final h5ad file
-    # Prepare for Extra Information
-    # replicate=args.pool_name.split('_')[2]
-    # add few more annotations
-    # adata.obs['batch'] = args.pool_name
-    # adata.obs['rep'] = replicate
-    # adata.obs['set'] = '_'.join(args.pool_name.split('_')[:3])[:-1]
+    if args.swap_correct is not None:
+        swap_corr_df = auto_read(args.swap_correct)
 
     # New way to add extra annotations
     if args.common_annotations is None:
@@ -489,17 +488,22 @@ def main():
         else:
             print("Validation successful!")
 
+        # Wet Lab file, Filter wet lab file's columns, if needed
+        if has_wet_lab_value_column(data):
+            df = auto_read(args.wet_lab_file)
+
         # PROCESS THE DATA
-        processed = process_columns(data, args.pool_name, df)
+        processed = process_columns(data, args.pool_name, df).by_h5ad
 
         # OLD STYLE
         # Add the above annotations
         # for i, j in processed.items():
         #     adata.obs.loc[:, i] = j
         # NEW STYLE
-        for p in processed:
-            adata.obs.loc[:, p.column_header_h5ad] = p.column_value
+        for col_header, col_value in processed.items():
+            adata.obs.loc[:, col_header] = col_value
 
+    
     # Cell barcodes
     cell_bcs =  adata.obs_names.to_series()
 

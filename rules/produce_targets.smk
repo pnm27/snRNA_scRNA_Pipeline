@@ -6,12 +6,13 @@ from typing import Literal
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
+# STATIC, pool-only expansion
 def _expand_pools(template: str) -> list:
     """Expand a path template over all pools."""
     return expand(template, pool=POOLS)
 
 
+# DYNAMIC, pool+donors expansion
 def _expand_pools_donors(template: str, wildcards) -> list:
     """Expand a path template over pool + its donors, zipped."""
     wc_dict = get_real_donors({"pool": wildcards.pool})
@@ -56,21 +57,31 @@ def targets_cellSNP(multiome: bool = False) -> list:
     ]
 
 
-def targets_gt_demux(h5ad: bool = False, multiome: bool = False) -> list:
+def targets_demux(suffix: list, out_dir: list | None,
+    h5ad: bool = False,
+    # demux_type: Literal['vireo', 'solo', 'both'],
+    multiome: bool = False) -> list:
     sub_dirs = ["ATAC", "cDNA"] if multiome else [""]
+    ret_targets = []
     if not h5ad:
-        out_dir = config["gt_demux_pipeline"]["vireosnp_dir"]
-        fs_gt   = config["fold_struct_gt_demux"]
-        suff    = config["gt_demux_pipeline"]["donors_classification"]
-        return [
-            os.path.join(f"{out_dir}{fs_gt}", d, suff)
-            for d in sub_dirs
-        ]
+        # NEED TO DO FOR SOLO
+        for suff in suffix:
+            out_dir = config["gt_demux_pipeline"]["vireosnp_dir"]
+            fs_gt   = config["fold_struct_gt_demux"]
+            suff    = config["gt_demux_pipeline"]["donors_classification"]
+            ret_targets.append(
+                os.path.join(f"{out_dir}{fs_gt}", d, suff)
+                for d in sub_dirs
+            )
     else:
-        out_dir = config["gt_demux_pipeline"]["final_count_matrix_dir"]
-        fs_gt   = config["fold_struct_demux"]
-        suff    = config["gt_demux_pipeline"]["final_count_matrix_h5ad"]
-        return [os.path.join(f"{out_dir}{fs_gt}{suff}")]
+        for od, suff in zip(out_dir, suffix):
+            #  NOT SAME FOR CREATE_H5AD_ONLY
+            fs_gt   = config["fold_struct_demux"]
+            # out_dir = config["gt_demux_pipeline"]["final_count_matrix_dir"]
+            # suff    = config["gt_demux_pipeline"]["final_count_matrix_h5ad"]
+            ret_targets.append(os.path.join(f"{od}{fs_gt}{suff}"))
+
+    return ret_targets
 
 
 def targets_gt_demux2(multiome: bool = False) -> list:
@@ -104,8 +115,11 @@ def targets_gt_demux_identify_swaps(multiome: bool = False) -> list:
     return [os.path.join(out_dir, f"{fs}{suff}")]
 
 
-def targets_multiome(last: str, h5ad: bool = False,
-                     multiome: bool = False) -> list:
+def targets_multiome(last: str, suffix: list | None, 
+    out_dir: list | None,
+    h5ad: bool = False,
+    multiome: bool = False) -> list:
+    # required_args = ['vireo', 'solo']
     dispatch = {
         "alignment":   lambda: [
             f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{f}"
@@ -115,13 +129,16 @@ def targets_multiome(last: str, h5ad: bool = False,
                 "filtered_feature_bc_matrix/matrix.mtx.gz",
             ]
         ],
-        "vireo":       lambda: targets_gt_demux(h5ad=h5ad, multiome=multiome),
+        "vireo": lambda x, y: targets_demux(x, y, h5ad=h5ad, multiome=multiome),
         "splitBams":   lambda: targets_SplitBams(multiome=multiome),
         "identifySwaps": lambda: targets_gt_demux_identify_swaps(multiome=multiome),
+        "solo": [], # ADD LATER
+        "both": [], # ADD LATER
     }
     if last not in dispatch:
         raise ValueError(f"Unknown multiome target stage: '{last}'")
-    return dispatch[last]()
+
+    return dispatch[last](suffix, out_dir) if suffix is not None else dispatch[last]()
 
 
 # ---------------------------------------------------------------------------
@@ -133,13 +150,40 @@ def produce_targets(wildcards) -> list:
     metrics  = (config["picard_metrics"].lower()
                 if config["picard_metrics"] is not None else None)
     h5ad     = config.get("create_final_h5ad", False) if "gt_demux" in step else False
+    demux_type = config.get("demux_type", None)
+    h5ad_suffixes = []
+    h5ad_outdir = []
     multiome = "multiome" in step
     suff_h5ad = config["gt_demux_pipeline"]["final_count_matrix_h5ad"]
+
+
+    if not multiome and demux_type in ['vireo', 'add_vireo']:
+        demux_type = 'vireo'
+        h5ad_outdir = [
+            config['gt_demux_pipeline']['final_count_matrix_dir'],
+            ]
+        h5ad_suffixes = [
+            config['gt_demux_pipeline']['final_count_matrix_h5ad'],
+            ]
+    elif not multiome and demux_type in ['solo', 'add_solo']:
+        demux_type = 'solo'
+        h5ad_outdir = [
+            config['hashsolo_demux_pipeline']['final_count_matrix_dir'],
+            ]
+        h5ad_suffixes = [
+            config['hashsolo_demux_pipeline']['final_count_matrix_h5ad'],
+            ]
+    #  TO DO
+    elif not multiome and demux_type == 'both':
+        h5ad_suffixes = [
+            config['gt_demux_pipeline']['final_count_matrix_h5ad'],
+            config['hashsolo_demux_pipeline']['final_count_matrix_h5ad'],
+            ]
 
     def _with_picard(targets: list) -> list:
         """Optionally append Picard targets to an existing list."""
         if metrics is not None:
-            targets += _expand_pools(_picard_targets(progs=metrics)[0])
+            targets += _expand_pools(_picard_targets(progs=metrics))
         return targets
 
     # -- dispatch -----------------------------------------------------------
@@ -166,9 +210,11 @@ def produce_targets(wildcards) -> list:
     elif step == "starsolo_cellsnp":
         return _with_picard(_expand_pools(targets_cellSNP(multiome=False)[0]))
 
-    elif step == "starsolo_gt_demux":
+    elif step == "starsolo_demux":
+        fs_gt = config['gt_demux_pipeline']['final_count_matrix_h5ad']
         return _with_picard(
-            _expand_pools(targets_gt_demux(h5ad=h5ad, multiome=multiome)[0])
+            _expand_pools(targets_demux(fs_gt, h5ad=h5ad,
+            multiome=multiome)[0])
         )
 
     elif step == "starsolo_gt_demux_multi_vcf":
@@ -185,15 +231,19 @@ def produce_targets(wildcards) -> list:
             raise ValueError("VCF_TYPE must be a str or list.")
 
     elif step == "multiome_alignment":
-        return [f for t in targets_multiome("alignment")
+        return [f for t in targets_multiome("alignment", None)
                 for f in _expand_pools(t)]
 
     elif step == "multiome_gt_demux":
-        return [f for t in targets_multiome("vireo", h5ad=h5ad, multiome=multiome)
-                for f in _expand_pools(t)]
+        h5ad_outdir = [config['gt_demux_pipeline']['final_count_matrix_dir']]
+        h5ad_suffixes = [config['gt_demux_pipeline']['final_count_matrix_h5ad']]
+        return [
+            f for t in targets_multiome("vireo", h5ad_suffixes, h5ad_outdir, h5ad=h5ad, multiome=multiome)
+            for f in _expand_pools(t)
+        ]
 
     elif step == "multiome_split_bams_gt_demux":
-        targets = targets_multiome("splitBams", multiome=multiome)
+        targets = targets_multiome("splitBams", None, h5ad=h5ad, multiome=multiome)
         return [
             f
             for i, t in enumerate(targets)
@@ -201,16 +251,24 @@ def produce_targets(wildcards) -> list:
         ]
 
     elif step == "multiome_gt_demux_identify_swaps":
-        return [f for t in targets_multiome("identifySwaps", multiome=multiome)
+        return [f for t in targets_multiome("identifySwaps", None, multiome=multiome)
                 for f in _expand_pools(t)]
 
     elif "starsolo" in step:
+        ret_list=[]
         if metrics is None:
-            return _expand_pools(targets_STARsolo()[0])
-        return _expand_pools(_picard_targets(progs=metrics)[0])
+            ret_list += _expand_pools(targets_STARsolo()[0])
+        else:
+            ret_list += _expand_pools(_picard_targets(progs=metrics))
 
-    elif any(s in step for s in ["split_bams", "identify_swaps"]):
-        return expand("resolved/{pool}.done", pool=POOLS)
+        if any(s in step for s in ["split_bams", "identify_swaps"]):
+            ret_list += expand("resolved/{pool}.done", pool=POOLS)
+
+        if h5ad:
+            ret_list += _expand_pools(
+                targets_demux(h5ad_suffixes, h5ad_outdir, h5ad=h5ad, multiome=multiome)[0])
+        return ret_list
+
 
     else:
         raise ValueError(f"Unrecognised last_step: '{step}'")

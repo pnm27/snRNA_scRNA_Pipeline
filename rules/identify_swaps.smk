@@ -3,13 +3,13 @@ def get_bam_inputs(wildcards):
     if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
         if 'multiome' in config['last_step'].lower():
             return (
-                f"{config['split_bams_pipeline']['split_bams_dir2']}"
+                f"{config['split_bams_pipeline']['split_bams_dir']}"
                 f"{config['fold_struct_bam_split2']}"
                 f"{config['fold_struct_gt_demux_redo']}.bam"
             ).format(**wildcards)
         else:
             return (
-                f"{config['split_bams_pipeline']['split_bams_dir2']}"
+                f"{config['split_bams_pipeline']['split_bams_dir']}"
                 f"{config['fold_struct_bam_split2']}"
                 f"{config['fold_struct_gt_demux_redo']}.bam"
             )
@@ -53,7 +53,8 @@ rule qtltools_mbv:
     # Use one of the below
     wildcard_constraints:
         # donor=r"(?<=cDNA_|ATAC_).+" #WILDCARDS # For multiome
-        donor=r"(?:.*)(?<=\/)([^/_]*)" #WILDCARDS # Match everything except the last '/', donor var should not contain '/' and '_'
+        donor=r"(?:.*)(?<=\/)([^/_]*)", #WILDCARDS # Match everything except the last '/', donor var should not contain '/' and '_'
+        pool=r"[^_]+"
 
     shell:
         """

@@ -638,6 +638,30 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
 
 # Adding Annotations & validating them --------------------------------------
 
+def has_wet_lab_value_column(config: dict) -> bool:
+    r"""Checks if wet lab file is needed for annotation
+
+    This function evaluates if the Wet Lab file is need for annotations
+     as mentioned in the uploaded schema.
+
+    Paramters
+    ---------
+    config
+        A dict formed from JSON parsing containing recipes for adding 
+        annotations.
+    
+    Returns
+    -------
+    bool
+        True if file is needed
+    """
+    return any(
+        col.get("value_column", "").startswith("wet_lab.")
+        for col in config.get("columns", [])
+        if "value_column" in col
+    )
+
+
 # EXTRA ANNOTATIONS: TRANSFORMATION
 # OLD STYLE
 # def apply_pythonic(value, operation, old, new, start, end, by, index):
@@ -759,7 +783,7 @@ def apply_regex(value: Any, t: dict[str, Any]) -> str:
 
 # EXTRA ANNOTATIONS: PROCESS EACH COLUMN
 def process_columns(config: dict[str, Any], 
-    pool_name: str, df: pd.DataFrame) -> ParsedColumns:
+    pool_name: str, df: pd.DataFrame | None) -> ParsedColumns:
     r"""Process annotations by reading a JSON recipe.
 
     This function provides an output, which can be used to 
@@ -836,8 +860,11 @@ def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
     
     result = {}
     if 'demultiplex_paths' not in config:
-        raise warnings.warn("No demultiplex paths provided! "
-            "Can't write swap corrected statistics!!!", UserWarning)
+        warnings.warn("""
+            No demultiplex paths provided!
+            Can't write swap corrected statistics!!!
+            """, UserWarning
+        )
     else:
         result.update(config['demultiplex_paths'])
 
@@ -846,7 +873,7 @@ def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
 
 # PROCESS SWAP CORRECTION
 def process_swap_correction(config: dict[str, Any], 
-    swap_df: pd.DataFrame, pool_name: str, 
+    swap_df: pd.DataFrame | None, pool_name: str, 
     demux_paths: dict[str, str]) -> str:
     r"""This function returns the location of demultiplexing data
 
@@ -884,8 +911,11 @@ def process_swap_correction(config: dict[str, Any],
     ]
     
     if 'swap_correction_df' not in config:
-        raise warnings.warn("No swap_correction metrics provided! "
-            "Can't write swap corrected statistics!!!", UserWarning)
+        warnings.warn("""
+            No swap_correction metrics provided!
+            Can't write swap corrected statistics!!!"""
+            , UserWarning
+        )
     else:
         if all( f in config['swap_correction_df'] for f in lookup_columns ):
             pool_col = config['swap_correction_df']['pool_column']
@@ -894,15 +924,47 @@ def process_swap_correction(config: dict[str, Any],
             result = demux_paths[dem_val]
             
         else:
-            raise warnings.warn("Given columns not douns in the swap_correction DF! "
-            "Check their names!!!", UserWarning)
+            warnings.warn("""
+            Given columns not douns in the swap_correction DF 
+            Check their names!!!""", UserWarning
+            )
     
     return result
 
 # ---------------------------------------------------------------------------
 
-# UPDATED write_logs from update_logs.py
+# This function is to read files with extension '.stats', which are formatted weirdly
+# and return a pandas Dataframe for easy use
+def get_df(inp_path) -> pd.DataFrame:
+    r"""This function returns the location of demultiplexing data
 
+    This function uses a swap correction file to look up specific
+    pools and extract the relevant directory containing the correct
+    version of demultiplexing run.
+
+    Paramters
+    ---------
+    inp_path
+        A dict formed from JSON parsing containing recipes for adding 
+        annotations.
+
+    Returns
+    -------
+    pd.DataFrame
+        A string returning demultiplexing directory.
+    """
+    col1 = []
+    col2 = []
+    with open(inp_path) as f1:
+        for line in f1:
+            col1.append(line.strip().split()[0])
+            col2.append(line.strip().split()[1])
+   
+    n_df = pd.DataFrame({'cols':col1,'vals':col2})
+    return n_df
+
+
+# UPDATED write_logs from update_logs.py
 import logging
 import pandas as pd
 

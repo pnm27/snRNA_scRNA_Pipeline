@@ -8,6 +8,7 @@ from time import sleep
 import argparse, warnings # errno
 from demultiplex_helper_funcs import (
     process_columns, auto_read, 
+    get_df, has_wet_lab_value_column,
     get_demux_paths, process_swap_correction,
     ColumnResult, ParsedColumns
 )
@@ -48,20 +49,6 @@ def get_filename(loc_dir, file_struct, fn, suffix):
     else:
         return ret_path
 
-
-
-# This function is to read files with extension '.stats', which are formatted weirdly
-# and return a pandas Dataframe for easy use
-def get_df(inp_path):
-    col1 = []
-    col2 = []
-    with open(inp_path) as f1:
-        for line in f1:
-            col1.append(line.strip().split()[0])
-            col2.append(line.strip().split()[1])
-   
-    n_df = pd.DataFrame({'cols':col1,'vals':col2})
-    return n_df
 
 
 # This function is used to caluclate ratios like doublet pct and negative pct
@@ -326,6 +313,8 @@ def main():
     pic_dir = args.picard_dir
     dem_dir = args.demul_dir # DEPRACATED
     samples = args.samples if args.samples else args.samples_deprecated
+    df = None # Default - Wet Lab File is not provided
+    swap_corr_df = None # Default - Swap Correction File is not provided
 
     # Resolve which one to use
     if args.samples and args.samples_deprecated:
@@ -413,8 +402,6 @@ def main():
         swap_corr_df = auto_read(args.swap_correct)
 
     if args.common_annotations is not None:
-        # Wet Lab file, Filter wet lab file's columns, if needed
-        df = auto_read(args.wet_lab_file)
 
         # Load the user config
         with open(args.common_annotations) as f:
@@ -433,8 +420,12 @@ def main():
         else:
             print("Validation successful!")
 
+        # Wet Lab file, Filter wet lab file's columns, if needed
+        if has_wet_lab_value_column(data):
+            df = auto_read(args.wet_lab_file)
+
     # Get all columns for the output df
-    extra_cols = [ col.get("columnInLogs", []) for col in data["columns"] ]
+    extra_cols = [ col["columnInLogs"] for col in data["columns"] if "columnInLogs" in col]
     cols_list = get_all_columns(map_names, extra_cols)
     demul_dirs = get_demux_paths(data)
 

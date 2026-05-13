@@ -15,15 +15,15 @@ from functools import partial
 
 # Resource Allocation ------------------
 def allocate_mem_FCB(wildcards, attempt):
-    return 150*attempt+150
+    return 1000+200*(attempt-1)
 
 
 def allocate_time_FCB(wildcards, attempt):
-    return 20*attempt+20
+    return 20+20*(attempt-1)
 
 
 def allocate_mem_SB(wildcards, attempt):
-    return 75*attempt+75
+    return 250+100*(attempt-1)
 
 # --------------------------------------
 

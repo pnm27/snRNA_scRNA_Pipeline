@@ -3,10 +3,12 @@
 ## TODO
 
 - Move logic of pools calculation from **input_processing.smk** to config (inspirations from **downloadFromSynapse.py** - config part of it).
+- Use *branch* function to handle rules that have varied inputs
 - Make the new pipeline compatible for:
   - [ ] multiome
   - [ ] multi-module
   - [ ] multi-vcf
+- Add Logging support for python using logging
 - Miscellaneous:
   - [ ] Write down schemas.
   - [ ] Add support for multiome in **update_logs.py**.
@@ -208,11 +210,12 @@ The highlights of the pipeline are:
   - *mito* to *mito_prefix*. Reflected in **demultiplex.smk**, **split_bams.smk** and **calico_solo_demux.smk**
   - *gt_check* in *gt_check* to *gt_check*. Reflected in **split_bams.smk** and **produce_targets.smk**.
   - Added *demultiplex* section for the rule *demux_samples_both*.
-  - Fixed issues of incompatible gtf, fasta and genome dir issue for STARsolo by making anchors and references. Now just select 'genome_pick' in 'STARsolo_pipeline' and the following is automatically setup and read through the rule:
+  - Fixed issues of incompatible gtf, fasta and genome dir issue for STARsolo and gene annotations by making anchors and references. Now just select 'genome_pick' in 'STARsolo_pipeline' and the following is automatically setup and read through the rule:
     - gtf now selected through 'gtf' from the above heirarchy (earlier 'gtf_file').
     - fasta now selected through 'fasta' from the above heirarchy (earlier 'genome_fasta').
     - genome directory now selected through 'genome' from the above heirarchy (earlier 'genome_dir').
     - overhang now selected through 'overhang' from the above heirarchy (earlier 'sjdboverhang').
+    - gene_info_file now selected through 'gene_info_file' from the above heirarchy (earlier 'gene_info_file')
 - Removed mode='w+' when creating outputs in *create_Feat_Barc.py*.
 - Added *multiome_alignment* as a new module. Created **cellranger.smk**, which currently support cellranger arc count only.
 - Added multiome demultiplexing support for the following rules:

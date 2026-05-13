@@ -35,13 +35,13 @@ args["SWAP_CORRECT_DF"]=""
 
 
 samp_list=""
-while read l 
+while IFS=$'\t' read -r -a l
 do
 {
-    if ! grep -q "^#" <<< ${l}; then
+    if ! grep -q "^#" <<< ${l[0]}; then
         # Remove 'cDNA' at the end of the names
         # glob can add cDNA or HTO as required
-        samp_name=$(rev <<< ${l} | cut -d "/" -f1 | rev | sed "s#[-_][cC][dD][nN][aA]##g" )
+        samp_name=$(rev <<< ${l[0]} | cut -d "/" -f1 | rev | sed "s#[-_][cC][dD][nN][aA]##g" )
         samp_list=${samp_list}" "${samp_name}
     fi
 }
@@ -60,7 +60,8 @@ echo
 set -x
 # Restrict glob expansion
 python3 ../helper_py_scripts/update_logs.py ${samp_list} ${cmd_str} \
-    --ss_l --ss_g_f --ss_gf_f --ss_g_s --ss_gf_s --ss_bc --pc_gc --pc_rs --dem_info
+    --ss_l --ss_g_f --ss_gf_f --ss_g_s --ss_gf_s --ss_bc --pc_gc --pc_rs \
+    --dem_info "_STARsolo_vS_info.tsv"
     
 set +x
 echo

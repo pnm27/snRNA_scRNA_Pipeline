@@ -82,8 +82,14 @@ def get_cellsnp_inputs(wildcards, config):
             temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
             n_cols = temp_df.shape[1]
             # For demux run wo_gt, we generally won't have per-donor vcf
-            if config['demux_run_type'] == 'wo_gt':
+            # Similarly, if there are just 2 columns and if it's not 
+            # the demultiplexing run without genotype (like projects 
+            # with only SNP array data) 
+            if config['demux_run_type'] == 'wo_gt' or (
+                n_cols == 2 and config['demux_run_type'] != 'wo_gt'
+                ):
                 ret_dict['regionsFile'] = config['gt_demux_pipeline']['genome_1k_ref']
+
             # If there are more than 3 columns then columns 4 and above
             # have per-donor vcfs 
             # (the 'above' is useful for multi-vcf setup) - TODO
@@ -92,6 +98,9 @@ def get_cellsnp_inputs(wildcards, config):
                 temp_df.columns = col_set
                 ret_dict['regionsFile'] = temp_df.loc[
                     temp_df["pool"] == samp_name, "vcf"].values[0]
+            # Default
+            else:
+                ret_dict['regionsFile'] = config['gt_demux_pipeline']['genome_1k_ref']
 
     return ret_dict
 
@@ -119,8 +128,10 @@ def get_vir_inputs(wildcards, config):
         n_cols = temp_df.shape[1]
         # Make snakemake's wildcard same as the value in the "pool" column
         samp_name = wildcards.pool # WILDCARDS
+        if n_cols == 2 and config['demux_run_type'] != 'wo_gt':
+            ret_dict['donorFile'] = config['gt_demux_pipeline']['genome_1k_ref']
         # For condn. 1)
-        if n_cols == 4:
+        elif n_cols == 4:
             temp_df = temp_df.iloc[:, :n_cols]
             temp_df.columns = col_set
             ret_dict['donorFile'] = (
@@ -132,15 +143,147 @@ def get_vir_inputs(wildcards, config):
 
     return ret_dict
 
+# Demultiplex ---------------------------------------------------------------------------
+
+def get_inputs_demux(wildcards, config):
+    demux_type = config['demux_type'].lower()
+
+    if demux_type not in ('solo', 'vireo', 'both', 'add_solo', 'add_vireo'):
+        # create_h5ad_only branch
+        return [
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        ]
+
+    if demux_type in ('solo', 'add_solo'):
+        return _inputs_solo(wildcards, config)
+
+    if demux_type in ('vireo', 'add_vireo'):
+        return _inputs_vireo(wildcards, config)
+
+    if demux_type == 'both':
+        return _inputs_both(wildcards, config)
+
+    return []
 
 
+def _inputs_solo(wildcards, config):
+    demux_type = config['demux_type'].lower()
+    ret = []
+
+    if demux_type == 'add_solo':
+        ret.append(
+            f"{config['gt_demux_pipeline']['final_count_matrix_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['gt_demux_pipeline']['final_count_matrix_h5ad']}"
+        )
+    elif demux_type == 'solo':
+        ret.append(
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        )
+
+    ret.append(
+        f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
+        f"{config['fold_struct_demux']}"
+        f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+    )
+    return ret
+
+
+def _inputs_vireo(wildcards, config):
+    multi_module = ['multiome', 'gt_demux']
+    demux_type   = config['demux_type'].lower()
+    last_step    = config['last_step'].lower()
+    ret = []
+
+    if demux_type == 'add_vireo':
+        ret.append(
+            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
+        )
+    elif demux_type == 'vireo':
+        if all(m in last_step for m in multi_module):
+            ret.extend([
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz",
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}ATAC/"
+                f"{config['gt_demux_pipeline']['donors_classification']}",
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}cDNA/"
+                f"{config['gt_demux_pipeline']['donors_classification']}",
+            ])
+        else:
+            ret.append(
+                f"{config['STARsolo_pipeline']['bams_dir']}"
+                f"{config['fold_struct']}"
+                f"{config['STARsolo_pipeline']['genefull_matrix']}"
+            )
+            vcf_seg = (
+                f"{wildcards.vcf_type}/"
+                if last_step.endswith('multi_vcf') else ""
+            )
+            ret.append(
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}{vcf_seg}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+            )
+
+    if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+        ret.append(config['gt_demux_pipeline']['donorName_conv']['file'])
+
+    return ret
+
+
+def _inputs_both(wildcards, config):
+    last_step = config['last_step'].lower()
+    ret = [
+        f"{config['STARsolo_pipeline']['bams_dir']}"
+        f"{config['fold_struct']}"
+        f"{config['STARsolo_pipeline']['genefull_matrix']}",
+        f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
+        f"{config['fold_struct_demux']}"
+        f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}",
+    ]
+
+    vcf_seg = (
+        f"{wildcards.vcf_type}/"
+        if last_step.endswith('multi_vcf') else ""
+    )
+    ret.append(
+        f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+        f"{config['fold_struct_gt_demux']}{vcf_seg}"
+        f"{config['gt_demux_pipeline']['donors_classification']}"
+    )
+
+    if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+        ret.append(config['gt_demux_pipeline']['donorName_conv']['file'])
+
+    return ret
+
+
+# ---------------------------------------------------------------------------------------
+# Split bam -----------------------------------------------------------------------------
 def get_inp_splitBam(wildcards, config):
-    if config['split_bams_pipeline']['split_by']['input'].lower() == 'raw':
-        if config['split_bams_pipeline']['split_by']['demux'].lower() in ['vireo', 'vs']:
-            return f"{config['gt_demux_pipeline']['vireosnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['donors_classification']}"
-        elif config['split_bams_pipeline']['split_by']['demux'].lower() in \
-            ["cs", "calico", "calico_solo", "hashsolo"]:
-            return f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+    split_by = config['split_bams_pipeline']['split_by']['input'].lower()
+    demux_type = config['split_bams_pipeline']['split_by']['demux'].lower()
+    if split_by == 'raw':
+        if demux_type in ['vireo', 'vs']:
+            return (
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+            )
+        elif split_by in ["cs", "calico", "calico_solo", "hashsolo"]:
+            return (
+                f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
+                f"{config['fold_struct_demux']}"
+                f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+            )
     else:
         # if len(config['split_bams_pipeline']['split_by']['demux']) == 1:
         #     if config['split_bams_pipeline']['split_by']['demux'][0].lower() in ['vireo', 'vs'] or \
@@ -148,7 +291,11 @@ def get_inp_splitBam(wildcards, config):
         #       ["cs", "calico", "calico_solo", "hashsolo"]:
         #         return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
         # else:
-        return f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
+        return (
+            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
+            f"{config['fold_struct_demux']}"
+            f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
+        )
 
 
 def get_bam(wildcards, config):

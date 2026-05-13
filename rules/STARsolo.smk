@@ -56,8 +56,12 @@ def get_limitsjdbval_coll(wildcards, resources):
                 
                 elif line.lower().startswith("solution") and "limitBAMsortRAM" in line:
                     # print("Found an Error with limitOutSJcollapsed. Changing from the default value of 1000000 to {}".format(1000000*(1+resources.attempt)))
-                    val = re.search(r"--limitBAMsortRAM ([0-9]+) ", line)
-                    limitbamsortram = int(val.group(1)) if val is not None else limitbamsortram
+                    val = re.search(r"--limitBAMsortRAM ([0-9]+)", line)
+                    limitbamsortram = ( 
+                                        int(val.group(1)) if val is not None and 
+                                            (int(val.group(1)) > limitbamsortram) 
+                                        else limitbamsortram
+                                    )
 
                 else:
                     continue
@@ -74,14 +78,18 @@ def get_limitsjdbval_coll(wildcards, resources):
             with open("{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)) as fin: # wildcard
                 for line in fin:
                     # print("Found values of \"limitSjdbInsertNsj\" and \"limitOutSJcollapsed\" from the previous successfull run in {}. Using the same value".format(config['star_params_dir']))
-                    val = re.search(r"--limitSjdbInsertNsj ([0-9]+) ", line)
+                    val = re.search(r"--limitSjdbInsertNsj ([0-9]+)", line)
                     temp_nsj = int(val.group(1)) if val is not None else 0
-                    val = re.search(r"--limitOutSJcollapsed ([0-9]+) ", line)
+                    val = re.search(r"--limitOutSJcollapsed ([0-9]+)", line)
                     temp_sj_coll = int(val.group(1)) if val is not None else 0
                     ins_nsj = max(temp_nsj, temp_sj_coll, ins_nsj, sj_collap)
                     sj_collap = ins_nsj
-                    val = re.search(r"--limitBAMsortRAM ([0-9]+) ", line)
-                    limitbamsortram = int(val.group(1)) if val is not None else 0
+                    val = re.search(r"--limitBAMsortRAM ([0-9]+)", line)
+                    limitbamsortram = ( 
+                                        int(val.group(1)) if val is not None and 
+                                            (int(val.group(1)) > limitbamsortram) 
+                                        else limitbamsortram
+                                    )
 
 
     return [ins_nsj, sj_collap, limitbamsortram]

@@ -21,7 +21,10 @@ def get_params_cics(wildcards, config, input):
         "max_mito": [config['max_mito_percentage'], "-m"],
         "min_genes": [config['min_genes_per_cell'], "-g"],
         "min_cells": [config['min_cells_per_gene'], "--min_cells"],
-        "genes_info": [config['gene_info_file'], "--id2name"],
+        "genes_info": [
+            config['STARsolo_pipeline']['genome_pick']['gene_info_file'], 
+            "--id2name"
+            ],
         "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
  
     }
@@ -125,7 +128,7 @@ def get_params_demux(wildcards, input, output, config):
             config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname'], 
             "--h5ad_new_classify_colname"],
     }
-    gene_info_file = config['gene_info_file']
+    gene_info_file = config['STARsolo_pipeline']['genome_pick']['gene_info_file']
     solo_inp = ["--calico_solo"]
     vireo_inp = ["--vireo_out", "--converter_file"]
     multiome_inp = ["--vireo_out", "--vireo_out", "--converter_file"]

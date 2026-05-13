@@ -2,7 +2,7 @@
 # coding: utf-8
 
 
-import pandas as pd, os, argparse, glob2, matplotlib, numpy as np
+import pandas as pd, os, re, glob2, matplotlib, numpy as np
 from adjustText import adjust_text # To avoid overlapping texts
 
 # Anti-Grain Geometry, which is a non-GUI backend used for writing images to files, rather than displaying them on a screen
@@ -31,14 +31,29 @@ def process_file(f, op_png_dir):
         return f"Skipping {f}"
     
     f1=pd.read_csv(f, sep=' ')
-    # 1. Find the point closest to (1,1)
-    f1["dist_to_11"] = np.sqrt((1 - f1["x"])**2 + (1 - f1["y"])**2)
-    
     plot_samples = [] # To check if a sample is already plotted or not
     texts = [] # To align the texts in the plot
     fig, ax = plt.subplots(figsize=(8.0, 6.0))
     ax.scatter(f1['perc_het_consistent'], f1['perc_hom_consistent'])
 
+    # ------ Plot sample with highest hets -----
+    # DEPRACATED STYLE
+    # f1.sort_values(['perc_het_consistent', 'perc_hom_consistent'], ascending=False, inplace=True)
+    # f1.reset_index(inplace=True, drop=True)
+    # ideal_samp = f1['SampleID'][0]
+    # ideal_samp_x, ideal_samp_y = f1.iloc[0, 8:10]
+    # # Annotate sample if it is "real"
+    # if not any( np.isnan(x) for x in (ideal_samp_x, ideal_samp_y)):
+    #     plot_samples.append(ideal_samp)
+    #     texts.append(ax.annotate(ideal_samp, (ideal_samp_x, ideal_samp_y)))
+        
+    # # Plot sample with 2nd highest hets
+    # high_hets_samp2 = f1['SampleID'][1]
+    # high_hets_samp2_x, high_hets_samp2_y = f1.iloc[1, 8:10]
+    # # Annotate sample if it is "real"
+    # if not any( np.isnan(x) for x in (high_hets_samp2_x, high_hets_samp2_y)):
+    #     plot_samples.append(high_hets_samp2)
+    #     texts.append(ax.annotate(high_hets_samp2, (high_hets_samp2_x, high_hets_samp2_y)))
     f1_sorted = f1.sort_values(
         ['perc_het_consistent', 'perc_hom_consistent'],
         ascending=False
@@ -51,6 +66,24 @@ def process_file(f, op_png_dir):
             plot_samples.append(samp_id)
             texts.append(ax.annotate(samp_id, (x, y)))
 
+    # Plot sample with highest hom
+    # DEPRACATED STYLE
+    # f1.sort_values(['perc_hom_consistent', 'perc_het_consistent'], ascending=False, inplace=True)
+    # f1.reset_index(inplace=True, drop=True)
+    # high_hom_samp = f1['SampleID'][0]
+    # high_hom_samp_x, high_hom_samp_y = f1.iloc[0, 8:10]
+    # # If not previously found and is "real" then annotate
+    # if high_hom_samp not in plot_samples and not any( np.isnan(x) for x in (high_hom_samp_x, high_hom_samp_y)):
+    #     texts.append(ax.annotate(high_hom_samp, (high_hom_samp_x, high_hom_samp_y)))
+    #     plot_samples.append(high_hom_samp)
+        
+    # # Plot sample with 2nd highest hom
+    # high_hom_samp2 = f1['SampleID'][1]
+    # high_hom_samp2_x, high_hom_samp2_y = f1.iloc[1, 8:10]
+    # # If not previously found and is "real" then annotate
+    # if high_hom_samp2 not in plot_samples and not any( np.isnan(x) for x in (high_hom_samp2_x, high_hom_samp2_y)):
+    #     texts.append(ax.annotate(high_hom_samp2, (high_hom_samp2_x, high_hom_samp2_y)))
+    #     plot_samples.append(high_hom_samp2)
     f1_sorted = f1.sort_values(
         ['perc_hom_consistent', 'perc_het_consistent'],
         ascending=False
@@ -90,7 +123,8 @@ def process_file(f, op_png_dir):
         for (row, col), cell in table.get_celld().items():
             if row == 0:
                 cell.get_text().set_weight('bold')
-    
+            
+    # os.makedirs(os.path.join(op_png_dir, samp), exist_ok=True)
 
     fig.tight_layout()
     plt.savefig(op_n, bbox_inches='tight', facecolor=fig.get_facecolor(), edgecolor='none')
@@ -98,62 +132,11 @@ def process_file(f, op_png_dir):
     return f"Finished plotting for: {f}"
 
 
-def get_argument_parser():
-    """Generate and return argument parser."""
-
-    #Parse Command-Line arguments
-    parser = argparse.ArgumentParser(description="Demultiplex pools "
-    "(supports hashsolo and vireo). Note: poor cells are not removed but "
-    "they aren't included while demultiplexing."
-    )
-    parser.add_argument('qtltools_dir', help="Path to matrix.mtx.gz or h5ad "
-    "file. If an h5ad file is provided then it is expected that it "
-    "has been already processed i.e. poor cells are already filtered out."
-    )
-    parser.add_argument('--qtltools_suffix', nargs='?', help="Column containing "
-    "converted donor names in the converter file. As present in snakemake's "
-    "config['identify_swaps']['mbv_suffix']. When flag is used but no value "
-    "is provided = .bamstat.txt, no flag provided = .txt", 
-    const=".bamstat.txt", default='.txt'
-    )
-    parser.add_argument('--vireo_out', help="Path to the directory "
-    "containing vireo outputs."
-    )
-    parser.add_argument('--vireo_sample_prefix', help="If the sample "
-    "names in vireo outputs are different than that of outputs in "
-    "qtltools."
-    )
-    parser.add_argument('--threads', help="Number of threads/parallel "
-    "workers to use.", type=int, default=4,
-    )
-    parser.add_argument('-s', '--sep', help="Separator used in qtltools "
-    "filenames between donor and pool. DEFAULT = '_'. "
-    "example: poolA_donorX.bamstat.txt, poolA_donorY.bamstat.txt "
-    "then sep='_'. First part of the split is c", default='_',
-    )
-    return parser
-
-
 def main():
+    all_files=glob2.glob("/sc/arion/projects/CommonMind/pnm/genesis_U24/A6_Ruzicka/qtltools_mbv/*.txt")
 
-    parser = get_argument_parser()
-    args = parser.parse_args()
-
-    qtltools_dir = args.qtltools_dir
-    qtltools_suff = args.qtltools_suffix
-
-    # all_files=glob2.glob("/sc/arion/projects/CommonMind/pnm/genesis_U24/A6_Ruzicka/qtltools_mbv/*txt")
-    all_files = glob2.glob(os.path.join(qtltools_dir, f"*{qtltools_suff}"))
-    # op_png_dir="/sc/arion/projects/CommonMind/pnm/genesis_U24/A6_Ruzicka/qtltools_mbv_pngs/"
-    op_png_dir = (
-        qtltools_dir[:-1] + '_pngs/'
-        if qtltools_dir[-1] == '/' 
-        else qtltools_dir + '_pngs/'
-    )
-    # vir_out_dir = "/sc/arion/projects/psychAD/pnm/A6_Ruzicka/demultiplex/vireoSNP/"
-    vir_out_dir = args.vireo_out
-
-    max_workers = args.threads # 14   # Adjust to your CPU cores
+    op_png_dir="/sc/arion/projects/CommonMind/pnm/genesis_U24/A6_Ruzicka/qtltools_mbv_pngs/"
+    max_workers = 14   # Adjust to your CPU cores
 
     os.makedirs(op_png_dir, exist_ok=True)
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -165,6 +148,7 @@ def main():
         for future in as_completed(futures):
             print(future.result())
 
+    vir_out_dir = "/sc/arion/projects/psychAD/pnm/A6_Ruzicka/demultiplex/vireoSNP/"
 
     a=[]
     uniq_id = {} # Unique for vireo's Sample and seq type pair
@@ -172,10 +156,8 @@ def main():
         f1=pd.read_csv(f, sep=' ')
         f1.sort_values(['perc_het_consistent', 'perc_hom_consistent'], ascending=False, inplace=True)
         f1.reset_index(inplace=True, drop=True)
-        # samp = os.path.basename(f).replace(".bamstat.txt", "").split('_')[0]
-        # don = '_'.join(os.path.basename(f).replace(".bamstat.txt", "").split('_')[1:])
-        samp = os.path.basename(f).replace(qtltools_suff, "").split('_')[0]
-        don = '_'.join(os.path.basename(f).replace(qtltools_suff, "").split('_')[1:])
+        samp = os.path.basename(f).replace(".bamstat.txt", "").split('_')[0]
+        don = '_'.join(os.path.basename(f).replace(".bamstat.txt", "").split('_')[1:])
         # seq_type = os.path.basename(f).replace(".bamstat.txt", "").split('_')[0]
         # don = '_'.join(os.path.basename(f).replace(".bamstat.txt", "").split('_')[1:])
         if len(uniq_id.keys()) == 0 or os.path.join(vir_out_dir, f"Sample_{samp}/summary.tsv") not in uniq_id:

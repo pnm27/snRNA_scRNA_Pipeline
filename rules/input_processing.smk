@@ -27,7 +27,7 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
                 POOLS.append(pool_name)
                 if len(line_sp) == 2:
                     mem = line_sp[1].strip()
-                    if mem == ''
+                    if mem == '':
                         SS_MEM[pool_name] = 0 # Default in SS resources
                         continue
                     try:
