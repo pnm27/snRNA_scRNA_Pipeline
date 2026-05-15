@@ -1,3 +1,6 @@
 new_config.yaml
 **/__pycache__/
-new_config_backup.yaml
+backups/
+python_notebooks/
+misc_scripts/
+schema/config.schema.json
