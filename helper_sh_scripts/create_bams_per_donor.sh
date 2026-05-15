@@ -8,7 +8,6 @@
 
 # This script loops over the donors (1st column; using awk's arrays) and get the corresponding barcodes
 # Default naming style of split bams: <split_bams_dir><donor>.bam . NOTE: <split_bams_dir> has a file structure associated with it
-# e.g.(/sc/arion/projects/psychAD/STARsolo_split_filt_bams/round1/NPSAD-20201013-A1-cDNA/M34966.bam)
 #      ----------------------split_bams_dir--------------------------------------------- -donor-
 # sample name will be the basename extracted from the bam file
 

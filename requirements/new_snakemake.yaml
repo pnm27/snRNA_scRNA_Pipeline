@@ -35,4 +35,4 @@ dependencies:
   - pip
   - plotly==5.14.1
   - r-irkernel
-prefix: /sc/arion/work/prashf01/conda/envs/new_snakemake
+  
