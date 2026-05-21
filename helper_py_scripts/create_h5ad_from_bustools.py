@@ -6,7 +6,8 @@ This sciprt takes the output after a bustools count run and creates
 an h5ad file.
 """
 
-import scanpy as sc, pandas as pd, numpy as np
+from __future__ import annotations
+import scanpy as sc, pandas as pd
 import argparse
 
 sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)

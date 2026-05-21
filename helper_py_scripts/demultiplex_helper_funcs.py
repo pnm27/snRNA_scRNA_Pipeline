@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
 import pandas as pd, warnings, os, sys, regex
 from collections import OrderedDict as ord_dict
-from typing import Union, Optional, Any, Literal # Need verion > 3.5
+from typing import Union, Optional, Any # Need verion > 3.5
+from dataclasses import dataclass
 
 
 assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
@@ -139,6 +141,7 @@ def parse_file(wet_lab_df, cols, s_name, hs, d_con) \
 
 def demux_stats(demux_freq: pd.Series, demux_name: str) -> list[str]:
     r"""
+    Demux stats
     """
 
     temp_df=[]
@@ -204,15 +207,18 @@ def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame,
 
     Parameters
     ----------
-    hto_df
-        A series of cell barcodes from gene count matrix
-    pool_info_df
-        Subset of wet lab file containing multi-HTO information and \
+    hto_df: 
+    A series of cell barcodes from gene count matrix
+    pool_info_df: 
+    Subset of wet lab file containing multi-HTO information and
         SubID (donor IDs)
 
     col_list
-        List of column names in the wet lab file in the sequence: pool name, \
-        HTO names (separated by 'sep'), HTO barcode, donor info
+        List of column names in the wet lab file in the sequence: 
+        - pool name
+        - HTO names (separated by 'sep')
+        - HTO barcode
+        - donor info
 
     Returns
     -------
@@ -225,12 +231,23 @@ def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame,
     pass
 
 
+@dataclass(slots=True)
+class HashSoloResult:
+    """Container for HashSolo demultiplexing results."""
+
+    donor_ids: pd.Series
+    hto_names: pd.Series
+    n_doublets: int
+    n_negatives: int
+
 
 # calico_solo demultiplexing function----------------------------------------
-def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
+def _ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     sep: Optional[str], col_list: list[str, str], dem_cs: pd.Series, 
-    donor_convert: bool, hto_count: int, multi_hto_setp: bool
-    ) -> list[pd.Series, pd.Series, int, int]:
+    donor_convert: bool, 
+    hto_count: int, multi_hto_setp: bool
+    # ) -> tuple[pd.Series, pd.Series, int, int]:
+    ) -> HashSoloResult:
     r"""Return HTO information and classification for each cell barcode.
 
     This function returns a 2 pandas series representing donor IDs and 
@@ -265,14 +282,13 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 
     Returns
     -------
-    pd.Series
-        Contains donor IDs with cell barcodes as index
-    pd.Series
-        Contains HTO name with cell barcodes as index
-    int
-        number of doublets
-    int
-        number of negatives.
+    HashSoloResult
+        An instance of the dataclass containing:
+        
+        - donor_ids : Sample name indexed by cell barcodes
+        - hto_names : HTO name indexed by cell barcodes
+        - n_doublets : Total count of doublets
+        - n_negatives : Total count of negatives
 
     """
 
@@ -335,7 +351,13 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     hash_n = pd.Series(hash_n, index=bcs.index)
     # ser_s = pd.DataFrame({'Sample':ret_samp, 'HTO':hash_n}, index=barc_l)
 
-    return [ret_samp, hash_n, doublet_n, negative_n] #zip(barc_l, samp_n)
+    # return [ret_samp, hash_n, doublet_n, negative_n] #zip(barc_l, samp_n)
+    return HashSoloResult(
+        donor_ids=ret_samp,
+        hto_names=hash_n,
+        n_doublets=doublet_n,
+        n_negatives=negative_n,
+    )
 
 
 
@@ -363,12 +385,58 @@ def ret_htos_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
 # def demux_by_calico_solo(obs_index: pd.Index, df_s: pd.DataFrame):
 def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     sep: str, col_list: list[str, str], dem_cs: pd.Series, 
-    donor_convert: bool, hto_count: int, multi_hto_sep: str = ""
-    ) -> list[pd.Series, pd.Series, list[str]]:
-    r"""Main function for classification by calico_solo.
+    donor_convert: bool, 
+    hto_count: int, multi_hto_sep: str = ""
+    ) -> tuple[pd.Series, pd.Series, list[str]]:
+    r"""Assign donor and HTO classifications using HashSolo output.
 
-    This function assigns calico_solo classification using another
-    function :func:`demultiplex_helper_funcs.ret_htos_calico_solo`.
+    This function performs donor assignment using HashSolo (formerly
+    calico_solo) classifications generated from HTO demultiplexing.
+
+    Parameters
+    ----------
+    bcs
+        Cell barcodes from the gene count matrix.
+    df_s
+        Wet lab file containing HTO information and donor IDs
+        for each pool.
+    samp
+        Pool name present in ``df_s``.
+    sep
+        Separator used when all HTOs and donors are present in a
+        single row. Set to ``None`` for multi-HTO setup.
+    col_list
+        Column names where the first value corresponds to the
+        HTO column and the second value corresponds to the
+        donor ID column.
+    dem_cs
+        Series containing HashSolo HTO classifications with
+        cell barcodes as index.
+    donor_convert 
+        Whether donor names should be converted from the naming
+        convention used by HashSolo.
+    hto_count
+        Position of the HTO in the sequence for multi-HTO setup.
+    multi_hto_sep
+        Separator used for multi-HTO setups.
+
+    Returns
+    -------
+    Returns a tuple with following values in the order:
+
+    donor_ids
+        Donor IDs indexed by cell barcode.
+
+    hto_names
+        HTO names indexed by cell barcode.
+
+    demux_stats
+        Demultiplexing statistics.
+
+    See Also
+    --------
+    _ret_htos_calico_solo 
+        To generate donor IDs and HTO labels.
 
     """
 
@@ -376,9 +444,10 @@ def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     temp_df=[]
 
     # hto_tags_cs = ret_htos_calico_solo(bcs, df_s, samp, sep, col_list, dem_cs)
-    SubID_cs, hasht_n_cs, n_doubs, n_negs = ret_htos_calico_solo(bcs, 
-                                            df_s, samp, sep, col_list, 
-                                            dem_cs, donor_convert)
+    results = _ret_htos_calico_solo(bcs, df_s, samp, sep, 
+            col_list, dem_cs, donor_convert
+            )
+    
     
     # Create obs columns in adata to represent the SubID as assigned by 
     # calico solo and its associated hastag number
@@ -388,8 +457,10 @@ def demux_by_calico_solo(bcs: pd.Series, df_s: pd.DataFrame, samp: str,
     # hasht_n_cs = bcs.to_series().apply(ret_hto_number, args=(hto_tags_cs[0], ))
 
     # Force convert all values to str
-    SubID_cs = SubID_cs.apply(str)
-    hasht_n_cs = hasht_n_cs.apply(str)
+    SubID_cs = results.donor_ids.apply(str)
+    hasht_n_cs = results.hto_names.apply(str)
+    n_doubs = results.n_doublets
+    n_negs = results.n_negatives
     
     # Save doublets and negatives info from calico solo
     temp_df.append(('Doublets #cells_cs', n_doubs))
@@ -421,6 +492,7 @@ def set_don_ids(x: str) -> str:
     -------
     str
         The 'changed' classification
+
     """
 
     # Example:
@@ -525,6 +597,7 @@ def ret_subj_ids(ser: list, t_df: pd.DataFrame) -> pd.DataFrame:
     -------
     pd.DataFrame
         A dataframe with extra stats
+
     """
     headers = ["Subj_ID", "prob_max", "prob_doublet"]
     ret_df_l = []
@@ -577,6 +650,7 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
         Demux stats
     pd.Series
         Converted donor names of classification by vireo per cell
+
     """
 
     # Will contain demultiplexing stats
@@ -654,6 +728,7 @@ def has_wet_lab_value_column(config: dict) -> bool:
     -------
     bool
         True if file is needed
+
     """
     return any(
         col.get("value_column", "").startswith("wet_lab.")
@@ -688,9 +763,6 @@ def has_wet_lab_value_column(config: dict) -> bool:
 #     elif operation == "replace":
 #         method = getattr(value, operation)
 #         return method(old, new)
-
-from dataclasses import dataclass
-# from typing import List, Any
 
 
 @dataclass
@@ -772,6 +844,7 @@ def apply_regex(value: Any, t: dict[str, Any]) -> str:
     -------
     str
         Output of regex operation
+
     """
     pattern = t["pattern"]
     replacement = t["replacement"]
@@ -799,6 +872,7 @@ def process_columns(config: dict[str, Any],
         Pool name. 
     df
         A pandas dataframe containing relevant annotations.
+
     Returns
     -------
     ParsedColumns
@@ -806,8 +880,9 @@ def process_columns(config: dict[str, Any],
 
     See Also
     --------
-    :func: ~apply_regex : Regex function can be used, if JSON input needs it.
-    :func: ~apply_pythonic : Python function can be used, if JSON input needs it.
+    apply_regex : Regex function can be used, if JSON input needs it.
+    apply_pythonic : Python function can be used, if JSON input needs it.
+
     """
     result = []
 
@@ -900,8 +975,9 @@ def process_swap_correction(config: dict[str, Any],
 
     See Also
     --------
-    :func: ~get_demux_paths : This is utilized to get all possible
-    demultiplex output containing directories.
+    get_demux_paths : This is utilized to get all possible 
+        demultiplex output containing directories.
+
     """
 
     result = ""

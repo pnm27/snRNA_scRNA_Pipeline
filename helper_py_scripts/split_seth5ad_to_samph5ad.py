@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 import re, glob2, os, argparse, gc, warnings
-import pandas as pd, anndata as ad, scanpy as sc
-from pathlib import Path
+import pandas as pd, anndata as ad
 from collections import Counter
 
 

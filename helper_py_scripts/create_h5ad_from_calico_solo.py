@@ -1,105 +1,210 @@
-#!/usr/bin/env python3
+from __future__ import annotations
 
-"""Create an h5ad file from the outputs of a hashsolo run
+import argparse
+import re
 
-This script runs hashsolo given an h5ad file containing hashing counts
-(usually obtained by using sofwatre like bustools count), matrix file containing
-gene counts, and a genes annotation file to produce an h5ad file.
-
-Note
------
-
-More often than not the hashing counts file may have lesser barcodes in them as 
-compared to the gene counts file and thus one should expect, at max, the number 
-of barcodes retained in the hasing counts file.
-"""
-# Solo didn't run through scvi, scvi-tools nor scanpy.external
-# Only this seems to work
-from solo import hashsolo
 import anndata as ad
-import scanpy as sc, pandas as pd, numpy as np
-import re, argparse
+import pandas as pd
+import scanpy as sc
+from scvi.external import HashSolo
 
 
-# sc.settings.set_figure_params(dpi_save=400, format='png', color_map = 'viridis_r')
-# sc.settings.autosave = True
-# sc.settings.autoshow = False
-sc.settings.verbosity = 3  # verbosity: errors (0), warnings (1), info (2), hints (3)
+sc.settings.verbosity = 3
 sc.logging.print_version_and_date()
 
 
 def get_argument_parser():
     """Generate and return argument parser."""
-    parser = argparse.ArgumentParser(description="Create h5ad output after running calico_solo(hashsolo)")
 
-    parser.add_argument('bustools_out', help="Path to cached output of bustools kite pipeline(h5ad)")
-    parser.add_argument('matrix_file', help="Path to matrix.mtx.gz")
-    parser.add_argument('output_file', help="Path to store output file(h5ad)")
-    parser.add_argument('gene_info_file', help="Path to file that contains gene names and ids for annotation (tab-separated txt file)")
+    parser = argparse.ArgumentParser(
+        description="Run HashSolo demultiplexing on HTO counts"
+    )
 
-    # Optional parameters
-    parser.add_argument('-m', '--max_mito', type=int, help="Max mitochondrial genes(in percent) per cell. Default: 5", default=5)
-    parser.add_argument('-g', '--min_genes', type=int, help="Min #genes per cell. Default: 1000", default=1000)
-    parser.add_argument('-c', '--min_cells', type=int, help="Min #cells expressing a gene for it to pass the filter. Default: 10", default=10)
-    parser.add_argument('--mito_prefix', help="How mitochondrial genes can be identified from the gene_info_file. e.g. mito genes have prefix \'MT-\' (DEFAULT)", default='MT-')
+    parser.add_argument(
+        "bustools_out",
+        help="Path to HTO h5ad generated from bustools/kite",
+    )
+
+    parser.add_argument(
+        "matrix_file",
+        help="Path to gene expression matrix.mtx.gz",
+    )
+
+    parser.add_argument(
+        "output_file",
+        help="Output h5ad file",
+    )
+
+    parser.add_argument(
+        "gene_info_file",
+        help="Tab-separated gene annotation file",
+    )
+
+    # QC parameters
+    parser.add_argument(
+        "-m",
+        "--max_mito",
+        type=float,
+        default=5,
+        help="Maximum mitochondrial percentage",
+    )
+
+    parser.add_argument(
+        "-g",
+        "--min_genes",
+        type=int,
+        default=1000,
+        help="Minimum genes per cell",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--min_cells",
+        type=int,
+        default=10,
+        help="Minimum cells expressing gene",
+    )
+
+    parser.add_argument(
+        "--mito_prefix",
+        default="MT-",
+        help="Prefix for mitochondrial genes",
+    )
 
     return parser
+
+
+def load_gex_data(args):
+
+    t2g = pd.read_csv(
+        args.gene_info_file,
+        skiprows=1,
+        usecols=range(2),
+        names=["gene_id", "gene_name"],
+        sep="\t",
+    )
+
+    t2g.index = t2g.gene_id
+    t2g = t2g.loc[~t2g.index.duplicated(keep="first")]
+
+    adata = sc.read_10x_mtx(
+        args.matrix_file[:-13],
+        make_unique=True,
+        var_names="gene_ids",
+        cache=True,
+    )
+
+    adata.var_names_make_unique()
+
+    adata.var["gene_id"] = adata.var.index.values
+    adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
+
+    adata.var_names = (
+        adata.var_names.to_series().map(lambda x: f"{x}_index")
+    )
+
+    adata = adata[:, pd.notna(adata.var["gene_name"])]
+
+    adata.var_names_make_unique()
+
+    adata.obs_names = (
+        adata.obs_names.to_series().map(
+            lambda x: re.sub(r"-.*", "", x)
+        )
+    )
+
+    return adata
+
+
+def perform_qc(
+    adata,
+    min_genes,
+    min_cells,
+    max_mito,
+    mito_prefix,
+):
+
+    sc.pp.filter_cells(adata, min_genes=min_genes)
+    sc.pp.filter_genes(adata, min_cells=min_cells)
+
+    adata.var["mito"] = adata.var["gene_name"].str.startswith(
+        mito_prefix
+    )
+
+    sc.pp.calculate_qc_metrics(
+        adata,
+        qc_vars=["mito"],
+        inplace=True,
+    )
+
+    adata = adata[
+        adata.obs["pct_counts_mito"] < max_mito
+    ].copy()
+
+    return adata
+
 
 def main():
 
     parser = get_argument_parser()
     args = parser.parse_args()
 
+    # Load GEX matrix
+    adata = load_gex_data(args)
 
-    # Parameters for filtering
-    max_mito = args.max_mito
-    min_genes = args.min_genes
-    min_cells = args.min_cells
+    # QC
+    adata = perform_qc(
+        adata,
+        min_genes=args.min_genes,
+        min_cells=args.min_cells,
+        max_mito=args.max_mito,
+        mito_prefix=args.mito_prefix,
+    )
+
+    # Load HTO counts
+    hash_data = ad.read_h5ad(args.bustools_out)
+
+    # Standardize barcode names
+    hash_data.obs_names = (
+        hash_data.obs_names.to_series().map(
+            lambda x: re.sub(r"-.*", "", x)
+        )
+    )
+
+    # Keep only shared cells
+    shared_barcodes = adata.obs_names.intersection(
+        hash_data.obs_names
+    )
+
+    adata = adata[shared_barcodes].copy()
+    hash_data = hash_data[shared_barcodes].copy()
+
+    # HashSolo expects raw HTO counts in .X
+    # Optional but recommended:
+    hash_data.X = hash_data.X.astype("float32")
+
+    # Run HashSolo
+    hs = HashSolo(
+        hash_data,
+    )
+
+    hs.train()
+
+    # Add predictions
+    hash_data.obs["hashsolo_assignment"] = (
+        hs.predict()
+    )
+
+    # Optional probabilities
+    probs = hs.predict_proba()
+
+    for col in probs.columns:
+        hash_data.obs[f"hashsolo_{col}"] = probs[col].values
+
+    # Save
+    hash_data.write_h5ad(args.output_file)
 
 
-    t2g = pd.read_csv(args.gene_info_file, skiprows=1, usecols=range(2),names=["gene_id", "gene_name"], sep="\t")
-    t2g.index = t2g.gene_id
-    t2g = t2g.loc[~t2g.index.duplicated(keep='first')]
-
-    hash_data = ad.read(args.bustools_out)
-    adata = sc.read_10x_mtx(args.matrix_file[:-13], make_unique=True, var_names= "gene_ids", cache=True)
-    adata.var_names_make_unique()
-    adata.var["gene_id"] = adata.var.index.values
-    adata.var["gene_name"] = adata.var.gene_id.map(t2g["gene_name"])
-    adata.var_names = adata.var_names.to_series().map(lambda x: x + '_index')
-    adata = adata[:, pd.notna(adata.var["gene_name"])]
-    adata.var_names_make_unique()
-    adata.X = adata.X.astype('float64')
-    adata.obs_names = adata.obs_names.to_series().map(lambda x: re.sub('-.*', '', x))
-    
-    sc.pp.filter_cells(adata, min_genes=min_genes)
-    sc.pp.filter_genes(adata, min_cells=min_cells)
-    # Filter data wrt mito content
-    adata.var["mito"] = adata.var_names.str.startswith(args.mito_prefix)
-    sc.pp.calculate_qc_metrics(adata, inplace=True, qc_vars=["mito"])
-    adata = adata[adata.obs["pct_counts_mito"]< max_mito, :]
-
-    # Some barcodes in gene expression matrix doesn't exist in the bus output
-    try:
-        hash_data = hash_data[adata.obs_names].copy()
-    except:
-        filt_bc = [b for b in adata.obs_names.to_list() if b in hash_data.obs_names]
-        hash_data = hash_data[filt_bc].copy()
-
-    hashsolo.hashsolo(hash_data)
-    hash_data.write(args.output_file)
-    '''
-
-    Default:
-    priors: list = [.01, .8, .19],
-    pre_existing_clusters: str = None,
-    clustering_data: anndata.AnnData = None,
-    resolutions: list = [.1, .25, .5, .75, 1],
-    number_of_noise_barcodes: int = None,
-    inplace: bool = True
-
-    '''
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
+    

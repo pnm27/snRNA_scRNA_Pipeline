@@ -54,8 +54,9 @@
 #     --column_prefix SubID_vs_ -g GRCh38
 
 
+from __future__ import annotations
 import pegasus as pg, pegasusio as io, pandas as pd
-import os, glob2, logging, re, argparse
+import os, glob2, logging, argparse
 from time import sleep
 # import yaml
 

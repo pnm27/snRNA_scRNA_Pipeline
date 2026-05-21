@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+from __future__ import annotations
 import pandas as pd, anndata as ad
 import os, re, argparse
 from collections import Counter

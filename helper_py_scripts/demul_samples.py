@@ -2,12 +2,11 @@
 
 # Solo didn't run through scvi, scvi-tools nor scanpy.external
 # Only this seems to work
-from typing import Union # Need verion > 3.5
+# from typing import Union # Need verion > 3.5
+from __future__ import annotations
 import anndata as ad
-import scanpy as sc, pandas as pd, numpy as np
+import scanpy as sc, pandas as pd
 import os, sys, argparse, itertools, json
-from collections import Counter
-from collections import defaultdict, OrderedDict as ord_dict
 import datetime
 from time import sleep
 from jsonschema import validate, Draft202012Validator
@@ -564,11 +563,19 @@ def main():
             # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
             #  as columns no. of doublet cells, no. of negative cells]
 
+            donor_conv = args.subid_convert if not multi_hto_setup else False
             ct = datetime.datetime.now()
             print(
                 "Starting: Assigning cell classifications by"
                 f"hashsolo/calico solo at: {ct}"
                 )
+            cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
+                cell_bcs, df, args.pool_name, 
+                args.hto_sep, [cols[1], cols[3]], 
+                dem_cs.obs['Classification'], donor_conv,
+                # hto_count, multi_hto_setup
+                )
+
             if not multi_hto_setup:
                 cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
                     cell_bcs, df, args.pool_name, 

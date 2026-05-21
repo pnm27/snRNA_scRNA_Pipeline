@@ -11,11 +11,10 @@ then too this script can be used).
 
 """
 
-import anndata as ad, string
-import scanpy as sc, pandas as pd, numpy as np
-import os, re, sys, argparse
-from collections import Counter
-from collections import defaultdict
+from __future__ import annotations
+import anndata as ad
+import scanpy as sc, pandas as pd
+import os, sys, argparse
 # using datetime module
 from itertools import repeat
 from demultiplex_helper_funcs import auto_read

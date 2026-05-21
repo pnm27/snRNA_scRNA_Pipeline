@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
 import pandas as pd
 import os, json
 import numpy as np
@@ -10,9 +11,8 @@ from demultiplex_helper_funcs import (
     process_columns, auto_read, 
     get_df, has_wet_lab_value_column,
     get_demux_paths, process_swap_correction,
-    ColumnResult, ParsedColumns
 )
-from jsonschema import validate, Draft202012Validator
+from jsonschema import Draft202012Validator
 
 
 # This function returns the filename if it exists

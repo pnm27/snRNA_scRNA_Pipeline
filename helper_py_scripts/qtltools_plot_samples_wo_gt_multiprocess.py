@@ -2,6 +2,7 @@
 # coding: utf-8
 
 
+from __future__ import annotations
 import pandas as pd, os, argparse, glob2, matplotlib, numpy as np
 from adjustText import adjust_text # To avoid overlapping texts
 

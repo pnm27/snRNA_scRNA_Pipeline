@@ -53,8 +53,9 @@ rule qtltools_mbv:
     # Use one of the below
     wildcard_constraints:
         # donor=r"(?<=cDNA_|ATAC_).+" #WILDCARDS # For multiome
-        donor=r"(?:.*)(?<=\/)([^/_]*)", #WILDCARDS # Match everything except the last '/', donor var should not contain '/' and '_'
+        # donor=r"(?:.*)(?<=\/)([^/_]*)", #WILDCARDS # Match everything except the last '/', donor var should not contain '/' and '_'
         pool=r"[^_]+"
+        # donor=r"[^.]+"
 
     shell:
         """

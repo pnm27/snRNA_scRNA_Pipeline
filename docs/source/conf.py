@@ -10,7 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
+import os, subprocess
 import sys
 
 sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
@@ -35,7 +35,7 @@ release = '0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "myst_parser",
+    # "myst_parser",
     "sphinx.ext.duration",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.autodoc",
@@ -47,16 +47,28 @@ extensions = [
     "sphinxcontrib.bibtex",
     'sphinx.ext.autosummary',
     "sphinxcontrib.jquery",
+    "sphinx_design",
+    "sphinx_autodoc_typehints",
+    "sphinx_copybutton",
+    # "sphinx_autoapi",
+    "autoapi.extension",
+    "myst_nb",
     # "numpydoc",
     # "sphinx_mdinclude",
 ]
+
+# To prevent section label (autosectionlabel) collisions
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 3 # max depth for labelling
 
 # For todo extension
 todo_include_todos = True
 source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'restructuredtext',
-    '.md': 'markdown',
+    '.md': 'myst-nb',
+    '.ipynb': 'myst-nb',
+    '.myst': 'myst-nb',
 }
 
 # For having myst to generate anchors until ### (h3 level) headings
@@ -75,7 +87,7 @@ mermaid_params = ['-p' 'puppeteer-config.json']
 autosectionlabel_prefix_document = True
 
 # Napoleon settings
-napoleon_google_docstring = True
+napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = False
@@ -85,10 +97,13 @@ napoleon_use_admonition_for_notes = False
 napoleon_use_admonition_for_references = False
 napoleon_use_ivar = False
 napoleon_use_param = True
-napoleon_use_rtype = True
+napoleon_use_rtype = False # sphinx.ext.napoleon setting
 napoleon_preprocess_types = False
 napoleon_type_aliases = None
 napoleon_attr_annotations = True
+
+# reads Python type hints and automatically adds type information
+typehints_use_rtype = False
 
 # For hover tooltips
 hoverxref_roles = [
@@ -126,12 +141,47 @@ autosummary_generate = False
 add_module_names = False
 # Sort members by type
 autodoc_member_order = 'groupwise'
+autodoc_mock_imports = [
+    "scanpy",
+    "anndata",
+    "solo-sc",
+    "pegasuspy",
+    "matplotlib",
+]
+
+# moves types into the description section
+autodoc_typehints = "description"
+
+# AutoAPI search dir for source
+autoapi_dirs = ['../../helper_py_scripts/']
+
+# DEBUG - Create files in docs/source/autoapi/
+autoapi_keep_files = True 
+
+# Skip running API
+# def run_apidoc(_):
+#     subprocess.call([
+#         "sphinx-apidoc",
+#         "-e", # each script in separate page
+#         "-f", # force build - removes lingering older docs
+#         "-o",
+#         "api",
+#         "../../helper_py_scripts",
+#         "../../helper_py_scripts/__pycache__", # exclude
+#     ])
+
+# To copy all lines in a multiline command prompt
+copybutton_line_continuation_character = "\\"
+# To copy HERE-doc
+copybutton_here_doc_delimiter = "EOF"
+
 # Document __init__, __repr__, and __str__ methods
 # def skip(app, what, name, obj, would_skip, options):
 #     if name in ("__init__", "__repr__", "__str__"):
 #         return False
 #     return would_skip
 def setup(app):
+    # app.connect("builder-inited", run_apidoc)
     print(app)
 #     app.connect("autodoc-skip-member", skip)
 
@@ -140,7 +190,7 @@ def setup(app):
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'furo' # 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -3,11 +3,10 @@
 #  The files_tracker file lets the user know if a particular wet lab file's (files') content has been changed at the level of (either):
 # "unique_sample_ID", "hashtag", "ab_barcode"
 # NOTE: After each run the files_tracker file will be overwritten
+from __future__ import annotations
 import os, re
-from collections import Counter
-import pandas as pd, numpy as np, argparse
+import pandas as pd, argparse
 from itertools import chain, repeat
-
 
 
 def get_subid(ser1, df1, df2):

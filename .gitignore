@@ -4,3 +4,4 @@ backups/
 python_notebooks/
 misc_scripts/
 schema/config.schema.json
+docs/build/

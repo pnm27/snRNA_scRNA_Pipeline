@@ -287,6 +287,7 @@ Both dispatcher functions raise on unrecognised steps rather than silently retur
 - Now, dependent on input type (), rule STARsolo_sort can utilize per-pool (wildcards.pool) memory.
 - Removed unused sub-snakefiles called **helper_functions.smk** and **analyse_vireo.smk**.
 - Upgraded requirement of pyyaml to 6.0.2 version in **sphinxdoc_requirements.txt**.
+- Now, function *ret_htos_calico_solo* in **demultiplex_helper_funs.py** returns a tuple instead of a list.
 
   
 ## Requirements

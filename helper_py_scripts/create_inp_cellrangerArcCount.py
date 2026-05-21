@@ -8,6 +8,7 @@ and converts them into a metadata.csv file, which is required for the
 """
 
 
+from __future__ import annotations
 import pandas as pd
 import os, argparse
 # using datetime module

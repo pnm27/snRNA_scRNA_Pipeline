@@ -42,13 +42,11 @@ configfile: "new_config.yaml"
 
 include: "rules/input_processing.smk"
 include: "rules/produce_targets.smk"
-include: "rules/helper_functions.smk"
 include: "rules/resources.smk"
 include: "rules/STARsolo.smk"
 include: "rules/picard_metrics.smk"
 include: "rules/kite.smk"
 include: "rules/calico_solo_demux.smk"
-# include: "rules/pheno_demux3.smk" # DEPRACATED NAME
 include: "rules/genotype_demux.smk"
 include: "rules/demultiplex.smk"
 include: "rules/split_bams.smk"
