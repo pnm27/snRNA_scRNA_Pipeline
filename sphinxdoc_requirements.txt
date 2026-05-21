@@ -17,3 +17,4 @@ numpydoc==1.5.0
 pandas==1.5.3
 numpy==1.26.4
 furo==2025.12.19
+regex==2024.7.24

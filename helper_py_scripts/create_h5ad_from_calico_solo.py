@@ -6,7 +6,7 @@ import re
 import anndata as ad
 import pandas as pd
 import scanpy as sc
-from scvi.external import HashSolo
+import scanpy.external as sce
 
 
 sc.settings.verbosity = 3
@@ -184,7 +184,7 @@ def main():
     hash_data.X = hash_data.X.astype("float32")
 
     # Run HashSolo
-    hs = HashSolo(
+    hs = sce.pp.hashsolo(
         hash_data,
     )
 
