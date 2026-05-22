@@ -7,10 +7,6 @@
 This documentation is incomplete and is under heavy development!
 ```
 
-```{include} ../../README.md
-:relative-images:
-```
-
 ```{toctree}
 :caption: Introduction
 :maxdepth: 2
@@ -45,6 +41,14 @@ complex_tutorials
 :maxdepth: 3
 
 glossary
+```
+
+```{toctree}
+:caption: Development News
+:maxdepth: 2
+
+CHANGELOG
+TODO
 ```
 
 # Indices and tables

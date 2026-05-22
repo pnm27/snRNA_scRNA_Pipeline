@@ -86,6 +86,9 @@ mermaid_params = ['-p' 'puppeteer-config.json']
 # To make available sections that don't have a unique name as a hyperlink target
 autosectionlabel_prefix_document = True
 
+# DEBUG
+autosectionlabel_maxdepth = 2 
+
 # Napoleon settings
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True

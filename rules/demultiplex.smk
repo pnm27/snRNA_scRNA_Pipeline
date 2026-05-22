@@ -8,6 +8,16 @@ from lib.params import get_params_demux
 from functools import partial
 
 
+# Resource Allocation ------------------
+def allocate_mem_DMX(wildcards, attempt):
+    return 3500 * attempt + 3500
+
+
+def allocate_time_DMX(wildcards, attempt):
+    return 15 * attempt + 15
+
+
+# --------------------------------------
 # ── Output resolver ───────────────────────────────────────────────────────────
 
 def _output_cfg(config):
@@ -54,7 +64,7 @@ _out = _make_outputs(config)
 
 rule demux_samples:
     input:
-        lambda wildcards: get_inputs_demux(wildcards, config)
+        partial(get_inputs_demux, config=config)
 
     output:
         _out[0],
@@ -65,8 +75,8 @@ rule demux_samples:
         extra     = partial(get_params_demux, config=config)
 
     resources:
-        mem_mb   = lambda wildcards, attempt: 3500 * attempt + 3500,
-        time_min = lambda wildcards, attempt: 15   * attempt + 15
+        mem_mb   = allocate_mem_DMX,
+        time_min = allocate_time_DMX
 
     conda: "../envs/basic_sctools.yaml"
 

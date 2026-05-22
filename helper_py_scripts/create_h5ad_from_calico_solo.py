@@ -150,11 +150,11 @@ def main():
     args = parser.parse_args()
 
     # Load GEX matrix
-    adata = load_gex_data(args)
+    gene_adata = load_gex_data(args)
 
     # QC
-    adata = perform_qc(
-        adata,
+    gene_adata = perform_qc(
+        gene_adata,
         min_genes=args.min_genes,
         min_cells=args.min_cells,
         max_mito=args.max_mito,
@@ -172,34 +172,14 @@ def main():
     )
 
     # Keep only shared cells
-    shared_barcodes = adata.obs_names.intersection(
+    shared_barcodes = gene_adata.obs_names.intersection(
         hash_data.obs_names
     )
 
-    adata = adata[shared_barcodes].copy()
     hash_data = hash_data[shared_barcodes].copy()
+    hto_columns = hash_data.obs.columns.tolist()
 
-    # HashSolo expects raw HTO counts in .X
-    # Optional but recommended:
-    hash_data.X = hash_data.X.astype("float32")
-
-    # Run HashSolo
-    hs = sce.pp.hashsolo(
-        hash_data,
-    )
-
-    hs.train()
-
-    # Add predictions
-    hash_data.obs["hashsolo_assignment"] = (
-        hs.predict()
-    )
-
-    # Optional probabilities
-    probs = hs.predict_proba()
-
-    for col in probs.columns:
-        hash_data.obs[f"hashsolo_{col}"] = probs[col].values
+    sce.pp.hashsolo(hash_data, cell_hashing_columns=hto_columns)
 
     # Save
     hash_data.write_h5ad(args.output_file)
