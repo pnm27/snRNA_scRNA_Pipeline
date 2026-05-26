@@ -122,6 +122,7 @@ rule cellranger_arc_count:
         --reference={params.ref} --localcores={params.max_localcores} \
         --localmem=${{loc_mem}} &> {log}_{resources.attempt} && \
         rm -r {params.samp_id}/SC_ATAC_GEX_COUNTER_CS/ && \
+        rm -r {params.samp_id}/SC_RNA_COUNTER_CS/ && \
         mv {params.samp_id}/outs/* {params.outputdir}/ && \
         mv {params.samp_id}/{params.pipestance} {params.outputdir}/
         """

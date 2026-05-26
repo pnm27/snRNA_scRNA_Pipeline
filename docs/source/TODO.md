@@ -4,7 +4,6 @@
 
 - [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`)
 - [ ] Use `branch` function to handle rules with varied inputs
-- [ ] Consolidate demultiplexing into a single rule (combine all 4 `demux_samples_*` rules)
 - [ ] Change how demultiplexing directory variants are handled — replace separate config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file
 - [ ] Employ a clear strategy for `final_count_matrix_dir` across demux scenarios:
   - Both tools run simultaneously
@@ -15,6 +14,35 @@
   - BAM splitting (finalizing vs. genotype purposes)
 - [ ] Remove dependency on STARsolo as the only aligner
 - [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project
+- [ ] Restructure `new_config.yaml` to:
+  - separate:
+    - [ ]  static resources
+    - [ ]  experiment definitions
+    - [ ]  workflow behavior:
+      **OLD STYLE**
+
+      ```sh
+      demux_type: solo
+      demux_run_type: wo_gt
+      hto_demux_type: single
+      ```
+
+      **NEW STYLE**
+
+      ```sh
+      experiment:
+        demultiplexing:
+          method: solo
+          genotype:
+            enabled: false
+
+      hto:
+        enabled: true
+        multiplexing: single
+      ```
+
+    - [ ]  execution modules
+    - [ ]  Output naming conventions
 
 ---
 
@@ -40,11 +68,13 @@
 - [ ] When adding calico_solo or vireo results, include the existing demux stats file as input and append to it
 - [ ] Provide a way to retain vireo rerun information in both the demultiplex info file and `update_logs`
 - [ ] Retain variant matching stats from log runs (variants matched to donor VCF out of total pileup):
+
   ```shell
   find -mindepth 1 -maxdepth 1 -type d -exec sh -c \
     'a=$(sed "s#\./##g" <<< {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d " " -f1 | rev); \
      grep "variants matched to donor VCF" ${a}/${b}' \;
   ```
+
 - [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`
 - [ ] Beautify `get_filt_barcodes` in `pheno_demux3`
 

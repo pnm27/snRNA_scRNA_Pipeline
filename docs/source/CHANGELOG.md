@@ -14,12 +14,14 @@
   - `lsf.yaml` retained for Snakemake < v8
 - Standardized single wildcard name to `pool` (previously mixed: `num`, `id1`, `id2`); double wildcards retained
 - Added `multiome_alignment` as a new module with `cellranger.smk` (currently supports cellranger arc count only)
+- Consolidate demultiplexing into a single rule (combine all 4 `demux_samples_*` rules)
 
 ---
 
 ## Demultiplexing (`demultiplex.smk` / `demul_samples.py`)
 
 ### Rule restructuring
+
 - Split the single `demux_samples` rule into three rules reflecting output type:
   - `demux_samples_solo`, `demux_samples_vireo`, `demux_samples_both`
 - Added `demultiplex` config section for `demux_samples_both`
@@ -29,6 +31,7 @@
 - `demux_info` parameter changed from positional to optional in the add-demux rule
 
 ### Functional additions
+
 - Added `add_solo` / `add_vireo` config options to support running a second demultiplexing tool on top of an existing result
 - Added config option to enable/disable h5ad creation during demultiplexing (useful as a switch during genotype checks)
 - `demul_samples.py` now saves QC-failed genes in the final h5ad under `var` column `QC_pass`
@@ -46,6 +49,7 @@
 ## Genotype Demultiplexing (`genotype_demux.smk`)
 
 ### cellSNP
+
 - Simplified rule; now only runs `cellsnp-lite` (SNP filtering is better handled outside the pipeline)
 - Added option to run without a reference VCF (1000 Genomes Project VCF is the minimum requirement)
 - Added option to skip subsetting reference SNP VCFs
@@ -54,11 +58,13 @@
 - Replaced indexed array shell logic with `cmd_str_csnp` parameter function (was broken in Snakemake ≥ v8)
 
 ### vireoSNP
+
 - Replaced indexed array shell logic with `cmd_str_vireo` parameter function (was broken in Snakemake ≥ v8)
 - `vcf_info` file is now expected to have headers
 - Simplified command-line execution
 
 ### `vcf_info` file specification
+
 - **Must have headers**
 - Accepted column orders:
   - Without genotypes: `pool, n_donors`
@@ -109,6 +115,7 @@
 ## Logging & QC (`update_logs.py` / `run_update_logs.sh`)
 
 ### `update_logs.py`
+
 - All parameters except `map_file`, `output_file`, and `bam_dir` are now optional (default to `None`)
 - Missing `picard_dir` → skips GCBias and RNASeq Metrics collection
 - Missing `demul_dir` → skips demultiplexing info collection
@@ -121,6 +128,7 @@
 - New reference file: `Final_out_MAP_2_7_10a_latest_info.xlsx`
 
 ### `run_update_logs.sh`
+
 - Parameters and arguments now arranged as associative arrays
 - Accepts new parameters for annotations: wet lab file and annotation JSON
 - Use `empty` values to emulate missing picard or demultiplexing data
