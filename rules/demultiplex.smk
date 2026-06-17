@@ -26,32 +26,32 @@ def _output_cfg(config):
 
     if demux_type in ('solo', 'add_solo'):
         c = config['hashsolo_demux_pipeline']
-        return (c['final_count_matrix_dir'], config['fold_struct_demux'],
+        return (c['final_count_matrix_dir'],config['fold_struct_demux'],
                 c['final_count_matrix_h5ad'],
-                c['demultiplex_info_dir'], c['demultiplex_info'], "")
+                c['demultiplex_info_dir'], c['demultiplex_info'])
 
     if demux_type in ('vireo', 'add_vireo'):
         c = config['gt_demux_pipeline']
-        return (c['final_count_matrix_dir'], config['fold_struct_demux'],
+        return (c['final_count_matrix_dir'], config['fold_struct_gt_demux'].rstrip('/'),
                 c['final_count_matrix_h5ad'],
-                c['demultiplex_info_dir'], c['demultiplex_info'], "")
+                c['demultiplex_info_dir'], c['demultiplex_info'])
 
     if demux_type == 'both':
         c = config['demultiplex']
         return (c['demux_count_matrix_dir'], config['fold_struct_demux'],
                 c['final_count_matrix_h5ad'],
-                c['demux_count_matrix_dir'], c['demultiplex_info'], "")
+                c['demux_count_matrix_dir'], c['demultiplex_info'])
 
     # create_h5ad_only — strip the "_vS" suffix
     c = config['gt_demux_pipeline']
     return (c['final_count_matrix_dir'], config['fold_struct'],
             c['final_count_matrix_h5ad'].replace("_vS", ""),
             c['demultiplex_info_dir'],
-            c['demultiplex_info'].replace("_vS", ""), "")
+            c['demultiplex_info'].replace("_vS", ""))
 
 
 def _make_outputs(config):
-    mat_dir, fold, mat_h5ad, demux_dir, demux_info, _ = _output_cfg(config)
+    mat_dir, fold, mat_h5ad, demux_dir, demux_info= _output_cfg(config)
     return (
         f"{mat_dir}{fold}{mat_h5ad}",
         f"{demux_dir}{fold}{demux_info}",

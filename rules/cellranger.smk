@@ -18,7 +18,7 @@ def allocate_mem_ICAC(wildcards, attempt):
     return 2000+1000*(attempt-1)
 
 def allocate_time_ICAC(wildcards, attempt):
-    return 5
+    return 10
 
 def allocate_mem_CAC(wildcards, attempt):
     return 160000+2000*(attempt-1)
@@ -98,8 +98,8 @@ rule cellranger_arc_count:
     
     # Restrict wildcards so that ATAC and cDNA filt or subset bams 
     # (from split_bams.smk) won't get triggerred
-    wildcard_constraints:
-        pool=r"[^/]" #WILDCARDS
+    # wildcard_constraints:
+    #     pool=r"[^/]" #WILDCARDS
 
     resources:
         cpus_per_task=20, # For snakemake > v8
@@ -121,8 +121,8 @@ rule cellranger_arc_count:
         cellranger-arc count --id={params.samp_id} --libraries={input[0]} \
         --reference={params.ref} --localcores={params.max_localcores} \
         --localmem=${{loc_mem}} &> {log}_{resources.attempt} && \
-        rm -r {params.samp_id}/SC_ATAC_GEX_COUNTER_CS/ && \
-        rm -r {params.samp_id}/SC_RNA_COUNTER_CS/ && \
+        rm -rf {params.samp_id}/SC_ATAC_GEX_COUNTER_CS/ && \
+        rm -rf {params.samp_id}/SC_RNA_COUNTER_CS/ && \
         mv {params.samp_id}/outs/* {params.outputdir}/ && \
         mv {params.samp_id}/{params.pipestance} {params.outputdir}/
         """

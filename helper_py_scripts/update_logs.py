@@ -2,53 +2,40 @@
 
 from __future__ import annotations
 import pandas as pd
-import os, json
+import os, json, logging, sys
 import numpy as np
-import glob2
 from time import sleep
 import argparse, warnings # errno
 from demultiplex_helper_funcs import (
     process_columns, auto_read, 
-    get_df, has_wet_lab_value_column,
+    has_wet_lab_value_column,
     get_demux_paths, process_swap_correction,
+    get_filename, write_logs
 )
 from jsonschema import Draft202012Validator
+from pathlib import Path
 
 
-# This function returns the filename if it exists
-# otherwise an empty string
-def get_filename(loc_dir, file_struct, fn, suffix):
+log_file = f"{Path(sys.argv[0]).stem}.log"
+logger = logging.getLogger(__name__) # File only (DEFAULT)
 
-    if suffix is None:
-        return ''
-    
-    loc_dir = [loc_dir] if ',' not in loc_dir else loc_dir.split(',')
-    ret_path = []
-    for l in loc_dir:
-        if file_struct.endswith('/'):
-            try:
-                ret_path.append(glob2.glob(os.path.join(l, file_struct, f"{fn}*{suffix}"))[0])
-            except:
-                ret_path.append("")
-        elif file_struct == "":
-            try:
-                ret_path.append(glob2.glob(os.path.join(l, f"{fn}*{suffix}"))[0])
-            except:
-                ret_path.append("")
-        else:
-            if glob2.glob(os.path.join(l, f"{file_struct}*{suffix}")):
-                ret_path.append(glob2.glob(os.path.join(l, f"{file_struct}*{suffix}"))[0])
-            elif glob2.glob(os.path.join(l, f"{file_struct}*{fn}*{suffix}")):
-                ret_path.append(glob2.glob(os.path.join(l, f"{file_struct}*{fn}*{suffix}"))[0])
-            else:
-                ret_path.append("")
+# Prevent duplicate messages via the root logger
+logger.propagate = True
 
-    ret_path = ','.join(ret_path)
-    if ret_path == ',':
-        return ''
-    else:
-        return ret_path
 
+def setup_logging(verbose: int):
+    level = {
+        0: logging.ERROR,
+        1: logging.WARNING,
+        2: logging.INFO, 
+        3: logging.DEBUG,
+        }.get(verbose, logging.INFO)
+
+    logging.basicConfig(
+        level=level, filename=log_file,
+        format="%(name)s - %(asctime)s - %(levelname)s - %(message)s",
+        filemode='w',
+    )
 
 
 # This function is used to caluclate ratios like doublet pct and negative pct
@@ -60,146 +47,8 @@ def calc_ratio(numer, denom):
     return ratios
 
 
-# Main function to write rows of samples into a df
-def write_logs(df_all_cols, mapper, all_files_dict, no_progs, more_data: dict): # had **kwargs
-   
-
-    new_row = {}
-
-    # Add values to a list in the same sequence as the final output file/dataframe
-    for prog, sub_prog, val in df_all_cols:
-        add_value=""
-        # First, check in USER-added columns
-        if (prog, sub_prog, val) in more_data:
-            add_value = more_data[(prog, sub_prog, val)]
-            
-        elif prog != "LAB" and (sub_prog not in no_progs and
-                        not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
-                        ):
-            if sub_prog == "REG":
-                temp_df = pd.read_csv(all_files_dict["STAR_final"], names=["cols", "vals"], delimiter=r"|", skiprows=[7, 22, 27, 34])
-                temp_df = temp_df.apply(lambda col: col.str.strip() if col.dtype == "object" else col)
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[mapper["curr_val"] == val, "val_in_log"].values[0], "vals"].values[0]
-                    temp_value = temp_value.replace(" ","/") # Used to resolve time based values
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "GC":
-                temp_df = pd.read_csv(all_files_dict["PICARD_GC"], sep='\t', skiprows=6)
-                try:
-                    temp_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GC"), "val_in_log"].values[0]]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-               
-            elif sub_prog == "RNASEQMETRIC":
-                temp_df = pd.read_csv(all_files_dict["PICARD_RNASeq"], sep='\t', nrows=1, skiprows=6)
-                try:
-                    temp_value = temp_df.loc[0, mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "RNASEQMETRIC"), "val_in_log"].values[0]]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "GENE_FEATURE":
-                temp_df = get_df(all_files_dict["Gene_Features"]) 
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "GENE_SUMM":
-                temp_df = pd.read_csv(all_files_dict["Gene_Summary"], names=['cols', 'vals'])
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENE_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "GENEFULL_FEATURE":
-                temp_df = get_df(all_files_dict["GeneFull_Features"])
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_FEATURE"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "GENEFULL_SUMM":
-                temp_df = pd.read_csv(all_files_dict["GeneFull_Summary"], names=['cols', 'vals'])
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "GENEFULL_SUMM"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-
-            elif sub_prog == "BARCODE_STATS":
-                temp_df = get_df(all_files_dict["Barcodes_stats"])
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == "BARCODE_STATS"), "val_in_log"].values[0], "vals"].values[0]
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value
-           
-            elif sub_prog.startswith("DEMUX"):
-                temp_df = pd.read_csv(all_files_dict["Demultiplex_stats"], names=['cols', 'vals'], skiprows=1, sep='\t')
-                try:
-                    temp_value = temp_df.loc[temp_df["cols"] == mapper.loc[(mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog), "val_in_log"].values[0], "vals"].values[0]
-                    if isinstance(temp_value, str) and temp_value.endswith(','):
-                        temp_value = temp_value[:-1]
-                    elif isinstance(temp_value, float):
-                        temp_value = (
-                                    temp_value if float(temp_value).is_integer
-                                    else round(temp_value, 3)
-                                )
-                except Exception as e:
-                    # Handle other potential exceptions
-                    print(f"While Assigning {prog}, {sub_prog}, {val}: An unexpected error occurred: {e}")
-                else:
-                    add_value = temp_value      
-
-            else:
-                raise ValueError(f'This extra column exists in the output file-All_logs.csv: {prog}, {sub_prog}, {val}')
-
-        # elif prog != "LAB" and not (sub_prog not in no_progs and
-        #                 not any(list(map(lambda x: sub_prog.startswith(x), no_progs)))
-        #                 ):
-        #     add_value = ""
-
-
-        new_row[(prog, sub_prog, val)] = add_value
-
-    return new_row
-
-# OLD-STYLE
-# Extra columns (annotations) to add (This sequence should be maintained everywhere)
-# new_cols_to_add = [
-#     ['ROUND', 'LAB', 'BATCH'], 
-#     ['SAMPLE', 'LAB', 'SAMPLE'], 
-#     ['SET', 'LAB', 'BATCH'], 
-#     ['PREPARER', 'LAB', 'BATCH'], 
-#     ['REP', 'LAB', 'BATCH']
-# ]
-
-
-def get_all_columns(map_df: pd.DataFrame, new_cols_to_add: list[list[str]]):
+def get_all_columns(map_df: pd.DataFrame, 
+    new_cols_to_add: list[list[str]]) -> pd.DataFrame:
 
     # Skip description (as present in the OG log files)
     # Reorder columns
@@ -297,8 +146,13 @@ def get_argument_parser():
     )
     parser.add_argument('-w', '--wet_lab_file', help="Path to file that contains either/all of: HTO info for each set, annotations, etc."
     )
+    parser.add_argument('--verbose', '-v', action='count', default=0, 
+        help="Increase output verbosity, default is ERROR and above "
+        "(e.g. default for ERROR, -v for WARNING, -vv for INFO, -vvv for DEBUG)"
+    )
 
     return parser
+
 
 
 def main():
@@ -308,6 +162,8 @@ def main():
     parser = get_argument_parser()
     args = parser.parse_args()
     
+    setup_logging(args.verbose)
+
     # Parse all values
     bam_dir = args.bam_dir
     pic_dir = args.picard_dir
@@ -315,6 +171,14 @@ def main():
     samples = args.samples if args.samples else args.samples_deprecated
     df = None # Default - Wet Lab File is not provided
     swap_corr_df = None # Default - Swap Correction File is not provided
+
+    if dem_dir is not None:
+        warnings.warn((
+            "Positional argument for demultiplexing directory "
+            "is deprecated and won't be used. Instead, specify in "
+            "the file provided to key --common_annotations, now."), 
+            DeprecationWarning
+        )
 
     # Resolve which one to use
     if args.samples and args.samples_deprecated:
@@ -346,17 +210,17 @@ def main():
 
     # Validate the optional parameters, if present
     opt_file_params = {
-                    'ss_l': ['.out', 'REG'], 'pc_gc': ['.txt', 'GC'], 
-                    'pc_rs':['.txt', 'RNASEQMETRIC'], 
-                    'ss_g_f': ['.stats', 'GENE_FEATURE'], 
-                    'ss_gf_f': ['.stats', 'GENEFULL_FEATURE'],
-                    'ss_g_s': ['.csv', 'GENE_SUMM'], 
-                    'ss_gf_s': ['.csv', 'GENEFULL_SUMM'], 
-                    'ss_bc': ['.stats', 'BARCODE_STATS'], 
-                    'dem_info': ['.tsv', 'DEMUX'], 
-                    'output_file': ['.tsv', None],
-                    'map_file': ['.tsv', None]
-                    }
+        'ss_l': ['.out', 'REG'], 'pc_gc': ['.txt', 'GC'], 
+        'pc_rs':['.txt', 'RNASEQMETRIC'], 
+        'ss_g_f': ['.stats', 'GENE_FEATURE'], 
+        'ss_gf_f': ['.stats', 'GENEFULL_FEATURE'],
+        'ss_g_s': ['.csv', 'GENE_SUMM'], 
+        'ss_gf_s': ['.csv', 'GENEFULL_SUMM'], 
+        'ss_bc': ['.stats', 'BARCODE_STATS'], 
+        'dem_info': ['.tsv', 'DEMUX'], 
+        'output_file': ['.tsv', None],
+        'map_file': ['.tsv', None]
+    }
 
     # List of programs from which no stats need be recorded
     exclude_progs=[]
@@ -448,7 +312,7 @@ def main():
         
 
         dem_dir = process_swap_correction(data, swap_df=swap_corr_df,
-                pool_name=sample, demux_paths=demul_dirs)
+                pool_name=sample, demux_paths=demul_dirs, logger=logger)
         
         # Get full filenames if user requires them to be tabulated
         ss_log_final = get_filename(bam_dir, bam_st, sample, args.ss_l)
@@ -461,14 +325,7 @@ def main():
         pc_rs_file = get_filename(pic_dir, pc_st, sample, args.pc_rs)
         dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info)
 
-        # sample_name=sample
-        # DEPRECATED: Add Annotations
-        # preparer = sample.split('-')[2][0] if len(sample.split('-')[2]) > 1 else "NA"
-        # replicate = sample.split('-')[2][1] if len(sample.split('-')[2]) > 1 else sample.split('-')[2][0]
-        # set_val = '-'.join(sample.split('-')[:2]) + '-' + preparer if preparer != 'NA' else '-'.join(sample.split('-')[:2])
-        
 
-        
         # Test if at least one of the input files exists
         test_f_exists = [
             ss_log_final != "", ss_gene_summary != "", 
@@ -489,20 +346,25 @@ def main():
             "PICARD_RNASeq": pc_rs_file, "Gene_Features": ss_gene_features, 
             "GeneFull_Features": ss_genefull_features, "Gene_Summary": ss_gene_summary, 
             "GeneFull_Summary": ss_genefull_summary, "Barcodes_stats": ss_bc_stats, 
-            "Demultiplex_stats": dem_file
+            "Demultiplex_stats": dem_file,
+            # FUTURE
+            # "Basic_Demultiplex_stats": dem_file_basic,
+            # "Hashsolo_Demultiplex_stats": dem_file_hashsolo,
+            # "Vireo_Demultiplex_stats": dem_file,
         }
 
-        # Check for each sample in the list if it has all required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
+        # Check for each sample in the list if it has all 
+        # required files otherwise mark as "" for the respective sample (i.e. update samp_excl_progs list)
         per_samp_check = {
             'REG': ss_log_final, 'GC': pc_gc_file, 
             'RNASEQMETRIC': pc_rs_file, 'GENE_FEATURE': ss_gene_features, 
             'GENEFULL_FEATURE': ss_genefull_features, 
             'GENE_SUMM': ss_gene_summary, 'GENEFULL_SUMM': ss_genefull_summary, 
             'BARCODE_STATS': ss_bc_stats, 'DEMUX': dem_file
-            }
+        }
         
         for k, v in per_samp_check.items():
-            if k == 'REG' and v == "":
+            if k == 'REG' and not v:
                 ss_dep_files = [
                     'REG', 'GENE_FEATURE', 'GENE_SUMM',
                     'GENEFULL_FEATURE', 'GENEFULL_SUMM',
@@ -511,7 +373,7 @@ def main():
                 ss_dep_files = [ j for j in ss_dep_files if j not in samp_excl_progs ]
                 samp_excl_progs.extend(ss_dep_files)
 
-            elif k not in samp_excl_progs and v == "":
+            elif k not in samp_excl_progs and not v:
                 samp_excl_progs.append(k)
 
 
@@ -524,49 +386,14 @@ def main():
                 "are not present!!"
             )
             continue
-           
-        # OLD STYLE
-        # if isinstance(combo_log, list) or \
-        #     (isinstance(combo_log, pd.DataFrame) and \
-        #         not(combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample).any())
-        #     ):
 
-        #     # Add a kwargs style input for extra annotations
-        #     row_list.append(write_logs(
-        #         cols_list, map_names, files_dict, 
-        #         samp_excl_progs, processed_data
-        #         # sample=sample, 
-        #         # prep=preparer, rep=replicate, 
-        #         # set_num=set_val
-        #         )
-        #     )
-        
-        # else:
-        #     old_val = combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample), :].to_numpy().flatten().tolist()
-        #     new_val = write_logs(
-        #                 cols_list, map_names, files_dict, 
-        #                 samp_excl_progs, processed_data
-        #                 # sample=sample, 
-        #                 # prep=preparer, rep=replicate, 
-        #                 # set_num=set_val
-        #             )
-            
-        #     # If the new_val is different than the old value, replace it 
-        #     if old_val != new_val:
-        #         combo_log.loc[combo_log['LAB']['SAMPLE']['SAMPLE'].str.contains(sample)] = [new_val]
-        #     else:
-        #         print(
-        #             f"Skipping {sample} as the output file already "
-        #             "contains the same value for all columns!!"
-        #         )
-        #         continue
         row_list.append(write_logs(
-            cols_list.to_numpy().tolist(), map_names, files_dict, 
-            samp_excl_progs, processed_data
+            cols_list.to_numpy(), map_names, 
+            files_dict, samp_excl_progs, sample, 
+            logger=logger, 
+            processed_data=processed_data,
             )
         )
-        print(f"Finished adding {sample} to the file")
-
     
     temp_df = pd.DataFrame(row_list, columns=pd.MultiIndex.from_frame(cols_list, names=["prog", "sub_prog", "curr_val"]))
     try:
@@ -616,9 +443,6 @@ def main():
 
     combo_log.replace([np.inf, -np.inf], np.nan, inplace=True)
     combo_log.to_csv(out, sep = "\t", index=False)
-
-
-    sleep(30) # Allow Snakemake to sync output before rule completes
     
 
 # Run this only when executed through Snakemake

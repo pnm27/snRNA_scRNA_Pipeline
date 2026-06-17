@@ -169,12 +169,22 @@ rule filt_chr_bams_multiome:
         unpack(partial(get_bam, config=config))
 
     output:
-        bam=(
+        gex_bam=(
             f"{config['cellranger_arc_count']['bams_dir']}"
             f"{config['fold_struct']}{{bam}}"
             f"{config['split_bams_pipeline']['short_bam']}"
         ), # generalize this
-        bai=(
+        gex_bai=(
+            f"{config['cellranger_arc_count']['bams_dir']}"
+            f"{config['fold_struct']}{{bam}}"
+            f"{config['split_bams_pipeline']['short_bam']}.bai"
+        ),
+        atac_bam=(
+            f"{config['cellranger_arc_count']['bams_dir']}"
+            f"{config['fold_struct']}{{bam}}"
+            f"{config['split_bams_pipeline']['short_bam']}"
+        ), # generalize this
+        atac_bai=(
             f"{config['cellranger_arc_count']['bams_dir']}"
             f"{config['fold_struct']}{{bam}}"
             f"{config['split_bams_pipeline']['short_bam']}.bai"

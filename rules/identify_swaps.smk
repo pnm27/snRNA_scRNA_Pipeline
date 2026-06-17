@@ -33,7 +33,11 @@ rule qtltools_mbv:
         ref_snps=config['identify_swaps']['ref_vcf']
 
     output:
-        f"{config['identify_swaps']['mbv_out_dir']}{config['fold_struct_swaps_check']}{config['identify_swaps']['mbv_suffix']}"
+        (
+            f"{config['identify_swaps']['mbv_out_dir']}"
+            f"{config['fold_struct_swaps_check']}"
+            f"{config['identify_swaps']['mbv_suffix']}"
+        )
         
 
     params:

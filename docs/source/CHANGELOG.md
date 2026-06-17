@@ -101,6 +101,7 @@
 - Eliminated `wc_d`; all `expand(..., zip, **wc_d)` calls replaced with:
   - `_expand_pools(template)` — static, pool-only expansion
   - `_expand_pools_donors(template, wildcards)` — runtime, pool+donor expansion
+  - `_expand_pools_multiome_donors(template, wildcards)` — runtime, pool+donor expansion (TEMPORARY)
 - Target builder functions now consistently return lists
 - Extracted `_picard_targets` to eliminate duplicated config key lookups
 - `targets_multiome` now uses a dispatch dict instead of an if/elif chain
@@ -109,7 +110,8 @@
   - `starsolo_split_bams`, `starsolo_split_bams_gt_demux`, `starsolo_split_bams_gt_demux_multi_vcf`, `starsolo_gt_demux_identify_swaps`
 - Fixed logic issue for single-cell/nucleus processing
 - Removed dead code and last_step branches: `targets_resolve_swaps_gt_demux`, `targets_multibamsummary`, `targets_multibamsummaryPlotCorr`, `targets_all`
-
+- For the function `targets_demux`, now argument type has changed from list to dict for better documentation.
+  
 ---
 
 ## Logging & QC (`update_logs.py` / `run_update_logs.sh`)
@@ -120,18 +122,22 @@
 - Missing `picard_dir` → skips GCBias and RNASeq Metrics collection
 - Missing `demul_dir` → skips demultiplexing info collection
 - Added annotation support via the same JSON file used in `demul_samples.py`
-- Refactored internals: 1 loop for conversion, 1 loop for calculations, fully vectorized with `pd.to_numeric`
-- No duplicated code; structured outputs; easier to extend
-- `pd.concat` usage updated per FutureWarning
-- Backward support partially removed (advised to create new output files)
-- Added support for STARsolo 2.7.10 via `Final_out_MAP_2_7_10a_latest.tsv`
-- New reference file: `Final_out_MAP_2_7_10a_latest_info.xlsx`
+- Refactored internals: 1 loop for conversion, 1 loop for calculations, fully vectorized with `pd.to_numeric`.
+- No duplicated code; structured outputs; easier to extend.
+- Function `write_logs` moved to `demultiplex_helper_funcs.py`.
+- Logging is now supported and can be modified using *verbose* argument.
+- *Swap correction* is now supported. Metrics from the appropriate run of each pool is used for compilation.
+- `pd.concat` usage updated per FutureWarning.
+- Backward support partially removed (advised to create new output files).
+- Added support for STARsolo 2.7.10 via `Final_out_MAP_2_7_10a_latest.tsv`.
+- New reference file: `Final_out_MAP_2_7_10a_latest_info.xlsx`.
 
 ### `run_update_logs.sh`
 
-- Parameters and arguments now arranged as associative arrays
-- Accepts new parameters for annotations: wet lab file and annotation JSON
-- Use `empty` values to emulate missing picard or demultiplexing data
+- Parameters and arguments now arranged as associative arrays.
+- Accepts new parameters for annotations: wet lab file and annotation JSON.
+- Use `empty` values to emulate missing picard or demultiplexing data.
+- Supports *swap correction*.
 
 ---
 
@@ -161,7 +167,15 @@
 
 ---
 
-## STARsolo
+## Alignment Support
+
+### cellranger
+
+- Supports ATAC-based (along with RNA-based) vireo demultiplexing via cellranger-arc count.
+- Supports cellranger-arc count for multiome preprocessing.
+
+
+### STARsolo
 
 - Per-pool memory allocation for `STARsolo_sort` based on input type (`wildcards.pool`)
 - Modelled resource consumption approach for STARsolo

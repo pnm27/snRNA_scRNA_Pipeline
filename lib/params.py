@@ -127,6 +127,10 @@ def get_params_demux(wildcards, input, output, config):
         "new_h5ad_col": [
             config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname'], 
             "--h5ad_new_classify_colname"],
+        "swap_correction_df": [
+            config['gt_demux_pipeline']['swap_correction_df'],
+            "--swap_correct",
+        ]
     }
     gene_info_file = config['STARsolo_pipeline']['genome_pick']['gene_info_file']
     solo_inp = ["--calico_solo"]

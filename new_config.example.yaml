@@ -128,7 +128,7 @@ fold_struct_bam_split2: "Sample_{pool}-cDNA/" # Used for per-barcode and per-don
 # fold_struct_snv_aware: "{id1}/"
 
 fold_struct_gt_demux_redo: "{donor}" # for donor bams and h5ads
-fold_struct_swaps_check: "{pool}_{donor}" # for qtltools-mbv
+fold_struct_swaps_check: "{pool}_{donor}_{modality}" # for qtltools-mbv
 fold_struct_deeptools: "Sample-{pool}"
 
 STAR_version: star/2.7.10a
@@ -304,6 +304,7 @@ gt_demux_pipeline:
     - donor_id
   final_count_matrix_h5ad: _STARsolo_vS_out.h5ad
   demultiplex_info: _STARsolo_vS_info.tsv
+  swap_correction_df: null
 
 # Demultiplex info---------------------------------------------------------
 # Use this path if running hashsolo and vireoSNP simultaneously

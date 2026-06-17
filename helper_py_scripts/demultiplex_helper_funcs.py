@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
-import pandas as pd, warnings, os, sys, regex
+import pandas as pd, warnings, os, sys
+import regex, logging, glob2, logging
 from collections import OrderedDict as ord_dict
-from typing import Union, Optional, Any # Need verion > 3.5
+from typing import Union, Optional, Any # Need verion > 3.10
 from dataclasses import dataclass
+from functools import cached_property
+from pathlib import Path
+from numpy.typing import NDArray
 
 
-assert sys.version_info >= (3, 5), "This script needs python version >= 3.5!"
+assert sys.version_info >= (3, 10), "This script needs python version >= 3.10!"
+# Logger owned by this module
+logger = logging.getLogger(__name__)
 
 # Basic helper functions-----------------------------------------------------
 def auto_read(fname, lev=1, **kwargs) -> pd.DataFrame :
@@ -207,12 +213,12 @@ def get_donor_info(hto_df: pd.DataFrame, pool_info_df: pd.DataFrame,
 
     Parameters
     ----------
-    hto_df: 
-    A series of cell barcodes from gene count matrix
-    pool_info_df: 
+    hto_df
+        A series of cell barcodes from gene count matrix
+    pool_info_df
+        Pool Info containing file (usually comes from the wet lab)
     Subset of wet lab file containing multi-HTO information and
         SubID (donor IDs)
-
     col_list
         List of column names in the wet lab file in the sequence: 
         - pool name
@@ -772,9 +778,6 @@ class ColumnResult:
     column_header_logs: list[str]
 
 
-from functools import cached_property
-
-
 class ParsedColumns:
     def __init__(self, results: list[ColumnResult]):
         self.results = results
@@ -913,6 +916,82 @@ def process_columns(config: dict[str, Any],
     return ParsedColumns(result)
 
 
+# ----------------------------------------------------------------------------
+# For creating All_logs file containing all metrics --------------------------
+def get_filename(loc_dir: str | None, 
+    file_struct: str | None, 
+    fn: str | None, 
+    suffix: str | None) -> list[str]:
+    """
+    Find matching file(s) in one or more directories.
+
+    Parameters
+    ----------
+    loc_dir
+        Directory path or comma-separated list of directory paths.
+    file_struct
+        File structure/prefix pattern. If it ends with ``'/'``, it is treated
+        as a subdirectory. If empty, the search is based only on ``fn`` and
+        ``suffix``.
+    fn
+        Filename identifier used in the search pattern.
+    suffix
+        File suffix to match. If ``None``, an empty string is returned.
+
+    Returns
+    -------
+    str
+        Comma-separated list of matching file paths. Missing matches are
+        represented by empty entries. Returns an empty string if no valid
+        matches are found.
+    """
+
+    if suffix is None or not loc_dir:
+        return []
+
+    file_struct = file_struct or ""
+    fn = fn or ""
+
+    directories = (
+        [loc_dir]
+        if "," not in loc_dir
+        else [d.strip() for d in loc_dir.split(",")]
+    )
+
+    results = []
+
+    for directory in directories:
+        match = ""
+
+        if file_struct.endswith("/"):
+            pattern = Path(directory) / file_struct / f"{fn}*{suffix}"
+            matches = glob2.glob(str(pattern))
+
+        elif file_struct == "":
+            pattern = Path(directory) / f"{fn}*{suffix}"
+            matches = glob2.glob(str(pattern))
+
+        else:
+            patterns = [
+                Path(directory) / f"{file_struct}*{suffix}",
+                Path(directory) / f"{file_struct}*{fn}*{suffix}",
+            ]
+
+            matches = []
+            for pattern in patterns:
+                matches = glob2.glob(str(pattern))
+                if matches:
+                    break
+
+        if matches:
+            match = matches[0]
+
+        results.append(match)
+
+
+    return results
+
+
 # get demultiplex_paths
 def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
     r""" Function that returns directories with demultiplex results
@@ -949,7 +1028,8 @@ def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
 # PROCESS SWAP CORRECTION
 def process_swap_correction(config: dict[str, Any], 
     swap_df: pd.DataFrame | None, pool_name: str, 
-    demux_paths: dict[str, str]) -> str:
+    demux_paths: dict[str, str],
+    logger: logging.Logger | None = None) -> str | None:
     r"""This function returns the location of demultiplexing data
 
     This function uses a swap correction file to look up specific
@@ -965,13 +1045,19 @@ def process_swap_correction(config: dict[str, Any],
         A pandas dataframe containing swap corrected results.
     pool_name
         Pool name. 
-    df
-        A pandas dataframe containing relevant annotations.
+    demux_paths
+        A dict containing all directories that contain demultiplexed 
+        info.
+    logger
+        Logger to use. Defaults to this module's logger.
 
     Returns
     -------
     str
         A string returning demultiplexing directory.
+    None
+        When `pool_name` is not found in the `swap_df` or 
+        when the required columns are not found in the `swap_df`.
 
     See Also
     --------
@@ -985,25 +1071,34 @@ def process_swap_correction(config: dict[str, Any],
         'pool_column', 
         'demultiplex_version_column'   
     ]
-    
+    colsFound_msg = (
+        f"{pool_name} not present in the swap_correction file! "
+        "Skipping writing the demultiplexing info!!!"
+    )
+    notFound_msg = (
+        "No swap_correction metrics provided! "
+        "Can't write swap corrected statistics!!!"
+    )
+    colsNotFound_msg = (
+        "Given columns not present in the swap_correction file! " 
+        "Check their names!!!"
+    )
     if 'swap_correction_df' not in config:
-        warnings.warn("""
-            No swap_correction metrics provided!
-            Can't write swap corrected statistics!!!"""
-            , UserWarning
-        )
+        warnings.warn(notFound_msg, UserWarning)
     else:
         if all( f in config['swap_correction_df'] for f in lookup_columns ):
             pool_col = config['swap_correction_df']['pool_column']
             dem_col = config['swap_correction_df']['demultiplex_version_column']
-            dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
+            try:
+                dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
+            except IndexError:
+                warnings.warn(colsFound_msg, UserWarning)
+                logger.warning(colsFound_msg)
+                return None
             result = demux_paths[dem_val]
             
         else:
-            warnings.warn("""
-            Given columns not douns in the swap_correction DF 
-            Check their names!!!""", UserWarning
-            )
+            warnings.warn(colsNotFound_msg, UserWarning)
     
     return result
 
@@ -1041,16 +1136,13 @@ def get_df(inp_path) -> pd.DataFrame:
 
 
 # UPDATED write_logs from update_logs.py
-import logging
-import pandas as pd
-
 # ---------------------------------------------------------------------------
 # File-loading strategies, keyed by sub_prog prefix.
 # Each loader receives all_files_dict and returns a DataFrame ready for lookup.
 # ---------------------------------------------------------------------------
 _LOADERS = {
     "REG": lambda d: pd.read_csv(
-        d["STAR_final"],
+        d["STAR_final"][0],
         names=["cols", "vals"],
         delimiter=r"|",
         skiprows=[7, 22, 27, 34],
@@ -1059,57 +1151,153 @@ _LOADERS = {
         vals=lambda df: df["vals"].str.strip(),
     ),
     "GC": lambda d: pd.read_csv(
-        d["PICARD_GC"], sep="\t", skiprows=6
+        d["PICARD_GC"][0], sep="\t", skiprows=6
     ),
     "RNASEQMETRIC": lambda d: pd.read_csv(
-        d["PICARD_RNASeq"], sep="\t", nrows=1, skiprows=6
+        d["PICARD_RNASeq"][0], sep="\t", nrows=1, skiprows=6
     ),
-    "GENE_FEATURE":     lambda d: get_df(d["Gene_Features"]),
-    "GENE_SUMM":        lambda d: pd.read_csv(d["Gene_Summary"],    names=["cols", "vals"]),
-    "GENEFULL_FEATURE": lambda d: get_df(d["GeneFull_Features"]),
-    "GENEFULL_SUMM":    lambda d: pd.read_csv(d["GeneFull_Summary"], names=["cols", "vals"]),
-    "BARCODE_STATS":    lambda d: get_df(d["Barcodes_stats"]),
+    "GENE_FEATURE":     lambda d: get_df(d["Gene_Features"][0]),
+    "GENE_SUMM":        lambda d: pd.read_csv(d["Gene_Summary"][0],    names=["cols", "vals"]),
+    "GENEFULL_FEATURE": lambda d: get_df(d["GeneFull_Features"][0]),
+    "GENEFULL_SUMM":    lambda d: pd.read_csv(d["GeneFull_Summary"][0], names=["cols", "vals"]),
+    "BARCODE_STATS":    lambda d: get_df(d["Barcodes_stats"][0]),
+    # FUTURE
+    # "DEMUX_CS":            lambda d: pd.read_csv(
+    #     d["Demultiplex_stats"], names=["cols", "vals"], skiprows=1, sep="\t"
+    # ),
+    # "DEMUX_VS":            lambda d: pd.read_csv(
+    #     d["Demultiplex_stats"], names=["cols", "vals"], skiprows=1, sep="\t"
+    # ),
     "DEMUX":            lambda d: pd.read_csv(
-        d["Demultiplex_stats"], names=["cols", "vals"], skiprows=1, sep="\t"
+        d["Demultiplex_stats"][0], names=["cols", "vals"], skiprows=1, sep="\t"
     ),
 }
 
 # sub_progs that share the DEMUX loader
 _DEMUX_PREFIXES = {"DEMUX", "DEMUX_CS", "DEMUX_VS"}
-
-
-def _load_file(sub_prog, all_files_dict, cache):
+def _load_file(sub_prog: str, 
+    all_files_dict: dict[str, list[str]], 
+    cache: dict, 
+    logger: logging.Logger| None = None) -> pd.DataFrame:
     """
     Return (and cache) the DataFrame for a given sub_prog.
-    Raises RuntimeError if the underlying file cannot be read.
+
+    Parameters
+    ----------
+    sub_prog
+        Sub-program name.
+    all_files_dict
+        Dictionary containing source file paths.
+    cache
+        Cache of already-loaded DataFrames.
+    logger
+        Logger to use. Defaults to this module's logger.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Loaded DataFrame.
+
+    Raises
+    ------
+    ValueError
+        If no loader is defined for ``sub_prog``.
+    RuntimeError
+        If the source file cannot be read.
     """
+    log = logger or logging.getLogger(__name__)
+
     loader_key = "DEMUX" if sub_prog in _DEMUX_PREFIXES else sub_prog
-    if loader_key not in cache:
-        if loader_key not in _LOADERS:
-            raise ValueError(
-                f"No file loader defined for sub_prog '{sub_prog}'. "
-                "Add an entry to _LOADERS or check your map file."
-            )
-        try:
-            cache[loader_key] = _LOADERS[loader_key](all_files_dict)
-        except (FileNotFoundError, pd.errors.ParserError, pd.errors.EmptyDataError) as e:
-            raise RuntimeError(
-                f"Could not read source file for sub_prog='{sub_prog}': {e}"
-            ) from e
+
+    if loader_key in cache:
+        log.debug(
+            "Using cached DataFrame for sub_prog='%s' (loader='%s')",
+            sub_prog,
+            loader_key,
+        )
+        return cache[loader_key]
+
+    log.debug(
+        "Cache miss for sub_prog='%s'; using loader '%s'",
+        sub_prog,
+        loader_key,
+    )
+
+    if loader_key not in _LOADERS:
+        msg = (
+            f"No file loader defined for sub_prog '{sub_prog}'. "
+            "Add an entry to _LOADERS or check your map file."
+        )
+        log.error(msg)
+        raise ValueError(msg)
+
+    try:
+        log.debug("Loading source data for sub_prog='%s'", sub_prog)
+
+        cache[loader_key] = _LOADERS[loader_key](all_files_dict)
+
+        log.info(
+            "Successfully loaded source data for sub_prog='%s'",
+            sub_prog,
+        )
+
+    except (
+        FileNotFoundError,
+        pd.errors.ParserError,
+        pd.errors.EmptyDataError,
+    ) as e:
+
+        log.exception(
+            "Failed to load source data for sub_prog='%s'",
+            sub_prog,
+        )
+
+        raise RuntimeError(
+            f"Could not read source file for sub_prog='{sub_prog}': {e}"
+        ) from e
+
     return cache[loader_key]
 
 
-def _lookup_value(temp_df, sub_prog, val, mapper):
+_SKIP_METRICS =[
+    "N_DOUBLET_CELLS",
+    "N_NEGATIVE_CELLS",
+    "N_CELLS_AFTER_DEMUX",
+]
+def _lookup_value(temp_df: pd.DataFrame, 
+    sub_prog: str, 
+    metric: str, 
+    mapper: pd.DataFrame, 
+    logger=None) -> str | int | float:
     """
     Look up a single value from a loaded DataFrame using the mapper.
     Returns the value, or "" if the mapper entry or column is absent.
     Trailing commas are stripped (demux legacy format).
+
+    Parameters
+    ----------
+    temp_df
+        File containing the necessary metrics
+    sub_prog
+        Sub-program name.
+    metric
+        Metric name to lookup in `mapper`.
+    mapper
+        Mapping curr_val -> val_in_log
+    logger
+        Logger to use. Defaults to this module's logger.
+
+    Returns
+    -------
+    Returns the looked-up value, or an empty string if not found.
+
     """
+    log = logger or logging.getLogger(__name__)
     try:
-        mask = (mapper["curr_val"] == val) & (mapper["sub_prog"] == sub_prog)
+        mask = (mapper["curr_val"] == metric) & (mapper["sub_prog"] == sub_prog)
         mapped_col = mapper.loc[mask, "val_in_log"].values[0]
     except IndexError:
-        logging.warning("No mapper entry for sub_prog=%s val=%s — writing empty", sub_prog, val)
+        log.warning("No mapper entry for sub_prog=%s val=%s — writing empty", sub_prog, metric)
         return ""
 
     try:
@@ -1120,10 +1308,14 @@ def _lookup_value(temp_df, sub_prog, val, mapper):
         else:
             result = temp_df.loc[temp_df["cols"] == mapped_col, "vals"].values[0]
     except (KeyError, IndexError):
-        logging.warning(
-            "Mapper entry found but value absent in file: sub_prog=%s val=%s mapped_col=%s — writing empty",
-            sub_prog, val, mapped_col,
-        )
+        if not any(m in metric for m in _SKIP_METRICS):
+            log.warning(
+                (
+                "Mapper entry found but value absent in file: "
+                "sub_prog=%s metric=%s mapped_col=%s — writing empty"
+                ),
+                sub_prog, metric, mapped_col,
+            )
         return ""
 
     # Normalise: strip trailing commas, clean up floats
@@ -1139,30 +1331,46 @@ def _lookup_value(temp_df, sub_prog, val, mapper):
     return result
 
 
-def write_logs(big_df, mapper, all_files_dict, no_progs, *args):
+def write_logs(columns: NDArray, 
+    mapper: pd.DataFrame, 
+    all_files_dict: dict[str, list[str]], 
+    no_progs: list, sample: str, logger=None, 
+    processed_data=None):
     """
     Build one output row for a single sample.
 
     Parameters
     ----------
-    big_df         : DataFrame with MultiIndex columns (prog, sub_prog, val)
-    mapper         : DataFrame mapping curr_val -> val_in_log
-    all_files_dict : dict of {key: filepath} for all input files
-    no_progs       : list of sub_prog prefixes to skip
-    *args          : leading annotation values (e.g. sample name)
+    columns
+        Column names present as prog, sub_prog, val
+    mapper
+        DataFrame mapping curr_val -> val_in_log
+    all_files_dict
+        all input files present as key: list of file paths
+    no_progs
+        list of sub_prog prefixes to skip
+    sample
+        Sample name (for logging)
+    logger
+        Logger instance for logging warnings (optional)
+    processed_data
+        Dict of extra annotations
 
     Returns
     -------
     list of values in column order
     """
-    new_row = list(args)
+    log = logger or logging.getLogger(__name__)
+    # new_row = list(args)
+    new_row = []
     file_cache = {}   # Populated lazily; one DataFrame per loader key
     empty_count = 0
 
-    for prog, sub_prog, val in big_df.columns.tolist():
+    for prog, sub_prog, metric in columns.tolist():
 
-        # LAB columns are annotation placeholders — already handled via *args
+        # LAB columns are always annotated here as they don't require file lookups
         if prog == "LAB":
+            new_row.append(processed_data.get((prog, sub_prog, metric), ""))
             continue
 
         # Skip excluded sub_progs (exact match or prefix match)
@@ -1170,8 +1378,8 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, *args):
             new_row.append("")
             continue
 
-        temp_df = _load_file(sub_prog, all_files_dict, file_cache)
-        add_value = _lookup_value(temp_df, sub_prog, val, mapper)
+        temp_df = _load_file(sub_prog, all_files_dict, file_cache, logger=log)
+        add_value = _lookup_value(temp_df, sub_prog, metric, mapper, logger=log)
 
         if add_value == "":
             empty_count += 1
@@ -1179,12 +1387,14 @@ def write_logs(big_df, mapper, all_files_dict, no_progs, *args):
         new_row.append(add_value)
 
     if empty_count:
-        logging.warning(
+        log.warning(
             "Sample '%s': %d/%d values were empty — check mapper and input files.",
-            args[0] if args else "unknown",
+            sample,
             empty_count,
-            len(big_df.columns),
+            len(columns),
         )
+
+    print(f"Finished processing {sample}")
 
     return new_row
 

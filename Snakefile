@@ -67,7 +67,7 @@ rule resolve_pool_targets:
     input:
         produce_targets_dynamic
     output:
-        "resolved/{pool}.done"
+        "resolved/{pool}/{modality}.done"
     shell:
         "touch {output}"
         

@@ -2,8 +2,15 @@
 
 ## Architecture & Design
 
-- [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`)
+- [ ] Currently, the creation of h5ad from vireo output lies within the rule `demux_samples`. Split that rule into 2 rules:
+  - [ ] RULE A: An h5ad is created after vireo output
+  - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
+- [ ] Currently, the dash app can't compare samples. Make it so that a pair-wise sample (can be donor vs donor or pool vs pool) sub-plot pop up.
+- [ ] Next update will be split the design for sc/snRNA seq, scATAC and multiome. Pipeline will be restructured.
+- [ ] `wildcards.modality` will handle cDNA/RNA, HTO or ATAC rather than functions (Input, params, etc.)
+- [ ] Split the demultiplexing info. It should be like basic stats (common file), hashsolo to hashsolo_stats file and vireo to vireo_stats file. This would make all things distinct (stats saved per demux per config/params). Not only will it be organized well but also mark the final version for each pool (by specifying in swap_correction_df).
 - [ ] Use `branch` function to handle rules with varied inputs
+- [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`)
 - [ ] Change how demultiplexing directory variants are handled — replace separate config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file
 - [ ] Employ a clear strategy for `final_count_matrix_dir` across demux scenarios:
   - Both tools run simultaneously
@@ -14,6 +21,7 @@
   - BAM splitting (finalizing vs. genotype purposes)
 - [ ] Remove dependency on STARsolo as the only aligner
 - [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project
+- [ ] Absorb HTO, cDNA and ATAC into the wildcard `modality`.
 - [ ] Restructure `new_config.yaml` to:
   - separate:
     - [ ]  static resources
@@ -43,6 +51,7 @@
 
     - [ ]  execution modules
     - [ ]  Output naming conventions
+- [ ]  Support ArchR and Signac QC for ATAC QC metrics.
 
 ---
 
@@ -66,7 +75,9 @@
 - [ ] Fix `vcf_type` wildcard issue in the rule `demux_samples`
 - [ ] Fix automatic output directory selection in `demux_samples`
 - [ ] When adding calico_solo or vireo results, include the existing demux stats file as input and append to it
-- [ ] Provide a way to retain vireo rerun information in both the demultiplex info file and `update_logs`
+- [ ] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
+  - [x] *swap correction* addresses proper demultiplex file per each pool.
+  - [ ] *swap correction* has appropriately identified donors per each pool.
 - [ ] Retain variant matching stats from log runs (variants matched to donor VCF out of total pileup):
 
   ```shell
@@ -76,14 +87,13 @@
   ```
 
 - [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`
-- [ ] Beautify `get_filt_barcodes` in `pheno_demux3`
+- [ ] Beautify `get_filt_barcodes` in `genotype_demux.smk`
 
 ---
 
 ## cellranger
 
-- [ ] Add support for ATAC-based vireo demultiplexing via cellranger-arc count
-- [x] Add alignment support for cellranger-arc count
+- [ ] Add support for cellranger.
 
 ---
 

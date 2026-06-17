@@ -30,7 +30,7 @@ def get_filt_barcodes(wildcards, config):
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}"
                 "/filtered_feature_bc_matrix/matrix.mtx.gz"
-            ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+            ).format(pool=wildcards.pool) # WILDCARDS
 
         else:
             return (
@@ -49,17 +49,30 @@ def get_cellsnp_inputs(wildcards, config):
         f"{config['fold_struct_filt_bc']}.txt"
     )
     if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+        # DEPRACATED
+        # if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+        #     ret_dict['bam'] = ((
+        #         f"{config['cellranger_arc_count']['bams_dir']}"
+        #         f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+        #         ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+        #     )
+        # else:
+        #     ret_dict['bam'] = ((
+        #         f"{config['cellranger_arc_count']['bams_dir']}"
+        #         f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+        #         ).format(pool=wildcards.pool) # WILDCARDS
+        #     )
+        if wildcards.modality.lower() == 'cdna': # WILDCARDS
             ret_dict['bam'] = ((
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+                ).format(pool=wildcards.pool) # WILDCARDS
             )
         else:
             ret_dict['bam'] = ((
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+                ).format(pool=wildcards.pool) # WILDCARDS
             )
     else:
         ret_dict.update({
@@ -78,7 +91,7 @@ def get_cellsnp_inputs(wildcards, config):
     # 'cellsnp_ref_snps' is useful when per-Pool vcfs need to subset for SNVs
     if config['gt_demux_pipeline']['vcf_info'] is not None \
         and os.path.isfile(config['gt_demux_pipeline']['vcf_info']):
-            samp_name = '-'.join(wildcards.pool)
+            samp_name = wildcards.pool # WILDCARDS
             temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
             n_cols = temp_df.shape[1]
             # For demux run wo_gt, we generally won't have per-donor vcf
@@ -143,30 +156,8 @@ def get_vir_inputs(wildcards, config):
 
     return ret_dict
 
+
 # Demultiplex ---------------------------------------------------------------------------
-
-def get_inputs_demux(wildcards, config):
-    demux_type = config['demux_type'].lower()
-
-    if demux_type not in ('solo', 'vireo', 'both', 'add_solo', 'add_vireo'):
-        # create_h5ad_only branch
-        return [
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['STARsolo_pipeline']['genefull_matrix']}"
-        ]
-
-    if demux_type in ('solo', 'add_solo'):
-        return _inputs_solo(wildcards, config)
-
-    if demux_type in ('vireo', 'add_vireo'):
-        return _inputs_vireo(wildcards, config)
-
-    if demux_type == 'both':
-        return _inputs_both(wildcards, config)
-
-    return []
-
 
 def _inputs_solo(wildcards, config):
     demux_type = config['demux_type'].lower()
@@ -211,10 +202,10 @@ def _inputs_vireo(wildcards, config):
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz",
                 f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}ATAC/"
+                f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}",
                 f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}cDNA/"
+                f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}",
             ])
         else:
@@ -266,6 +257,29 @@ def _inputs_both(wildcards, config):
     return ret
 
 
+def get_inputs_demux(wildcards, config):
+    demux_type = config['demux_type'].lower()
+
+    if demux_type not in ('solo', 'vireo', 'both', 'add_solo', 'add_vireo'):
+        # create_h5ad_only branch
+        return [
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        ]
+
+    if demux_type in ('solo', 'add_solo'):
+        return _inputs_solo(wildcards, config)
+
+    if demux_type in ('vireo', 'add_vireo'):
+        return _inputs_vireo(wildcards, config)
+
+    if demux_type == 'both':
+        return _inputs_both(wildcards, config)
+
+    return []
+
+
 # ---------------------------------------------------------------------------------------
 # Split bam -----------------------------------------------------------------------------
 def get_inp_splitBam(wildcards, config):
@@ -299,29 +313,77 @@ def get_inp_splitBam(wildcards, config):
 
 
 def get_bam(wildcards, config):
+    # DEPRACATED
+    # if 'multiome' in config['last_step'].lower():
+    #     if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+    #         return {
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+    #             ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
+    #             'bai': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bai']}"
+    #             ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+    #         } 
+                
+    #     else:
+    #         return {
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+    #             ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
+    #             'bai': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bai']}"
+    #             ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+    #         } 
+    # else:
+    #     return {
+    #         'bam': (
+    #         f"{config['STARsolo_pipeline']['bams_dir']}"
+    #         f"{config['fold_struct']}"
+    #         f"{config['STARsolo_pipeline']['bam']}"
+    #         ),
+    #         'bai': (
+    #         f"{config['STARsolo_pipeline']['bams_dir']}"
+    #         f"{config['fold_struct']}"
+    #         f"{config['STARsolo_pipeline']['bai']}"
+    #         )
+    #     }
     if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+        if wildcards.modality.lower() == 'cdna': # WILDCARDS
             return {
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
+                ).format(pool=wildcards.pool), # WILDCARDS
                 'bai': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bai']}"
-                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-            } 
-                
+                ).format(pool=wildcards.pool), # WILDCARDS
+            }
+        elif wildcards.modality.lower() == 'atac': # WILDCARDS
+            return {
+                'bam': (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+                ).format(pool=wildcards.pool), # WILDCARDS
+                'bai': (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bai']}"
+                ).format(pool=wildcards.pool) # WILDCARDS
+            }
         else:
             return {
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
+                ).format(pool=wildcards.pool), # WILDCARDS
                 'bai': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bai']}"
-                ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
+                ).format(pool=wildcards.pool) # WILDCARDS
             } 
     else:
         return {
@@ -346,19 +408,66 @@ def get_bam_to_split(wildcards, config):
     subBam = {}
     filtBam = {}
     if 'multiome' in config['last_step'].lower():
-        if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+        # DEPRACATED MULTIOME
+    #     if 'cdna' in wildcards.pool.lower(): # WILDCARDS
+    #         fullBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+    #             ).format(pool=wildcards.pool.split('/')[0])}
+    #         )
+    #         subBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+    #             ).format(
+    #                 pool=wildcards.pool.split('/')[0]).replace(  # WILDCARDS
+    #                     '.bam', config['split_bams_pipeline']['short_bam'])}
+    #         ) 
+    #         filtBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
+    #             ).format(
+    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+    #                     '.bam', config['split_bams_pipeline']['filt_bam'])}
+    #         )
+    #     else:
+    #         fullBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+    #             ).format(pool=wildcards.pool.split('/')[0])} # WILDCARDS
+    #         ) 
+    #         subBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+    #             ).format(
+    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+    #                     '.bam', config['split_bams_pipeline']['short_bam'])}
+    #         )
+    #         filtBam.update({
+    #             'bam': (
+    #             f"{config['cellranger_arc_count']['bams_dir']}"
+    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+    #             ).format(
+    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+    #                     '.bam', config['split_bams_pipeline']['filt_bam'])}
+    #         )
+        if wildcards.modality.lower() == 'cdna': # WILDCARDS
             fullBam.update({
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0])}
+                ).format(pool=wildcards.pool)}
             )
             subBam.update({
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
                 ).format(
-                    pool=wildcards.pool.split('/')[0]).replace(  # WILDCARDS
+                    pool=wildcards.pool).replace(  # WILDCARDS
                         '.bam', config['split_bams_pipeline']['short_bam'])}
             ) 
             filtBam.update({
@@ -366,7 +475,30 @@ def get_bam_to_split(wildcards, config):
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
                 ).format(
-                    pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+                    pool=wildcards.pool).replace( # WILDCARDS
+                        '.bam', config['split_bams_pipeline']['filt_bam'])}
+            )
+        elif wildcards.modality.lower() == 'atac': # WILDCARDS
+            fullBam.update({
+                'bam': (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+                ).format(pool=wildcards.pool)}
+            )
+            subBam.update({
+                'bam': (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+                ).format(
+                    pool=wildcards.pool).replace(  # WILDCARDS
+                        '.bam', config['split_bams_pipeline']['short_bam'])}
+            ) 
+            filtBam.update({
+                'bam': (
+                f"{config['cellranger_arc_count']['bams_dir']}"
+                f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
+                ).format(
+                    pool=wildcards.pool).replace( # WILDCARDS
                         '.bam', config['split_bams_pipeline']['filt_bam'])}
             )
         else:
@@ -374,14 +506,14 @@ def get_bam_to_split(wildcards, config):
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-                ).format(pool=wildcards.pool.split('/')[0])} # WILDCARDS
+                ).format(pool=wildcards.pool)} # WILDCARDS
             ) 
             subBam.update({
                 'bam': (
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
                 ).format(
-                    pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+                    pool=wildcards.pool).replace( # WILDCARDS
                         '.bam', config['split_bams_pipeline']['short_bam'])}
             )
             filtBam.update({
@@ -389,7 +521,7 @@ def get_bam_to_split(wildcards, config):
                 f"{config['cellranger_arc_count']['bams_dir']}"
                 f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
                 ).format(
-                    pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
+                    pool=wildcards.pool).replace( # WILDCARDS
                         '.bam', config['split_bams_pipeline']['filt_bam'])}
             )
     else:
