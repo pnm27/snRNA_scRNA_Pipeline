@@ -26,4 +26,4 @@ conda activate new_snakemake
 # MEM PROVIDED IS THE TOTAL FOR EACH RULE OTHERWISE IT IS PER CPU USED
 export SNAKEMAKE_LSF_MEMFMT="perjob" 
 snakemake --profile prachu_lsf_smk8 --workflow-profile workflow_profile --ri \
- --rerun-triggers input software-env mtime # code params
+ --rerun-triggers mtime # input software-env code params

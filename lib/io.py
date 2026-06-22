@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 
-import os
-from .utils import read_files_ext, ret_cols
+import os, glob2
+from .utils import read_files_ext
 
+
+
+# cellranger ---------------------------------------------------------------------------
+def get_fastqs(wildcards, config):
+    temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
+    all_files = []
+    all_files.extend(glob2.glob(f"{config['cDNA_fastqs_dir']}"
+                f"{temp_fold}*{config['multiome_suffix']}"))
+    all_files.extend(glob2.glob(f"{config['ATAC_fastqs_dir']}"
+                f"{temp_fold}*{config['multiome_suffix']}"))
+
+    return sorted(all_files)
+
+# ----------------------------------------------------------------------------------------
 
 # Columns for a vcf_info file when provided with a vcf per pool
 col_set = [

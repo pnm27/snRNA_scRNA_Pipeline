@@ -321,7 +321,8 @@ def produce_targets(wildcards) -> list:
         if any(s in step for s in ["split_bams", "identify_swaps"]):
             ret_list += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
 
-        ret_list += _expand_pools(targets_demux(CFG.demuxes), modality=MODALITY)
+        if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
+            ret_list += _expand_pools(targets_demux(CFG.demuxes), modality=MODALITY)
 
         return ret_list
 
@@ -337,7 +338,8 @@ def produce_targets(wildcards) -> list:
         if any(s in step for s in ["split_bams", "identify_swaps"]):
             ret_list += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
 
-        ret_list += _expand_pools(targets_demux(CFG.demuxes, multiome=True), modality=MODALITY)
+        if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
+            ret_list += _expand_pools(targets_demux(CFG.demuxes, multiome=True), modality=MODALITY)
 
         return ret_list
 

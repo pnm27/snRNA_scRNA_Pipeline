@@ -1,15 +1,6 @@
 import os, glob2, re
-
-
-def get_fastqs(wildcards):
-    temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
-    all_files = []
-    all_files.extend(glob2.glob(f"{config['cDNA_fastqs_dir']}"
-                f"{temp_fold}*{config['multiome_suffix']}"))
-    all_files.extend(glob2.glob(f"{config['ATAC_fastqs_dir']}"
-                f"{temp_fold}*{config['multiome_suffix']}"))
-
-    return sorted(all_files)
+from functools import partial
+from lib.io import get_fastqs
 
 
 # Resource Allocation ------------------
@@ -30,10 +21,10 @@ def allocate_time_CAC(wildcards, attempt):
 
 rule inp_cellranger_arc_count:
     input:
-        get_fastqs
+        partial(get_fastqs, config=config)
 
     params:
-        samp_id=lambda wildcards: wildcards.pool
+        samp_id=lambda wildcards: wildcards.pool # Same as samp_id in rule "cellranger_arc_count"
 
     output:
         "{pool}_metadata.csv"
@@ -63,8 +54,7 @@ rule cellranger_arc_count:
     """
     input:
         "{pool}_metadata.csv",
-        get_fastqs
-    # priority: 10
+        partial(get_fastqs, config=config)
 
     params:
         ref=config['cellranger_arc_ref'],
@@ -81,10 +71,6 @@ rule cellranger_arc_count:
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_bai']}",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_fragments']}",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['filtered_h5_matrix']}",
-        # expand(
-        #     f"{config['cellranger_arc_count']['bams_dir']}/{{{pool}}}/filtered_feature_bc_matrix/{{name}}",
-        #     name=["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"],
-        # ),
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
         f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",

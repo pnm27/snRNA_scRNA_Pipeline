@@ -327,14 +327,13 @@ def main():
 
 
         # Test if at least one of the input files exists
-        test_f_exists = [
-            ss_log_final != "", ss_gene_summary != "", 
-            ss_genefull_summary != "", ss_gene_features != "", 
-            ss_genefull_features != "", ss_bc_stats != "",
-            pc_gc_file != "", pc_rs_file != "", dem_file != ""
+        all_files = [
+            ss_log_final, ss_gene_summary,
+            ss_genefull_summary, ss_gene_features,
+            ss_genefull_features, ss_bc_stats,
+            pc_gc_file, pc_rs_file, dem_file
         ]
-            
-        if not any(test_f_exists):
+        if not any(all_files):
             raise ValueError(
                 f"All files for the sample {sample} are "
                 "empty or not to be found! Please check the directories "

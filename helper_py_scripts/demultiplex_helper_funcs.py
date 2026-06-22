@@ -1085,6 +1085,7 @@ def process_swap_correction(config: dict[str, Any],
     )
     if 'swap_correction_df' not in config:
         warnings.warn(notFound_msg, UserWarning)
+        return None
     else:
         if all( f in config['swap_correction_df'] for f in lookup_columns ):
             pool_col = config['swap_correction_df']['pool_column']

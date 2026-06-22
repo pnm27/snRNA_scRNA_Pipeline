@@ -26,7 +26,7 @@
   - separate:
     - [ ]  static resources
     - [ ]  experiment definitions
-    - [ ]  workflow behavior:
+    - [ ]  workflow behavior \( RE-ASSESS 'last_step'\) :
       **OLD STYLE**
 
       ```sh

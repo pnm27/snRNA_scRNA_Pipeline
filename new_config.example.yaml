@@ -74,8 +74,8 @@ wildcards_select: null # null when select_fastqs is not a dir otherwise provide 
 HTO_fastqs_dir: projdir/fastq_files/
 cDNA_fastqs_dir: projdir/fastq_files/
 ATAC_fastqs_dir: projdir/fastq_files/
-R1_suffix: .R1.fastq.gz
-R2_suffix: .R2.fastq.gz
+R1_suffix: R1*fastq.gz
+R2_suffix: R2*fastq.gz
 multiome_suffix: .fastq.gz
 
 
