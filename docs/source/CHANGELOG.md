@@ -15,6 +15,8 @@
 - Standardized single wildcard name to `pool` (previously mixed: `num`, `id1`, `id2`); double wildcards retained
 - Added `multiome_alignment` as a new module with `cellranger.smk` (currently supports cellranger arc count only)
 - Consolidate demultiplexing into a single rule (combine all 4 `demux_samples_*` rules)
+- Most of the parameter functions have been moved to `lib/params.py`.
+- Most of the input functions have been moved to `lib/io.py`.
 
 ---
 
@@ -173,7 +175,6 @@
 
 - Supports ATAC-based (along with RNA-based) vireo demultiplexing via cellranger-arc count.
 - Supports cellranger-arc count for multiome preprocessing.
-
 
 ### STARsolo
 

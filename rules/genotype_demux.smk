@@ -112,7 +112,6 @@ rule create_inp_cellSNP:
         mem_mb=allocate_mem_CICS,
         time_min=allocate_time_CICS
 
-    # group: "genotype-demux"
     # For snakemake < v8
     # threads: 2
 
@@ -136,8 +135,6 @@ rule cellSNP:
     input:
         unpack(partial(get_cellsnp_inputs, config=config))
 
-    # group: "genotype-demux"
-
     output:
         f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}",
         f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_base']}"
@@ -149,8 +146,12 @@ rule cellSNP:
         processors=partial(get_procs_csnp, config=config),
         min_maf=config['gt_demux_pipeline']['min_maf'],
         min_ct=config['gt_demux_pipeline']['min_aggr_count'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['cellsnp_cells']}", ''),
-        filt_vcf_dir=f"{config['gt_demux_pipeline']['filt_vcf_dir']}{config['fold_struct_gt_demux']}"[:-1], # remove trailing forward slash
+        output_prefix=lambda _, output: (
+            output[0].replace(
+                f"/{config['gt_demux_pipeline']['cellsnp_cells']}", 
+                ''
+            )
+        ),
         threads=config['gt_demux_pipeline']['bcftools_thread']
 
 
@@ -168,11 +169,13 @@ rule cellSNP:
 
     shell:
         """
+        set -x
         cellsnp-lite -b {input.barcodesFile} -s {input.bam} \
             -R {input.regionsFile} -O {params.output_prefix} \
             -p {params.processors} --minMAF {params.min_maf} \
             --minCOUNT {params.min_ct} --cellTAG {params.cell_tag} \
             --UMItag {params.umi_tag} --genotype --gzip
+        set +x
         """
 
 
@@ -188,9 +191,13 @@ rule vireoSNP:
         )
 
     params:
-        # donor_info=get_donor_info,
         geno_tag=config['gt_demux_pipeline']['donor_genotype'],
-        output_prefix=lambda wildcards, output: output[0].replace(f"/{config['gt_demux_pipeline']['donors_classification']}", ''),
+        output_prefix=lambda _, output: (
+            output[0].replace(
+                f"/{config['gt_demux_pipeline']['donors_classification']}", 
+                ''
+            )
+        ),
         cmd_str=partial(get_cmd_str_vireo, config=config)
 
     # For snakemake < v8
@@ -207,6 +214,7 @@ rule vireoSNP:
         """        
         set -x
         vireo -c {input.cellsnpCells} -o {params.output_prefix} \
-        -t {params.geno_tag} --noPlot --randSeed 100 {params.cmd_str}
+            -t {params.geno_tag} --noPlot --randSeed 100 \
+            {params.cmd_str}
         set +x
         """

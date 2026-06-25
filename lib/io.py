@@ -5,7 +5,7 @@ from .utils import read_files_ext
 
 
 
-# cellranger ---------------------------------------------------------------------------
+# cellranger ----------------------------------------------------------------------------
 def get_fastqs(wildcards, config):
     temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
     all_files = []
@@ -16,8 +16,21 @@ def get_fastqs(wildcards, config):
 
     return sorted(all_files)
 
-# ----------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
+# STARsolo ------------------------------------------------------------------------------
+def get_r1_fastqs(wildcards, config):
+    temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
+    r1_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R1_suffix']}"))
+    return r1_files
+
+
+def get_r2_fastqs(wildcards, config):
+    temp_fold=f"{config['fold_struct']}".format(**wildcards)
+    r2_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R2_suffix']}"))
+    return r2_files
+
+# ---------------------------------------------------------------------------------------
 # Columns for a vcf_info file when provided with a vcf per pool
 col_set = [
     "pool", 
@@ -63,19 +76,6 @@ def get_cellsnp_inputs(wildcards, config):
         f"{config['fold_struct_filt_bc']}.txt"
     )
     if 'multiome' in config['last_step'].lower():
-        # DEPRACATED
-        # if 'cdna' in wildcards.pool.lower(): # WILDCARDS
-        #     ret_dict['bam'] = ((
-        #         f"{config['cellranger_arc_count']['bams_dir']}"
-        #         f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-        #         ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-        #     )
-        # else:
-        #     ret_dict['bam'] = ((
-        #         f"{config['cellranger_arc_count']['bams_dir']}"
-        #         f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-        #         ).format(pool=wildcards.pool) # WILDCARDS
-        #     )
         if wildcards.modality.lower() == 'cdna': # WILDCARDS
             ret_dict['bam'] = ((
                 f"{config['cellranger_arc_count']['bams_dir']}"
@@ -313,12 +313,6 @@ def get_inp_splitBam(wildcards, config):
                 f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
             )
     else:
-        # if len(config['split_bams_pipeline']['split_by']['demux']) == 1:
-        #     if config['split_bams_pipeline']['split_by']['demux'][0].lower() in ['vireo', 'vs'] or \
-        #       config['split_bams_pipeline']['split_by']['demux'][0].lower() in \
-        #       ["cs", "calico", "calico_solo", "hashsolo"]:
-        #         return f"{config['demux_pipeline']['final_count_matrix_dir']}{config['fold_struct_demux']}{config['demux_pipeline']['final_count_matrix_h5ad']}"
-        # else:
         return (
             f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
             f"{config['fold_struct_demux']}"
@@ -327,44 +321,6 @@ def get_inp_splitBam(wildcards, config):
 
 
 def get_bam(wildcards, config):
-    # DEPRACATED
-    # if 'multiome' in config['last_step'].lower():
-    #     if 'cdna' in wildcards.pool.lower(): # WILDCARDS
-    #         return {
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-    #             ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
-    #             'bai': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bai']}"
-    #             ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-    #         } 
-                
-    #     else:
-    #         return {
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-    #             ).format(pool=wildcards.pool.split('/')[0]), # WILDCARDS
-    #             'bai': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bai']}"
-    #             ).format(pool=wildcards.pool.split('/')[0]) # WILDCARDS
-    #         } 
-    # else:
-    #     return {
-    #         'bam': (
-    #         f"{config['STARsolo_pipeline']['bams_dir']}"
-    #         f"{config['fold_struct']}"
-    #         f"{config['STARsolo_pipeline']['bam']}"
-    #         ),
-    #         'bai': (
-    #         f"{config['STARsolo_pipeline']['bams_dir']}"
-    #         f"{config['fold_struct']}"
-    #         f"{config['STARsolo_pipeline']['bai']}"
-    #         )
-    #     }
     if 'multiome' in config['last_step'].lower():
         if wildcards.modality.lower() == 'cdna': # WILDCARDS
             return {
@@ -415,60 +371,11 @@ def get_bam(wildcards, config):
     
 
 def get_bam_to_split(wildcards, config):
-    # fullBam = ""
-    # subBam = ""
-    # filtBam = ""
+
     fullBam = {}
     subBam = {}
     filtBam = {}
     if 'multiome' in config['last_step'].lower():
-        # DEPRACATED MULTIOME
-    #     if 'cdna' in wildcards.pool.lower(): # WILDCARDS
-    #         fullBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-    #             ).format(pool=wildcards.pool.split('/')[0])}
-    #         )
-    #         subBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-    #             ).format(
-    #                 pool=wildcards.pool.split('/')[0]).replace(  # WILDCARDS
-    #                     '.bam', config['split_bams_pipeline']['short_bam'])}
-    #         ) 
-    #         filtBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['gex_bam']}"
-    #             ).format(
-    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
-    #                     '.bam', config['split_bams_pipeline']['filt_bam'])}
-    #         )
-    #     else:
-    #         fullBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-    #             ).format(pool=wildcards.pool.split('/')[0])} # WILDCARDS
-    #         ) 
-    #         subBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-    #             ).format(
-    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
-    #                     '.bam', config['split_bams_pipeline']['short_bam'])}
-    #         )
-    #         filtBam.update({
-    #             'bam': (
-    #             f"{config['cellranger_arc_count']['bams_dir']}"
-    #             f"{{pool}}/{config['cellranger_arc_count']['atac_bam']}"
-    #             ).format(
-    #                 pool=wildcards.pool.split('/')[0]).replace( # WILDCARDS
-    #                     '.bam', config['split_bams_pipeline']['filt_bam'])}
-    #         )
         if wildcards.modality.lower() == 'cdna': # WILDCARDS
             fullBam.update({
                 'bam': (
@@ -580,3 +487,26 @@ def get_bam_to_split(wildcards, config):
             return subBam
     else:
         return filtBam
+    
+# ---------------------------------------------------------------------------------------
+
+# identify_swaps ------------------------------------------------------------------------
+
+def get_bam_inputs(wildcards, config):
+    
+    if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
+        if 'multiome' in config['last_step'].lower():
+            return (
+                f"{config['split_bams_pipeline']['split_bams_dir']}"
+                f"{config['fold_struct_bam_split2']}"
+                f"{config['fold_struct_gt_demux_redo']}.bam"
+            ).format(**wildcards)
+        else:
+            return (
+                f"{config['split_bams_pipeline']['split_bams_dir']}"
+                f"{config['fold_struct_bam_split2']}"
+                f"{config['fold_struct_gt_demux_redo']}.bam"
+            )
+    else:
+        return config['identify_swaps']['mbv_inp']
+

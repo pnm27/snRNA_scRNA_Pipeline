@@ -22,6 +22,7 @@
 - [ ] Remove dependency on STARsolo as the only aligner
 - [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project
 - [ ] Absorb HTO, cDNA and ATAC into the wildcard `modality`.
+- [ ] Resolve the issue of multi-HTO setup in `kite.smk`.
 - [ ] Restructure `new_config.yaml` to:
   - separate:
     - [ ]  static resources

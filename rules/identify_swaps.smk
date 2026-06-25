@@ -1,20 +1,5 @@
-def get_bam_inputs(wildcards):
-    
-    if config['identify_swaps']['mbv_inp'] == 'vireo_outs':
-        if 'multiome' in config['last_step'].lower():
-            return (
-                f"{config['split_bams_pipeline']['split_bams_dir']}"
-                f"{config['fold_struct_bam_split2']}"
-                f"{config['fold_struct_gt_demux_redo']}.bam"
-            ).format(**wildcards)
-        else:
-            return (
-                f"{config['split_bams_pipeline']['split_bams_dir']}"
-                f"{config['fold_struct_bam_split2']}"
-                f"{config['fold_struct_gt_demux_redo']}.bam"
-            )
-    else:
-        return config['identify_swaps']['mbv_inp']
+from functools import partial
+from lib.io import get_bam_inputs
 
 
 # Resource Allocation ------------------
@@ -29,7 +14,7 @@ def allocate_time_QM(wildcards, attempt):
 
 rule qtltools_mbv:
     input:
-        bam=get_bam_inputs,
+        bam=partial(get_bam_inputs, config=config),
         ref_snps=config['identify_swaps']['ref_vcf']
 
     output:

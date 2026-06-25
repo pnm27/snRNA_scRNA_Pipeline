@@ -1,8 +1,102 @@
 #!/usr/bin/env python3
 
 from .utils import read_files_ext
+import re, glob2, os
+
+# STARsolo ------------------------------------------------------------------------------
+# To check if the last digit of the line in the error log of STARsolo is a number
+def check_isnumber(x):
+    try:
+        int(x)
+        return True
+   
+    except ValueError:
+        return False
 
 
+# We can use this to similarly change other params in the log
+def get_limitsjdbval_coll(wildcards, config, resources):
+    '''
+    This function reads the log file created per attempt to change the parameter "limitsjdbInsertNsj" and "limitOutSJcollapsed" in STARsolo
+    Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
+    '''
+    # This is to check the log file produced after each attempt for the error value
+    file_p_temp = f"{config['fold_struct']}".format(**wildcards)
+    SS_params_file = "{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)
+    
+    ins_nsj = 1000000 # DEFAULT
+    sj_collap = 1000000 # DEFAULT
+    limitbamsortram = 5000000000
+    ram_limit_pattern = re.compile(r"--limitBAMsortRAM ([0-9]+)")
+
+    # This is to check the parameters file
+    if os.path.isfile(SS_params_file):
+        with open(SS_params_file) as fin:
+            for line in fin:
+                nsj_limit = re.search(r"--limitSjdbInsertNsj (\d+)", line)
+                sj_limit = re.search(r"--limitOutSJcollapsed (\d+)", line)
+                ram_limit = ram_limit_pattern.search(line)
+
+                temp_nsj = int(nsj_limit.group(1)) if nsj_limit else 0
+                temp_sj_coll = int(sj_limit.group(1)) if sj_limit else 0
+
+                ins_nsj = max(
+                    temp_nsj,
+                    temp_sj_coll,
+                    ins_nsj,
+                    sj_collap,
+                )
+                sj_collap = ins_nsj
+
+                if ram_limit:
+                    limitbamsortram = max(
+                        limitbamsortram,
+                        int(ram_limit.group(1)),
+                    )
+
+
+        return {
+            'ins_nsj': ins_nsj, 
+            'sj_collap': sj_collap, 
+            'limitbamsortram': limitbamsortram
+        }
+    
+    log_list = glob2.glob(
+        "{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], 
+            file_p_temp)
+    )
+    # limitbamsortram = int(resources.mem_mb * 0.5 * 1000000) # resources.mem_mb * (resources.cpus_per_task - 1) * 1000000 # DEFAULT
+    for log_file in log_list: 
+        with open(log_file) as fin:
+            for line in fin:
+                if line.lower().startswith("solution") and "limitSjdbInsertNsj" in line \
+                    and check_isnumber(line.split()[-1]):
+                    ins_nsj = max(int(line.split()[-1]), ins_nsj)
+                    sj_collap = max(ins_nsj, sj_collap)
+
+                elif line.lower().startswith("solution") and "limitOutSJcollapsed" in line:
+                    sj_collap = 1000000*(1+resources.attempt)
+                    ins_nsj = max(ins_nsj, sj_collap)
+                
+                elif line.lower().startswith("solution") and "limitBAMsortRAM" in line:
+                    ram_limit = ram_limit_pattern.search(line)
+                    if ram_limit:
+                        limitbamsortram = max(
+                            limitbamsortram,
+                            int(ram_limit.group(1)),
+                        )
+                    
+    
+    return {
+        'ins_nsj': ins_nsj, 
+        'sj_collap': sj_collap, 
+        'limitbamsortram': limitbamsortram
+    }
+   
+
+# ---------------------------------------------------------------------------------------
+
+# genotype demux ------------------------------------------------------------------------
 # Columns for a vcf_info file when provided with a vcf per pool
 col_set = [
     "pool", 
@@ -52,29 +146,23 @@ def get_procs_csnp(wildcards, config, resources):
     user_def = config['gt_demux_pipeline']['n_proc']
     expected_thresh = resources.cpus_per_task * 2
     return user_def if user_def > expected_thresh else expected_thresh
+        
 
-
-# DEPRACATED
-# def get_cmd_str_csnp(wildcards, input):
-#     ret_str = ""
-#     inp_list = [
-#         input.barcodefile,
-#         input.bam
-#     ]
-#     for x,y in zip(["-b", "-s"], inp_list):
-#         ret_str+=f" {x} {y}"
-
-#     return ret_str
-
-
+def get_umiTag(wildcards, config):
+    # For ATAC return None
+    if 'multiome' in config['last_step'].lower() and \
+     'cdna' not in wildcards.pool.lower():
+        return None
+    else:
+        return config['gt_demux_pipeline']['umi_tag']
+    
 
 def get_cmd_str_vireo(wildcards, input, config) -> None | int:
     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
     # Make snakemake's wildcard same as the value in the "pool" column
     samp_name = wildcards.pool # WILDCARDS
     ret_str = ""
-    # for x,y in zip(["-c", "-d"], input):
-    #     ret_str+=f" {x} {y}"
+
     if input['donorFile']:
         ret_str += f" -d {input['donorFile']}"
 
@@ -89,18 +177,11 @@ def get_cmd_str_vireo(wildcards, input, config) -> None | int:
         )
 
     return ret_str
-        
-
-def get_umiTag(wildcards, config):
-    # For ATAC return None
-    if 'multiome' in config['last_step'].lower() and \
-     'cdna' not in wildcards.pool.lower():
-        return None
-    else:
-        return config['gt_demux_pipeline']['umi_tag']
 
 
-# 
+# ---------------------------------------------------------------------------------------
+
+# Demultiplex ---------------------------------------------------------------------------
 def get_params_demux(wildcards, input, output, config):
     params_dict = {
         "demux_info": [output[1], "--demux_info"],
@@ -178,6 +259,30 @@ def get_params_demux(wildcards, input, output, config):
     pos_args+=ret_str
 
     return pos_args
+
+
+# ---------------------------------------------------------------------------------------
+
+# Split bams ----------------------------------------------------------------------------
+
+def get_params_create_inp_splitBams(wildcards, config):
+    ret_str = ''
+    donor_params = config['split_bams_pipeline']['donor_name_converter']
+    demuxSplit_params = config['split_bams_pipeline']['split_by']
+
+    params_dict = {
+        "conv_file": [ donor_params.get('file', None), "--conv_file"],
+        "conv_file_FromCol": [ donor_params.get('from_column', None), "--conv_file_from_col"],
+        "conv_file_ToCol": [ donor_params.get('to_column', None), "--conv_file_to_col"],
+        "demux_split_method": [ demuxSplit_params.get('demux', None), "--split_by"],
+        "splitBy_h5adCol": [ demuxSplit_params.get('column', None), "--h5ad_donor_column"],
+    }
+    
+    for _, v in params_dict.items():
+        if v[0]:
+            ret_str += f'{v[1]} {v[0]} '
+
+    return ret_str
 
 
 def get_mito(wildcards, config):

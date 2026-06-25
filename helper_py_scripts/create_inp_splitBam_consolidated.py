@@ -54,21 +54,11 @@ def get_argument_parser():
     parser.add_argument('--converter_file_to_col', 
             help="Column containing the final donor names", dest='to_col',
             )
-    
-    # subparsers = parser.add_subparsers(help='subcommand help', required=True, 
-    #         dest='subparser_name')
-    
-    # create the parser for the "demux_h5ad" command
-    # demux_h5ad = subparsers.add_parser('demux_h5ad', help="Demux h5ad using"
-    #         " columns containing classifications."
-    #         )
-    
     parser.add_argument('--h5ad_donor_column', 
             help="If the input is an h5ad containing donor classification, "
             "provide the 'obs' column containing the classification", 
             dest='h5ad_don_col',
             )
-        
     parser.add_argument('--split_by', nargs='+', 
             help="To split bams by classifications preoduced by either "
             "one or both of calico_solo and vireo provide column(s) "
@@ -108,9 +98,6 @@ def main():
 
     inp_h5ad = False if os.path.basename(args.inp) == 'donor_ids.tsv' else True
     fout = args.output
-    rem_op = args.overwrite
-
-    
 
     if args.converter_file is not None:
         conv_df = pd.read_csv(args.converter_file)
@@ -122,9 +109,6 @@ def main():
     file_ext = file_ext.group(0) if file_ext is not None else None
     file_basename = fout.replace(file_ext, '') if file_ext is not None else fout
 
-    # Call the respective functions
-    # args.func(args)
-
     # This is for splitting the bam files after finalizing genotypes
     if inp_h5ad:
         adata = ad.read_h5ad(args.inp)
@@ -133,7 +117,7 @@ def main():
         # For donor name conversion
         if args.converter_file is not None:
             conv_df = conv_df.loc[ conv_df[args.from_col].isin(adata.obs[args.h5ad_don_col].unique()), 
-                                    [args.to_col, args.from_col] ]
+                [args.to_col, args.from_col] ]
             conv_map = conv_df.set_index(args.from_col)[args.to_col].to_dict()
 
         # Support for calico_solo based demux too
@@ -192,31 +176,17 @@ def main():
             vir_class['donor_id'] = vir_class['donor_id'].map(conv_map)
             vir_class = vir_class.loc[:, ["donor_id", "cell"]]
             
-            vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+            vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, 
+                inplace=True, errors="raise")
             
         # -------------------------------------------------------------------------
         else:
-            vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, inplace=True, errors="raise")
+            vir_class.rename(columns={"cell":"barcodes", "donor_id":"Subj_ID"}, 
+                inplace=True, errors="raise")
 
         vir_class = vir_class.loc[:, ["Subj_ID", "barcodes"]]
 
         save_df(vir_class, file_ext, fout)
-
-
-    # # OLDER CODE ----------------------------
-    # if rem_op:
-    #     try:
-    #         os.remove(op_f)
-
-    #     except:
-    #         pass
-    #     save_df(temp_df, file_ext, op_f)
-    # # ---------------------------------------------
-    # else:   
-    #     file_pref = file_basename + '_' + suff + '_2'
-    #     new_name = file_pref + '_2' + file_ext
-    #     save_df(temp_df, file_ext, new_name)
-    # # ---------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
