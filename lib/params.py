@@ -151,7 +151,7 @@ def get_procs_csnp(wildcards, config, resources):
 def get_umiTag(wildcards, config):
     # For ATAC return None
     if 'multiome' in config['last_step'].lower() and \
-     'cdna' not in wildcards.pool.lower():
+        wildcards.modality.lower() == 'atac':
         return None
     else:
         return config['gt_demux_pipeline']['umi_tag']

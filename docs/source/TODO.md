@@ -5,6 +5,8 @@
 - [ ] Currently, the creation of h5ad from vireo output lies within the rule `demux_samples`. Split that rule into 2 rules:
   - [ ] RULE A: An h5ad is created after vireo output
   - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
+- [ ] Need a way to run the rule `vireoSNP` using a previous run of `cellSNP` (useful when there's a vcf for w_gt run but the SNPs haven't changed - many WGS)
+- [ ] Currently, the checkpoint `create_inp_splitBams` is handling the exact donors that will undergo splitting and further qtltools check, if needed. Make it to filter based on if cellSNP produces an empty `cellSNP.base.vcf.gz` too.
 - [ ] Currently, the dash app can't compare samples. Make it so that a pair-wise sample (can be donor vs donor or pool vs pool) sub-plot pop up.
 - [ ] Next update will be split the design for sc/snRNA seq, scATAC and multiome. Pipeline will be restructured.
 - [ ] `wildcards.modality` will handle cDNA/RNA, HTO or ATAC rather than functions (Input, params, etc.)
@@ -15,13 +17,12 @@
 - [ ] Employ a clear strategy for `final_count_matrix_dir` across demux scenarios:
   - Both tools run simultaneously
   - Tools run sequentially (name each run separately or record the order)
-- [ ] Simplify wildcard structure so folder structure encodes wildcards naturally
+- [ ] Simplify wildcard structure so folder structure encodes wildcards naturally.
 - [ ] Revamp wildcards to correctly handle varying output dirs for:
   - Demux output (single method vs. simultaneous both)
   - BAM splitting (finalizing vs. genotype purposes)
 - [ ] Remove dependency on STARsolo as the only aligner
 - [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project
-- [ ] Absorb HTO, cDNA and ATAC into the wildcard `modality`.
 - [ ] Resolve the issue of multi-HTO setup in `kite.smk`.
 - [ ] Restructure `new_config.yaml` to:
   - separate:
