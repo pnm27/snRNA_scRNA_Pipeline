@@ -14,6 +14,7 @@ params["OUTPUT_FILE"]="-o"
 params["BAM_STRUCT"]="--bam_struct"
 params["PICARD_STRUCT"]="--pc_struct"
 params["DEMUX_STRUCT"]="--dem_struct"
+params["DEMUX_SUFFIX"]="--dem_info"
 params["WET_LAB_FILE"]="-w"
 params["ANNOT"]="--common_annotations"
 params["SWAP_CORRECT_DF"]="--swap_correct"
@@ -29,9 +30,11 @@ args["OUTPUT_FILE"]="/sc/arion/projects/psychAD/pnm/All_logs.tsv" # REQUIRED
 args["BAM_STRUCT"]="Sample_<sample>*/" # REQUIRED
 args["PICARD_STRUCT"]="Sample_<sample>*/"
 args["DEMUX_STRUCT"]="Sample_<sample>*/"
+args["DEMUX_SUFFIX"]="_STARsolo_vS_info.tsv"
 args["WET_LAB_FILE"]=""
 args["ANNOT"]=""
 args["SWAP_CORRECT_DF"]=""
+verbosity="" # Can be set to -v, -vv or -vvv for verbose output, else leave it empty
 
 
 samp_list=""
@@ -61,7 +64,8 @@ set -x
 # Restrict glob expansion
 python3 ../helper_py_scripts/update_logs.py ${samp_list} ${cmd_str} \
     --ss_l --ss_g_f --ss_gf_f --ss_g_s --ss_gf_s --ss_bc --pc_gc --pc_rs \
-    --dem_info "_STARsolo_vS_info.tsv"
+    ${verbosity}
+
     
 set +x
 echo

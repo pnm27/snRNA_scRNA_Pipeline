@@ -288,10 +288,10 @@ def main():
         if has_wet_lab_value_column(data):
             df = auto_read(args.wet_lab_file)
 
-    # Get all columns for the output df
-    extra_cols = [ col["columnInLogs"] for col in data["columns"] if "columnInLogs" in col]
-    cols_list = get_all_columns(map_names, extra_cols)
-    demul_dirs = get_demux_paths(data)
+        # Get all columns for the output df
+        extra_cols = [ col["columnInLogs"] for col in data["columns"] if "columnInLogs" in col]
+        cols_list = get_all_columns(map_names, extra_cols)
+        demul_dirs = get_demux_paths(data)
 
     # Process each sample -----------------------------------------------------------------------------------------------------------------------------------------------
     # List containing per sample values as lists (list of lists)
@@ -334,10 +334,10 @@ def main():
             pc_gc_file, pc_rs_file, dem_file
         ]
         if not any(all_files):
-            raise ValueError(
+            warnings.warn(
                 f"All files for the sample {sample} are "
                 "empty or not to be found! Please check the directories "
-                "and usage of this script for more info."
+                "and usage of this script for more info. Skipping this sample."
             )
 
         files_dict = {
@@ -364,13 +364,17 @@ def main():
         
         for k, v in per_samp_check.items():
             if k == 'REG' and not v:
-                ss_dep_files = [
-                    'REG', 'GENE_FEATURE', 'GENE_SUMM',
-                    'GENEFULL_FEATURE', 'GENEFULL_SUMM',
-                    'BARCODE_STATS'
-                ]
-                ss_dep_files = [ j for j in ss_dep_files if j not in samp_excl_progs ]
-                samp_excl_progs.extend(ss_dep_files)
+                warnings.warn((
+                    "The STARsolo log file is not present for the sample {sample}! "
+                ))
+
+                # ss_dep_files = [
+                #     'REG', 'GENE_FEATURE', 'GENE_SUMM',
+                #     'GENEFULL_FEATURE', 'GENEFULL_SUMM',
+                #     'BARCODE_STATS'
+                # ]
+                # ss_dep_files = [ j for j in ss_dep_files if j not in samp_excl_progs ]
+                # samp_excl_progs.extend(ss_dep_files)
 
             elif k not in samp_excl_progs and not v:
                 samp_excl_progs.append(k)
@@ -380,9 +384,10 @@ def main():
             skip_sample=True
 
         if skip_sample:
-            print(
+            warnings.warn((
                 f"Skipping {sample} as all the input files "
                 "are not present!!"
+                )
             )
             continue
 

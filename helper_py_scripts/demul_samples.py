@@ -459,8 +459,8 @@ def main():
         print("Successfully loaded the input file!")
 
 
-    if args.swap_correct is not None:
-        swap_corr_df = auto_read(args.swap_correct)
+    # if args.swap_correct is not None:
+    #     swap_corr_df = auto_read(args.swap_correct)
 
     # New way to add extra annotations
     if args.common_annotations is None:

@@ -38,7 +38,10 @@ rule STARsolo_sort:
         gtf=config['STARsolo_pipeline']['genome_pick']['gtf'], # USED to be ['gtf_file']
         genome_dir=config['STARsolo_pipeline']['genome_pick']['genome'], # USED to be ['STARsolo_pipeline']['genome_dir']
         overhang=config['STARsolo_pipeline']['genome_pick']['overhang'], # USED to be ['STARsolo_pipeline']['sjdboverhang']
-        opt_params=partial(get_limitsjdbval_coll, config=config, resources=resources), # To change STARsolo params based on the log file of the previous attempt
+        opt_params=lambda wildcards, resources: (
+            partial(get_limitsjdbval_coll, 
+                config=config, resources=resources)
+        ), # To change STARsolo params based on the log file of the previous attempt
         chemistry=config['STARsolo_pipeline']['soloType'], # For STARsolo
         whitelist=config['whitelist'], # V3 whitelist
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 

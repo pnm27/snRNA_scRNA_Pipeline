@@ -986,7 +986,8 @@ def get_filename(loc_dir: str | None,
         if matches:
             match = matches[0]
 
-        results.append(match)
+        if match:
+            results.append(match)
 
 
     return results

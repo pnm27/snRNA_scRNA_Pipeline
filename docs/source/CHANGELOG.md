@@ -45,6 +45,7 @@
 - Changed `vcf_type` wildcard to support both multi-vcf and multiome setups
 - Function `ret_htos_calico_solo` now returns a tuple instead of a list
 - hashsolo now runs via `scanpy.external` (deprecated: `solo-sc`)
+- Add `--keep-going` parameter in `run_snakemake.sh` so that independent jobs get submitted even if some other job fails.
 
 ---
 
@@ -133,6 +134,8 @@
 - Backward support partially removed (advised to create new output files).
 - Added support for STARsolo 2.7.10 via `Final_out_MAP_2_7_10a_latest.tsv`.
 - New reference file: `Final_out_MAP_2_7_10a_latest_info.xlsx`.
+- Now, when STARsolo's log file is not present it will still collect info while providing a warning.
+- Added verbosity as an option to `run_update_logs.sh`.
 
 ### `run_update_logs.sh`
 

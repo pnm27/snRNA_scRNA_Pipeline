@@ -2,6 +2,79 @@
 
 ## Architecture & Design
 
+- [ ] Separate resources into a yaml file following a structure and heirarchy:
+  
+  ```yaml
+  resources:
+  cellsnp:
+    cpus_per_task: 8
+    mem_mb: 32000
+    time_min: "04:00:00"
+
+  vireo:
+    cpus_per_task: 2
+    mem_mb: 8000
+    time_min: "01:00:00"
+
+  star:
+    cpus_per_task: 16
+    mem_mb: 64000
+    time_min: "08:00:00"
+    ```
+
+    **Helper Function**
+
+    ```python
+    def mem(rule, attempt):
+    cfg = config["resources"][rule]["mem_mb"]
+
+    return min(
+        cfg["base"] * cfg.get("factor", 1) ** (attempt - 1),
+        cfg.get("max", float("inf")),
+    )
+    ```
+
+    **Usage in a Rule**
+
+    ```python
+    rule vireo:
+    threads:
+        config["resources"]["vireo"]["threads"]
+
+    resources:
+        mem_mb=lambda wc, attempt: mem("vireo", attempt)
+    ```
+
+    **OR**
+    **HELPER FUNCTION**
+
+    ```python
+    def resource(rule, name, attempt=1):
+    value = config["resources"][rule][name]
+
+    if isinstance(value, int):
+        return value
+
+    if isinstance(value, dict):
+        base = value["base"]
+        factor = value.get("factor", 1)
+        maximum = value.get("max", float("inf"))
+        return min(base * factor ** (attempt - 1), maximum)
+
+    raise ValueError(f"Unknown resource spec: {rule}/{name}")
+    ```
+
+    **Usage in a Rule**
+
+    ```python
+    rule cellsnp:
+    threads:
+        resource("cellsnp", "threads")
+
+    resources:
+        mem_mb=lambda wc, attempt: resource("cellsnp", "mem_mb", attempt)
+    ```
+
 - [ ] Currently, the creation of h5ad from vireo output lies within the rule `demux_samples`. Split that rule into 2 rules:
   - [ ] RULE A: An h5ad is created after vireo output
   - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
@@ -54,6 +127,18 @@
     - [ ]  execution modules
     - [ ]  Output naming conventions
 - [ ]  Support ArchR and Signac QC for ATAC QC metrics.
+- [ ]  It will be easy to modify suffixes for files in `run_update_logs.sh`:
+  
+  ```sh
+  declare -A opt_values=(
+    [ss_l]="5"
+    # [pc_gc] removed entirely
+    ...
+  )
+  ```
+- [ ] in `run_update_logs.sh`, cmd_args is built as a bash array, not a concatenated string
+- [ ] in `run_update_logs.sh`, Add a lightweight check_required_args for REQUIRED ARGS - fails fast with a clear message.
+- [ ] append_optional_flags warns (not fails) if key not in opt_flags.
 
 ---
 
@@ -76,6 +161,8 @@
 
 - [ ] Fix `vcf_type` wildcard issue in the rule `demux_samples`
 - [ ] Fix automatic output directory selection in `demux_samples`
+- [ ] Currently, when per pool vcf is provided then it automatically uses it for vireo too. Provide an option to just use it for pileups and not for vireo.
+- [ ] Think in terms of Shannon entropy for a better selection of SNPs
 - [ ] When adding calico_solo or vireo results, include the existing demux stats file as input and append to it
 - [ ] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
   - [x] *swap correction* addresses proper demultiplex file per each pool.

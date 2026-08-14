@@ -47,7 +47,7 @@ checkpoint create_inp_splitBams:
         # demux_method=config['split_bams_pipeline']['split_by']['demux'],
         # inp_ext=config['split_bams_pipeline']['split_by']['input'],
         # h5ad_col=config['split_bams_pipeline']['split_by']['column'],
-        extra = partial(get_params_inp_splitBams, config=config),
+        extra = partial(get_params_create_inp_splitBams, config=config),
         script="helper_py_scripts/create_inp_splitBam_consolidated.py"
 
     # For snakemake < v8
@@ -156,49 +156,90 @@ rule filt_chr_bams:
         """
 
 
-rule filt_chr_bams_multiome:
+def _bam_pattern(config, modality_key: str) -> str:
+    """Return a wildcard-pattern path for a given modality bam key."""
+    bam_file = config['cellranger_arc_count'][modality_key]
+    short    = config['split_bams_pipeline']['short_bam']
+    base     = (
+        f"{config['cellranger_arc_count']['bams_dir']}"
+        f"{{pool}}/{bam_file}"
+    ).replace('.bam', short)
+    return base
+
+
+def _output_fcb_multiome(config) -> tuple[str, str]:
+    """
+    Return (bam_pattern, bai_pattern) for multiome, driven by {modality} wildcard.
+    The {modality} wildcard in the pattern lets Snakemake resolve it at runtime.
+    """
+    gex_bam  = _bam_pattern(config, 'gex_bam')
+    atac_bam = _bam_pattern(config, 'atac_bam')
+
+    # Use a Snakemake wildcard-keyed lookup at rule-match time via a
+    # dispatch pattern encoded directly into the path using {modality}
+    # We can't branch on modality here, so we rely on the {modality}
+    # wildcard constraint on the rule to route correctly — two rules,
+    # one per modality, or a shared pattern if paths can encode modality.
+    #
+    # Since gex and atac have different filenames, we need two rules.
+    # Return both as a dict for callers to pick from.
+    return {
+        "cdna": (gex_bam,  gex_bam  + '.bai'),
+        "atac": (atac_bam, atac_bam + '.bai'),
+    }
+
+
+_out_fcb_multiome = _output_fcb_multiome(config)
+
+rule filt_chr_bams_multiome_cdna:
+    wildcard_constraints:
+        modality="cDNA"
     input:
-        unpack(partial(get_bam, config=config))
-
+        # unpack(partial(get_bam, config=config))
+        unpack(lambda wildcards: get_bam(
+            SimpleNamespace(**vars(wildcards), modality="cDNA"), config
+        ))
     output:
-        gex_bam=(
-            f"{config['cellranger_arc_count']['bams_dir']}"
-            f"{config['fold_struct']}{{bam}}"
-            f"{config['split_bams_pipeline']['short_bam']}"
-        ), # generalize this
-        gex_bai=(
-            f"{config['cellranger_arc_count']['bams_dir']}"
-            f"{config['fold_struct']}{{bam}}"
-            f"{config['split_bams_pipeline']['short_bam']}.bai"
-        ),
-        atac_bam=(
-            f"{config['cellranger_arc_count']['bams_dir']}"
-            f"{config['fold_struct']}{{bam}}"
-            f"{config['split_bams_pipeline']['short_bam']}"
-        ), # generalize this
-        atac_bai=(
-            f"{config['cellranger_arc_count']['bams_dir']}"
-            f"{config['fold_struct']}{{bam}}"
-            f"{config['split_bams_pipeline']['short_bam']}.bai"
-        ) 
-
+        bam=_out_fcb_multiome["cdna"][0],
+        bai=_out_fcb_multiome["cdna"][1]
     params:
         sub_chr=partial(subset_to_chr, config=config),
-        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
-
-    # For snakemake < v8
-    # threads: 1
-
+        threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
     resources:
-        cpus_per_task=1, # For snakemake > v8
+        cpus_per_task=1,
         mem_mb=allocate_mem_FCB,
         time_min=allocate_time_FCB
-
     conda: "../envs/pysam.yaml"
-
     envmodules:
         "samtools"
+    shell:
+        """
+        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
+        samtools index -@ {params.threads} {output.bam}
+        """
 
+
+rule filt_chr_bams_multiome_atac:
+    wildcard_constraints:
+        modality="ATAC"
+    input:
+        # unpack(partial(get_bam, config=config))
+        unpack(lambda wildcards: get_bam(
+            SimpleNamespace(**vars(wildcards), modality="ATAC"), config
+        ))
+    output:
+        bam=_out_fcb_multiome["atac"][0],
+        bai=_out_fcb_multiome["atac"][1]
+    params:
+        sub_chr=partial(subset_to_chr, config=config),
+        threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
+    resources:
+        cpus_per_task=1,
+        mem_mb=allocate_mem_FCB,
+        time_min=allocate_time_FCB
+    conda: "../envs/pysam.yaml"
+    envmodules:
+        "samtools"
     shell:
         """
         samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
