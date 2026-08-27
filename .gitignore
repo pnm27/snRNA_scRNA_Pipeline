@@ -6,3 +6,4 @@ misc_scripts/
 schema/config.schema.json
 docs/build/
 docs/source/autoapi/
+vcf_threshold4vireo.xlsx
