@@ -16,5 +16,4 @@ helper_py_scripts
    demul_samples
    demultiplex_helper_funcs
    qtltools_plot_samples_wo_gt_multiprocess
-   split_seth5ad_to_samph5ad
    update_logs
