@@ -148,8 +148,11 @@ autodoc_mock_imports = [
     "scanpy",
     "anndata",
     "solo-sc",
-    "pegasuspy",
+    "pegasus",
+    "pegasusio",
     "matplotlib",
+    "",
+
 ]
 
 # moves types into the description section
