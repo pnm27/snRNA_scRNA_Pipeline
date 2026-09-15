@@ -166,6 +166,14 @@ def targets_SplitBams(multiome: bool = False) -> list:
     ]
 
 
+def targets_SplitBams_new(multiome: bool = False) -> list:
+    out_dir  = f"{config['split_bams_pipeline']['split_bams_dir']}"
+    op = config["fold_struct_bam_split2"]
+    return [
+        os.path.join(out_dir, op, "{donor}.bam")
+    ]
+
+
 def targets_gt_demux_identify_swaps(multiome: bool = False) -> list:
     # sub_dirs = ["ATAC", "cDNA"] if multiome else ["cDNA"]
     out_dir = config["identify_swaps"]["mbv_out_dir"]
@@ -358,12 +366,15 @@ def produce_targets_dynamic(wildcards) -> list:
         return _expand_pools_donors(targets_SplitBams()[0], wildcards)
 
     elif step == "starsolo_split_bams_gt_demux":
-        targets = targets_SplitBams()
-        return [
-            f
-            for i, t in enumerate(targets)
-            for f in _expand_pools_donors(f"{t}.txt" if i == 0 else t, wildcards)
-        ]
+        # targets = targets_SplitBams()
+        # return [
+        #     f
+        #     for i, t in enumerate(targets)
+        #     for f in _expand_pools_donors(f"{t}.txt" if i == 0 else t, wildcards)
+        # ]
+        return _expand_pools_donors(
+            targets_SplitBams_new(multiome=False)[0], wildcards
+        )
 
     elif step == "starsolo_split_bams_gt_demux_multi_vcf":
         suff_h5ad = config["gt_demux_pipeline"]["final_count_matrix_h5ad"]

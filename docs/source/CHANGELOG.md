@@ -17,6 +17,7 @@
 - Consolidate demultiplexing into a single rule (combine all 4 `demux_samples_*` rules)
 - Most of the parameter functions have been moved to `lib/params.py`.
 - Most of the input functions have been moved to `lib/io.py`.
+- Input file now supports a 2-columned (tab-separated) file containing *pool*, *SS_MEM*, where *SS_MEM* is RAM memory per thread/task.
 
 ---
 

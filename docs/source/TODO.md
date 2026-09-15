@@ -80,6 +80,18 @@
   - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
 - [ ] Need a way to run the rule `vireoSNP` using a previous run of `cellSNP` (useful when there's a vcf for w_gt run but the SNPs haven't changed - many WGS)
 - [ ] Currently, the checkpoint `create_inp_splitBams` is handling the exact donors that will undergo splitting and further qtltools check, if needed. Make it to filter based on if cellSNP produces an empty `cellSNP.base.vcf.gz` too.
+- [ ] Change method for creating *Final* per-donor bams after genotype checks.
+ *BEFORE* : For each group of samples that require the same round of demultiplexing, run with **new_config.yaml** setup like:
+
+ ```yaml
+ gt_check: yes # yes or no
+ select_fastqs: subsetA_samples
+ split_bams_pipeline:
+  subset_chr: null
+ ```
+
+  *UPGRADE*: Use `Final_swap_correction` file to utilize the final version of demultiplexing results to produce the per-donor bams.
+
 - [ ] Currently, the dash app can't compare samples. Make it so that a pair-wise sample (can be donor vs donor or pool vs pool) sub-plot pop up.
 - [ ] Next update will be split the design for sc/snRNA seq, scATAC and multiome. Pipeline will be restructured.
 - [ ] `wildcards.modality` will handle cDNA/RNA, HTO or ATAC rather than functions (Input, params, etc.)
@@ -136,6 +148,7 @@
     ...
   )
   ```
+
 - [ ] in `run_update_logs.sh`, cmd_args is built as a bash array, not a concatenated string
 - [ ] in `run_update_logs.sh`, Add a lightweight check_required_args for REQUIRED ARGS - fails fast with a clear message.
 - [ ] append_optional_flags warns (not fails) if key not in opt_flags.

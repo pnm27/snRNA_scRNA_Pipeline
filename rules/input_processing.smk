@@ -21,7 +21,9 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
 
     with open(config['select_fastqs']) as fq:
         for line in fq:
-            if not line.startswith('#'):
+            if not line.strip():
+                continue  # Skips the empty line
+            elif not line.startswith('#'):
                 line_sp = line.split('\t')
                 pool_name = line_sp[0].strip().replace('-cDNA', '')
                 POOLS.append(pool_name)

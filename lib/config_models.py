@@ -43,7 +43,11 @@ class DemuxConfig:
                         if create_h5ad
                         else config["gt_demux_pipeline"]["donors_classification"]
                     ),
-                    fold_struct=config['fold_struct_gt_demux'].rstrip('/')
+                    fold_struct=(
+                        config['fold_struct_gt_demux'].rstrip('/')
+                        if create_h5ad
+                        else config['fold_struct_gt_demux']
+                    )
                 )
             )
 
@@ -75,8 +79,11 @@ class DemuxConfig:
                         if create_h5ad
                         else config["gt_demux_pipeline"]["donors_classification"]
                     ),
-                    fold_struct=config['fold_struct_gt_demux'].rstrip('/')
-
+                    fold_struct=(
+                        config['fold_struct_gt_demux'].rstrip('/')
+                        if create_h5ad
+                        else config['fold_struct_gt_demux']
+                    )
                 ),
                 DemuxResult(
                     demux_type="solo",

@@ -40,6 +40,7 @@ complex_tutorials
 :caption: Reference
 :maxdepth: 3
 
+modules
 glossary
 ```
 
