@@ -3,6 +3,7 @@
   "title": "H5AD Column Transformation Schema and Annotations for Log File",
   "type": "object",
   "required": ["columns"],
+  "description": "This contains annotations that will be either populated in the h5ads and/or the summary log file. ",
   "properties": {
     "columns": {
       "type": "array",
@@ -10,10 +11,10 @@
         "type": "object",
         "required": ["name", "source_value"],
         "properties": {
-          "name": { "type": "string" },
-          "source_value": { "type": "string" },
-          "value_column": { "type": "string" },
-          "lookup_column": { "type": "string" },
+          "name": { "type": "string", "description": "Name of the obs column for the h5ad. \nWhen `skip_h5ad_annotation` is true, this column will not be added to the h5ad." },
+          "source_value": { "type": "string", "description": "This can either be a true singular value (e.g. 'project_name' which will be same for the whole h5ad) or a 'lookup' value that will be used to fetch the actual value from a lookup table (usually 'wet_lab_file')." },
+          "value_column": { "type": "string", "description": "The column name in the lookup table (usually 'wet_lab_file') that contains the actual value to be used for this obs column." },
+          "lookup_column": { "type": "string", "description": "The column name in the lookup table (usually 'wet_lab_file') that will be used to match against the source value." },
           "transformations": {
             "type": "array",
             "items": {
@@ -27,9 +28,46 @@
             "type": "array", 
             "items" : {"type": "string"},
             "maxItems": 3,
-            "minItems": 3
+            "minItems": 3,
+            "description": "This conforms to the standard 3-levelled hierarchy of column names for the metric to retain in summary log file."
+          },
+          "skip_h5ad_annotation": { 
+            "type": "boolean", 
+            "description": "Whether to skip annotation in the h5ad file or not." 
           }
         }
+      }
+    },
+    "swap_correction_df": {
+      "type": "object",
+      "required": ["pool_column", "demultiplex_version_column", "donor_from", "donor_to"],
+      "description": "All the values corresponds to the column names in the file containing swap corrections created after genotype checks. \nThis serves the purpose to finally assign proper donor names to each demultiplexed donor from each pool. \nIt serves to change the names in the h5ad as well as the summary log file.",
+      "properties": {
+        "pool_column": { "type": "string", "description": "In the swap correction file, column name that contains the pool names." },
+        "demultiplex_version_column": { "type": "string", "description": "In the swap correction file, column name that corresponds to the demultiplex version finally used for each pool." },
+        "donor_from": { "type": "string", "description": "In the swap correction file, column name for the donor that was subjected to genotype check." },
+        "donor_to": { "type": "string", "description": "In the swap correction file, column name for the donor that finally assigned after genotype check." }
+      }
+    },
+    "demultiplex_paths": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "description": "The property name should be a value in the column containing the final demultiplex version to use (`demultiplex_version_column` in `swap_correction_df`) in the file containing swap corrections. ",
+        "required": ["demux"],
+        "properties": {
+          "demux": { "type": "string", "description": "The path to h5ad files created for this 'version' (specified by the `name` property) of the demultiplexing run."},
+          "info": { "type": "string", "description": "The path to the demultiplexing info for this 'version' (specified by the `name` property) of the demultiplexing run." }
+        }
+      }
+    },
+    "individualID_conv_df": {
+      "type": "object",
+      "required": ["from_donorName", "to_donorName"],
+      "description": "Use this to describe the columns in a converter file, which is needed to change the names assigned during the genotype checks phase. \nExample: when the WGS names and the sample names differ then genotype checks, including the file containing swap corrections, will contain WGS names and a conversion to 'true' donor names is needed.",
+      "properties": {
+        "from_donorName": { "type": "string", "description": "The column name containing the donor names that matches those in the file containing swap corrections" },
+        "to_donorName": { "type": "string", "description": "The column name containing the 'true' donor names to which the names in the file containing swap corrections should be converted to." }
       }
     }
   },

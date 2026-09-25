@@ -18,6 +18,7 @@ params["DEMUX_SUFFIX"]="--dem_info"
 params["WET_LAB_FILE"]="-w"
 params["ANNOT"]="--common_annotations"
 params["SWAP_CORRECT_DF"]="--swap_correct"
+params["DONOR_NAME_CONV_DF"]="--donorName_correct"
 
 
 # CHANGE THIS ACCORDING TO PROJECT REQUIREMENTS
@@ -34,6 +35,7 @@ args["DEMUX_SUFFIX"]="_STARsolo_vS_info.tsv"
 args["WET_LAB_FILE"]=""
 args["ANNOT"]=""
 args["SWAP_CORRECT_DF"]=""
+args["DONOR_NAME_CONV_DF"]=""
 verbosity="" # Can be set to -v, -vv or -vvv for verbose output, else leave it empty
 
 

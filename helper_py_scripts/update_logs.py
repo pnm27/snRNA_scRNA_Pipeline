@@ -9,7 +9,8 @@ import argparse, warnings # errno
 from demultiplex_helper_funcs import (
     process_columns, auto_read, 
     has_wet_lab_value_column,
-    get_demux_paths, process_swap_correction,
+    get_demux_paths, final_demultiplex_version,
+    # process_swap_correction,
     get_filename, write_logs
 )
 from jsonschema import Draft202012Validator
@@ -146,6 +147,7 @@ def get_argument_parser():
     )
     parser.add_argument('-w', '--wet_lab_file', help="Path to file that contains either/all of: HTO info for each set, annotations, etc."
     )
+    parser.add_argument('--donorName_correct', help="A csv file that contains old name and the new name", dest='donName_conv_df')
     parser.add_argument('--verbose', '-v', action='count', default=0, 
         help="Increase output verbosity, default is ERROR and above "
         "(e.g. default for ERROR, -v for WARNING, -vv for INFO, -vvv for DEBUG)"
@@ -169,8 +171,12 @@ def main():
     pic_dir = args.picard_dir
     dem_dir = args.demul_dir # DEPRACATED
     samples = args.samples if args.samples else args.samples_deprecated
+
+    # Set Defaults
     df = None # Default - Wet Lab File is not provided
-    swap_corr_df = None # Default - Swap Correction File is not provided
+    swap_corr_df = None # Default - Swap Correction file is not provided
+    donName_conv_df = None # Default - Donor Name conversion file is not provided
+
 
     if dem_dir is not None:
         warnings.warn((
@@ -250,20 +256,13 @@ def main():
 
     # If file doesn't exist create one else open as pandas dataframe
     try:
-        #if os.path.isfile(snakemake.output[0]) :
         combo_log = pd.read_csv(out, sep = "\t", header=[0, 1, 2])
 
         # DON'T SUPPORT CATCHING OLDER FILES
-        # Catch older files that may have lesser columns than expected
-        # if combo_log.shape[1] != cl.shape[0]:
-        #     combo_log = pd.DataFrame(columns=pd.MultiIndex.from_frame(cl, names=["prog", "sub_prog", "curr_val"]))
 
     except Exception as e:
         # Catch any other potential exceptions
         print(f"Will create a new file: {out}")
-
-    if args.swap_correct is not None:
-        swap_corr_df = auto_read(args.swap_correct)
 
     if args.common_annotations is not None:
 
@@ -291,7 +290,21 @@ def main():
         # Get all columns for the output df
         extra_cols = [ col["columnInLogs"] for col in data["columns"] if "columnInLogs" in col]
         cols_list = get_all_columns(map_names, extra_cols)
-        demul_dirs = get_demux_paths(data)
+        demul_dirs = get_demux_paths(data, info=True)
+
+    if args.swap_correct is not None:
+        swap_corr_df = auto_read(args.swap_correct)
+        pool_name = data['swap_correction_df']['pool_column']
+        don_name_from = data['swap_correction_df']['donor_from']
+        don_name_to = data['swap_correction_df']['donor_to']
+        donor_map = swap_corr_df.set_index([pool_name, don_name_from])[don_name_to].to_dict()
+
+    if args.donName_conv_df is not None:
+        donName_conv_df = auto_read(args.donName_conv_df)
+        donName_conv_from = data["individualID_conv_df"]["from_donorName"]
+        donName_conv_to = data["individualID_conv_df"]["to_donorName"]
+        donName_map = dict(zip(donName_conv_df[donName_conv_from], donName_conv_df[donName_conv_to]))
+
 
     # Process each sample -----------------------------------------------------------------------------------------------------------------------------------------------
     # List containing per sample values as lists (list of lists)
@@ -309,10 +322,17 @@ def main():
         bam_st = args.bam_struct.replace("<sample>", sample)
         pc_st = args.pc_struct.replace("<sample>", sample) if args.pc_struct is not None else ""
         dem_st = args.dem_struct.replace("<sample>", sample) if args.dem_struct is not None else ""
-        
 
-        dem_dir = process_swap_correction(data, swap_df=swap_corr_df,
-                pool_name=sample, demux_paths=demul_dirs, logger=logger)
+        if 'swap_correction_df' not in data:
+            warnings.warn((
+                "No swap_correction metrics provided! "
+                "Can't write swap corrected statistics!!!"
+            ), UserWarning)
+        else:
+            dem_dir = final_demultiplex_version(data['swap_correction_df'], 
+                swap_df=swap_corr_df, pool_name=sample, 
+                demux_paths=demul_dirs, logger=logger
+            )
         
         # Get full filenames if user requires them to be tabulated
         ss_log_final = get_filename(bam_dir, bam_st, sample, args.ss_l)
@@ -323,7 +343,7 @@ def main():
         ss_bc_stats = get_filename(bam_dir, bam_st, sample, args.ss_bc)
         pc_gc_file = get_filename(pic_dir, pc_st, sample, args.pc_gc)
         pc_rs_file = get_filename(pic_dir, pc_st, sample, args.pc_rs)
-        dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info)
+        dem_file = get_filename(dem_dir, dem_st, sample, args.dem_info, new_demux=True) # For older formats, use False
 
 
         # Test if at least one of the input files exists
@@ -363,20 +383,7 @@ def main():
         }
         
         for k, v in per_samp_check.items():
-            if k == 'REG' and not v:
-                warnings.warn((
-                    "The STARsolo log file is not present for the sample {sample}! "
-                ))
-
-                # ss_dep_files = [
-                #     'REG', 'GENE_FEATURE', 'GENE_SUMM',
-                #     'GENEFULL_FEATURE', 'GENEFULL_SUMM',
-                #     'BARCODE_STATS'
-                # ]
-                # ss_dep_files = [ j for j in ss_dep_files if j not in samp_excl_progs ]
-                # samp_excl_progs.extend(ss_dep_files)
-
-            elif k not in samp_excl_progs and not v:
+            if k not in samp_excl_progs and not v:
                 samp_excl_progs.append(k)
 
 
@@ -443,6 +450,37 @@ def main():
 
             except Exception as e:
                 print(f"Error processing {mode}: {e}")
+
+    # Swap correction based on mapping file
+    if swap_corr_df is not None and not swap_corr_df.empty:
+
+        def rename_donors(row):
+            import re
+            pattern = re.compile(r"([^:,]+)\s*:\s*(\d+)")
+
+            def replace(match):
+                donor = match.group(1).strip()
+                count = match.group(2)
+
+                new_donor = donor_map.get((row[("LAB", "SAMPLE", "SAMPLE")], donor), donor)
+
+                # Drop donor if mapping exists but is NaN
+                if pd.isna(new_donor):
+                    return ""
+                elif donName_conv_df is not None and not donName_conv_df.empty and new_donor in donName_map:
+                    new_donor = donName_map.get(new_donor, new_donor)
+
+                return f"{new_donor}: {count}"
+
+            return pattern.sub(replace, row[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")])
+
+        combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = combo_log.apply(rename_donors, axis=1)
+        # Clean up separators left behind by dropped donors
+        combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = (
+            combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")]
+            .str.replace(r"[:,\s]*,", ",", regex=True)
+            .str.strip(" ,")
+            )
 
 
     combo_log.replace([np.inf, -np.inf], np.nan, inplace=True)

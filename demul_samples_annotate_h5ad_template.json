@@ -4,54 +4,62 @@
       "name": "Batch",
       "source_value": "args.p",
       "columnInLogs": [ "LAB", "SAMPLE", "SAMPLE"]
-
     },
     {
-      "name": "replicate",
+      "name": "individualID",
       "source_value": "args.p",
-      "transformations": [
-        {
-          "type": "pythonic",
-          "operation": "split",
-          "by": "-"
-        },
-        {
-          "type": "pythonic",
-          "operation": "select_index",
-          "index": -1
-        }
-      ],
-      "columnInLogs": [ "LAB", "BATCH", "REP"]
+      "lookup_column": "wet_lab.Batch",
+      "value_column": "wet_lab.individualID",
+      "columnInLogs": [ "LAB", "SAMPLE", "individualID"]
     },
     {
-      "name": "set",
+      "name": "brain_region",
       "source_value": "args.p",
-      "transformations": [
-        {
-          "type": "pythonic",
-          "operation": "split",
-          "by": "-"
-        },
-        {
-          "type": "pythonic",
-          "operation": "select_range",
-          "end": -1
-        },
-        {
-          "type": "pythonic",
-          "operation": "join",
-          "by": "-"
-        }
-      ],
-      "columnInLogs": [ "LAB", "BATCH", "SET"]
+      "lookup_column": "wet_lab.Batch",
+      "value_column": "wet_lab.brain_region",
+      "columnInLogs": [ "LAB", "SAMPLE", "BRAIN_REGION"]
+    },
+    {
+      "name": "disease_status",
+      "source_value": "args.p",
+      "lookup_column": "wet_lab.Batch",
+      "value_column": "wet_lab.Disease_status",
+      "columnInLogs": [ "LAB", "SAMPLE", "DISEASE_STATUS"]
+    },
+    {
+      "name": "Set_number",
+      "source_value": "args.p",
+      "lookup_column": "wet_lab.Batch",
+      "value_column": "wet_lab.Set_number",
+      "columnInLogs": [ "LAB", "BATCH", "SET"],
+      "skip_h5ad_annotation": true
+    },
+    {
+      "name": "Preparer",
+      "source_value": "args.p",
+      "lookup_column": "wet_lab.Batch",
+      "value_column": "wet_lab.Preparer"
     }
   ],
   "swap_correction_df": {
     "pool_column": "Sample",
-    "demultiplex_version_column": "Version_used"
+    "demultiplex_version_column": "Version_used",
+    "donor_from": "Donor_name",
+    "donor_to": "Solution"
   },
   "demultiplex_paths": {
-    "w_gt":  "/path/to/final_count_matrix_w_gt/",
-    "wo_gt": "/path/to/final_count_matrix/"
+    "wo_gt": {
+        "demux": "/path/to/vireoSNP_wo_gt/",
+        "info": "/path/to/demultiplex/info/vireoSNP_wo_gt/"
+    },
+    "w_gt": {
+        "demux": "/path/to/vireoSNP_w_gt/",
+        "info": "/path/to/demultiplex/info/vireoSNP_w_gt/"
+    }
+  },
+  "individualID_conv_df": {
+    "from_donorName": "from",
+    "to_donorName": "to"
   }
+
 }

@@ -96,7 +96,19 @@ class DemuxConfig:
                     fold_struct=config['fold_struct_demux']
                 )
             ])
-
+        elif demux_type is None or demux_type == "none" or not demux_type:
+            demuxes.append(
+                DemuxResult(
+                    demux_type=False,
+                    outdir=config[
+                        'hashsolo_demux_pipeline'
+                    ]['final_count_matrix_dir'],
+                    suffix=config[
+                        'hashsolo_demux_pipeline'
+                    ]['final_count_matrix_h5ad'],
+                    fold_struct=config['fold_struct_demux']
+                )
+            )
         else:
             raise ValueError(
                 f"Unsupported demux_type: {demux_type}"

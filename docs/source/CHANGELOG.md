@@ -43,6 +43,9 @@
 - `demultiplex_helper_funcs.py`:
   - Added support for annotating outputs using a JSON file
   - Created dataclass for custom outputs and views
+  - Added a new parameter to the function `get_filename` to support latest demultiplexing info filenames.
+  - Changed previously named function `process_swap_correction` to `final_demultiplex_version` due to the name being a misnomer.
+  - Added a new `process_swap_correction` function which now processes donor name correction.
 - Changed `vcf_type` wildcard to support both multi-vcf and multiome setups
 - Function `ret_htos_calico_solo` now returns a tuple instead of a list
 - hashsolo now runs via `scanpy.external` (deprecated: `solo-sc`)
@@ -144,6 +147,8 @@
 - Accepts new parameters for annotations: wet lab file and annotation JSON.
 - Use `empty` values to emulate missing picard or demultiplexing data.
 - Supports *swap correction*.
+- To support newer demultiplexing info output names (*cDNA_STARsolo_vS_info.tsv*, *ATAC_STARsolo_vS_info.tsv*).
+- Changed the function `process_swap_correction`
 
 ---
 

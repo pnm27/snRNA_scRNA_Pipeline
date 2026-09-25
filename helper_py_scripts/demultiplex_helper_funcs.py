@@ -921,7 +921,9 @@ def process_columns(config: dict[str, Any],
 def get_filename(loc_dir: str | None, 
     file_struct: str | None, 
     fn: str | None, 
-    suffix: str | None) -> list[str]:
+    suffix: str | None,
+    new_demux: bool = False,
+    ) -> list[str]:
     """
     Find matching file(s) in one or more directories.
 
@@ -937,6 +939,9 @@ def get_filename(loc_dir: str | None,
         Filename identifier used in the search pattern.
     suffix
         File suffix to match. If ``None``, an empty string is returned.
+    new_demux
+        This parameter makes it compatible with latest demultiplexing 
+        naming convention.
 
     Returns
     -------
@@ -964,7 +969,10 @@ def get_filename(loc_dir: str | None,
         match = ""
 
         if file_struct.endswith("/"):
-            pattern = Path(directory) / file_struct / f"{fn}*{suffix}"
+            if new_demux:
+                pattern = Path(directory) / f"{file_struct}*{suffix}"
+            else:
+                pattern = Path(directory) / file_struct / f"{fn}*{suffix}"
             matches = glob2.glob(str(pattern))
 
         elif file_struct == "":
@@ -994,17 +1002,20 @@ def get_filename(loc_dir: str | None,
 
 
 # get demultiplex_paths
-def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
+def get_demux_paths(config: dict[str, Any], info: bool = False) -> dict[str, str]:
     r""" Function that returns directories with demultiplex results
 
     This function extracts all the directories containing demultiplexing
-    data and returns them.
+    data and returns them along with the info file. This is used for 
+    writing swap corrected statistics.
 
     Paramters
     ---------
     config
         A dict formed from JSON parsing containing recipes for adding 
         annotations.
+    info
+        If True, returns the info file along with the directories.
 
     Returns
     -------
@@ -1021,13 +1032,20 @@ def get_demux_paths(config: dict[str, Any]) -> dict[str, str]:
             """, UserWarning
         )
     else:
-        result.update(config['demultiplex_paths'])
+        if not info:
+            result.update(
+                {k: v.get('demux', '') for k, v in config['demultiplex_paths'].items()}
+            )
+        else:
+            result.update(
+                {k: v.get('info', '') for k, v in config['demultiplex_paths'].items()}
+            )
 
     return result
 
 
-# PROCESS SWAP CORRECTION
-def process_swap_correction(config: dict[str, Any], 
+# previously called process_swap_correction
+def final_demultiplex_version(config: dict[str, Any], 
     swap_df: pd.DataFrame | None, pool_name: str, 
     demux_paths: dict[str, str],
     logger: logging.Logger | None = None) -> str | None:
@@ -1040,8 +1058,7 @@ def process_swap_correction(config: dict[str, Any],
     Paramters
     ---------
     config
-        A dict formed from JSON parsing containing recipes for adding 
-        annotations.
+        A dict containing info on the swap correction columns.
     swap_df
         A pandas dataframe containing swap corrected results.
     pool_name
@@ -1076,33 +1093,55 @@ def process_swap_correction(config: dict[str, Any],
         f"{pool_name} not present in the swap_correction file! "
         "Skipping writing the demultiplexing info!!!"
     )
-    notFound_msg = (
-        "No swap_correction metrics provided! "
-        "Can't write swap corrected statistics!!!"
-    )
     colsNotFound_msg = (
         "Given columns not present in the swap_correction file! " 
         "Check their names!!!"
     )
-    if 'swap_correction_df' not in config:
-        warnings.warn(notFound_msg, UserWarning)
-        return None
+    # if 'swap_correction_df' not in config:
+    #     warnings.warn(notFound_msg, UserWarning)
+    #     return None
+    # else:
+    if all( f in config for f in lookup_columns ):
+        pool_col = config['pool_column']
+        dem_col = config['demultiplex_version_column']
+        try:
+            dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
+        except IndexError:
+            warnings.warn(colsFound_msg, UserWarning)
+            logger.warning(colsFound_msg)
+            return None
+        result = demux_paths[dem_val]
+        
     else:
-        if all( f in config['swap_correction_df'] for f in lookup_columns ):
-            pool_col = config['swap_correction_df']['pool_column']
-            dem_col = config['swap_correction_df']['demultiplex_version_column']
-            try:
-                dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
-            except IndexError:
-                warnings.warn(colsFound_msg, UserWarning)
-                logger.warning(colsFound_msg)
-                return None
-            result = demux_paths[dem_val]
-            
-        else:
-            warnings.warn(colsNotFound_msg, UserWarning)
+        warnings.warn(colsNotFound_msg, UserWarning)
     
     return result
+
+
+# def process_swap_correction():
+#     import ast
+#     result = {}
+
+#     for pair in s.split(","):
+#         key, value = pair.split(":")
+#         result[key.strip()] = int(value.strip())
+
+#     if 'swap_correction_df' not in config:
+#             warnings.warn(notFound_msg, UserWarning)
+#             return None
+#         else:
+#             if all( f in config['swap_correction_df'] for f in lookup_columns ):
+#                 pool_col = config['swap_correction_df']['pool_column']
+#                 dem_col = config['swap_correction_df']['demultiplex_version_column']
+#                 try:
+#                     dem_val = swap_df.loc[swap_df[pool_col] == pool_name, dem_col].values[0]
+#                 except IndexError:
+#                     warnings.warn(colsFound_msg, UserWarning)
+#                     logger.warning(colsFound_msg)
+#                     return None
+#                 result = demux_paths[dem_val]
+#     print(result)
+
 
 # ---------------------------------------------------------------------------
 
@@ -1337,7 +1376,8 @@ def write_logs(columns: NDArray,
     mapper: pd.DataFrame, 
     all_files_dict: dict[str, list[str]], 
     no_progs: list, sample: str, logger=None, 
-    processed_data=None):
+    processed_data=None,
+    ):
     """
     Build one output row for a single sample.
 
