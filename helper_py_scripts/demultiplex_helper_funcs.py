@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import pandas as pd, warnings, os, sys
-import regex, logging, glob2, logging
+import regex, logging, glob2, logging, re
 from collections import OrderedDict as ord_dict
 from typing import Union, Optional, Any # Need verion > 3.10
 from dataclasses import dataclass
@@ -890,6 +890,8 @@ def process_columns(config: dict[str, Any],
     result = []
 
     for col in config["columns"]:
+        if col.get('skip_h5ad_annotation', False):
+            continue
         current_value = col["source_value"]
         current_value = pool_name if current_value == 'args.p' else current_value
         # Use Wet lab spreadsheet
@@ -1439,5 +1441,101 @@ def write_logs(columns: NDArray,
     print(f"Finished processing {sample}")
 
     return new_row
+
+
+# Compile once, globally — not per-row
+_DONOR_PATTERN = re.compile(r"([^:,]+)\s*:\s*(\d+)")
+_CLEANUP_PATTERN = re.compile(r"[:,\s]*,")
+
+
+def _rename_donors_in_cell(
+    cell_value: str,
+    sample_id: str,
+    donor_map: dict,
+    donName_map: dict | None = None,
+) -> str:
+    """
+    Renames (or drops) donors in a demux cell string based on mapping dicts.
+
+    Parameters
+    ----------
+    cell_value
+        The raw string, e.g. "donorA: 10, donorB: 5"
+    sample_id
+        The sample key used to look up donor_map.
+    donor_map
+        Dict keyed by (sample_id, donor_name) → new donor name or NaN.
+    donName_map
+        Optional display-name conversion dict.
+
+    Returns
+    -------
+        Cleaned string with donors renamed/dropped.
+    """
+    def replace(match: re.Match) -> str:
+        donor = match.group(1).strip()
+        count = match.group(2)
+        new_donor = donor_map.get((sample_id, donor), donor)
+
+        if pd.isna(new_donor):
+            return ""
+
+        if donName_map and new_donor in donName_map:
+            new_donor = donName_map[new_donor]
+
+        return f"{new_donor}: {count}"
+
+    result = _DONOR_PATTERN.sub(replace, cell_value)
+    result = _CLEANUP_PATTERN.sub(",", result).strip(" ,")
+    return result
+
+
+def apply_donor_renaming(
+    combo_log: pd.DataFrame,
+    swap_corr_df: pd.DataFrame | None,
+    donor_map: dict,
+    donName_map: dict | None,
+    target_col: tuple,
+    sample_col: tuple,
+) -> pd.DataFrame:
+    """
+    Applies rename_donors_in_cell across a DataFrame column.
+    Returns the modified DataFrame.
+
+    Parameters
+    ----------
+    combo_log
+        The DataFrame containing the summary statistics.
+    swap_corr_df
+        DataFrame used for swap correction; if None or empty, no renaming is applied.
+    donor_map
+        Dict mapping donor names after genotype checking to assign 'corrected' donor names, 
+        with the value being the new donor name or NaN.
+    donName_map
+        Optional changing of 'corrected' donor names to display names. e.g. WGS names are 
+        used for genotype check, etc. but want to report 'individualID'
+    target_col
+        Tuple indicating the column in combo_log to apply renaming.
+    sample_col
+        Tuple indicating the column in combo_log containing sample IDs.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Modified DataFrame with donors renamed/dropped in the target column.
+    """
+    if swap_corr_df is None or swap_corr_df.empty:
+        return combo_log
+
+    combo_log[target_col] = combo_log.apply(
+        lambda row: _rename_donors_in_cell(
+            cell_value=row[target_col],
+            sample_id=row[sample_col],
+            donor_map=donor_map,
+            donName_map=donName_map,
+        ),
+        axis=1,
+    )
+    return combo_log
 
 # -------------------------------------------------------------------

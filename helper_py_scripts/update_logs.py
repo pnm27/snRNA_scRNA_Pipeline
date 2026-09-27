@@ -11,7 +11,8 @@ from demultiplex_helper_funcs import (
     has_wet_lab_value_column,
     get_demux_paths, final_demultiplex_version,
     # process_swap_correction,
-    get_filename, write_logs
+    get_filename, write_logs,
+    apply_donor_renaming
 )
 from jsonschema import Draft202012Validator
 from pathlib import Path
@@ -451,37 +452,45 @@ def main():
             except Exception as e:
                 print(f"Error processing {mode}: {e}")
 
-    # Swap correction based on mapping file
-    if swap_corr_df is not None and not swap_corr_df.empty:
+    # OLD STYLE
+    # # Swap correction based on mapping file
+    # if swap_corr_df is not None and not swap_corr_df.empty:
 
-        def rename_donors(row):
-            import re
-            pattern = re.compile(r"([^:,]+)\s*:\s*(\d+)")
+    #     def rename_donors(row):
+    #         import re
+    #         pattern = re.compile(r"([^:,]+)\s*:\s*(\d+)")
 
-            def replace(match):
-                donor = match.group(1).strip()
-                count = match.group(2)
+    #         def replace(match):
+    #             donor = match.group(1).strip()
+    #             count = match.group(2)
 
-                new_donor = donor_map.get((row[("LAB", "SAMPLE", "SAMPLE")], donor), donor)
+    #             new_donor = donor_map.get((row[("LAB", "SAMPLE", "SAMPLE")], donor), donor)
 
-                # Drop donor if mapping exists but is NaN
-                if pd.isna(new_donor):
-                    return ""
-                elif donName_conv_df is not None and not donName_conv_df.empty and new_donor in donName_map:
-                    new_donor = donName_map.get(new_donor, new_donor)
+    #             # Drop donor if mapping exists but is NaN
+    #             if pd.isna(new_donor):
+    #                 return ""
+    #             elif donName_conv_df is not None and not donName_conv_df.empty and new_donor in donName_map:
+    #                 new_donor = donName_map.get(new_donor, new_donor)
 
-                return f"{new_donor}: {count}"
+    #             return f"{new_donor}: {count}"
 
-            return pattern.sub(replace, row[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")])
+    #         return pattern.sub(replace, row[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")])
 
-        combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = combo_log.apply(rename_donors, axis=1)
-        # Clean up separators left behind by dropped donors
-        combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = (
-            combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")]
-            .str.replace(r"[:,\s]*,", ",", regex=True)
-            .str.strip(" ,")
-            )
+    #     combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = combo_log.apply(rename_donors, axis=1)
+    #     # Clean up separators left behind by dropped donors
+    #     combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")] = (
+    #         combo_log[("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")]
+    #         .str.replace(r"[:,\s]*,", ",", regex=True)
+    #         .str.strip(" ,")
+    #         )
 
+    # Make TARGET_COL to use DEMUX_VS, DEMUX_CS, etc. as needed
+    TARGET_COL = ("STARsolo", "DEMUX_VS", "N_CELLS_AFTER_DEMUX_VS")
+    SAMPLE_COL = ("LAB", "SAMPLE", "SAMPLE")
+
+    combo_log = apply_donor_renaming(
+        combo_log, swap_corr_df, donor_map, donName_map, TARGET_COL, SAMPLE_COL
+    )
 
     combo_log.replace([np.inf, -np.inf], np.nan, inplace=True)
     combo_log.to_csv(out, sep = "\t", index=False)
