@@ -13,26 +13,43 @@
       "columnInLogs": [ "LAB", "SAMPLE", "individualID"]
     },
     {
-      "name": "brain_region",
+      "name": "replicate",
       "source_value": "args.p",
-      "lookup_column": "wet_lab.Batch",
-      "value_column": "wet_lab.brain_region",
-      "columnInLogs": [ "LAB", "SAMPLE", "BRAIN_REGION"]
+      "transformations": [
+        {
+          "type": "pythonic",
+          "operation": "split",
+          "by": "-"
+        },
+        {
+          "type": "pythonic",
+          "operation": "select_index",
+          "index": -1
+        }
+      ],
+      "columnInLogs": [ "LAB", "BATCH", "REP"]
     },
     {
-      "name": "disease_status",
+      "name": "Set",
       "source_value": "args.p",
-      "lookup_column": "wet_lab.Batch",
-      "value_column": "wet_lab.Disease_status",
-      "columnInLogs": [ "LAB", "SAMPLE", "DISEASE_STATUS"]
-    },
-    {
-      "name": "Set_number",
-      "source_value": "args.p",
-      "lookup_column": "wet_lab.Batch",
-      "value_column": "wet_lab.Set_number",
-      "columnInLogs": [ "LAB", "BATCH", "SET"],
-      "skip_h5ad_annotation": true
+      "transformations": [
+        {
+          "type": "pythonic",
+          "operation": "split",
+          "by": "-"
+        },
+        {
+          "type": "pythonic",
+          "operation": "select_range",
+          "end": -1
+        },
+        {
+          "type": "pythonic",
+          "operation": "join",
+          "by": "-"
+        }
+      ],
+      "columnInLogs": [ "LAB", "BATCH", "SET"]
     },
     {
       "name": "Preparer",
