@@ -57,7 +57,7 @@ rule cellranger_arc_count:
         partial(get_fastqs, config=config)
 
     params:
-        ref=config['cellranger_arc_ref'],
+        ref=config['cellranger_arc_count']['ref']['genome'],
         max_localcores=lambda wildcards, resources: resources.cpus_per_task*4,
         max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task/1000,
         samp_id=lambda wildcards: wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"

@@ -177,8 +177,8 @@ def main():
     df = None # Default - Wet Lab File is not provided
     swap_corr_df = None # Default - Swap Correction file is not provided
     donName_conv_df = None # Default - Donor Name conversion file is not provided
-    donor_map = None # Default - Donor map is not provided
-    donName_map = None # Default - Donor name conversion map is not provided
+    donor_map = None # Default - Donor map
+    donName_map = None # Default - Donor name conversion map
 
 
     if dem_dir is not None:

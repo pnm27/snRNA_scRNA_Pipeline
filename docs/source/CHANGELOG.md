@@ -174,7 +174,8 @@
 - Added `demultiplex` section for `demux_samples_both`
 - Added PICARD option
 - Fixed genome/GTF/FASTA incompatibility: selecting `genome_pick` in `STARsolo_pipeline` now automatically resolves `gtf`, `fasta`, `genome`, `overhang`, and `gene_info_file` via anchors and references
-- Deprecated `vcf_info_columns`
+- Deprecated `vcf_info_columns`.
+- Removed `cellranger_arc_ref` and replaced it with genome selection (similar to STARsolo's)
 
 ---
 

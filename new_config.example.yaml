@@ -52,7 +52,12 @@ STARsolo_genome_dir:
     overhang: 149
 
 
-cellranger_arc_ref: references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0
+cellranger_arc_genome_dir:
+  gencode44: &cellR_gen44
+    genome: references/cellranger_GRCh38_Gencode_44
+
+  gencode38: &cellR_gen38
+    genome: references/cellranger_GRCh38_Gencode_38
 
 # -----------------------------------------------------------------------------
 # Common Params----------------------------------------------------------------
