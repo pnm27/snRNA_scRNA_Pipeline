@@ -1493,7 +1493,7 @@ def _rename_donors_in_cell(
 def apply_donor_renaming(
     combo_log: pd.DataFrame,
     swap_corr_df: pd.DataFrame | None,
-    donor_map: dict,
+    donor_map: dict | None,
     donName_map: dict | None,
     target_col: tuple,
     sample_col: tuple,

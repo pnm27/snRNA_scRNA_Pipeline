@@ -8,7 +8,6 @@ declare -A args # contains the values for above params
 # DON'T CHANGE THE BELOW SET
 params["BAM_DIR"]="-b"
 params["PICARD_DIR"]="-p"
-params["DEMUL_DIR"]="-d"
 params["MAP_FILE"]="-m"
 params["OUTPUT_FILE"]="-o"
 params["BAM_STRUCT"]="--bam_struct"
@@ -25,7 +24,6 @@ params["DONOR_NAME_CONV_DF"]="--donorName_correct"
 INPUT_FILE="/sc/arion/projects/psychAD/pnm/fastq_files.txt"
 args["BAM_DIR"]="/sc/arion/projects/psychAD/STARsolo_bams/" # REQUIRED
 args["PICARD_DIR"]="/sc/arion/projects/psychAD/STARsolo_bams/"
-args["DEMUL_DIR"]="/sc/arion/projects/psychAD/demultiplex/info/"
 args["MAP_FILE"]="/sc/arion/projects/psychAD/pnm/Final_out_MAP_2.tsv"
 args["OUTPUT_FILE"]="/sc/arion/projects/psychAD/pnm/All_logs.tsv" # REQUIRED
 args["BAM_STRUCT"]="Sample_<sample>*/" # REQUIRED
