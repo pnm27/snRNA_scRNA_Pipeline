@@ -75,9 +75,10 @@
         mem_mb=lambda wc, attempt: resource("cellsnp", "mem_mb", attempt)
     ```
 
-- [ ] Currently, the creation of h5ad from vireo output lies within the rule `demux_samples`. Split that rule into 2 rules:
+- [ ] Currently, the creation of h5ad lies within the rule `demux_samples`. Split that rule into 2 rules:
   - [ ] RULE A: An h5ad is created after vireo output
   - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
+- [ ] Creation of h5ad when there's no need for demultiplexing is needed.
 - [ ] Need a way to run the rule `vireoSNP` using a previous run of `cellSNP` (useful when there's a vcf for w_gt run but the SNPs haven't changed - many WGS)
 - [ ] Currently, the checkpoint `create_inp_splitBams` is handling the exact donors that will undergo splitting and further qtltools check, if needed. Make it to filter based on if cellSNP produces an empty `cellSNP.base.vcf.gz` too.
 - [ ] Change method for creating *Final* per-donor bams after genotype checks.
