@@ -63,7 +63,7 @@ rule Picard_RNAseq_metrics:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}"
 
     params:
-        flat_ref=config['picard_pipeline']['flat_ref'],
+        flat_ref=config['STARsolo_pipeline']['genome_pick']['flat_ref'], # config['picard_pipeline']['flat_ref'],
         strand=config['picard_pipeline']['strand']
 
     resources:

@@ -15,10 +15,12 @@ genome_builds:
     gtf: references/Homo_sapiens.GRCh38.104.gtf
     fasta: references/Homo_sapiens.GRCh38.dna.primary_assembly.fa
     gene_info_file: gene_annotations/Hs_allchr_MT.txt
+    flat_ref: gene_annotations/refFlat_104_wo_chr.txt
   gencode44: &gen44
     gtf: references/gencode.v44.primary_assembly.annotation.gtf
     fasta: references/GRCh38_gencode44.primary_assembly.genome.fa
     gene_info_file: gene_annotations/all_genes_EnsemblInfo_110.csv
+    flat_ref: gene_annotations/refFlat_v44.txt
 
 STARsolo_genome_dir:
   gencode38o150: &gencode38o150
@@ -66,7 +68,7 @@ last_step: STARsolo_kb_solo
 picard_metrics: all # can be null, all, rnaseq or gc
 create_final_h5ad: True # can be True, False or null
 gt_check: yes # yes or no
-demux_type: solo # can be solo, vireo, both, add_solo, add_vireo
+demux_type: solo # can be null, solo, vireo, both, add_solo, add_vireo
 demux_run_type: wo_gt # can be wo_gt, w_gt, w_gt_2, etc.
 hto_demux_type: single # Can be single, multiple or null
 
@@ -196,7 +198,6 @@ picard_pipeline:
   gc_summary_metrics: _summary_metrics.txt
 
   # PICARD RNAseq Metrics
-  flat_ref: references/refFlat_wo_chr.txt
   strand: NONE
   # Optional params
   rnaseq_metrics: _rnaseq_metrics.txt
