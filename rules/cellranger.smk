@@ -12,7 +12,7 @@ def allocate_time_ICAC(wildcards, attempt):
     return 10
 
 def allocate_mem_CAC(wildcards, attempt):
-    return 160000+2000*(attempt-1)
+    return 16000+2000*(attempt-1)
 
 def allocate_time_CAC(wildcards, attempt):
     return 2880
