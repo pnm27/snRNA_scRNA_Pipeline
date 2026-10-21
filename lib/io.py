@@ -156,8 +156,11 @@ def get_vir_inputs(wildcards, config):
         n_cols = temp_df.shape[1]
         # Make snakemake's wildcard same as the value in the "pool" column
         samp_name = wildcards.pool # WILDCARDS
+        # For condn. 2) - a single vcf containing all donors
         if n_cols == 2 and config['demux_run_type'] != 'wo_gt':
-            ret_dict['donorFile'] = config['gt_demux_pipeline']['genome_1k_ref']
+            ret_dict['donorFile'] = (
+                config['gt_demux_pipeline']['donors_per_pool_file'] or []
+            )
         # For condn. 1)
         elif n_cols == 4:
             temp_df = temp_df.iloc[:, :n_cols]

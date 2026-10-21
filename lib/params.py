@@ -157,16 +157,24 @@ def get_umiTag(wildcards, config):
         return config['gt_demux_pipeline']['umi_tag']
     
 
-def get_cmd_str_vireo(wildcards, input, config) -> None | int:
-    temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
+def get_cmd_str_vireo(wildcards, input, config) -> str:
+    vcf_info = config['gt_demux_pipeline']['vcf_info']
     # Make snakemake's wildcard same as the value in the "pool" column
     samp_name = wildcards.pool # WILDCARDS
     ret_str = ""
 
-    if input['donorFile']:
+    if input.get('donorFile'):
         ret_str += f" -d {input['donorFile']}"
 
-    temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
+    # vireo always needs the number of donors (-N) per pool
+    if vcf_info is None or not os.path.isfile(vcf_info):
+        raise ValueError(
+            "vireoSNP needs the number of donors per pool: set "
+            "'gt_demux_pipeline: vcf_info' to an existing file "
+            f"(currently: {vcf_info})"
+        )
+
+    temp_df = read_files_ext(vcf_info)
     cols = col_set[:2]
     temp_df = temp_df.iloc[:, :2]
     temp_df.columns = cols
