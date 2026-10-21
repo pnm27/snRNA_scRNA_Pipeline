@@ -1,140 +1,216 @@
 #!/usr/bin/env python3
+"""Where the demultiplexing rules write their outputs.
 
+- Rule A (``demux_run_<tool>``, one per tool of this run): an h5ad with
+  the demultiplexing of one tool (``solo``, ``vireo``, or ``none`` for no
+  demultiplexing) and its demultiplex info, in that tool's dirs.
+- Rule B (``demux_final``): the final h5ad of a pool, built from the
+  Rule A outputs picked for it (the swap correction file, else this run).
+"""
 
+import os
 from dataclasses import dataclass, field
-from typing import List
-from .utils import get_demux_type
+from functools import lru_cache
+from typing import List, Optional
+from .utils import get_demux_type, read_files_ext, run_dir
+
+
+# Tools run by Rule A for each demux_type ('none': only create the h5ad)
+TOOLS_BY_DEMUX_TYPE = {
+    None: ['none'],
+    'solo': ['solo'],
+    'add_solo': ['solo'],
+    'vireo': ['vireo'],
+    'add_vireo': ['vireo'],
+    'both': ['solo', 'vireo'],
+}
+
+# The tool whose outputs (from 'previous_run_tag') an add_* run adds to
+PREVIOUS_TOOL = {'add_solo': 'vireo', 'add_vireo': 'solo'}
+
+
+def demux_tools(config) -> List[str]:
+    return TOOLS_BY_DEMUX_TYPE[get_demux_type(config)]
+
+
+def is_multi_vcf(config) -> bool:
+    return config['last_step'].lower().endswith('multi_vcf')
+
+
+def is_multiome(config) -> bool:
+    return 'multiome' in config['last_step'].lower()
+
+
+def pool_fold(fold: str) -> str:
+    """'fold' without its '{modality}' part, so one file covers a pool."""
+    parts = [p for p in fold.split('/') if p and '{modality}' not in p]
+    return '/'.join(parts)
+
+
+def _vcf_fold(config, fold: str) -> str:
+    # Multi-VCF inputs carry the 'vcf_type' wildcard, so the outputs must too
+    if is_multi_vcf(config) and '{vcf_type}' not in fold:
+        return fold + "_{vcf_type}"
+    return fold
 
 
 @dataclass
-class DemuxResult:
-    demux_type: str
-    outdir: str
-    suffix: str
-    fold_struct: str
+class DemuxRun:
+    """Rule A outputs of one tool in the run tagged 'run_tag'."""
+    tool: str
+    run_tag: Optional[str]
+    h5ad: str
+    info: str
+
+    @property
+    def label(self) -> str:
+        return f"{self.tool}:{self.run_tag or ''}"
+
+
+def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
+    if tool == 'solo':
+        section, fold = 'hashsolo_demux_pipeline', config['fold_struct_demux']
+    elif tool == 'vireo':
+        section, fold = 'gt_demux_pipeline', pool_fold(config['fold_struct_gt_demux'])
+    elif tool == 'none':
+        section, fold = 'gt_demux_pipeline', config['fold_struct']
+    else:
+        raise ValueError(f"Unknown demultiplexing tool: '{tool}'")
+
+    fold = _vcf_fold(config, fold)
+    h5ad = config[section]['final_count_matrix_h5ad']
+    info = config[section]['demultiplex_info']
+    if tool == 'none':
+        h5ad, info = h5ad.replace("_vS", ""), info.replace("_vS", "")
+
+    return DemuxRun(
+        tool=tool,
+        run_tag=run_tag,
+        h5ad=f"{run_dir(config, section, 'final_count_matrix_dir', run_tag)}{fold}{h5ad}",
+        info=f"{run_dir(config, section, 'demultiplex_info_dir', run_tag)}{fold}{info}",
+    )
+
+
+def parse_label(label: str) -> List[tuple]:
+    """'vireo:w_gt_2' -> [('vireo', 'w_gt_2')]; 'both:x' -> solo and vireo.
+
+    No run_tag ('vireo' or 'vireo:') means the untagged dirs.
+    """
+    tool, _, run_tag = str(label).strip().partition(':')
+    tool = tool.strip().lower()
+    run_tag = run_tag.strip() or None
+    tools = ['solo', 'vireo'] if tool == 'both' else [tool]
+    for t in tools:
+        if t not in ('solo', 'vireo', 'none'):
+            raise ValueError(
+                f"Unknown tool '{t}' in demultiplex version '{label}' "
+                "(expected solo, vireo or both, then ':<run_tag>')"
+            )
+    return [(t, run_tag) for t in tools]
+
+
+@lru_cache(maxsize=None)
+def _read_swap_file(fname: str):
+    return read_files_ext(fname)
+
+
+def swap_correction(config) -> dict:
+    return config['demultiplex'].get('swap_correction') or {}
+
+
+def swap_version(config, pool: str) -> Optional[str]:
+    """Demultiplex version of 'pool' in the swap correction file, if any."""
+    swap = swap_correction(config)
+    if not swap.get('file'):
+        return None
+    if not os.path.isfile(swap['file']):
+        raise ValueError(
+            "'demultiplex: swap_correction: file' doesn't exist: "
+            f"{swap['file']}"
+        )
+    df = _read_swap_file(swap['file'])
+    versions = df.loc[
+        df[swap['pool_column']].astype(str) == str(pool),
+        swap['version_column']
+    ].dropna().unique()
+    if len(versions) > 1:
+        raise ValueError(
+            f"Pool '{pool}' has more than one demultiplex version in "
+            f"{swap['file']}: {list(versions)}"
+        )
+    return versions[0] if len(versions) else None
+
+
+def final_sources(config, pool: str) -> List[DemuxRun]:
+    """Rule A outputs that make up the final h5ad of 'pool', oldest first."""
+    version = swap_version(config, pool)
+    if version is not None:
+        return [demux_run(config, t, r) for t, r in parse_label(version)]
+
+    demux_type = get_demux_type(config)
+    ret = []
+    if demux_type in PREVIOUS_TOOL:
+        ret.append(demux_run(
+            config, PREVIOUS_TOOL[demux_type],
+            config['demultiplex'].get('previous_run_tag')
+        ))
+    ret.extend(
+        demux_run(config, t, config.get('run_tag')) for t in demux_tools(config)
+    )
+    return ret
+
+
+@dataclass
+class FinalPaths:
+    """Rule B outputs."""
+    h5ad: str
+    info: str
+
+
+def final_paths(config) -> FinalPaths:
+    c = config['demultiplex']
+    if not c.get('demux_count_matrix_dir'):
+        raise ValueError(
+            "Set 'demultiplex: demux_count_matrix_dir', where the final "
+            "h5ad of each pool is written"
+        )
+    fold = _vcf_fold(config, config['fold_struct_final'])
+    return FinalPaths(
+        h5ad=f"{c['demux_count_matrix_dir']}{fold}{c['final_count_matrix_h5ad']}",
+        info=f"{c['demultiplex_info_dir']}{fold}{c['demultiplex_info']}",
+    )
+
+
+def raw_output(config, tool: str) -> str:
+    """Output of the demultiplexing tool itself (before Rule A)."""
+    if tool == 'vireo':
+        c = config['gt_demux_pipeline']
+        return f"{c['vireosnp_dir']}{config['fold_struct_gt_demux']}{c['donors_classification']}"
+    c = config['hashsolo_demux_pipeline']
+    return f"{c['calico_solo_dir']}{config['fold_struct_demux']}{c['calico_solo_h5ad']}"
 
 
 @dataclass
 class DemuxConfig:
+    """Demultiplexing targets of this run."""
 
-    demuxes: list[DemuxResult] = field(default_factory=list)
+    targets: List[str] = field(default_factory=list)
     multiome: bool = False
     create_h5ad: bool = False
 
     @classmethod
     def from_snakemake(cls, config):
+        create_h5ad = bool(config.get("create_final_h5ad", False))
+        tools = demux_tools(config)
 
-        demuxes = []
-        demux_type = get_demux_type(config)
-        create_h5ad = config.get(
-                "create_final_h5ad",
-                False
-            )
-        if demux_type in ["vireo", "add_vireo"]:
-            demuxes.append(
-                DemuxResult(
-                    demux_type="vireo",
-                    outdir=(
-                        config['gt_demux_pipeline']['final_count_matrix_dir']
-                        if create_h5ad
-                        else config["gt_demux_pipeline"]["vireosnp_dir"]
-                    ),
-                    suffix=(
-                        config['gt_demux_pipeline']['final_count_matrix_h5ad']
-                        if create_h5ad
-                        else config["gt_demux_pipeline"]["donors_classification"]
-                    ),
-                    fold_struct=(
-                        config['fold_struct_gt_demux'].rstrip('/')
-                        if create_h5ad
-                        else config['fold_struct_gt_demux']
-                    )
-                )
-            )
-
-        elif demux_type in ["solo", "add_solo"]:
-            demuxes.append(
-                DemuxResult(
-                    demux_type="solo",
-                    outdir=config[
-                        'hashsolo_demux_pipeline'
-                    ]['final_count_matrix_dir'],
-                    suffix=config[
-                        'hashsolo_demux_pipeline'
-                    ]['final_count_matrix_h5ad'],
-                    fold_struct=config['fold_struct_demux']
-                )
-            )
-
-        elif demux_type == "both" and create_h5ad:
-            # Both demuxes are combined into one h5ad by 'demux_samples'
-            # (see '_output_cfg' in rules/demultiplex.smk)
-            demuxes.append(
-                DemuxResult(
-                    demux_type="both",
-                    outdir=config[
-                        'demultiplex'
-                    ]['demux_count_matrix_dir'],
-                    suffix=config[
-                        'demultiplex'
-                    ]['final_count_matrix_h5ad'],
-                    fold_struct=config['fold_struct_demux']
-                )
-            )
-
-        elif demux_type == "both":
-            demuxes.extend([
-                DemuxResult(
-                    demux_type="vireo",
-                    outdir=(
-                        config['gt_demux_pipeline']['final_count_matrix_dir']
-                        if create_h5ad
-                        else config["gt_demux_pipeline"]["vireosnp_dir"]
-                    ),
-                    suffix=(
-                        config['gt_demux_pipeline']['final_count_matrix_h5ad']
-                        if create_h5ad
-                        else config["gt_demux_pipeline"]["donors_classification"]
-                    ),
-                    fold_struct=(
-                        config['fold_struct_gt_demux'].rstrip('/')
-                        if create_h5ad
-                        else config['fold_struct_gt_demux']
-                    )
-                ),
-                DemuxResult(
-                    demux_type="solo",
-                    outdir=config[
-                        'hashsolo_demux_pipeline'
-                    ]['final_count_matrix_dir'],
-                    suffix=config[
-                        'hashsolo_demux_pipeline'
-                    ]['final_count_matrix_h5ad'],
-                    fold_struct=config['fold_struct_demux']
-                )
-            ])
-        elif demux_type is None:
-            # create_h5ad_only — must match the 'demux_samples' output
-            # (see '_output_cfg' in rules/demultiplex.smk)
-            demuxes.append(
-                DemuxResult(
-                    demux_type="none",
-                    outdir=config[
-                        'gt_demux_pipeline'
-                    ]['final_count_matrix_dir'],
-                    suffix=config[
-                        'gt_demux_pipeline'
-                    ]['final_count_matrix_h5ad'].replace("_vS", ""),
-                    fold_struct=config['fold_struct']
-                )
-            )
+        if create_h5ad or tools == ['none']:
+            targets = [final_paths(config).h5ad]
         else:
-            raise ValueError(
-                f"Unsupported demux_type: {demux_type}"
-            )
+            # Stop at the outputs of the demultiplexing tools
+            targets = [raw_output(config, t) for t in tools]
 
         return cls(
-            demuxes=demuxes,
-            multiome="multiome" in config["last_step"].lower(),
-            create_h5ad=create_h5ad
+            targets=targets,
+            multiome=is_multiome(config),
+            create_h5ad=create_h5ad,
         )

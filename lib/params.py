@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from .utils import read_files_ext, get_demux_type
+from .config_models import final_sources, swap_correction
 import re, glob2, os
 
 # STARsolo ------------------------------------------------------------------------------
@@ -190,9 +191,10 @@ def get_cmd_str_vireo(wildcards, input, config) -> str:
 # ---------------------------------------------------------------------------------------
 
 # Demultiplex ---------------------------------------------------------------------------
-def get_params_demux(wildcards, input, output, config):
+def get_params_demux(wildcards, input, output, config, tool):
+    """Arguments of demul_samples.py for Rule A ('demux_run_<tool>')."""
     params_dict = {
-        "demux_info": [output[1], "--demux_info"],
+        "demux_info": [output.info, "--demux_info"],
         "cols": [config['hashsolo_demux_pipeline']['columns_to_pick'], "--columns"],
         "wet_lab_file": [config['wet_lab_info'], "--wet_lab_file"],
         "hto_sep": [config['hashsolo_demux_pipeline']['hto_sep'], "--hto_sep"],
@@ -216,21 +218,9 @@ def get_params_demux(wildcards, input, output, config):
         "new_h5ad_col": [
             config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname'], 
             "--h5ad_new_classify_colname"],
-        "swap_correction_df": [
-            config['gt_demux_pipeline']['swap_correction_df'],
-            "--swap_correct",
-        ]
     }
     gene_info_file = config['STARsolo_pipeline']['genome_pick']['gene_info_file']
-    solo_inp = ["--calico_solo"]
-    vireo_inp = ["--vireo_out", "--converter_file"]
-    multiome_inp = ["--vireo_out", "--vireo_out", "--converter_file"]
-    multiome_suffix = " --suffix atac cdna "
-    inp_files = [""] # Keep first value empty as input[0] is positional arg
-    multi_module = ['multiome', 'gt_demux']
-    multi_module = all([ m in config['last_step'].lower() for m in multi_module])
-    ret_str = ''
-    pos_args = ''
+    ret_str = f"{input.mtx} {output.h5ad} {gene_info_file} "
 
     for k, v in params_dict.items():
         if k == "hto_sep" or k == "mito_prefix":
@@ -242,32 +232,36 @@ def get_params_demux(wildcards, input, output, config):
         else:
             ret_str += f'{v[1]} {v[0]} '
 
-    demux_type = get_demux_type(config)
-    if demux_type in ['solo', 'add_solo']:
-        inp_files += solo_inp
-    elif demux_type in ['vireo', 'add_vireo']:
-        if multi_module:
-            inp_files += multiome_inp
-        else:
-            inp_files += vireo_inp
-    elif demux_type == 'both':
-        inp_files += solo_inp + vireo_inp
+    if tool == 'solo':
+        ret_str += f"--calico_solo {input.calico_solo} "
+    elif tool == 'vireo':
+        vireo_out = input.vireo if isinstance(input.vireo, list) else [input.vireo]
+        ret_str += ''.join(f"--vireo_out {v} " for v in vireo_out)
+        if 'converter' in input.keys():
+            ret_str += f"--converter_file {input.converter} "
+        if len(vireo_out) > 1:
+            ret_str += "--suffix atac cdna "
 
-    for k, v in zip(inp_files, input):
-        if k == "":
-            pos_args += f'{v} '
-        else:
-            ret_str += f'{k} {v} '
+    return ret_str
 
-    if multi_module:
-        ret_str += multiome_suffix
 
-    pos_args+= f'{output[0]} {gene_info_file} '
+def get_params_demux_final(wildcards, input, config):
+    """Arguments of demux_final.py for Rule B ('demux_final')."""
+    sources = final_sources(config, wildcards.pool) # WILDCARDS
+    ret_str = "--sources " + " ".join(f"'{s.label}'" for s in sources) + " "
 
-    # Append positional args at the end of optional args
-    pos_args+=ret_str
+    new_col = config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname']
+    if new_col:
+        ret_str += f"--donor_column {new_col} "
 
-    return pos_args
+    swap = swap_correction(config)
+    if swap.get('file'):
+        ret_str += (
+            f"--swap_correct {input.swap} "
+            f"--swap_columns {swap['pool_column']} {swap['donor_from']} "
+            f"{swap['donor_to']} "
+        )
+    return ret_str
 
 
 # ---------------------------------------------------------------------------------------

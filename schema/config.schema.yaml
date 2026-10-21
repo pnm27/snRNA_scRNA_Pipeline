@@ -175,6 +175,10 @@ properties:
     type: string
   fold_struct_deeptools:
     type: string
+  fold_struct_final:
+    type: string
+    default: '{pool}'
+    description: Folder structure (and prefix) of the final h5ad of each pool
   STAR_version:
     type: string
   featuremap_script:
@@ -485,6 +489,7 @@ properties:
         - string
         - 'null'
         default: null
+        description: Unused, see 'demultiplex.swap_correction'
   demultiplex:
     type: object
     properties:
@@ -498,6 +503,58 @@ properties:
         type: string
       demultiplex_info:
         type: string
+      previous_run_tag:
+        type:
+        - string
+        - 'null'
+        default: null
+        description: run_tag of the earlier run that add_solo/add_vireo adds to
+      swap_correction:
+        type: object
+        default: {}
+        properties:
+          file:
+            type:
+            - string
+            - 'null'
+            default: null
+          pool_column:
+            type:
+            - string
+            - 'null'
+            default: null
+          version_column:
+            type:
+            - string
+            - 'null'
+            default: null
+            description: 'Demultiplex version of each pool: <tool>:<run_tag> (tool: solo, vireo or both)'
+          donor_from:
+            type:
+            - string
+            - 'null'
+            default: null
+          donor_to:
+            type:
+            - string
+            - 'null'
+            default: null
+        if:
+          properties:
+            file:
+              type: string
+          required:
+          - file
+        then:
+          properties:
+            pool_column:
+              type: string
+            version_column:
+              type: string
+            donor_from:
+              type: string
+            donor_to:
+              type: string
   split_bams_pipeline:
     type: object
     properties:

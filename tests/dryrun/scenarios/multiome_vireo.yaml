@@ -1,5 +1,5 @@
 # multiome vireo (ATAC and cDNA)
-# expect: cellranger_arc_count demux_samples vireoSNP
+# expect: cellranger_arc_count demux_run_vireo demux_final vireoSNP
 last_step: multiome_gt_demux
 demux_type: vireo
 picard_metrics: null

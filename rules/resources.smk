@@ -152,9 +152,13 @@ RESOURCES = {
     },
 
     # demultiplex.smk
-    "demux_samples": {
+    "demux_run": {
         "mem_mb": {"base": 7000, "step": 3500},
         "time_min": {"base": 30, "step": 15},
+    },
+    "demux_final": {
+        "mem_mb": {"base": 7000, "step": 3500},
+        "time_min": {"base": 15, "step": 15},
     },
 
     # split_bams.smk

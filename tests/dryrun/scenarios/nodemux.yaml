@@ -1,5 +1,5 @@
 # h5ad from STARsolo output without demultiplexing
-# expect: demux_samples STARsolo_sort
+# expect: demux_run_none demux_final STARsolo_sort
 last_step: STARsolo_demux
 demux_type: null
 picard_metrics: null

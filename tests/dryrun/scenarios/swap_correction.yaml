@@ -1,0 +1,15 @@
+# the swap correction file picks the hashsolo run tagged wo_gt for P1
+# expect: demux_final
+# absent: demux_run_vireo vireoSNP
+# path: final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad projdir/swap.tsv
+last_step: STARsolo_demux
+demux_type: vireo
+run_tag: w_gt
+picard_metrics: null
+demultiplex:
+  swap_correction:
+    file: projdir/swap.tsv
+    pool_column: pool
+    version_column: version
+    donor_from: from
+    donor_to: to

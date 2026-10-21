@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from typing import Literal
-from lib.config_models import DemuxResult, DemuxConfig
+from lib.config_models import DemuxConfig
 
 
 # ---------------------------------------------------------------------------
@@ -96,50 +96,11 @@ def targets_cellSNP(multiome: bool = False) -> list:
     # return ret_targets
 
 
-def targets_demux(demuxes: list[DemuxResult],
-    multiome: bool = False) -> list:
-    """
-    Create a list of target files for demultiplexed outputs.
-
-    Parameters
-    ----------
-    demuxes
-        Collection of demultiplexing output definitions generated from the
-        workflow configuration. Each `DemuxResult` contains:
-
-        - demux_type
-            Demultiplexing method identifier
-            (e.g. "vireo", "solo").
-
-        - outdir
-            Directory containing finalized output matrices.
-
-        - suffix
-            Filename suffix or h5ad filename associated with the
-            finalized count matrix.
-    multiome
-        Whether to include both ATAC and RNA subdirectories in the target paths
-        (if `True`, includes "ATAC" and "cDNA"; if `False`, includes only "").
-
-    Returns
-    -------
-    List
-        List of file paths corresponding to the finalized demultiplexed h5ad
-        outputs, expanded over both ATAC and RNA modes (if multiome).
-
-    """
-    ret_targets = []
-
-    for demux in demuxes:
-        if demux.demux_type not in ['vireo', 'solo', 'both', 'none']:
-            raise ValueError(f"Unknown demux type in suffix dict: '{demux.demux_type}'")
-        
-        ret_targets.append(os.path.join(
-            demux.outdir,
-            demux.fold_struct + demux.suffix)
-        )
-
-    return ret_targets
+def targets_demux() -> list:
+    """Demultiplexing targets of this run (see DemuxConfig): the final h5ad
+    of each pool or, without 'create_final_h5ad', the demultiplexing tools'
+    own outputs."""
+    return list(CFG.targets)
 
 
 def targets_gt_demux2(multiome: bool = False) -> list:
@@ -194,10 +155,7 @@ def targets_gt_demux_identify_swaps(multiome: bool = False) -> list:
     ]
 
 
-def targets_multiome(
-    last: str,
-    demuxes: list[DemuxResult] | None = None,
-) -> list:
+def targets_multiome(last: str) -> list:
 
     out_dir = config['cellranger_arc_count']['bams_dir']
 
@@ -211,9 +169,7 @@ def targets_multiome(
             ]
         ],
 
-        "vireo": lambda: targets_demux(
-            demuxes=demuxes
-        ),
+        "vireo": targets_demux,
 
         "splitBams": lambda: targets_SplitBams(
             multiome=True
@@ -293,7 +249,7 @@ def produce_targets(wildcards) -> list:
     elif step == "starsolo_demux":
         # fs_gt = config['gt_demux_pipeline']['final_count_matrix_h5ad']
         return _with_picard(
-            _expand_pools(targets_demux(CFG.demuxes)[0], modality=MODALITY)
+            _expand_pools(targets_demux(), modality=MODALITY)
         )
 
     elif step == "starsolo_gt_demux_multi_vcf":
@@ -310,12 +266,12 @@ def produce_targets(wildcards) -> list:
             raise ValueError("VCF_TYPE must be a str or list.")
 
     elif step == "multiome_alignment":
-        return [f for t in targets_multiome("alignment", None)
+        return [f for t in targets_multiome("alignment")
                 for f in _expand_pools(t, modality=MODALITY)]
 
     elif step == "multiome_gt_demux":
         return [
-            f for t in targets_multiome("vireo", CFG.demuxes)
+            f for t in targets_multiome("vireo")
             for f in _expand_pools(t, modality=MODALITY)
         ]
 
@@ -330,14 +286,14 @@ def produce_targets(wildcards) -> list:
             ret_list += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
 
         if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
-            ret_list += _expand_pools(targets_demux(CFG.demuxes), modality=MODALITY)
+            ret_list += _expand_pools(targets_demux(), modality=MODALITY)
 
         return ret_list
 
     elif "multiome" in step:
         ret_list=[]
         if metrics is None:
-            ret_list += [f for t in targets_multiome("alignment", None)
+            ret_list += [f for t in targets_multiome("alignment")
                 for f in _expand_pools(t, modality=MODALITY)]
         else:
             pass # WORK TO DO
@@ -347,7 +303,7 @@ def produce_targets(wildcards) -> list:
             ret_list += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
 
         if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
-            ret_list += _expand_pools(targets_demux(CFG.demuxes, multiome=True), modality=MODALITY)
+            ret_list += _expand_pools(targets_demux(), modality=MODALITY)
 
         return ret_list
 
@@ -399,7 +355,7 @@ def produce_targets_dynamic(wildcards) -> list:
         )
 
     elif step == "multiome_split_bams_gt_demux":
-        targets = targets_multiome("splitBams", CFG.demuxes)
+        targets = targets_multiome("splitBams")
         return [
             f
             for i, t in enumerate(targets)
@@ -407,7 +363,7 @@ def produce_targets_dynamic(wildcards) -> list:
         ]
 
     elif step == "multiome_gt_demux_identify_swaps":
-        return [f for t in targets_multiome("identifySwaps", CFG.demuxes)
+        return [f for t in targets_multiome("identifySwaps")
                 for f in _expand_pools_donors(t, wildcards)]
 
     else:

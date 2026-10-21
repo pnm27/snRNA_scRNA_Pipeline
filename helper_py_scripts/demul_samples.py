@@ -509,7 +509,10 @@ def main():
 
     # For demultiplexing using calico_solo
     if add_calico is not None:
-        
+        cols = args.columns
+        if df is None:
+            df = auto_read(args.wet_lab_file)
+
         if df.loc[df[cols[0]].str.lower() == args.pool_name.lower()].empty:
             raise ValueError("Check dtypes!\nSample (variable name 'var'"
             f", data type {type(args.pool_name)}, with value "
@@ -524,7 +527,6 @@ def main():
                 f"Starting calico_solo/hashsolo demultiplexing at: {ct}"
             )
 
-        cols = args.columns
         hto_count=0
 
         # If more than 1 hasholo outputs are given then it means
@@ -536,7 +538,7 @@ def main():
             assert args.subid_convert == False, "'no-subid-convert' flag " \
             "is not expected as multiple calico_solo outputs are " \
             "provided per pool!"
-            assert len(add_calico) == len(args.pref), "Suffix options " \
+            assert len(add_calico) == len(suffixes), "Suffix options " \
             "given to 'suffix' parameter should be equal to number of " \
             "hashsolo inputs!"
 
@@ -564,17 +566,10 @@ def main():
             # pd DF with barcodes as index. SubID and HTO number (HTO1, HTO2, etc)
             #  as columns no. of doublet cells, no. of negative cells]
 
-            donor_conv = args.subid_convert if not multi_hto_setup else False
             ct = datetime.datetime.now()
             print(
                 "Starting: Assigning cell classifications by"
                 f"hashsolo/calico solo at: {ct}"
-                )
-            cs_dons, hto_name_cs, temp_df = demux_by_calico_solo(
-                cell_bcs, df, args.pool_name, 
-                args.hto_sep, [cols[1], cols[3]], 
-                dem_cs.obs['Classification'], donor_conv,
-                # hto_count, multi_hto_setup
                 )
 
             if not multi_hto_setup:

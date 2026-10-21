@@ -1,5 +1,5 @@
 # hashsolo demultiplexing
-# expect: demux_samples run_calico_solo run_kallisto
+# expect: demux_run_solo demux_final run_calico_solo run_kallisto
 last_step: STARsolo_demux
 demux_type: solo
 picard_metrics: null

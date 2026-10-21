@@ -1,5 +1,6 @@
 # hashsolo and vireo together, one combined h5ad
-# expect: demux_samples vireoSNP run_calico_solo
+# expect: demux_run_solo demux_run_vireo demux_final vireoSNP run_calico_solo
+# path: final_count_matrix/final/P1_final.h5ad
 last_step: STARsolo_demux
 demux_type: both
 picard_metrics: null

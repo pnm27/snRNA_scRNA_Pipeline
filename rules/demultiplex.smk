@@ -1,86 +1,72 @@
 from lib.io import (
-    get_filt_barcodes, 
+    get_filt_barcodes,
     get_cellsnp_inputs,
     get_vir_inputs,
-    get_inputs_demux
+    get_inputs_demux_run,
+    get_inputs_demux_final,
 )
-from lib.params import get_params_demux
-from lib.utils import get_demux_type
+from lib.params import get_params_demux, get_params_demux_final
+from lib.config_models import demux_tools, demux_run, final_paths
 from functools import partial
 
 
-# ── Output resolver ───────────────────────────────────────────────────────────
+# Output paths of both rules are in lib/config_models.py
 
-def _output_cfg(config):
-    """Return (matrix_dir, fold_struct, matrix_h5ad, demux_info_dir, demux_info, suffix)."""
-    demux_type = get_demux_type(config)
+# ── Rule A: one h5ad per demultiplexing tool of this run ─────────────────────
 
-    if demux_type in ('solo', 'add_solo'):
-        c = config['hashsolo_demux_pipeline']
-        return (c['final_count_matrix_dir'],config['fold_struct_demux'],
-            c['final_count_matrix_h5ad'],
-            c['demultiplex_info_dir'], c['demultiplex_info']
-        )
+for _tool in demux_tools(config):
+    _run = demux_run(config, _tool, config['run_tag'])
 
-    elif demux_type in ('vireo', 'add_vireo'):
-        c = config['gt_demux_pipeline']
-        return (c['final_count_matrix_dir'], config['fold_struct_gt_demux'].rstrip('/'),
-            c['final_count_matrix_h5ad'],
-            c['demultiplex_info_dir'], c['demultiplex_info']
-        )
+    rule:
+        name: f"demux_run_{_tool}"
 
-    elif demux_type == 'both':
-        c = config['demultiplex']
-        return (c['demux_count_matrix_dir'], config['fold_struct_demux'],
-            c['final_count_matrix_h5ad'],
-            c['demultiplex_info_dir'], c['demultiplex_info']
-        )
-    
-    else:
-        # create_h5ad_only — strip the "_vS" suffix
-        c = config['gt_demux_pipeline']
-        return (c['final_count_matrix_dir'], config['fold_struct'],
-            c['final_count_matrix_h5ad'].replace("_vS", ""),
-            c['demultiplex_info_dir'],
-            c['demultiplex_info'].replace("_vS", "")
-        )
-    
+        input:
+            unpack(partial(get_inputs_demux_run, config=config, tool=_tool))
+
+        output:
+            h5ad = _run.h5ad,
+            info = _run.info
+
+        params:
+            pool_name = lambda wildcards: wildcards.pool,
+            extra     = partial(get_params_demux, config=config, tool=_tool)
+
+        resources:
+            **get_resources("demux_run")
+
+        conda: "../envs/basic_sctools.yaml"
+
+        shell:
+            """
+            trap 'echo "Received SIGTERM, killing children"; kill 0; wait' SIGTERM
+            python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
+            """
 
 
-def _make_outputs(config):
-    mat_dir, fold, mat_h5ad, demux_dir, demux_info= _output_cfg(config)
-    # Multi-VCF inputs carry the 'vcf_type' wildcard, so the outputs must too
-    if config['last_step'].lower().endswith('multi_vcf') and '{vcf_type}' not in fold:
-        fold += "_{vcf_type}"
-    return (
-        f"{mat_dir}{fold}{mat_h5ad}",
-        f"{demux_dir}{fold}{demux_info}",
-    )
+# ── Rule B: final h5ad of a pool ─────────────────────────────────────────────
+# Combines the Rule A outputs picked for the pool: its row in the swap
+# correction file, else the tools of this run (plus, for add_solo/add_vireo,
+# the other tool from 'previous_run_tag')
 
-
-# ── Consolidated rule ─────────────────────────────────────────────────────────
-
-_out = _make_outputs(config)
-
-rule demux_samples:
+rule demux_final:
     input:
-        partial(get_inputs_demux, config=config)
+        unpack(partial(get_inputs_demux_final, config=config))
 
     output:
-        _out[0],
-        _out[1]
+        h5ad = final_paths(config).h5ad,
+        info = final_paths(config).info
 
     params:
-        pool_name = lambda wildcards: wildcards.pool,
-        extra     = partial(get_params_demux, config=config)
+        extra = partial(get_params_demux_final, config=config)
 
     resources:
-        **get_resources("demux_samples")
+        **get_resources("demux_final")
 
     conda: "../envs/basic_sctools.yaml"
 
     shell:
         """
-        trap 'echo "Received SIGTERM, killing children"; kill 0; wait' SIGTERM
-        python3 helper_py_scripts/demul_samples.py {params.extra} --pool_name {params.pool_name}
+        python3 helper_py_scripts/demux_final.py --h5ad {input.h5ad} \
+            --info {input.info} --pool_name {wildcards.pool} \
+            -o {output.h5ad} --info_out {output.info} {params.extra}
         """

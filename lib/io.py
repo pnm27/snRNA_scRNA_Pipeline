@@ -2,6 +2,9 @@
 
 import os, glob2
 from .utils import read_files_ext, get_demux_type
+from .config_models import (
+    demux_run, final_sources, raw_output, swap_correction
+)
 
 
 
@@ -47,30 +50,19 @@ col_set = [
 def get_filt_barcodes(wildcards, config):
     """Count matrix that 'create_inp_cellSNP' takes the cells from.
 
-    - add_vireo: the final h5ad of the earlier hashsolo run
+    - add_vireo: the hashsolo h5ad (Rule A) of 'previous_run_tag'
     - vireo/both: the alignment's filtered matrix (cellranger-arc for
       multiome, STARsolo otherwise), filtered as in calico_solo's rule
     """
     demux_type = get_demux_type(config)
 
     if demux_type == 'add_vireo':
-        return (
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
-            f"{config['fold_struct_demux']}"
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
-        )
+        return demux_run(
+            config, 'solo', config['demultiplex'].get('previous_run_tag')
+        ).h5ad
 
     if demux_type in ('vireo', 'both'):
-        if 'multiome' in config['last_step'].lower():
-            return (
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz" # WILDCARDS
-            )
-        return (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['STARsolo_pipeline']['genefull_matrix']}"
-        )
+        return _count_matrix(wildcards, config)
 
     raise ValueError(
         "The rule 'create_inp_cellSNP' (vireo's input) isn't needed for "
@@ -199,122 +191,58 @@ def _vcf_seg(wildcards, config):
     return f"{wildcards.vcf_type}/"
 
 
-def _inputs_solo(wildcards, config):
-    demux_type = get_demux_type(config)
-    ret = []
-
-    if demux_type == 'add_solo':
-        ret.append(
-            f"{config['gt_demux_pipeline']['final_count_matrix_dir']}"
-            f"{config['fold_struct_demux']}"
-            f"{config['gt_demux_pipeline']['final_count_matrix_h5ad']}"
+def _count_matrix(wildcards, config):
+    """Count matrix (mtx) of the alignment, which Rule A starts from."""
+    if 'multiome' in config['last_step'].lower():
+        return (
+            f"{config['cellranger_arc_count']['bams_dir']}"
+            f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz" # WILDCARDS
         )
-    elif demux_type == 'solo':
-        ret.append(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['STARsolo_pipeline']['genefull_matrix']}"
-        )
-
-    ret.append(
-        f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
-        f"{config['fold_struct_demux']}"
-        f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
-    )
-    return ret
-
-
-def _inputs_vireo(wildcards, config):
-    multi_module = ['multiome', 'gt_demux']
-    demux_type   = get_demux_type(config)
-    last_step    = config['last_step'].lower()
-    ret = []
-
-    if demux_type == 'add_vireo':
-        ret.append(
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
-            f"{config['fold_struct_demux']}"
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
-        )
-    elif demux_type == 'vireo':
-        if all(m in last_step for m in multi_module):
-            vireo_out = (
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}"
-                f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
-            # One vireo output per modality, in the order of the
-            # '--suffix atac cdna' passed by 'get_params_demux'
-            ret.append(
-                f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz"
-            )
-            ret.extend(
-                vireo_out.replace('{modality}', m) for m in ['ATAC', 'cDNA']
-            )
-        else:
-            ret.append(
-                f"{config['STARsolo_pipeline']['bams_dir']}"
-                f"{config['fold_struct']}"
-                f"{config['STARsolo_pipeline']['genefull_matrix']}"
-            )
-            vcf_seg = _vcf_seg(wildcards, config)
-            ret.append(
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}{vcf_seg}"
-                f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
-
-    if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
-        ret.append(config['gt_demux_pipeline']['donorName_conv']['file'])
-
-    return ret
-
-
-def _inputs_both(wildcards, config):
-    ret = [
+    return (
         f"{config['STARsolo_pipeline']['bams_dir']}"
         f"{config['fold_struct']}"
-        f"{config['STARsolo_pipeline']['genefull_matrix']}",
-        f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
-        f"{config['fold_struct_demux']}"
-        f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}",
-    ]
-
-    vcf_seg = _vcf_seg(wildcards, config)
-    ret.append(
-        f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-        f"{config['fold_struct_gt_demux']}{vcf_seg}"
-        f"{config['gt_demux_pipeline']['donors_classification']}"
+        f"{config['STARsolo_pipeline']['genefull_matrix']}"
     )
 
-    if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
-        ret.append(config['gt_demux_pipeline']['donorName_conv']['file'])
+
+def get_inputs_demux_run(wildcards, config, tool):
+    """Inputs of Rule A ('demux_run_<tool>'), see lib/config_models.py."""
+    ret = {'mtx': _count_matrix(wildcards, config)}
+
+    if tool == 'solo':
+        ret['calico_solo'] = raw_output(config, 'solo')
+
+    elif tool == 'vireo':
+        vireo_out = raw_output(config, 'vireo')
+        if 'multiome' in config['last_step'].lower():
+            # One vireo output per modality, in the order of the
+            # '--suffix atac cdna' passed by 'get_params_demux'
+            ret['vireo'] = [
+                vireo_out.replace('{modality}', m) for m in ['ATAC', 'cDNA']
+            ]
+        else:
+            ret['vireo'] = (
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}{_vcf_seg(wildcards, config)}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+            )
+        if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
+            ret['converter'] = config['gt_demux_pipeline']['donorName_conv']['file']
 
     return ret
 
 
-def get_inputs_demux(wildcards, config):
-    demux_type = get_demux_type(config)
-
-    if demux_type not in ('solo', 'vireo', 'both', 'add_solo', 'add_vireo'):
-        # create_h5ad_only branch
-        return [
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['STARsolo_pipeline']['genefull_matrix']}"
-        ]
-
-    if demux_type in ('solo', 'add_solo'):
-        return _inputs_solo(wildcards, config)
-
-    if demux_type in ('vireo', 'add_vireo'):
-        return _inputs_vireo(wildcards, config)
-
-    if demux_type == 'both':
-        return _inputs_both(wildcards, config)
-
-    return []
+def get_inputs_demux_final(wildcards, config):
+    """Inputs of Rule B ('demux_final'): the Rule A outputs picked for the pool."""
+    sources = final_sources(config, wildcards.pool) # WILDCARDS
+    ret = {
+        'h5ad': [s.h5ad for s in sources],
+        'info': [s.info for s in sources],
+    }
+    swap_file = swap_correction(config).get('file')
+    if swap_file:
+        ret['swap'] = swap_file
+    return ret
 
 
 # ---------------------------------------------------------------------------------------

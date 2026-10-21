@@ -39,7 +39,16 @@ create_h5ad_bustools:
 run_calico_solo:
   - "-q express"
 
-demux_samples:
+demux_run_solo:
+  - "-q express"
+
+demux_run_vireo:
+  - "-q express"
+
+demux_run_none:
+  - "-q express"
+
+demux_final:
   - "-q express"
 
 create_inp_cellSNP:

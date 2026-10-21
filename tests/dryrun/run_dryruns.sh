@@ -40,6 +40,11 @@ printf "SetNumber\tGt_count\tdonors\tpool_vcf\nP1\t4\ta,b,c,d\tprojdir/P1.vcf.gz
     > projdir/pool_info4.tsv
 touch projdir/P1.vcf.gz projdir/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vcf.gz \
     prev/cellSNP/Sample_P1-cDNA/cellSNP.cells.vcf.gz
+# Outputs of an earlier hashsolo run (run_tag wo_gt) and a swap correction file
+mkdir -p projdir/final_count_matrix/solo/wo_gt/P1 projdir/demultiplex/info/solo/wo_gt/P1
+touch projdir/final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad \
+    projdir/demultiplex/info/solo/wo_gt/P1/P1-HTO_STARsolo_info.tsv
+printf "pool\tversion\tfrom\tto\nP1\tsolo:wo_gt\tdonor0\tD1\n" > projdir/swap.tsv
 
 # Scenarios -----------------------------------------------------------------
 scenarios=("$@")
