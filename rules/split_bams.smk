@@ -12,6 +12,7 @@ from lib.params import (
     get_mito_file,
 )
 from functools import partial
+from types import SimpleNamespace
 
 
 # FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.

@@ -34,6 +34,14 @@ from lib.utils import apply_run_tag
 apply_run_tag(config)
 
 
+# Wildcards hold a single folder or file name part, so they can't
+# match across '/' (rules can narrow these further)
+wildcard_constraints:
+    pool = r"[^/]+",
+    donor = r"[^/]+",
+    modality = r"cDNA|ATAC|HTO",
+
+
 # DEPRACATED - USE new_config.yaml 'demux_type'
 # class global_vars():
 #   ONLY_SOLO = False
