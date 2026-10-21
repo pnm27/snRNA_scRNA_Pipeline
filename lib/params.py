@@ -194,7 +194,6 @@ def get_cmd_str_vireo(wildcards, input, config) -> str:
 def get_params_demux(wildcards, input, output, config, tool):
     """Arguments of demul_samples.py for Rule A ('demux_run_<tool>')."""
     params_dict = {
-        "demux_info": [output.info, "--demux_info"],
         "cols": [config['hashsolo_demux_pipeline']['columns_to_pick'], "--columns"],
         "wet_lab_file": [config['wet_lab_info'], "--wet_lab_file"],
         "hto_sep": [config['hashsolo_demux_pipeline']['hto_sep'], "--hto_sep"],
@@ -231,6 +230,9 @@ def get_params_demux(wildcards, input, output, config, tool):
             continue
         else:
             ret_str += f'{v[1]} {v[0]} '
+
+    if 'stats' in output.keys():
+        ret_str += f"--stats {output.stats} "
 
     if tool == 'solo':
         ret_str += f"--calico_solo {input.calico_solo} "

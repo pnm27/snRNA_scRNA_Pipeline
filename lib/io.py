@@ -237,7 +237,7 @@ def get_inputs_demux_final(wildcards, config):
     sources = final_sources(config, wildcards.pool) # WILDCARDS
     ret = {
         'h5ad': [s.h5ad for s in sources],
-        'info': [s.info for s in sources],
+        'stats': [s.stats for s in sources if s.stats],
     }
     swap_file = swap_correction(config).get('file')
     if swap_file:

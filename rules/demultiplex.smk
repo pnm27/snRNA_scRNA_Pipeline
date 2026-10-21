@@ -25,7 +25,7 @@ for _tool in demux_tools(config):
 
         output:
             h5ad = _run.h5ad,
-            info = _run.info
+            **({'stats': _run.stats} if _run.stats else {})
 
         params:
             pool_name = lambda wildcards: wildcards.pool,
@@ -53,8 +53,9 @@ rule demux_final:
         unpack(partial(get_inputs_demux_final, config=config))
 
     output:
-        h5ad = final_paths(config).h5ad,
-        info = final_paths(config).info
+        h5ad        = final_paths(config).h5ad,
+        basic_stats = final_paths(config).basic_stats,
+        info        = final_paths(config).info
 
     params:
         extra = partial(get_params_demux_final, config=config)
@@ -67,6 +68,7 @@ rule demux_final:
     shell:
         """
         python3 helper_py_scripts/demux_final.py --h5ad {input.h5ad} \
-            --info {input.info} --pool_name {wildcards.pool} \
-            -o {output.h5ad} --info_out {output.info} {params.extra}
+            --stats {input.stats} --pool_name {wildcards.pool} \
+            -o {output.h5ad} --basic_stats {output.basic_stats} \
+            --info_out {output.info} {params.extra}
         """

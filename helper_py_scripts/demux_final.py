@@ -7,11 +7,17 @@ the others are added to it. 'Donor_final' holds the donor of each cell,
 taken from vireo when present (else hashsolo) and renamed by the swap
 correction file, if one is given.
 
+Writes two stats files (columns 'Observations' and 'Vals'):
+- basic stats: the QC stats (uns['qc_stats'] of the first h5ad) and the
+  demultiplex versions used
+- demultiplex info: the basic stats and the stats of each tool, as read by
+  update_logs.py
+
 Example:
 python3 demux_final.py --h5ad solo/wo_gt/P1.h5ad vireo/w_gt/P1.h5ad \
-    --info solo/wo_gt/P1_info.tsv vireo/w_gt/P1_info.tsv \
-    --sources solo:wo_gt vireo:w_gt --pool_name P1 \
-    -o final/P1_final.h5ad --info_out final/P1_final_info.tsv
+    --stats solo/wo_gt/P1_hashsolo_stats.tsv vireo/w_gt/P1_vireo_stats.tsv \
+    --sources solo:wo_gt vireo:w_gt --pool_name P1 -o final/P1_final.h5ad \
+    --basic_stats final/P1_basic_stats.tsv --info_out final/P1_final_info.tsv
 """
 
 import argparse, os
@@ -31,15 +37,17 @@ def get_argument_parser():
         "h5ads of a pool into its final h5ad.")
     parser.add_argument('--h5ad', nargs='+', required=True,
         help="h5ads of the demultiplexing runs, oldest first.")
-    parser.add_argument('--info', nargs='+', required=True,
-        help="Demultiplex info files of the same runs (same order).")
+    parser.add_argument('--stats', nargs='*', default=[],
+        help="Stats files of the demultiplexing tools.")
     parser.add_argument('--sources', nargs='+', required=True,
         help="<tool>:<run_tag> of each h5ad (same order).")
     parser.add_argument('-p', '--pool_name', required=True)
     parser.add_argument('-o', '--output', required=True,
         help="Final h5ad.")
+    parser.add_argument('--basic_stats', required=True,
+        help="QC stats and the demultiplex versions used.")
     parser.add_argument('--info_out', required=True,
-        help="Demultiplex info of the final h5ad.")
+        help="Basic stats and the stats of each tool.")
     parser.add_argument('--donor_column', default=None,
         help="Obs column with the (converted) vireo donor names, if any; "
         "preferred over the columns in DONOR_COLUMNS.")
@@ -76,17 +84,20 @@ def swap_donor_map(fname: str, cols: list[str], pool: str) -> dict:
     return dict(zip(df[from_col].astype(str), df[to_col]))
 
 
-def combine_info(paths: list[str]) -> pd.DataFrame:
-    """Rows of all info files; a row in more than one keeps its first value."""
-    df = pd.concat([pd.read_csv(p, sep='\t') for p in paths])
-    return df.drop_duplicates(subset=df.columns[0], keep='first')
+STAT_COLS = ['Observations', 'Vals']
+
+
+def qc_stats(adata: ad.AnnData) -> pd.DataFrame:
+    if 'qc_stats' not in adata.uns:
+        print("No QC stats (uns['qc_stats']) in the first h5ad.")
+        return pd.DataFrame(columns=STAT_COLS)
+    return pd.DataFrame(adata.uns['qc_stats'])[STAT_COLS]
 
 
 def main():
     args = get_argument_parser().parse_args()
-    if not len(args.h5ad) == len(args.info) == len(args.sources):
-        raise ValueError("--h5ad, --info and --sources need the same number "
-            "of values")
+    if len(args.h5ad) != len(args.sources):
+        raise ValueError("--h5ad and --sources need the same number of values")
 
     adata = combine_h5ads(args.h5ad)
     adata.uns['demux_sources'] = list(args.sources)
@@ -110,15 +121,19 @@ def main():
         print(f"No donor column in the h5ads of {args.pool_name}; the swap "
             "correction file isn't applied.")
 
-    info = combine_info(args.info)
-    info = pd.concat([info, pd.DataFrame(
+    basic = pd.concat([qc_stats(adata), pd.DataFrame(
         [('Final demultiplex versions', ','.join(args.sources)),
          ('Swap corrected', 'yes' if swapped else 'no')],
-        columns=info.columns,
+        columns=STAT_COLS,
     )])
+    info = pd.concat([basic] + [
+        pd.read_csv(p, sep='\t', dtype=str, keep_default_na=False)
+        for p in args.stats
+    ])
 
-    for p in (args.output, args.info_out):
+    for p in (args.output, args.basic_stats, args.info_out):
         os.makedirs(os.path.dirname(p) or '.', exist_ok=True)
+    basic.to_csv(args.basic_stats, sep='\t', index=False)
     info.to_csv(args.info_out, sep='\t', index=False)
     adata.write(args.output)
 

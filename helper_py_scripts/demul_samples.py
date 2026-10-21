@@ -100,7 +100,11 @@ def get_argument_parser():
     "contains gene names and ids for annotation (tab-separated txt file)."
     )
     parser.add_argument('--demux_info', help="Path to store demultiplexing "
-    "info (tab-separated txt file)."
+    "info (tab-separated txt file): QC and demultiplexing stats."
+    )
+    parser.add_argument('--stats', help="Path to store only the "
+    "demultiplexing stats (tab-separated txt file). The QC stats are always "
+    "kept in the h5ad (uns['qc_stats'])."
     )
     parser.add_argument('-p', '--pool_name', help="Name of the pool. "
     "This should be in this script as well as the one in the wet_lab_file "
@@ -694,6 +698,16 @@ def main():
         f"{ct}"
         )
     
+    stat_cols = ['Observations', 'Vals']
+    # Strings, as h5ad can't store None or mixed types
+    adata.uns['qc_stats'] = pd.DataFrame(
+        [(str(k), str(v)) for k, v in filter_info], columns=stat_cols
+    )
+
+    if args.stats is not None:
+        pd.DataFrame(solo_dem_stats + vir_dem_stats, columns=stat_cols).to_csv(
+            args.stats, sep = "\t", index=False)
+
     if args.demux_info is not None:
         # Need only cs stats
         if solo_dem_stats and not vir_dem_stats:

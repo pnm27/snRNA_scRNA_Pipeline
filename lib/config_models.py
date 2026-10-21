@@ -3,9 +3,12 @@
 
 - Rule A (``demux_run_<tool>``, one per tool of this run): an h5ad with
   the demultiplexing of one tool (``solo``, ``vireo``, or ``none`` for no
-  demultiplexing) and its demultiplex info, in that tool's dirs.
+  demultiplexing; QC stats in ``uns['qc_stats']``) and the stats of that
+  tool (``_hashsolo_stats.tsv`` / ``_vireo_stats.tsv``), in its dirs.
 - Rule B (``demux_final``): the final h5ad of a pool, built from the
-  Rule A outputs picked for it (the swap correction file, else this run).
+  Rule A outputs picked for it (the swap correction file, else this run),
+  its basic stats (QC and the demultiplex versions used) and its
+  demultiplex info (basic and tool stats together, read by update_logs).
 """
 
 import os
@@ -54,13 +57,17 @@ def _vcf_fold(config, fold: str) -> str:
     return fold
 
 
+# Stats file of each tool (Rule A)
+STATS_SUFFIX = {'solo': '_hashsolo_stats.tsv', 'vireo': '_vireo_stats.tsv'}
+
+
 @dataclass
 class DemuxRun:
     """Rule A outputs of one tool in the run tagged 'run_tag'."""
     tool: str
     run_tag: Optional[str]
     h5ad: str
-    info: str
+    stats: Optional[str] # None for 'none'
 
     @property
     def label(self) -> str:
@@ -79,15 +86,21 @@ def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
 
     fold = _vcf_fold(config, fold)
     h5ad = config[section]['final_count_matrix_h5ad']
-    info = config[section]['demultiplex_info']
     if tool == 'none':
-        h5ad, info = h5ad.replace("_vS", ""), info.replace("_vS", "")
+        h5ad = h5ad.replace("_vS", "")
+
+    stats = None
+    if tool in STATS_SUFFIX:
+        stats = (
+            f"{run_dir(config, section, 'demultiplex_info_dir', run_tag)}"
+            f"{fold}{STATS_SUFFIX[tool]}"
+        )
 
     return DemuxRun(
         tool=tool,
         run_tag=run_tag,
         h5ad=f"{run_dir(config, section, 'final_count_matrix_dir', run_tag)}{fold}{h5ad}",
-        info=f"{run_dir(config, section, 'demultiplex_info_dir', run_tag)}{fold}{info}",
+        stats=stats,
     )
 
 
@@ -164,6 +177,7 @@ def final_sources(config, pool: str) -> List[DemuxRun]:
 class FinalPaths:
     """Rule B outputs."""
     h5ad: str
+    basic_stats: str
     info: str
 
 
@@ -177,6 +191,7 @@ def final_paths(config) -> FinalPaths:
     fold = _vcf_fold(config, config['fold_struct_final'])
     return FinalPaths(
         h5ad=f"{c['demux_count_matrix_dir']}{fold}{c['final_count_matrix_h5ad']}",
+        basic_stats=f"{c['demultiplex_info_dir']}{fold}_basic_stats.tsv",
         info=f"{c['demultiplex_info_dir']}{fold}{c['demultiplex_info']}",
     )
 

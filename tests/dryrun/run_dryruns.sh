@@ -43,7 +43,7 @@ touch projdir/P1.vcf.gz projdir/genome1K.phase3.SNP_AF5e2.chr1toX.hg38.sorted.vc
 # Outputs of an earlier hashsolo run (run_tag wo_gt) and a swap correction file
 mkdir -p projdir/final_count_matrix/solo/wo_gt/P1 projdir/demultiplex/info/solo/wo_gt/P1
 touch projdir/final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad \
-    projdir/demultiplex/info/solo/wo_gt/P1/P1-HTO_STARsolo_info.tsv
+    projdir/demultiplex/info/solo/wo_gt/P1/P1-HTO_hashsolo_stats.tsv
 printf "pool\tversion\tfrom\tto\nP1\tsolo:wo_gt\tdonor0\tD1\n" > projdir/swap.tsv
 
 # Scenarios -----------------------------------------------------------------
