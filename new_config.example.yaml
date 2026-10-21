@@ -70,6 +70,10 @@ create_final_h5ad: True # can be True, False or null
 gt_check: yes # yes or no
 demux_type: solo # can be null, solo, vireo, both, add_solo, add_vireo
 demux_run_type: wo_gt # can be wo_gt, w_gt, w_gt_2, etc.
+# Sub-folder for this demultiplexing run in the calico_solo, cellSNP, vireoSNP,
+# final count matrix and demultiplex info dirs (e.g. wo_gt, w_gt_2), so runs
+# don't need their own dirs. null: use the dirs as they are
+run_tag: null
 hto_demux_type: single # Can be single, multiple or null
 
 # Limit processing to the files present in

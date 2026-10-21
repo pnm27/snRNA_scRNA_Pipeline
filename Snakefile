@@ -29,6 +29,10 @@ configfile: "new_config.yaml"
 # Also fills in defaults for optional keys missing from older configs
 validate(config, "schema/config.schema.yaml")
 
+# Each demultiplexing run gets its own sub-folder ('run_tag')
+from lib.utils import apply_run_tag
+apply_run_tag(config)
+
 
 # DEPRACATED - USE new_config.yaml 'demux_type'
 # class global_vars():

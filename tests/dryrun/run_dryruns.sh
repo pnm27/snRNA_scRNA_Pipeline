@@ -12,6 +12,7 @@
 #   # expect: <rules that must be in the DAG>
 #   # absent: <rules that must not be in the DAG>
 #   # resources: <rule> <key=value ...>   (resolved resources of that rule)
+#   # path: <text>                        (must be in an input/output path)
 
 set -uo pipefail
 
@@ -75,6 +76,9 @@ for sc in "${scenarios[@]}"; do
             grep -qE "(^|[ ,])${kv}(,|$)" <<< "${res}" || errors+=("${rule}: expected ${kv} in '${res# *}'")
         done
     done < <(sed -n 's/^# resources://p' "${sc}")
+    for p in $(sed -n 's/^# path://p' "${sc}"); do
+        grep -qE "^    (input|output|log): .*${p}" <<< "${out}" || errors+=("no path with '${p}'")
+    done
 
     if (( ${#errors[@]} == 0 )); then
         echo "PASS  ${name}"

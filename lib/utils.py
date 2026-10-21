@@ -12,6 +12,45 @@ def get_demux_type(config) -> Union[None, str]:
     return str(demux_type).lower()
 
 
+# Output dirs of a demultiplexing run; 'run_tag' adds a sub-folder to each
+RUN_TAGGED_DIRS = {
+    'hashsolo_demux_pipeline': [
+        'calico_solo_dir', 'final_count_matrix_dir', 'demultiplex_info_dir',
+    ],
+    'gt_demux_pipeline': [
+        'inp_for_cellsnp_dir', 'cellsnp_dir', 'vireosnp_dir',
+        'final_count_matrix_dir', 'demultiplex_info_dir',
+    ],
+}
+
+
+def apply_run_tag(config) -> None:
+    """Add the 'run_tag' sub-folder to the dirs in RUN_TAGGED_DIRS.
+
+    The untagged dirs are kept in config['_untagged_dirs'], so the outputs
+    of other runs can still be found (see run_dir). Calling it again
+    doesn't add the tag twice.
+    """
+    if '_untagged_dirs' in config:
+        return
+
+    config['_untagged_dirs'] = {
+        section: {key: config[section][key] for key in keys}
+        for section, keys in RUN_TAGGED_DIRS.items()
+    }
+    for section, keys in RUN_TAGGED_DIRS.items():
+        for key in keys:
+            config[section][key] = run_dir(
+                config, section, key, config.get('run_tag')
+            )
+
+
+def run_dir(config, section: str, key: str, run_tag: Union[None, str]) -> str:
+    """config[section][key] of the run tagged 'run_tag' (None: untagged)."""
+    base = config['_untagged_dirs'][section][key]
+    return f"{base}{run_tag}/" if run_tag else base
+
+
 # def read_files_ext(fname, h: Union[None, list]=None) -> pd.DataFrame :
 def read_files_ext(fname: str, **kwargs: Any) -> pd.DataFrame :    
     if not os.path.isfile(fname):

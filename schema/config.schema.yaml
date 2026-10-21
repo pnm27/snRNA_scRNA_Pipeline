@@ -100,6 +100,14 @@ properties:
     type: string
     pattern: ^(wo_gt|w_gt.*)$
     description: wo_gt, w_gt, w_gt_2, etc.
+  run_tag:
+    type:
+    - string
+    - 'null'
+    pattern: ^[A-Za-z0-9_.-]+$
+    default: null
+    description: Sub-folder for the outputs of this demultiplexing run (e.g. wo_gt, w_gt_2);
+      null keeps the dirs as they are in the config
   hto_demux_type:
     type:
     - string
