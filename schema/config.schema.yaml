@@ -565,6 +565,7 @@ properties:
             type: string
           input:
             type: string
+            pattern: (?i)^(raw|h5ad|final)$
           column:
             type:
             - string

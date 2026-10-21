@@ -1,0 +1,11 @@
+# split bams by the final h5ad (after the swap correction)
+# expect: create_inp_splitBams demux_final
+# path: final_count_matrix/final/P1_final.h5ad
+last_step: STARsolo_split_bams
+demux_type: solo
+picard_metrics: null
+split_bams_pipeline:
+  split_by:
+    demux: hashsolo
+    input: final
+    column: null

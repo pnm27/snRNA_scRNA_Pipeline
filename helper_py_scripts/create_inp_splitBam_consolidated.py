@@ -126,18 +126,17 @@ def main():
         if len(demux_methods) > 1:
             assert len(demux_methods) == len(args.demux_suffix), "Number of suffixes"
             " and number of demux methods aren't the same!"
-        suff = args.demux_suffix[1:] if args.demux_suffix.startswith('_') else args.demux_suffix
+        suff = [s.lstrip('_') for s in (args.demux_suffix or [])]
 
         for i, dem in enumerate(demux_methods):
 
             d = Counter(adata.obs[args.h5ad_don_col])
 
-            if dem in ["vs", "vireo"]:
-                for vals in ['Doublet', 'Negative', 'Not Present']:
-                    d.pop(vals, None)
-            elif dem in ["cs", "calico", "calico_solo", "hashsolo"]:
-                for vals in ['doublet', 'unassigned']:
-                    d.pop(vals, None)
+            # Not donors: labels of demul_samples.py (both tools), of the
+            # raw outputs and of demux_final.py
+            for vals in ['Doublet', 'Negative', 'Not Present', 'doublet',
+                'unassigned', 'Removed']:
+                d.pop(vals, None)
 
 
             df_l = []

@@ -270,6 +270,21 @@ def get_params_demux_final(wildcards, input, config):
 
 # Split bams ----------------------------------------------------------------------------
 
+# Donor column of the h5ads written by the demultiplexing rules
+H5AD_DONOR_COLUMN = {'final': 'Donor_final', 'vireo': 'SubID_vs', 'solo': 'SubID_cs'}
+
+
+def _split_h5ad_column(split_by):
+    """'column' of 'split_by', else the donor column of its h5ad input."""
+    inp = str(split_by.get('input', '')).lower()
+    if split_by.get('column') or inp == 'raw':
+        return split_by.get('column')
+    if inp == 'final':
+        return H5AD_DONOR_COLUMN['final']
+    demux = str(split_by.get('demux', '')).lower()
+    return H5AD_DONOR_COLUMN['vireo' if demux in ('vireo', 'vs') else 'solo']
+
+
 def get_params_create_inp_splitBams(wildcards, config):
     ret_str = ''
     donor_params = config['split_bams_pipeline']['donor_name_converter']
@@ -280,7 +295,7 @@ def get_params_create_inp_splitBams(wildcards, config):
         "conv_file_FromCol": [ donor_params.get('from_column', None), "--conv_file_from_col"],
         "conv_file_ToCol": [ donor_params.get('to_column', None), "--conv_file_to_col"],
         "demux_split_method": [ demuxSplit_params.get('demux', None), "--split_by"],
-        "splitBy_h5adCol": [ demuxSplit_params.get('column', None), "--h5ad_donor_column"],
+        "splitBy_h5adCol": [ _split_h5ad_column(demuxSplit_params), "--h5ad_donor_column"],
     }
     
     for _, v in params_dict.items():

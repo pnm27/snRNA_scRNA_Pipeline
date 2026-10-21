@@ -3,7 +3,7 @@
 import os, glob2
 from .utils import read_files_ext, get_demux_type
 from .config_models import (
-    demux_run, final_sources, raw_output, swap_correction
+    demux_run, final_paths, final_sources, raw_output, swap_correction
 )
 
 
@@ -248,32 +248,37 @@ def get_inputs_demux_final(wildcards, config):
 # ---------------------------------------------------------------------------------------
 # Split bam -----------------------------------------------------------------------------
 def get_inp_splitBam(wildcards, config):
+    """Donor classification the bams are split by ('split_bams_pipeline: split_by').
+
+    - raw: the output of the demultiplexing tool ('demux')
+    - h5ad: the h5ad of that tool in this run (rule 'demux_run_<tool>')
+    - final: the final h5ad of the pool (rule 'demux_final'), e.g. after
+      the swap correction
+    """
     split_by = config['split_bams_pipeline']['split_by']['input'].lower()
-    demux_type = config['split_bams_pipeline']['split_by']['demux'].lower()
-    if split_by == 'raw':
-        if demux_type in ['vireo', 'vs']:
-            return (
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}"
-                f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
-        elif demux_type in ["cs", "calico", "calico_solo", "hashsolo"]:
-            return (
-                f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
-                f"{config['fold_struct_demux']}"
-                f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
-            )
-        else:
-            raise ValueError(
-                "Unknown 'split_bams_pipeline: split_by: demux' value: "
-                f"'{demux_type}'"
-            )
+    demux = config['split_bams_pipeline']['split_by']['demux'].lower()
+
+    if split_by == 'final':
+        return final_paths(config).h5ad
+
+    if demux in ['vireo', 'vs']:
+        tool = 'vireo'
+    elif demux in ["cs", "calico", "calico_solo", "hashsolo"]:
+        tool = 'solo'
     else:
-        return (
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
-            f"{config['fold_struct_demux']}"
-            f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
+        raise ValueError(
+            "Unknown 'split_bams_pipeline: split_by: demux' value: "
+            f"'{demux}'"
         )
+
+    if split_by == 'raw':
+        return raw_output(config, tool)
+    if split_by == 'h5ad':
+        return demux_run(config, tool, config.get('run_tag')).h5ad
+    raise ValueError(
+        "Unknown 'split_bams_pipeline: split_by: input' value: "
+        f"'{split_by}' (expected raw, h5ad or final)"
+    )
 
 
 def get_bam(wildcards, config):

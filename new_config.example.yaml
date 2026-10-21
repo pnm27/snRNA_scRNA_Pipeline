@@ -345,8 +345,10 @@ demultiplex:
 split_bams_pipeline:
   split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
     demux: vireo
-    input: raw # Accepts 'h5ad' or 'raw' (output of vireo or solo)
-    column: null # ONLY for 'h5ad' otherwise null
+    # raw: output of vireo or solo; h5ad: h5ad of that tool in this run;
+    # final: final h5ad of the pool (e.g. after the swap correction)
+    input: raw
+    column: null # h5ad/final only; null: SubID_vs, SubID_cs or Donor_final
   min_cells_per_donor: 200
   subset_chr: 1 # Subset BAM files
   inp_split_bams_dir: projdir/inp_split_filt_bams/
