@@ -44,37 +44,39 @@ col_set = [
     "donors", # NEW ADDITION (comma-sep donor list)
     "vcf",
 ]
-# Make this function to take first set of final_count_matrix file, if one demux is already done
-# or to simply filter the count matrix file (output of alignment) according to the same filters
-# as in calico_solo's rule
 def get_filt_barcodes(wildcards, config):
+    """Count matrix that 'create_inp_cellSNP' takes the cells from.
+
+    - add_vireo: the final h5ad of the earlier hashsolo run
+    - vireo/both: the alignment's filtered matrix (cellranger-arc for
+      multiome, STARsolo otherwise), filtered as in calico_solo's rule
+    """
     demux_type = get_demux_type(config)
 
-    if demux_type == 'add_solo':
-        pass
-    elif demux_type == 'add_vireo':
+    if demux_type == 'add_vireo':
         return (
             f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
             f"{config['fold_struct_demux']}"
             f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
         )
-    elif demux_type in ('vireo', 'both'):
+
+    if demux_type in ('vireo', 'both'):
         if 'multiome' in config['last_step'].lower():
             return (
                 f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{{pool}}"
-                "/filtered_feature_bc_matrix/matrix.mtx.gz"
-            ).format(pool=wildcards.pool) # WILDCARDS
-
-        else:
-            return (
-                f"{config['STARsolo_pipeline']['bams_dir']}"
-                f"{config['fold_struct']}"
-                f"{config['STARsolo_pipeline']['genefull_matrix']}"
+                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz" # WILDCARDS
             )
-    else:
-        raise ValueError("Unexpected inputs to the rule 'demux_samples_calico_solo_STARsolo'! Please check the INPUTS and the FLAGS!")
-    
+        return (
+            f"{config['STARsolo_pipeline']['bams_dir']}"
+            f"{config['fold_struct']}"
+            f"{config['STARsolo_pipeline']['genefull_matrix']}"
+        )
+
+    raise ValueError(
+        "The rule 'create_inp_cellSNP' (vireo's input) isn't needed for "
+        f"demux_type: {demux_type}. Please check 'demux_type' and 'last_step'!"
+    )
+
 
 def get_cellsnp_inputs(wildcards, config):
     ret_dict={}
