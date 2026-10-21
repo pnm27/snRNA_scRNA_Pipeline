@@ -224,16 +224,20 @@ def _inputs_vireo(wildcards, config):
         )
     elif demux_type == 'vireo':
         if all(m in last_step for m in multi_module):
-            ret.extend([
+            vireo_out = (
+                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+                f"{config['fold_struct_gt_demux']}"
+                f"{config['gt_demux_pipeline']['donors_classification']}"
+            )
+            # One vireo output per modality, in the order of the
+            # '--suffix atac cdna' passed by 'get_params_demux'
+            ret.append(
                 f"{config['cellranger_arc_count']['bams_dir']}"
-                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz",
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}"
-                f"{config['gt_demux_pipeline']['donors_classification']}",
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}"
-                f"{config['gt_demux_pipeline']['donors_classification']}",
-            ])
+                f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz"
+            )
+            ret.extend(
+                vireo_out.replace('{modality}', m) for m in ['ATAC', 'cDNA']
+            )
         else:
             ret.append(
                 f"{config['STARsolo_pipeline']['bams_dir']}"
