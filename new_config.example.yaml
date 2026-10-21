@@ -256,6 +256,8 @@ gt_demux_pipeline:
   cellsnp_dir: projdir/demultiplex/cellSNP/
   inp_for_cellsnp_dir: projdir/demultiplex/inp_for_cellsnp/
   cellsnp_ref_snps: null #/path/to/ref_SNPs/for/subsetting
+  reuse_cellsnp_dir: null # null or 'cellsnp_dir' of a previous run, to run vireo on its cellSNP outputs
+  pool_vcf_use: [pileup, vireo] # what a per-pool vcf in 'vcf_info' is used for: cellSNP pileup and/or vireo
   vcf_info: projdir/pool_info.tsv
   vireosnp_dir: projdir/demultiplex/vireoSNP/
   filt_vcf_dir: projdir/isec_reruns/ # when subsetting SNPs wrt ref SNVs (from a source like 1kGP)

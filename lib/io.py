@@ -31,6 +31,12 @@ def get_r2_fastqs(wildcards, config):
     return r2_files
 
 # ---------------------------------------------------------------------------------------
+# What a per-pool vcf (4-column 'vcf_info') is used for: the cellSNP
+# pileup ('pileup') and/or vireo's donor genotypes ('vireo')
+def _pool_vcf_use(config):
+    use = config['gt_demux_pipeline'].get('pool_vcf_use', ['pileup', 'vireo'])
+    return [u.lower() for u in ([use] if isinstance(use, str) else use or [])]
+
 # Columns for a vcf_info file when provided with a vcf per pool
 col_set = [
     "pool", 
@@ -121,7 +127,7 @@ def get_cellsnp_inputs(wildcards, config):
             # If there are more than 3 columns then columns 4 and above
             # have per-donor vcfs 
             # (the 'above' is useful for multi-vcf setup) - TODO
-            elif n_cols == 4:
+            elif n_cols == 4 and 'pileup' in _pool_vcf_use(config):
                 temp_df = temp_df.iloc[:, :4]
                 temp_df.columns = col_set
                 ret_dict['regionsFile'] = temp_df.loc[
@@ -144,8 +150,14 @@ def get_cellsnp_inputs(wildcards, config):
 #    a 2-columned (no-header) txt or csv or tsv file with pool name and expected donors
 def get_vir_inputs(wildcards, config):
     ret_dict = {}
+    # 'reuse_cellsnp_dir' points vireo to the cellSNP outputs of a previous
+    # run (e.g. a wo_gt run), so cellSNP isn't re-run when SNPs haven't changed
+    cellsnp_dir = (
+        config['gt_demux_pipeline'].get('reuse_cellsnp_dir')
+        or config['gt_demux_pipeline']['cellsnp_dir']
+    )
     ret_dict['cellsnpCells'] = (
-        f"{config['gt_demux_pipeline']['cellsnp_dir']}"
+        f"{cellsnp_dir}"
         f"{config['fold_struct_gt_demux']}"
         f"{config['gt_demux_pipeline']['cellsnp_cells']}"    
     )
@@ -162,7 +174,7 @@ def get_vir_inputs(wildcards, config):
                 config['gt_demux_pipeline']['donors_per_pool_file'] or []
             )
         # For condn. 1)
-        elif n_cols == 4:
+        elif n_cols == 4 and 'vireo' in _pool_vcf_use(config):
             temp_df = temp_df.iloc[:, :n_cols]
             temp_df.columns = col_set
             ret_dict['donorFile'] = (
