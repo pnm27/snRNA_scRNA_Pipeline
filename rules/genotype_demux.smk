@@ -114,6 +114,14 @@ rule vireoSNP:
             f"{config['gt_demux_pipeline']['donors_classification']}"
         )
 
+    # Read by demul_samples.py (next to donor_ids.tsv) for variant matching stats
+    log:
+        (
+            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
+            f"{config['fold_struct_gt_demux']}"
+            "vireo.log"
+        )
+
     params:
         geno_tag=config['gt_demux_pipeline']['donor_genotype'],
         output_prefix=lambda _, output: (
@@ -134,6 +142,6 @@ rule vireoSNP:
         set -x
         vireo -c {input.cellsnpCells} -o {params.output_prefix} \
             -t {params.geno_tag} --noPlot --randSeed 100 \
-            {params.cmd_str}
+            {params.cmd_str} 2>&1 | tee {log}
         set +x
         """

@@ -163,3 +163,6 @@ After cs demultiplexing #cells	N_CELLS_AFTER_DEMUX_CS	STARsolo	DEMUX_CS	Remainin
 Doublets #cells_vs	N_DOUBLET_CELLS_VS	STARsolo	DEMUX_VS	doublet cells as identified by vireoSNP
 Negative #cells_vs	N_NEGATIVE_CELLS_VS	STARsolo	DEMUX_VS	negative cells as identified by vireoSNP
 After vs demultiplexing #cells	N_CELLS_AFTER_DEMUX_VS	STARsolo	DEMUX_VS	Remaining cells after vireoSNP demultiplexing
+variants in pileup_vs	N_VARIANTS_PILEUP_VS	STARsolo	DEMUX_VS	variants in the cellSNP pileup (vireo log, runs with a donor VCF)
+variants matched to donor VCF_vs	N_VARIANTS_MATCHED_VS	STARsolo	DEMUX_VS	pileup variants matched to the donor VCF (vireo log)
+variants used for demultiplexing_vs	N_VARIANTS_USED_VS	STARsolo	DEMUX_VS	variants vireo used for demultiplexing (vireo log)

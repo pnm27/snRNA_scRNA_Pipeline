@@ -714,6 +714,52 @@ def demux_by_vireo(bcs: pd.Series, vir_out_file: str,
         return [get_df["Subj_ID"], temp_df, None]
     
 
+_VIREO_MATCHED = re.compile(
+    r"\[vireo\] (\d+) out (?:of )?(\d+) variants matched to donor VCF")
+_VIREO_USED = re.compile(
+    r"\[vireo\] Demultiplex \d+ cells to \d+ donors with (\d+) variants")
+
+
+def vireo_log_stats(vir_out_file: str, log_name: str = "vireo.log") \
+    -> list[tuple[str, int]]:
+    r"""Variant stats from the vireo log next to vireo's output.
+
+    Paramters
+    ---------
+    vir_out_file
+        Path to donor_ids.tsv file produced by vireo.
+    log_name
+        Name of the log file (written by the rule 'vireoSNP') in the 
+        same dir as vir_out_file.
+
+    Returns
+    -------
+    list
+        Demux stats (empty, if the log file is absent e.g. older runs). 
+        'variants matched to donor VCF' is only present for runs with 
+        a donor VCF.
+
+    """
+    log_file = os.path.join(os.path.dirname(vir_out_file), log_name)
+    if not os.path.isfile(log_file):
+        return []
+
+    with open(log_file) as f:
+        log_text = f.read()
+
+    temp_df = []
+    if "no variants matched to donor VCF" in log_text:
+        temp_df.append(('variants matched to donor VCF_vs', 0))
+    elif m := _VIREO_MATCHED.search(log_text):
+        temp_df.append(('variants matched to donor VCF_vs', int(m.group(1))))
+        temp_df.append(('variants in pileup_vs', int(m.group(2))))
+
+    if m := _VIREO_USED.search(log_text):
+        temp_df.append(('variants used for demultiplexing_vs', int(m.group(1))))
+
+    return temp_df
+
+
 # ---------------------------------------------------------------------------
 
 # Adding Annotations & validating them --------------------------------------

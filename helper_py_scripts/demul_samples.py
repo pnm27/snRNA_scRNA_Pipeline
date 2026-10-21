@@ -14,6 +14,7 @@ from demultiplex_helper_funcs import (
     auto_read, has_wet_lab_value_column, 
     demux_by_calico_solo, 
     demux_by_vireo,
+    vireo_log_stats,
     get_donor_info,
     process_columns 
     )
@@ -687,6 +688,7 @@ def main():
 
             if not args.vs_stats:
                 vir_dem_stats.extend(temp_df)
+                vir_dem_stats.extend(vireo_log_stats(v))
         
         
  
