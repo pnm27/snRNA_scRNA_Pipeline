@@ -4,6 +4,14 @@ from typing import Any, Union # Need verion > 3.10
 import pandas as pd, os
 
 
+def get_demux_type(config) -> Union[None, str]:
+    """Return config['demux_type'] lowercased, or None when no demux is needed."""
+    demux_type = config.get('demux_type')
+    if not demux_type or str(demux_type).lower() in ('none', 'null'):
+        return None
+    return str(demux_type).lower()
+
+
 # def read_files_ext(fname, h: Union[None, list]=None) -> pd.DataFrame :
 def read_files_ext(fname: str, **kwargs: Any) -> pd.DataFrame :    
     if not os.path.isfile(fname):

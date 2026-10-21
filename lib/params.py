@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from .utils import read_files_ext
+from .utils import read_files_ext, get_demux_type
 import re, glob2, os
 
 # STARsolo ------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ def get_params_cics(wildcards, config, input):
         else:
             ret_str += f'{v[1]} {v[0]} '
 
-    if config['demux_type'] in ['add_solo', 'add_vireo'] or input[0].endswith('.h5ad'):
+    if get_demux_type(config) in ['add_solo', 'add_vireo'] or input[0].endswith('.h5ad'):
         ret_str += '--prev '
     
     if 'multiome' in config['last_step'].lower():
@@ -234,14 +234,15 @@ def get_params_demux(wildcards, input, output, config):
         else:
             ret_str += f'{v[1]} {v[0]} '
 
-    if config['demux_type'].lower() in ['solo', 'add_solo']:
+    demux_type = get_demux_type(config)
+    if demux_type in ['solo', 'add_solo']:
         inp_files += solo_inp
-    elif config['demux_type'].lower() in ['vireo', 'add_vireo']:
+    elif demux_type in ['vireo', 'add_vireo']:
         if multi_module:
             inp_files += multiome_inp
         else:
             inp_files += vireo_inp
-    elif config['demux_type'].lower() == 'both':
+    elif demux_type == 'both':
         inp_files += solo_inp + vireo_inp
 
     for k, v in zip(inp_files, input):

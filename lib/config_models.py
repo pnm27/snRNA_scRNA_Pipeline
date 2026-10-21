@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass, field
 from typing import List
+from .utils import get_demux_type
 
 
 @dataclass
@@ -24,7 +25,7 @@ class DemuxConfig:
     def from_snakemake(cls, config):
 
         demuxes = []
-        demux_type = config.get("demux_type")
+        demux_type = get_demux_type(config)
         create_h5ad = config.get(
                 "create_final_h5ad",
                 False
@@ -96,17 +97,19 @@ class DemuxConfig:
                     fold_struct=config['fold_struct_demux']
                 )
             ])
-        elif demux_type is None or demux_type == "none" or not demux_type:
+        elif demux_type is None:
+            # create_h5ad_only — must match the 'demux_samples' output
+            # (see '_output_cfg' in rules/demultiplex.smk)
             demuxes.append(
                 DemuxResult(
-                    demux_type=False,
+                    demux_type="none",
                     outdir=config[
-                        'hashsolo_demux_pipeline'
+                        'gt_demux_pipeline'
                     ]['final_count_matrix_dir'],
                     suffix=config[
-                        'hashsolo_demux_pipeline'
-                    ]['final_count_matrix_h5ad'],
-                    fold_struct=config['fold_struct_demux']
+                        'gt_demux_pipeline'
+                    ]['final_count_matrix_h5ad'].replace("_vS", ""),
+                    fold_struct=config['fold_struct']
                 )
             )
         else:

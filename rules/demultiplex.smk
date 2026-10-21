@@ -5,6 +5,7 @@ from lib.io import (
     get_inputs_demux
 )
 from lib.params import get_params_demux
+from lib.utils import get_demux_type
 from functools import partial
 
 
@@ -22,11 +23,7 @@ def allocate_time_DMX(wildcards, attempt):
 
 def _output_cfg(config):
     """Return (matrix_dir, fold_struct, matrix_h5ad, demux_info_dir, demux_info, suffix)."""
-    demux_type = (
-        None
-        if config['demux_type'] is None 
-        else config['demux_type'].lower()
-        )
+    demux_type = get_demux_type(config)
 
     if demux_type in ('solo', 'add_solo'):
         c = config['hashsolo_demux_pipeline']

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os, glob2
-from .utils import read_files_ext
+from .utils import read_files_ext, get_demux_type
 
 
 
@@ -42,16 +42,17 @@ col_set = [
 # or to simply filter the count matrix file (output of alignment) according to the same filters
 # as in calico_solo's rule
 def get_filt_barcodes(wildcards, config):
+    demux_type = get_demux_type(config)
 
-    if config['demux_type'].lower() == 'add_solo':
+    if demux_type == 'add_solo':
         pass
-    elif config['demux_type'].lower() == 'add_vireo':
+    elif demux_type == 'add_vireo':
         return (
             f"{config['hashsolo_demux_pipeline']['final_count_matrix_dir']}"
             f"{config['fold_struct_demux']}"
             f"{config['hashsolo_demux_pipeline']['final_count_matrix_h5ad']}"
         )
-    elif config['demux_type'].lower() == 'vireo' or config['demux_type'].lower() == 'both':
+    elif demux_type in ('vireo', 'both'):
         if 'multiome' in config['last_step'].lower():
             return (
                 f"{config['cellranger_arc_count']['bams_dir']}"
@@ -174,7 +175,7 @@ def get_vir_inputs(wildcards, config):
 # Demultiplex ---------------------------------------------------------------------------
 
 def _inputs_solo(wildcards, config):
-    demux_type = config['demux_type'].lower()
+    demux_type = get_demux_type(config)
     ret = []
 
     if demux_type == 'add_solo':
@@ -200,7 +201,7 @@ def _inputs_solo(wildcards, config):
 
 def _inputs_vireo(wildcards, config):
     multi_module = ['multiome', 'gt_demux']
-    demux_type   = config['demux_type'].lower()
+    demux_type   = get_demux_type(config)
     last_step    = config['last_step'].lower()
     ret = []
 
@@ -272,7 +273,7 @@ def _inputs_both(wildcards, config):
 
 
 def get_inputs_demux(wildcards, config):
-    demux_type = config['demux_type'].lower()
+    demux_type = get_demux_type(config)
 
     if demux_type not in ('solo', 'vireo', 'both', 'add_solo', 'add_vireo'):
         # create_h5ad_only branch
