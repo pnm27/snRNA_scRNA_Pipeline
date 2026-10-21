@@ -2,6 +2,7 @@
 
 from .utils import read_files_ext, get_demux_type
 from .config_models import final_sources, swap_correction
+from .modality import get_modality, has_umi
 import re, glob2, os
 
 # STARsolo ------------------------------------------------------------------------------
@@ -150,12 +151,10 @@ def get_procs_csnp(wildcards, config, resources):
         
 
 def get_umiTag(wildcards, config):
-    # For ATAC return None
-    if 'multiome' in config['last_step'].lower() and \
-        wildcards.modality.lower() == 'atac':
+    # None for reads without UMIs (ATAC)
+    if not has_umi(config, get_modality(wildcards)):
         return None
-    else:
-        return config['gt_demux_pipeline']['umi_tag']
+    return config['gt_demux_pipeline']['umi_tag']
     
 
 def get_cmd_str_vireo(wildcards, input, config) -> str:

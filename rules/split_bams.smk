@@ -12,7 +12,7 @@ from lib.params import (
     get_mito_file,
 )
 from functools import partial
-from types import SimpleNamespace
+from lib.modality import bam_modalities, bam_paths, is_multiome
 
 
 # FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.
@@ -93,126 +93,39 @@ rule bamfilt_by_CB:
         """
 
 
-rule filt_chr_bams:
-    input:
-        unpack(partial(get_bam, config=config))
+# One rule per modality with a bam ('filt_chr_bams' for STARsolo runs)
+for _modality in bam_modalities(config):
+    _name = (
+        f"filt_chr_bams_multiome_{_modality.lower()}" if is_multiome(config)
+        else "filt_chr_bams"
+    )
 
-    output:
-        bam=(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['split_bams_pipeline']['short_bam']}"
-        ), # generalize this
-        bai=(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['split_bams_pipeline']['short_bam']}.bai"
-        )
+    rule:
+        name: _name
 
-    params:
-        sub_chr=partial(subset_to_chr, config=config),
-        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
+        input:
+            **bam_paths(config, _modality)
 
-    resources:
-        **get_resources("filt_chr_bams")
+        output:
+            **bam_paths(config, _modality, config['split_bams_pipeline']['short_bam'])
 
-    conda: "../envs/pysam.yaml"
+        params:
+            sub_chr=partial(subset_to_chr, config=config),
+            threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
-    envmodules:
-        "samtools"
-        
-    shell:
-        """
-        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
-        samtools index -@ {params.threads} {output.bam}
-        """
+        resources:
+            **get_resources(_name)
 
+        conda: "../envs/pysam.yaml"
 
-def _bam_pattern(config, modality_key: str) -> str:
-    """Return a wildcard-pattern path for a given modality bam key."""
-    bam_file = config['cellranger_arc_count'][modality_key]
-    short    = config['split_bams_pipeline']['short_bam']
-    base     = (
-        f"{config['cellranger_arc_count']['bams_dir']}"
-        f"{{pool}}/{bam_file}"
-    ).replace('.bam', short)
-    return base
+        envmodules:
+            "samtools"
 
-
-def _output_fcb_multiome(config) -> tuple[str, str]:
-    """
-    Return (bam_pattern, bai_pattern) for multiome, driven by {modality} wildcard.
-    The {modality} wildcard in the pattern lets Snakemake resolve it at runtime.
-    """
-    gex_bam  = _bam_pattern(config, 'gex_bam')
-    atac_bam = _bam_pattern(config, 'atac_bam')
-
-    # Use a Snakemake wildcard-keyed lookup at rule-match time via a
-    # dispatch pattern encoded directly into the path using {modality}
-    # We can't branch on modality here, so we rely on the {modality}
-    # wildcard constraint on the rule to route correctly — two rules,
-    # one per modality, or a shared pattern if paths can encode modality.
-    #
-    # Since gex and atac have different filenames, we need two rules.
-    # Return both as a dict for callers to pick from.
-    return {
-        "cdna": (gex_bam,  gex_bam  + '.bai'),
-        "atac": (atac_bam, atac_bam + '.bai'),
-    }
-
-
-_out_fcb_multiome = _output_fcb_multiome(config)
-
-rule filt_chr_bams_multiome_cdna:
-    wildcard_constraints:
-        modality="cDNA"
-    input:
-        # unpack(partial(get_bam, config=config))
-        unpack(lambda wildcards: get_bam(
-            SimpleNamespace(**vars(wildcards), modality="cDNA"), config
-        ))
-    output:
-        bam=_out_fcb_multiome["cdna"][0],
-        bai=_out_fcb_multiome["cdna"][1]
-    params:
-        sub_chr=partial(subset_to_chr, config=config),
-        threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
-    resources:
-        **get_resources("filt_chr_bams_multiome_cdna")
-    conda: "../envs/pysam.yaml"
-    envmodules:
-        "samtools"
-    shell:
-        """
-        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
-        samtools index -@ {params.threads} {output.bam}
-        """
-
-
-rule filt_chr_bams_multiome_atac:
-    wildcard_constraints:
-        modality="ATAC"
-    input:
-        # unpack(partial(get_bam, config=config))
-        unpack(lambda wildcards: get_bam(
-            SimpleNamespace(**vars(wildcards), modality="ATAC"), config
-        ))
-    output:
-        bam=_out_fcb_multiome["atac"][0],
-        bai=_out_fcb_multiome["atac"][1]
-    params:
-        sub_chr=partial(subset_to_chr, config=config),
-        threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
-    resources:
-        **get_resources("filt_chr_bams_multiome_atac")
-    conda: "../envs/pysam.yaml"
-    envmodules:
-        "samtools"
-    shell:
-        """
-        samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
-        samtools index -@ {params.threads} {output.bam}
-        """
+        shell:
+            """
+            samtools view -@ {params.threads} {input.bam} {params.sub_chr} -bho {output.bam}
+            samtools index -@ {params.threads} {output.bam}
+            """
 
 
 rule create_bed:
