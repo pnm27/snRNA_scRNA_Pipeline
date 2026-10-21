@@ -285,7 +285,7 @@ def produce_targets(wildcards) -> list:
             raise ValueError("VCF_TYPE must be a str or list.")
 
     elif step == "starsolo_kb_solo":
-        return _expand_pools(targets_STARsolo()[0])
+        return _expand_pools(targets_STARsolo()[0], modality=MODALITY)
 
     elif step == "starsolo_cellsnp":
         return _with_picard(_expand_pools(targets_cellSNP(multiome=False)[0], modality=MODALITY))
