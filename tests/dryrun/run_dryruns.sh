@@ -13,6 +13,13 @@
 #   # absent: <rules that must not be in the DAG>
 #   # resources: <rule> <key=value ...>   (resolved resources of that rule)
 #   # path: <text>                        (must be in an input/output path)
+#   # fails: <text>                       (snakemake must fail with this text)
+#   # donors: <donor ...>                 (the jobs up to the donor checkpoint
+#                                          'create_inp_splitBams' are done and
+#                                          found these donors, so per-donor
+#                                          jobs are in the DAG too)
+#
+# Each scenario runs in its own copy of the throwaway project.
 
 set -uo pipefail
 
@@ -25,8 +32,9 @@ TMP=$(mktemp -d)
 [[ -z "${KEEP_TMP:-}" ]] && trap 'rm -rf "${TMP}"' EXIT
 
 # Throwaway project ---------------------------------------------------------
-cp "${REPO}/new_config.example.yaml" "${TMP}/new_config.yaml"
-cd "${TMP}"
+mkdir "${TMP}/base"
+cp "${REPO}/new_config.example.yaml" "${TMP}/base/new_config.yaml"
+cd "${TMP}/base"
 mkdir -p projdir/fastq_files/Sample_P1-cDNA projdir/fastq_files/Sample_P1-HTO \
     prev/cellSNP/Sample_P1-cDNA
 printf "P1-cDNA\n" > projdir/fastq_files.txt
@@ -45,6 +53,34 @@ mkdir -p projdir/final_count_matrix/solo/wo_gt/P1 projdir/demultiplex/info/solo/
 touch projdir/final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad \
     projdir/demultiplex/info/solo/wo_gt/P1/P1-HTO_hashsolo_stats.tsv
 printf "pool\tversion\tfrom\tto\nP1\tsolo:wo_gt\tdonor0\tD1\n" > projdir/swap.tsv
+# identify_swaps
+mkdir -p outdir && touch outdir/reference.vcf.gz
+
+
+dry_run() {
+    PYTHONPATH="${REPO}" ${SNAKEMAKE} -s "${SNAKEFILE}" -n \
+        --configfile new_config.yaml "$1" 2>&1
+}
+
+
+# Creates the outputs of the jobs planned up to the donor checkpoint and
+# writes its donor hash file with 250 cells for each donor
+mark_checkpoint_done() {
+    local sc=$1 f h d i
+    shift
+    dry_run "${sc}" | sed -n 's/^    output: //p' | tr ',' '\n' | sed 's/^ *//' \
+        | grep -v '^resolved/' | while read -r f; do
+            [[ -z "${f}" ]] && continue
+            mkdir -p "$(dirname "${f}")" && touch "${f}"
+        done
+    sleep 1 # hash files newer than their inputs
+    find . -name '*_bc_hash.txt' | while read -r h; do
+        printf "Subj_ID\tbarcodes\n" > "${h}"
+        for d in "$@"; do
+            for i in $(seq 250); do printf "%s\tBC%s_%s\n" "${d}" "${d}" "${i}"; done
+        done >> "${h}"
+    done
+}
 
 # Scenarios -----------------------------------------------------------------
 scenarios=("$@")
@@ -59,12 +95,23 @@ fi
 n_fail=0
 for sc in "${scenarios[@]}"; do
     name=$(basename "${sc}" .yaml)
-    out=$(PYTHONPATH="${REPO}" ${SNAKEMAKE} -s "${SNAKEFILE}" -n \
-        --configfile new_config.yaml "${sc}" 2>&1)
+    cp -r "${TMP}/base" "${TMP}/${name}"
+    cd "${TMP}/${name}"
+
+    donors=$(sed -n 's/^# donors://p' "${sc}")
+    [[ -n "${donors}" ]] && mark_checkpoint_done "${sc}" ${donors}
+
+    out=$(dry_run "${sc}")
     status=$?
     errors=()
 
-    (( status != 0 )) && errors+=("snakemake exited with ${status}")
+    fails=$(sed -n 's/^# fails: *//p' "${sc}")
+    if [[ -n "${fails}" ]]; then
+        (( status == 0 )) && errors+=("snakemake didn't fail")
+        grep -qF "${fails}" <<< "${out}" || errors+=("no '${fails}' in the output")
+    elif (( status != 0 )); then
+        errors+=("snakemake exited with ${status}")
+    fi
 
     jobs=$(grep -oE "^(local)?(rule|checkpoint) [A-Za-z0-9_]+" <<< "${out}" \
         | awk '{print $2}' | sort -u)
@@ -91,7 +138,7 @@ for sc in "${scenarios[@]}"; do
         n_fail=$(( n_fail + 1 ))
         echo "FAIL  ${name}"
         printf '      %s\n' "${errors[@]}"
-        (( status != 0 )) && tail -n 15 <<< "${out}" | sed 's/^/      | /'
+        (( status != 0 )) && [[ -z "${fails}" ]] && tail -n 15 <<< "${out}" | sed 's/^/      | /'
     fi
 done
 

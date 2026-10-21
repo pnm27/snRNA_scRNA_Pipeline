@@ -1,0 +1,9 @@
+# final per-donor bams (cell-filtered bam), in split_bams_dir/final/
+# donors: D1 D2
+# expect: bamfilt_by_CB split_bams resolve_pool_targets
+# absent: filt_chr_bams
+# path: STARsolo_split_filt_bams/final/Sample_P1-cDNA/D1.bam _filt.bam
+last_step: STARsolo_split_bams_gt_demux
+demux_type: vireo
+gt_check: no
+picard_metrics: null

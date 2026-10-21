@@ -75,7 +75,8 @@ def _expand_pools_donors(template: str, wildcards) -> list:
                 }
             )
     if getattr(wildcards, "modality", None) not in (None, ""):
-        wc_dict["modality"] = wildcards.modality
+        # One value per donor: zip stops at its shortest list
+        wc_dict["modality"] = [wildcards.modality] * len(wc_dict["donor"])
     return expand(template, zip, **wc_dict)
 
 

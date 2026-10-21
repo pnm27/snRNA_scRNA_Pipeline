@@ -1,0 +1,8 @@
+# QTLtools-mbv on each per-donor bam
+# donors: D1 D2
+# expect: qtltools_mbv split_bams filt_chr_bams
+# path: qtltools_mbv/P1_D1_cDNA.bamstat.txt qtltools_mbv/P1_D2_cDNA.bamstat.txt
+last_step: STARsolo_gt_demux_identify_swaps
+demux_type: vireo
+gt_check: yes
+picard_metrics: null
