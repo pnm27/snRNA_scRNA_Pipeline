@@ -1,0 +1,659 @@
+# JSON schema (in YAML) for new_config.yaml, used by validate() in the Snakefile.
+# Nested sections allow extra keys; only the types of known keys are checked.
+$schema: https://json-schema.org/draft/2020-12/schema
+description: Config of the snRNA/scRNA pipeline (new_config.yaml). Validated at the start of every run;
+  defaults fill in optional keys missing from older configs.
+type: object
+required:
+- barcodes
+- genome_builds
+- STARsolo_genome_dir
+- cellranger_arc_genome_dir
+- last_step
+- picard_metrics
+- create_final_h5ad
+- gt_check
+- demux_type
+- demux_run_type
+- hto_demux_type
+- select_fastqs
+- wildcards_select
+- HTO_fastqs_dir
+- cDNA_fastqs_dir
+- ATAC_fastqs_dir
+- R1_suffix
+- R2_suffix
+- multiome_suffix
+- wet_lab_info
+- whitelist
+- reg_chr_bed
+- chr_prefix
+- mito_prefix
+- max_mito_percentage
+- min_genes_per_cell
+- min_cells_per_gene
+- fold_struct
+- fold_struct_kb
+- fold_struct_demux
+- fold_struct_gt_demux
+- fold_struct_gt_demux2
+- fold_struct_filt_bc
+- fold_struct_bam_split1
+- fold_struct_bam_split2
+- fold_struct_gt_demux_redo
+- fold_struct_swaps_check
+- fold_struct_deeptools
+- STAR_version
+- featuremap_script
+- STAR_snv_aware_version
+- cellranger-arc_version
+- STARsolo_pipeline
+- cellranger_arc_count
+- picard_pipeline
+- kb_pipeline
+- hashsolo_demux_pipeline
+- gt_demux_pipeline
+- demultiplex
+- split_bams_pipeline
+- identify_swaps
+- multiBamSummary
+- plotCorrelation
+properties:
+  barcodes:
+    type: array
+  genome_builds:
+    type: object
+    description: Reference sets, picked through YAML anchors
+  STARsolo_genome_dir:
+    type: object
+    description: Reference sets, picked through YAML anchors
+  cellranger_arc_genome_dir:
+    type: object
+    description: Reference sets, picked through YAML anchors
+  last_step:
+    type: string
+    pattern: (?i)^(all_multi_vcf|starsolo.*|multiome.*)$
+    description: Last module to run, e.g. STARsolo_kb_solo, STARsolo_demux, STARsolo_split_bams_gt_demux,
+      multiome_gt_demux
+  picard_metrics:
+    type:
+    - string
+    - 'null'
+    enum:
+    - all
+    - rnaseq
+    - gc
+    - null
+  create_final_h5ad:
+    type:
+    - boolean
+    - 'null'
+  gt_check:
+    type: boolean
+  demux_type:
+    type:
+    - string
+    - 'null'
+    pattern: (?i)^(none|null|solo|vireo|both|add_solo|add_vireo)$
+    description: null (or none) creates the h5ad without demultiplexing
+  demux_run_type:
+    type: string
+    pattern: ^(wo_gt|w_gt.*)$
+    description: wo_gt, w_gt, w_gt_2, etc.
+  hto_demux_type:
+    type:
+    - string
+    - 'null'
+    pattern: (?i)^(single|multiple)$
+  select_fastqs:
+    type: string
+  wildcards_select:
+    type:
+    - string
+    - 'null'
+  HTO_fastqs_dir:
+    type: string
+  cDNA_fastqs_dir:
+    type: string
+  ATAC_fastqs_dir:
+    type: string
+  R1_suffix:
+    type: string
+  R2_suffix:
+    type: string
+  multiome_suffix:
+    type: string
+  wet_lab_info:
+    type:
+    - string
+    - 'null'
+  whitelist:
+    type: string
+  reg_chr_bed:
+    type:
+    - string
+    - 'null'
+  chr_prefix:
+    type:
+    - string
+    - 'null'
+  mito_prefix:
+    type: string
+  max_mito_percentage:
+    type: integer
+  min_genes_per_cell:
+    type: integer
+  min_cells_per_gene:
+    type: integer
+  fold_struct:
+    type: string
+  fold_struct_kb:
+    type: string
+  fold_struct_demux:
+    type: string
+  fold_struct_gt_demux:
+    type: string
+  fold_struct_gt_demux2:
+    type: string
+  fold_struct_filt_bc:
+    type: string
+  fold_struct_bam_split1:
+    type: string
+  fold_struct_bam_split2:
+    type: string
+  fold_struct_gt_demux_redo:
+    type: string
+  fold_struct_swaps_check:
+    type: string
+  fold_struct_deeptools:
+    type: string
+  STAR_version:
+    type: string
+  featuremap_script:
+    type: string
+  STAR_snv_aware_version:
+    type: string
+  cellranger-arc_version:
+    type: string
+  STARsolo_pipeline:
+    type: object
+    properties:
+      bams_dir:
+        type: string
+      genome_pick:
+        type: object
+      star_params_dir:
+        type: string
+      umi_len:
+        type: integer
+      soloType:
+        type: string
+      solo_cell_filter:
+        type: string
+      SAM_attr:
+        type: string
+      features:
+        type: string
+      misc_reads_file:
+        type: string
+      bai:
+        type: string
+      bam:
+        type: string
+      STAR_log_final:
+        type: string
+      barcodes_stats:
+        type: string
+      gene_features_stats:
+        type: string
+      gene_barcodes:
+        type: string
+      gene_features:
+        type: string
+      gene_matrix:
+        type: string
+      gene_raw_matrix:
+        type: string
+      gene_summary:
+        type: string
+      genefull_features_stats:
+        type: string
+      genefull_barcodes:
+        type: string
+      genefull_features:
+        type: string
+      genefull_matrix:
+        type: string
+      genefull_raw_matrix:
+        type: string
+      genefull_summary:
+        type: string
+      extra_params:
+        type:
+        - string
+        - 'null'
+      run_threads:
+        type: integer
+  cellranger_arc_count:
+    type: object
+    properties:
+      bams_dir:
+        type: string
+      ref:
+        type: object
+      atac_fragments:
+        type: string
+      filtered_h5_matrix:
+        type: string
+      gex_bam:
+        type: string
+      gex_bai:
+        type: string
+      atac_bam:
+        type: string
+      atac_bai:
+        type: string
+      pipestance_struct:
+        type: string
+  picard_pipeline:
+    type: object
+    properties:
+      window_size:
+        type: integer
+      gc_bias_metrics:
+        type: string
+      gc_summary_metrics:
+        type: string
+      strand:
+        type: string
+        enum:
+        - NONE
+        - FIRST_READ_TRANSCRIPTION_STRAND
+        - SECOND_READ_TRANSCRIPTION_STRAND
+      rnaseq_metrics:
+        type: string
+  kb_pipeline:
+    type: object
+    properties:
+      kallisto_bustools_dir:
+        type: string
+      k_mer_length:
+        type: integer
+      chemistry:
+        type: string
+      columns_to_pick:
+        type: array
+      feature_barcodes:
+        type: string
+      headers:
+        type:
+        - boolean
+        - string
+      features_mismatch_fa:
+        type: string
+      features_mismatch_t2g:
+        type: string
+      features_mismatch_idx:
+        type: string
+      ec_matrix:
+        type: string
+      tx:
+        type: string
+      bus_file:
+        type: string
+      bus_file_corrected:
+        type: string
+      bus_file_sorted:
+        type: string
+      bus_count_dir:
+        type: string
+      bus_count_barcodes:
+        type: string
+      bus_count_genes:
+        type: string
+      bus_count_mtx:
+        type: string
+  hashsolo_demux_pipeline:
+    type: object
+    properties:
+      h5ad_bustools_dir:
+        type: string
+      calico_solo_dir:
+        type: string
+      hto_sep:
+        type:
+        - string
+        - 'null'
+      columns_to_pick:
+        type: array
+      SubID_convert:
+        type: boolean
+      final_count_matrix_dir:
+        type: string
+      demultiplex_info_dir:
+        type: string
+      bustools_h5ad:
+        type: string
+      calico_solo_h5ad:
+        type: string
+      final_count_matrix_h5ad:
+        type: string
+      demultiplex_info:
+        type: string
+  gt_demux_pipeline:
+    type: object
+    properties:
+      cellsnp_dir:
+        type: string
+      inp_for_cellsnp_dir:
+        type: string
+      cellsnp_ref_snps:
+        type:
+        - string
+        - 'null'
+      reuse_cellsnp_dir:
+        type:
+        - string
+        - 'null'
+        default: null
+        description: '''cellsnp_dir'' of a previous run, to run vireo on its cellSNP outputs'
+      pool_vcf_use:
+        type:
+        - array
+        - string
+        - 'null'
+        items:
+          enum:
+          - pileup
+          - vireo
+        default:
+        - pileup
+        - vireo
+        description: 'What a per-pool vcf (4-column vcf_info) is used for: the cellSNP pileup and/or vireo'
+      vcf_info:
+        type:
+        - string
+        - 'null'
+      vireosnp_dir:
+        type: string
+      filt_vcf_dir:
+        type: string
+      genome_1k_ref:
+        type: string
+      donor_genotype:
+        type: string
+      final_count_matrix_dir:
+        type: string
+      demultiplex_info_dir:
+        type: string
+      donorName_conv:
+        type: object
+        properties:
+          file:
+            type:
+            - string
+            - 'null'
+          header_lev:
+            type:
+            - string
+            - 'null'
+          pool_col:
+            type:
+            - string
+            - 'null'
+          donor_col:
+            type:
+            - string
+            - 'null'
+          convert_col:
+            type:
+            - string
+            - 'null'
+          new_h5ad_colname:
+            type:
+            - string
+            - 'null'
+      demux_col:
+        type: string
+      barcode_len:
+        type: integer
+      include_all_cells:
+        type: boolean
+      doublet:
+        type: string
+      negative:
+        type: string
+      na:
+        type: string
+      filt_barcodes:
+        type: string
+      cell_tag:
+        type: string
+      umi_tag:
+        type: string
+      cellsnp_base:
+        type: string
+      cellsnp_cells:
+        type: string
+      bcftools_thread:
+        type: integer
+      min_aggr_count:
+        type: integer
+      min_maf:
+        type: number
+      n_proc:
+        type: integer
+      donors_per_pool_file:
+        type:
+        - string
+        - 'null'
+      donors_vcf:
+        type: string
+      donors_classification:
+        type: string
+      filt_vcf:
+        type: string
+      hash_columns:
+        type: array
+      vcf_info_columns:
+        type: object
+        properties:
+          pool:
+            type: string
+          n_dons:
+            type: string
+          vcf:
+            type: array
+      wet_lab_file_cols:
+        type: array
+      vireo_donor_file_cols:
+        type: array
+      final_count_matrix_h5ad:
+        type: string
+      demultiplex_info:
+        type: string
+      swap_correction_df:
+        type:
+        - string
+        - 'null'
+        default: null
+  demultiplex:
+    type: object
+    properties:
+      demux_count_matrix_dir:
+        type:
+        - string
+        - 'null'
+      final_count_matrix_h5ad:
+        type: string
+      demultiplex_info_dir:
+        type: string
+      demultiplex_info:
+        type: string
+  split_bams_pipeline:
+    type: object
+    properties:
+      split_by:
+        type: object
+        properties:
+          demux:
+            type: string
+          input:
+            type: string
+          column:
+            type:
+            - string
+            - 'null'
+      min_cells_per_donor:
+        type: integer
+      subset_chr:
+        type:
+        - integer
+        - string
+        - 'null'
+      inp_split_bams_dir:
+        type: string
+      bams_per_barcode_dir:
+        type: string
+      split_bams_dir:
+        type: string
+      split_bams_proxy_dir:
+        type: string
+      reads_v_barcodes_dir:
+        type: string
+      temp_dir:
+        type: string
+      sort_temp_dir:
+        type: string
+      new_temp_dir:
+        type: string
+      split_bams_dir2:
+        type: string
+      per_donor_split_log_dir:
+        type: string
+      per_donor_split_log_dir2:
+        type: string
+      split_bams_proxy_dir2:
+        type: string
+      new_temp_dir2:
+        type: string
+      donor_name_converter:
+        type: object
+        properties:
+          file:
+            type:
+            - string
+            - 'null'
+          from_column:
+            type:
+            - string
+            - 'null'
+          to_column:
+            type:
+            - string
+            - 'null'
+      demux_suffixes:
+        type: object
+        properties:
+          vireo:
+            type:
+            - string
+            - 'null'
+          solo:
+            type:
+            - string
+            - 'null'
+      sort_cb_bam:
+        type: string
+      filt_bam:
+        type: string
+      sort_cb_bai:
+        type: string
+      sam:
+        type: string
+      bc_per_donor:
+        type: integer
+      time_per_donor:
+        type: string
+      short_bam:
+        type: string
+      mito_reads_file:
+        type:
+        - string
+        - 'null'
+  identify_swaps:
+    type: object
+    properties:
+      mbv_inp:
+        type: string
+      mbv_out_dir:
+        type: string
+      ref_vcf:
+        type: string
+      mbv_suffix:
+        type: string
+      mbv_extra_opt:
+        type:
+        - string
+        - 'null'
+  multiBamSummary:
+    type: object
+    properties:
+      bams_dir:
+        type: string
+      bam:
+        type: string
+      outdir:
+        type: string
+      rep1_suffix:
+        type: string
+      rep2_suffix:
+        type: string
+      extra_params:
+        type:
+        - string
+        - 'null'
+  plotCorrelation:
+    type: object
+    properties:
+      outdir:
+        type: string
+      corr_method:
+        type: string
+      plot_type:
+        type: string
+      out_fmt:
+        type: string
+  resources:
+    type:
+    - object
+    - 'null'
+    default: null
+    description: Per-rule overrides of rules/resources.smk (memory in MB, time in minutes)
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      properties:
+        cpus_per_task:
+          type: integer
+          minimum: 1
+        mem_mb: &id001
+          oneOf:
+          - type: integer
+            minimum: 0
+          - type: object
+            required:
+            - base
+            additionalProperties: false
+            properties:
+              base:
+                type: integer
+              step:
+                type: integer
+              max:
+                type: integer
+              by_vcf_suffix:
+                type: object
+                additionalProperties:
+                  type: object
+        time_min: *id001

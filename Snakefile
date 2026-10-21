@@ -26,7 +26,8 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 
 
 configfile: "new_config.yaml"
-#validate(config, "config.schema.json")  # Path to the specific schema
+# Also fills in defaults for optional keys missing from older configs
+validate(config, "schema/config.schema.yaml")
 
 
 # DEPRACATED - USE new_config.yaml 'demux_type'
