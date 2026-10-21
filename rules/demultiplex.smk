@@ -1,7 +1,4 @@
 from lib.io import (
-    get_filt_barcodes,
-    get_cellsnp_inputs,
-    get_vir_inputs,
     get_inputs_demux_run,
     get_inputs_demux_final,
 )

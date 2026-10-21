@@ -1,10 +1,11 @@
 # import os, uuid
 import pandas as pd
 from lib.io import (
-    get_inp_splitBam, 
+    split_tool,
     get_bam,
-    get_bam_to_split
+    bam_to_split,
 )
+from lib.config_models import demux_run, final_paths, raw_output
 from lib.params import (
     get_params_create_inp_splitBams,
     get_mito, 
@@ -15,10 +16,19 @@ from functools import partial
 from lib.modality import bam_modalities, bam_paths, is_multiome
 
 
-# FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.
+# Donor classification the bams are split by ('split_by: input'): the
+# output of the demultiplexing tool itself ('raw'), its h5ad in this run
+# ('h5ad'), or the final h5ad of the pool, e.g. after the swap correction
 checkpoint create_inp_splitBams:
     input:
-        partial(get_inp_splitBam, config=config)
+        branch(
+            lambda _: config['split_bams_pipeline']['split_by']['input'].lower(),
+            cases={
+                'raw': lambda _: raw_output(config, split_tool(config)),
+                'h5ad': lambda _: demux_run(config, split_tool(config), config['run_tag']).h5ad,
+                'final': lambda _: final_paths(config).h5ad,
+            },
+        )
 
     output:
         (
@@ -173,7 +183,16 @@ def get_real_donors(wildcards):
 
 rule split_bams:
     input:
-        unpack(partial(get_bam_to_split, config=config)),
+        unpack(branch(
+            partial(bam_to_split, config=config),
+            cases={
+                'whole': partial(get_bam, config=config),
+                'chr_subset': partial(get_bam, config=config,
+                    suffix=config['split_bams_pipeline']['short_bam']),
+                'cell_filtered': partial(get_bam, config=config,
+                    suffix=config['split_bams_pipeline']['filt_bam']),
+            },
+        )),
         barcodes_vs_donor = (
             f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
             f"{config['fold_struct_bam_split1']}_bc_hash.txt"

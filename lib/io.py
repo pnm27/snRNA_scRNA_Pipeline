@@ -48,27 +48,11 @@ col_set = [
     "donors", # NEW ADDITION (comma-sep donor list)
     "vcf",
 ]
-def get_filt_barcodes(wildcards, config):
-    """Count matrix that 'create_inp_cellSNP' takes the cells from.
-
-    - add_vireo: the hashsolo h5ad (Rule A) of 'previous_run_tag'
-    - vireo/both: the alignment's filtered matrix (cellranger-arc for
-      multiome, STARsolo otherwise), filtered as in calico_solo's rule
-    """
-    demux_type = get_demux_type(config)
-
-    if demux_type == 'add_vireo':
-        return demux_run(
-            config, 'solo', config['demultiplex'].get('previous_run_tag')
-        ).h5ad
-
-    if demux_type in ('vireo', 'both'):
-        return _count_matrix(wildcards, config)
-
-    raise ValueError(
-        "The rule 'create_inp_cellSNP' (vireo's input) isn't needed for "
-        f"demux_type: {demux_type}. Please check 'demux_type' and 'last_step'!"
-    )
+def previous_solo_h5ad(wildcards, config):
+    """hashsolo h5ad (Rule A) of 'previous_run_tag', which add_vireo adds to."""
+    return demux_run(
+        config, 'solo', config['demultiplex'].get('previous_run_tag')
+    ).h5ad
 
 
 def get_cellsnp_inputs(wildcards, config):
@@ -167,7 +151,7 @@ def _vcf_seg(wildcards, config):
     return f"{wildcards.vcf_type}/"
 
 
-def _count_matrix(wildcards, config):
+def count_matrix(wildcards, config):
     """Count matrix (mtx) of the alignment, which Rule A starts from."""
     if 'multiome' in config['last_step'].lower():
         return (
@@ -183,7 +167,7 @@ def _count_matrix(wildcards, config):
 
 def get_inputs_demux_run(wildcards, config, tool):
     """Inputs of Rule A ('demux_run_<tool>'), see lib/config_models.py."""
-    ret = {'mtx': _count_matrix(wildcards, config)}
+    ret = {'mtx': count_matrix(wildcards, config)}
 
     if tool == 'solo':
         ret['calico_solo'] = raw_output(config, 'solo')
@@ -223,59 +207,36 @@ def get_inputs_demux_final(wildcards, config):
 
 # ---------------------------------------------------------------------------------------
 # Split bam -----------------------------------------------------------------------------
-def get_inp_splitBam(wildcards, config):
-    """Donor classification the bams are split by ('split_bams_pipeline: split_by').
-
-    - raw: the output of the demultiplexing tool ('demux')
-    - h5ad: the h5ad of that tool in this run (rule 'demux_run_<tool>')
-    - final: the final h5ad of the pool (rule 'demux_final'), e.g. after
-      the swap correction
-    """
-    split_by = config['split_bams_pipeline']['split_by']['input'].lower()
+def split_tool(config) -> str:
+    """Tool of 'split_bams_pipeline: split_by: demux' (solo or vireo)."""
     demux = config['split_bams_pipeline']['split_by']['demux'].lower()
-
-    if split_by == 'final':
-        return final_paths(config).h5ad
-
     if demux in ['vireo', 'vs']:
-        tool = 'vireo'
-    elif demux in ["cs", "calico", "calico_solo", "hashsolo"]:
-        tool = 'solo'
-    else:
-        raise ValueError(
-            "Unknown 'split_bams_pipeline: split_by: demux' value: "
-            f"'{demux}'"
-        )
-
-    if split_by == 'raw':
-        return raw_output(config, tool)
-    if split_by == 'h5ad':
-        return demux_run(config, tool, config.get('run_tag')).h5ad
+        return 'vireo'
+    if demux in ["cs", "calico", "calico_solo", "hashsolo"]:
+        return 'solo'
     raise ValueError(
-        "Unknown 'split_bams_pipeline: split_by: input' value: "
-        f"'{split_by}' (expected raw, h5ad or final)"
+        "Unknown 'split_bams_pipeline: split_by: demux' value: "
+        f"'{demux}'"
     )
 
 
-def get_bam(wildcards, config):
-    """bam and bai of the pool's modality."""
-    return bam_paths(config, get_modality(wildcards))
-
-
-def get_bam_to_split(wildcards, config):
-    """bam split into per-donor bams.
-
-    Genotype checks (gt_check) use the whole bam, or the one subset to
-    'subset_chr'; otherwise the bam filtered by cell barcode.
-    """
-    sb = config['split_bams_pipeline']
-    if not config['gt_check']:
-        suffix = sb['filt_bam']
-    elif sb['subset_chr'] is None:
-        suffix = None
-    else:
-        suffix = sb['short_bam']
+def get_bam(wildcards, config, suffix=None):
+    """bam and bai of the pool's modality (suffix: see lib/modality.py)."""
     return bam_paths(config, get_modality(wildcards), suffix)
+
+
+def bam_to_split(wildcards, config) -> str:
+    """Which bam is split into per-donor bams.
+
+    Genotype checks (gt_check) use the whole bam ('whole'), or the one
+    subset to 'subset_chr' ('chr_subset'); otherwise the bam filtered by
+    cell barcode ('cell_filtered').
+    """
+    if not config['gt_check']:
+        return 'cell_filtered'
+    if config['split_bams_pipeline']['subset_chr'] is None:
+        return 'whole'
+    return 'chr_subset'
 
 # ---------------------------------------------------------------------------------------
 

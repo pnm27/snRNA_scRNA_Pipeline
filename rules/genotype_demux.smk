@@ -2,10 +2,12 @@
 # Provided a file that contains multiple vcfs per each sample
 # present as config['gt_demux_pipeline']['vcf_info']
 from lib.io import (
-    get_filt_barcodes, 
+    count_matrix,
+    previous_solo_h5ad,
     get_cellsnp_inputs,
     get_vir_inputs
 )
+from lib.utils import get_demux_type
 from lib.params import (
     get_params_cics, 
     get_procs_csnp, 
@@ -32,9 +34,15 @@ from functools import partial
 # is used for calico_solo's input
 
 
+# Cells come from the hashsolo h5ad that add_vireo adds to, else from the
+# count matrix (filtered as in calico_solo's rule)
 rule create_inp_cellSNP:
     input:
-        partial(get_filt_barcodes, config=config)
+        branch(
+            get_demux_type(config) == 'add_vireo',
+            then=partial(previous_solo_h5ad, config=config),
+            otherwise=partial(count_matrix, config=config),
+        )
 
     priority: 8
 
