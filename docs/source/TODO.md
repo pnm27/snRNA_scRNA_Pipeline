@@ -7,14 +7,19 @@ groundwork that the larger refactors depend on.
 
 ## Bugs to fix first
 
-- [ ] `demux_type: null` crashes: `get_inputs_demux` (`lib/io.py`), `get_params_demux` (`lib/params.py`) and `get_filt_barcodes` call `config['demux_type'].lower()` on `None`. Only the string `"none"` works today, although the config comment says `null` is allowed.
-- [ ] `get_inp_splitBam` (`lib/io.py`) checks `split_by` instead of `demux_type` in its hashsolo branch, so splitting by raw calico_solo output returns `None`.
-- [ ] `vcf_type` wildcard issue in `demux_samples`: `_inputs_vireo` / `_inputs_both` read `wildcards.vcf_type` when `last_step` ends in `multi_vcf`, but the rule's output path has no `{vcf_type}`. Add `{vcf_type}` to the output fold_struct for multi-VCF runs.
-- [ ] `get_vir_inputs`: with a 2-column `vcf_info` and `w_gt`, `donorFile` is set to `genome_1k_ref` (the 1kGP sites VCF). Should this be `donors_per_pool_file`?
-- [ ] `get_cmd_str_vireo` reads `vcf_info` unconditionally and indexes `input['donorFile']`, which fails when `vcf_info` is null or no donor file is set.
-- [ ] Resource functions are defined twice with different values (`allocate_mem_cS`, `allocate_mem_vS`, etc. in both `resources.smk` and `genotype_demux.smk`; the later include wins). Also: typo `allocate_timem_RN`, and `allocate_mem_QM` takes no `attempt`. Resolved by the resources item below.
-- [ ] `run_update_logs.sh` still passes `--pc_gc`.
-- [ ] Multiome branch of `_inputs_vireo` lists the same `donors_classification` path twice (likely meant one per modality).
+- [x] `demux_type: null` crashes: `get_inputs_demux` (`lib/io.py`), `get_params_demux` (`lib/params.py`) and `get_filt_barcodes` call `config['demux_type'].lower()` on `None`. Only the string `"none"` works today, although the config comment says `null` is allowed.
+- [x] `get_inp_splitBam` (`lib/io.py`) checks `split_by` instead of `demux_type` in its hashsolo branch, so splitting by raw calico_solo output returns `None`.
+- [x] `vcf_type` wildcard issue in `demux_samples`: `_inputs_vireo` / `_inputs_both` read `wildcards.vcf_type` when `last_step` ends in `multi_vcf`, but the rule's output path has no `{vcf_type}`. Add `{vcf_type}` to the output fold_struct for multi-VCF runs.
+- [x] `get_vir_inputs`: with a 2-column `vcf_info` and `w_gt`, `donorFile` was set to `genome_1k_ref` (the 1kGP sites VCF); now `donors_per_pool_file`.
+- [x] `get_cmd_str_vireo` reads `vcf_info` unconditionally and indexes `input['donorFile']`, which fails when `vcf_info` is null or no donor file is set.
+- [x] Resource functions are defined twice with different values (`allocate_mem_cS`, `allocate_mem_vS`, etc. in both `resources.smk` and `genotype_demux.smk`; the later include wins). Also: typo `allocate_timem_RN`, and `allocate_mem_QM` takes no `attempt`. Resolved by the resources item below.
+- [x] Multiome branch of `_inputs_vireo` lists the same `donors_classification` path twice (now one per modality).
+- [x] `demux_type: both` targets didn't match the single h5ad written by `demux_samples`.
+- [x] `STARsolo_kb_solo` target was missing the `modality` expansion.
+- [x] VCF-suffix memory/time scaling for `cellSNP`/`vireoSNP` never applied (`'vcf_type' in wildcards` checks values, not names).
+- [x] `new_config.example.yaml` was missing `cellranger_arc_count.ref`.
+- [ ] Multi-VCF targets in `produce_targets.smk` use undefined `VCF_TYPE` and `suff_h5ad` (see Compatibility → Multi-VCF).
+- [ ] Multiome `demux_samples` runs once per modality and writes the same combined h5ad twice (output path carries `{modality}`).
 
 ---
 
@@ -57,58 +62,17 @@ groundwork that the larger refactors depend on.
 
 ## Resources
 
-- [ ] Move all resource definitions out of the rule files into `rules/resources.smk`, so the rules only reference them (goal: readability of the rules). Back it with a per-rule spec using the same keys as the rules; `time_min` is an integer in minutes:
+- [x] Move all resource definitions out of the rule files into `rules/resources.smk`, so the rules only reference them (goal: readability of the rules). Rules use `**get_resources("<rule>")`; values are an int or `{base, step, max}` (`base + step * (attempt - 1)`), memory in MB and `time_min` in minutes. A `resources:` block in the config overrides any rule:
 
   ```yaml
   resources:
-    cellsnp:
-      cpus_per_task: 8
-      mem_mb:
-        base: 1500
-        factor: 1.15
-        max: 32000
-      time_min: 240
-
-    vireo:
+    vireoSNP:
       cpus_per_task: 7
-      mem_mb: 22000
-      time_min: 180
-
-    star:
-      cpus_per_task: 20
-      mem_mb: 25000
-      time_min: 1440
+      mem_mb: {base: 30000, step: 1000, max: 60000}
+      time_min: 240
   ```
 
-  **Helper Function** (in `rules/resources.smk`)
-
-  ```python
-  def resource(rule, name, attempt=1):
-      value = config["resources"][rule][name]
-
-      if isinstance(value, int):
-          return value
-
-      if isinstance(value, dict):
-          base = value["base"]
-          factor = value.get("factor", 1)
-          maximum = value.get("max", float("inf"))
-          return int(min(base * factor ** (attempt - 1), maximum))
-
-      raise ValueError(f"Unknown resource spec: {rule}/{name}")
-  ```
-
-  **Usage in a Rule**
-
-  ```python
-  rule cellSNP:
-      resources:
-          cpus_per_task=resource("cellsnp", "cpus_per_task"),
-          mem_mb=lambda wc, attempt: resource("cellsnp", "mem_mb", attempt),
-          time_min=lambda wc, attempt: resource("cellsnp", "time_min", attempt),
-  ```
-
-  - [ ] Support overrides by VCF suffix for `cellSNP` / `vireoSNP` (currently scaled on `vcf_type` endings `_max50k`, `25pct`, `gencode`).
+  - [x] Support overrides by VCF suffix for `cellSNP` / `vireoSNP` (`by_vcf_suffix`).
 
 ---
 
@@ -126,6 +90,7 @@ Design the output/stats file layout once; the items below follow from it.
   - Both tools run simultaneously
   - Tools run sequentially (name each run separately or record the order)
 - [ ] Replace separate demux config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file.
+- [ ] `get_inp_splitBam` with `split_by: input: h5ad` always reads the hashsolo final h5ad, even for vireo.
 - [ ] Use the `Final_swap_correction` file to produce the *Final* per-donor bams.
   *BEFORE*: for each group of samples that require the same round of demultiplexing, run with **new_config.yaml** set up like:
 
@@ -196,19 +161,11 @@ Prerequisite for the Compatibility section.
 
 ## run_update_logs.sh (one change)
 
-- [ ] Build `cmd_args` as a bash array, not a concatenated string (paths with spaces currently break).
-- [ ] Add a lightweight `check_required_args` for REQUIRED ARGS that fails fast with a clear message.
-- [ ] Make file suffixes easy to modify:
+- [x] Build `cmd_args` as a bash array, not a concatenated string (paths with spaces currently break).
+- [x] Add a lightweight `check_required_args` for REQUIRED ARGS that fails fast with a clear message.
+- [x] Make file suffixes easy to modify (`opt_values`: empty = default suffix, remove a line to skip that output).
 
-  ```sh
-  declare -A opt_values=(
-    [ss_l]="5"
-    # [pc_gc] removed entirely
-    ...
-  )
-  ```
-
-- [ ] `append_optional_flags` warns (not fails) if a key is not in `opt_flags`.
+- [x] `append_optional_flags` warns (not fails) if a key is not in `opt_flags`.
 
 ---
 
