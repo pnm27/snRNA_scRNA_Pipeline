@@ -131,7 +131,7 @@ def targets_demux(demuxes: list[DemuxResult],
     ret_targets = []
 
     for demux in demuxes:
-        if demux.demux_type not in ['vireo', 'solo', 'none']:
+        if demux.demux_type not in ['vireo', 'solo', 'both', 'none']:
             raise ValueError(f"Unknown demux type in suffix dict: '{demux.demux_type}'")
         
         ret_targets.append(os.path.join(

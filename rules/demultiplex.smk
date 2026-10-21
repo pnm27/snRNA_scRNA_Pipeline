@@ -43,7 +43,7 @@ def _output_cfg(config):
         c = config['demultiplex']
         return (c['demux_count_matrix_dir'], config['fold_struct_demux'],
             c['final_count_matrix_h5ad'],
-            c['demux_count_matrix_dir'], c['demultiplex_info']
+            c['demultiplex_info_dir'], c['demultiplex_info']
         )
     
     else:

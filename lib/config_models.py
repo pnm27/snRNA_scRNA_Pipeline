@@ -66,6 +66,22 @@ class DemuxConfig:
                 )
             )
 
+        elif demux_type == "both" and create_h5ad:
+            # Both demuxes are combined into one h5ad by 'demux_samples'
+            # (see '_output_cfg' in rules/demultiplex.smk)
+            demuxes.append(
+                DemuxResult(
+                    demux_type="both",
+                    outdir=config[
+                        'demultiplex'
+                    ]['demux_count_matrix_dir'],
+                    suffix=config[
+                        'demultiplex'
+                    ]['final_count_matrix_h5ad'],
+                    fold_struct=config['fold_struct_demux']
+                )
+            )
+
         elif demux_type == "both":
             demuxes.extend([
                 DemuxResult(
