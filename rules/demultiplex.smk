@@ -72,3 +72,25 @@ rule demux_final:
             -o {output.h5ad} --basic_stats {output.basic_stats} \
             --info_out {output.info} {params.extra}
         """
+
+
+# ── Demultiplex versions used for the final h5ad of each pool ────────────────
+
+rule collect_demux_versions:
+    input:
+        expand(final_paths(config).basic_stats, pool=POOLS)
+
+    output:
+        final_paths(config).versions
+
+    params:
+        pools = POOLS
+
+    resources:
+        **get_resources("collect_demux_versions")
+
+    shell:
+        """
+        python3 helper_py_scripts/collect_demux_versions.py \
+            --pools {params.pools} --basic_stats {input} -o {output}
+        """

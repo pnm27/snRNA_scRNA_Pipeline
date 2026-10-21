@@ -30,6 +30,8 @@ from demultiplex_helper_funcs import auto_read
 DONOR_COLUMNS = ['SubID_vs', 'SubID_vs_cdna', 'SubID_cs']
 # 'Donor_final' of the cells whose donor is dropped by the swap correction
 REMOVED = "Removed"
+# Values of 'Donor_final' that aren't donors
+NOT_DONORS = {'Doublet', 'Negative', 'Not Present', REMOVED}
 
 
 def get_argument_parser():
@@ -103,6 +105,7 @@ def main():
     adata.uns['demux_sources'] = list(args.sources)
 
     swapped = False
+    n_donors = 'NA'
     col = donor_column(adata, args.donor_column)
     if col is not None:
         donors = adata.obs[col].astype(str)
@@ -117,13 +120,15 @@ def main():
                 else (REMOVED if pd.isna(donor_map[d]) else str(donor_map[d]))
             )
         adata.obs['Donor_final'] = pd.Categorical(donors)
+        n_donors = len(set(donors) - NOT_DONORS)
     elif args.swap_correct:
         print(f"No donor column in the h5ads of {args.pool_name}; the swap "
             "correction file isn't applied.")
 
     basic = pd.concat([qc_stats(adata), pd.DataFrame(
         [('Final demultiplex versions', ','.join(args.sources)),
-         ('Swap corrected', 'yes' if swapped else 'no')],
+         ('Swap corrected', 'yes' if swapped else 'no'),
+         ('Donors in final', n_donors)],
         columns=STAT_COLS,
     )])
     info = pd.concat([basic] + [

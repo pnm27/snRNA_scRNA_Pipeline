@@ -175,10 +175,11 @@ def final_sources(config, pool: str) -> List[DemuxRun]:
 
 @dataclass
 class FinalPaths:
-    """Rule B outputs."""
+    """Rule B outputs, and the table of versions used for all pools."""
     h5ad: str
     basic_stats: str
     info: str
+    versions: str
 
 
 def final_paths(config) -> FinalPaths:
@@ -193,6 +194,7 @@ def final_paths(config) -> FinalPaths:
         h5ad=f"{c['demux_count_matrix_dir']}{fold}{c['final_count_matrix_h5ad']}",
         basic_stats=f"{c['demultiplex_info_dir']}{fold}_basic_stats.tsv",
         info=f"{c['demultiplex_info_dir']}{fold}{c['demultiplex_info']}",
+        versions=f"{c['demultiplex_info_dir']}final_demux_versions.tsv",
     )
 
 
@@ -210,6 +212,8 @@ class DemuxConfig:
     """Demultiplexing targets of this run."""
 
     targets: List[str] = field(default_factory=list)
+    # Not per pool (see 'collect_demux_versions')
+    summary_targets: List[str] = field(default_factory=list)
     multiome: bool = False
     create_h5ad: bool = False
 
@@ -218,14 +222,19 @@ class DemuxConfig:
         create_h5ad = bool(config.get("create_final_h5ad", False))
         tools = demux_tools(config)
 
+        summary_targets = []
         if create_h5ad or tools == ['none']:
             targets = [final_paths(config).h5ad]
+            # TODO: multi-VCF (needs the vcf_type of each pool)
+            if not is_multi_vcf(config):
+                summary_targets = [final_paths(config).versions]
         else:
             # Stop at the outputs of the demultiplexing tools
             targets = [raw_output(config, t) for t in tools]
 
         return cls(
             targets=targets,
+            summary_targets=summary_targets,
             multiome=is_multiome(config),
             create_h5ad=create_h5ad,
         )

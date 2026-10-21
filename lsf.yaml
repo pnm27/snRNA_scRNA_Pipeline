@@ -51,6 +51,9 @@ demux_run_none:
 demux_final:
   - "-q express"
 
+collect_demux_versions:
+  - "-q express"
+
 create_inp_cellSNP:
   - "-q express"
 

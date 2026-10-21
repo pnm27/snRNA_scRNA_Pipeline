@@ -98,9 +98,9 @@ def targets_cellSNP(multiome: bool = False) -> list:
 
 def targets_demux() -> list:
     """Demultiplexing targets of this run (see DemuxConfig): the final h5ad
-    of each pool or, without 'create_final_h5ad', the demultiplexing tools'
-    own outputs."""
-    return list(CFG.targets)
+    of each pool (and the table of demultiplex versions used) or, without
+    'create_final_h5ad', the demultiplexing tools' own outputs."""
+    return list(CFG.targets) + list(CFG.summary_targets)
 
 
 def targets_gt_demux2(multiome: bool = False) -> list:

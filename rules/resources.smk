@@ -160,6 +160,10 @@ RESOURCES = {
         "mem_mb": {"base": 7000, "step": 3500},
         "time_min": {"base": 15, "step": 15},
     },
+    "collect_demux_versions": {
+        "mem_mb": 1000,
+        "time_min": 10,
+    },
 
     # split_bams.smk
     "create_inp_splitBams": {
