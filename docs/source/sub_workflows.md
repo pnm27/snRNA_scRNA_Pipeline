@@ -167,6 +167,8 @@ Each demultiplexing run writes to its own sub-folder (`run_tag` in the config, e
 
 To split the bams by the final h5ad (e.g. after the swap correction), set `split_bams_pipeline: split_by: input: final`.
 
+Split bams go to a sub-folder of `inp_split_bams_dir`, `split_bams_dir`, `per_donor_split_log_dir` and `new_temp_dir`: `gt_check/` for genotype checks (`gt_check: yes`; the whole bam, or the one subset to `subset_chr`) and `final/` otherwise (the bam filtered by cell barcode).
+
 ```{eval-rst}
 .. autosummary::
   :nosignatures:

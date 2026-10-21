@@ -18,8 +18,13 @@ groundwork that the larger refactors depend on.
 - [x] `STARsolo_kb_solo` target was missing the `modality` expansion.
 - [x] VCF-suffix memory/time scaling for `cellSNP`/`vireoSNP` never applied (`'vcf_type' in wildcards` checks values, not names).
 - [x] `new_config.example.yaml` was missing `cellranger_arc_count.ref`.
-- [ ] Multi-VCF targets in `produce_targets.smk` use undefined `VCF_TYPE` and `suff_h5ad` (see Compatibility → Multi-VCF).
+- [x] Multi-VCF targets in `produce_targets.smk` used undefined `VCF_TYPE` and `suff_h5ad`; `vcf_type` now comes from `vcf_info_columns: vcf`.
 - [x] Multiome `demux_samples` ran once per modality and wrote the same combined h5ad twice (output path carried `{modality}`); `demux_run_vireo` / `demux_final` outputs have no `{modality}`.
+- [x] `STARsolo_cellsnp` target had an extra `cDNA/` folder that no rule makes.
+- [x] Split bams targets (`starsolo_split_bams`, `multiome_split_bams_gt_demux`) pointed at `split_bams_proxy_dir*` files that no rule makes.
+- [x] `identify_swaps` only had a target for the first donor of each pool.
+- [x] `filt_chr_bams_multiome_*` used `SimpleNamespace` without importing it.
+- [x] `bamfilt_by_CB` wrote every pool's barcodes to one file literally named `{pool}_bc.txt`.
 
 ---
 
@@ -29,7 +34,7 @@ groundwork that the larger refactors depend on.
   - [ ] Tighten the schema once the config is restructured (required nested keys, enums for `last_step`).
   - [ ] Consider growing `lib/config_models.py` (`DemuxConfig`) into typed config.
 - [x] Add a tiny test dataset (one small pool) and `snakemake -n` dry runs for each `demux_type` (`tests/dryrun/run_dryruns.sh`).
-  - [ ] Add scenarios for multi-VCF and the split-bams/identify-swaps steps once their targets are fixed.
+  - [x] Add scenarios for multi-VCF and the split-bams/identify-swaps steps (the harness marks the jobs up to the donor checkpoint as done, `# donors:`).
 
 ---
 
@@ -84,15 +89,13 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ## Wildcards & modality (one refactor)
 
-Prerequisite for the Compatibility section.
-
-- [ ] `wildcards.modality` handles cDNA/RNA, HTO or ATAC rather than functions (input, params, etc.).
-- [ ] Simplify the wildcard structure so the folder structure encodes wildcards naturally.
-- [ ] Handle varying output dirs for:
-  - Demux output (single method vs. simultaneous both)
-  - BAM splitting (finalizing vs. genotype purposes)
-- [ ] Use the `branch` function to handle rules with varied inputs.
-- [ ] Simplify target functions in `produce_targets` (`solo` / `both` targets are still TODO).
+- [x] `wildcards.modality` handles cDNA/RNA or ATAC rather than functions: the bams of each modality are looked up in `lib/modality.py`.
+- [x] Simplify the wildcard structure: global `wildcard_constraints` in the `Snakefile` (`pool`, `donor`, `modality`, and `vcf_type` limited to the vcf columns of `vcf_info`). The `fold_struct_*` keys stay as they are until the config is restructured (Needs your input).
+- [x] Handle varying output dirs for:
+  - Demux output (single method vs. simultaneous both): see Demultiplexing outputs & stats
+  - BAM splitting (finalizing vs. genotype purposes): `gt_check/` and `final/` sub-folders
+- [x] Use the `branch` function to handle rules with varied inputs (`create_inp_cellSNP`, `create_inp_splitBams`, `split_bams`).
+- [x] Simplify target functions in `produce_targets`: a table of stages per `last_step`; unsupported combinations (multiome with hashsolo, multi-VCF beyond vireo or with split bams) raise a clear error.
 
 ---
 
@@ -113,9 +116,11 @@ Prerequisite for the Compatibility section.
   - [ ] Multi-module
   - [ ] Multi-VCF
 - [ ] Generalize outputs to accommodate multiome:
-  - [ ] `split_bams.smk` (entire split bam pipeline)
-  - [ ] `filt_chr_bams` (→ `filt_chr_bams_multiome`)
-- [ ] Permanent fix for rule `filt_chr_bams_multiome`.
+  - [ ] `split_bams.smk` (entire split bam pipeline): only the cDNA bam is split for now (`bamfilt_by_CB` and `split_bams` have no `{modality}`)
+  - [x] `filt_chr_bams` (→ `filt_chr_bams_multiome_cdna` / `_atac`, one loop over the modalities)
+- [x] Permanent fix for rule `filt_chr_bams_multiome`.
+- [ ] Multi-VCF: cellSNP's regions and vireo's donor genotypes don't vary by `vcf_type` yet (only the paths do); hashsolo and split bams aren't supported.
+- [ ] Multiome with hashsolo (`solo` / `both` / `add_*`).
 - [ ] Add `CollectInsertSizeMetrics` for the ATAC modality in multiome (`picard_metrics`).
 - [ ] Add multiome support in `update_logs.py`.
 - [ ] Support ArchR and Signac QC for ATAC QC metrics.

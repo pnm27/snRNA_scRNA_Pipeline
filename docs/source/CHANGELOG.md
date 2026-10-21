@@ -10,6 +10,14 @@
 - All resource requirements are now defined in one table in `rules/resources.smk`; rules use `**get_resources("<rule>")` (int, or `base + step * (attempt - 1)` with an optional `max`), and the config's `resources` block can override any rule. Removed the duplicated and unused `allocate_*` functions and the `# threads` comments for Snakemake < v8
 - The config is validated against `schema/config.schema.yaml` at the start of every run; defaults fill in optional keys missing from older configs (e.g. `swap_correction_df`)
 - Added dry-run tests (`tests/dryrun/run_dryruns.sh`) that check the DAG of each scenario in `tests/dryrun/scenarios/` without data or a cluster
+- Global `wildcard_constraints` in the `Snakefile`: `pool` and `donor` can't contain `/`, `modality` is `cDNA|ATAC|HTO`, and `vcf_type` is one of the vcf columns of `vcf_info`
+- Per-modality bam paths are looked up in `lib/modality.py` (`get_bam`, `get_cellsnp_inputs`, `get_umiTag`); the `filt_chr_bams*` rules are one loop over the modalities with a bam
+- `create_inp_cellSNP`, `create_inp_splitBams` and `split_bams` pick their input with `branch()` (replacing `get_filt_barcodes`, `get_inp_splitBam` and `get_bam_to_split`)
+- `rule all`'s targets come from a table of stages per `last_step` (`rules/produce_targets.smk`); combinations not supported yet raise a clear error
+- Split bams (donor hash file, per-donor bams, logs, temp dir) go to `gt_check/` or `final/` sub-folders; `split_bams_dir2`, `per_donor_split_log_dir2`, `new_temp_dir2` and the `split_bams_proxy_dir*` keys are no longer used. Per-donor bams from earlier runs are outside these sub-folders, so move them in to avoid re-creating them
+- Multiome split bams use vireo's cDNA output and the cDNA bam
+- Fixed: `STARsolo_cellsnp` and split bams targets pointing at files no rule makes; multi-VCF targets (undefined `VCF_TYPE`); `identify_swaps` running only for the first donor of each pool; missing `SimpleNamespace` import for multiome; `bamfilt_by_CB` sharing one `{pool}_bc.txt` across pools
+- Dry-run tests can mark the jobs up to the donor checkpoint as done (`# donors:`) to check per-donor jobs, and check expected errors (`# fails:`)
 - Added support for Snakemake ≥ v8:
   - Added `workflow_profile/config.yaml`, reflected in `run_snakemake.sh`
   - Replaced `threads` directive with `resources: cpus_per_task`
