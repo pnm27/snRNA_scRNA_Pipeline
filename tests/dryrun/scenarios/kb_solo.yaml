@@ -1,0 +1,4 @@
+# alignment only
+# expect: STARsolo_sort samtools_index
+last_step: STARsolo_kb_solo
+picard_metrics: null

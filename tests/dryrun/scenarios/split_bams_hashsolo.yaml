@@ -1,0 +1,10 @@
+# split bams by raw hashsolo output
+# expect: create_inp_splitBams resolve_pool_targets run_calico_solo
+last_step: STARsolo_split_bams
+demux_type: solo
+picard_metrics: null
+split_bams_pipeline:
+  split_by:
+    demux: hashsolo
+    input: raw
+    column: null

@@ -1,0 +1,7 @@
+# multiome vireo (ATAC and cDNA)
+# expect: cellranger_arc_count demux_samples vireoSNP
+last_step: multiome_gt_demux
+demux_type: vireo
+picard_metrics: null
+fold_struct_gt_demux: "Sample_{pool}/{modality}/"
+fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}_{modality}"

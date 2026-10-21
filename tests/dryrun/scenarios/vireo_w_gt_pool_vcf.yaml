@@ -1,0 +1,9 @@
+# vireo with a per-pool vcf used only for the pileup
+# expect: vireoSNP cellSNP
+last_step: STARsolo_demux
+demux_type: vireo
+demux_run_type: w_gt
+picard_metrics: null
+gt_demux_pipeline:
+  vcf_info: projdir/pool_info4.tsv
+  pool_vcf_use: [pileup]

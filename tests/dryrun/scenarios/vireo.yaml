@@ -1,0 +1,5 @@
+# vireo demultiplexing without genotypes
+# expect: demux_samples vireoSNP cellSNP create_inp_cellSNP
+last_step: STARsolo_demux
+demux_type: vireo
+picard_metrics: null
