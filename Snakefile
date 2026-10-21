@@ -37,11 +37,18 @@ apply_split_purpose(config)
 
 
 # Wildcards hold a single folder or file name part, so they can't
-# match across '/' (rules can narrow these further)
+# match across '/' (rules can narrow these further). vcf_type (multi-VCF
+# runs) is one of the vcf columns of 'vcf_info', as in '{pool}_{vcf_type}'
+# it would otherwise also match a part of the pool name
+import re
+from lib.config_models import vcf_types
+VCF_TYPE_PATTERN = "|".join(map(re.escape, vcf_types(config))) or r"[^/]+"
+
 wildcard_constraints:
     pool = r"[^/]+",
     donor = r"[^/]+",
     modality = r"cDNA|ATAC|HTO",
+    vcf_type = VCF_TYPE_PATTERN,
 
 
 # DEPRACATED - USE new_config.yaml 'demux_type'

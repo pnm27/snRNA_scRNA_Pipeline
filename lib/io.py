@@ -143,14 +143,6 @@ def get_vir_inputs(wildcards, config):
 
 # Demultiplex ---------------------------------------------------------------------------
 
-def _vcf_seg(wildcards, config):
-    """vireo sub-dir for a multi-VCF run, unless 'fold_struct_gt_demux' already has it."""
-    if not config['last_step'].lower().endswith('multi_vcf') \
-        or '{vcf_type}' in config['fold_struct_gt_demux']:
-        return ""
-    return f"{wildcards.vcf_type}/"
-
-
 def count_matrix(wildcards, config):
     """Count matrix (mtx) of the alignment, which Rule A starts from."""
     if 'multiome' in config['last_step'].lower():
@@ -181,11 +173,7 @@ def get_inputs_demux_run(wildcards, config, tool):
                 vireo_out.replace('{modality}', m) for m in ['ATAC', 'cDNA']
             ]
         else:
-            ret['vireo'] = (
-                f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-                f"{config['fold_struct_gt_demux']}{_vcf_seg(wildcards, config)}"
-                f"{config['gt_demux_pipeline']['donors_classification']}"
-            )
+            ret['vireo'] = vireo_out
         if config['gt_demux_pipeline']['donorName_conv']['file'] is not None:
             ret['converter'] = config['gt_demux_pipeline']['donorName_conv']['file']
 

@@ -44,6 +44,39 @@ def is_multiome(config) -> bool:
     return 'multiome' in config['last_step'].lower()
 
 
+def vcf_types(config) -> List[str]:
+    """Values of the 'vcf_type' wildcard in multi-VCF runs: the vcf columns
+    of 'vcf_info' ('gt_demux_pipeline: vcf_info_columns: vcf')."""
+    if not is_multi_vcf(config):
+        return []
+    if '{vcf_type}' not in config['fold_struct_gt_demux']:
+        raise ValueError(
+            "Multi-VCF runs need '{vcf_type}' in 'fold_struct_gt_demux' "
+            "(e.g. \"Sample_{pool}-cDNA/{vcf_type}/\")"
+        )
+    cols = config['gt_demux_pipeline']['vcf_info_columns']['vcf']
+    if not cols:
+        raise ValueError(
+            "Multi-VCF runs need the vcf columns in "
+            "'gt_demux_pipeline: vcf_info_columns: vcf'"
+        )
+    return [cols] if isinstance(cols, str) else list(cols)
+
+
+def check_supported(config) -> None:
+    """Raise for combinations of last_step and demux_type not supported yet."""
+    tools = demux_tools(config)
+    if is_multiome(config) and 'solo' in tools:
+        raise ValueError(
+            "hashsolo (demux_type solo, add_solo, both or add_vireo) isn't "
+            "supported for multiome runs yet"
+        )
+    if is_multi_vcf(config) and tools != ['vireo']:
+        raise ValueError(
+            "Multi-VCF runs support only demux_type vireo for now"
+        )
+
+
 def pool_fold(fold: str) -> str:
     """'fold' without its '{modality}' part, so one file covers a pool."""
     parts = [p for p in fold.split('/') if p and '{modality}' not in p]
@@ -194,7 +227,10 @@ def final_paths(config) -> FinalPaths:
         h5ad=f"{c['demux_count_matrix_dir']}{fold}{c['final_count_matrix_h5ad']}",
         basic_stats=f"{c['demultiplex_info_dir']}{fold}_basic_stats.tsv",
         info=f"{c['demultiplex_info_dir']}{fold}{c['demultiplex_info']}",
-        versions=f"{c['demultiplex_info_dir']}final_demux_versions.tsv",
+        versions=(
+            f"{c['demultiplex_info_dir']}final_demux_versions"
+            f"{'_{vcf_type}' if is_multi_vcf(config) else ''}.tsv"
+        ),
     )
 
 
@@ -219,15 +255,14 @@ class DemuxConfig:
 
     @classmethod
     def from_snakemake(cls, config):
+        check_supported(config)
         create_h5ad = bool(config.get("create_final_h5ad", False))
         tools = demux_tools(config)
 
         summary_targets = []
         if create_h5ad or tools == ['none']:
             targets = [final_paths(config).h5ad]
-            # TODO: multi-VCF (needs the vcf_type of each pool)
-            if not is_multi_vcf(config):
-                summary_targets = [final_paths(config).versions]
+            summary_targets = [final_paths(config).versions]
         else:
             # Stop at the outputs of the demultiplexing tools
             targets = [raw_output(config, t) for t in tools]

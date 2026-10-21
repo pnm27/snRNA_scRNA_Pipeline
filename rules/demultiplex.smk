@@ -75,7 +75,8 @@ rule demux_final:
 
 rule collect_demux_versions:
     input:
-        expand(final_paths(config).basic_stats, pool=POOLS)
+        # Multi-VCF runs: one table per vcf_type
+        expand(final_paths(config).basic_stats, pool=POOLS, allow_missing=True)
 
     output:
         final_paths(config).versions
