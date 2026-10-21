@@ -19,7 +19,7 @@ groundwork that the larger refactors depend on.
 - [x] VCF-suffix memory/time scaling for `cellSNP`/`vireoSNP` never applied (`'vcf_type' in wildcards` checks values, not names).
 - [x] `new_config.example.yaml` was missing `cellranger_arc_count.ref`.
 - [ ] Multi-VCF targets in `produce_targets.smk` use undefined `VCF_TYPE` and `suff_h5ad` (see Compatibility → Multi-VCF).
-- [ ] Multiome `demux_samples` runs once per modality and writes the same combined h5ad twice (output path carries `{modality}`).
+- [x] Multiome `demux_samples` ran once per modality and wrote the same combined h5ad twice (output path carried `{modality}`); `demux_run_vireo` / `demux_final` outputs have no `{modality}`.
 
 ---
 
@@ -51,32 +51,25 @@ groundwork that the larger refactors depend on.
 
 ## Demultiplexing outputs & stats (one design)
 
-Design the output/stats file layout once; the items below follow from it.
+The layout is described in `docs/source/sub_workflows.md` (Demultiplexing outputs).
 
-- [ ] Split `demux_samples` into 2 rules:
-  - [ ] RULE A: an h5ad is created after vireo output
-  - [ ] RULE B: `demux_samples` picks the proper version of vireo demultiplexing, corrects swaps and creates a final h5ad
-- [ ] Split the demultiplexing info into basic stats (common file), `hashsolo_stats` and `vireo_stats`, saved per demux per config/params. Mark the final version for each pool in `swap_correction_df`.
-- [ ] When adding calico_solo or vireo results, take the existing demux stats file as input and append to it.
-- [ ] Fix automatic output directory selection in `demux_samples` (`_output_cfg`).
-- [ ] Clear strategy for `final_count_matrix_dir` across demux scenarios:
-  - Both tools run simultaneously
-  - Tools run sequentially (name each run separately or record the order)
-- [ ] Replace separate demux config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file.
-- [ ] `get_inp_splitBam` with `split_by: input: h5ad` always reads the hashsolo final h5ad, even for vireo.
-- [ ] Use the `Final_swap_correction` file to produce the *Final* per-donor bams.
-  *BEFORE*: for each group of samples that require the same round of demultiplexing, run with **new_config.yaml** set up like:
-
-  ```yaml
-  gt_check: yes # yes or no
-  select_fastqs: subsetA_samples
-  split_bams_pipeline:
-    subset_chr: null
-  ```
-
-- [ ] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
+- [x] Split `demux_samples` into 2 rules:
+  - [x] RULE A: `demux_run_<tool>` creates an h5ad per demultiplexing tool (and run)
+  - [x] RULE B: `demux_final` picks the version per pool (swap correction file, else this run), corrects swaps (`Donor_final`) and creates the final h5ad
+- [x] Split the demultiplexing info into basic stats (`_basic_stats.tsv`), `_hashsolo_stats.tsv` and `_vireo_stats.tsv`, saved per tool per run. The final version of each pool is listed in `final_demux_versions.tsv` (the swap correction file is left as it is).
+- [x] calico_solo / vireo results added later (`add_solo` / `add_vireo`) are combined by `demux_final` with the other tool's run (`demultiplex.previous_run_tag`), instead of appending to its stats file.
+- [x] Removed the automatic output directory selection in `demux_samples` (`_output_cfg`); paths are in `lib/config_models.py`.
+- [x] Clear strategy for `final_count_matrix_dir` across demux scenarios: each tool writes to its own dir (per `run_tag`); `demultiplex.demux_count_matrix_dir` has the final h5ad of each pool.
+  - Both tools run simultaneously: `demux_final` combines both runs
+  - Tools run sequentially: each run has its own `run_tag`; the order is in the `Final demultiplex versions` row of the basic stats
+- [x] Replaced separate demux config dirs (e.g. `wo_gt`, `w_gt`) with `run_tag` at the top of the config file.
+- [x] `get_inp_splitBam` with `split_by: input: h5ad` always read the hashsolo final h5ad, even for vireo.
+- [x] Use the swap correction file to produce the *Final* per-donor bams (`split_by: input: final`).
+- [x] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
   - [x] *swap correction* addresses proper demultiplex file per each pool.
-  - [ ] *swap correction* has appropriately identified donors per each pool.
+  - [x] *swap correction* has appropriately identified donors per each pool (`Donor_final`; donor count in `final_demux_versions.tsv`).
+- [ ] `update_logs.py`: read the basic/hashsolo/vireo stats files separately (its `Basic_Demultiplex_stats` etc. placeholders) and the demultiplex version of each pool from `final_demux_versions.tsv` instead of `demultiplex_paths`. Today it reads the combined `_final_info.tsv`.
+- [ ] `final_demux_versions.tsv` for multi-VCF runs (needs the `vcf_type` of each pool; see Compatibility → Multi-VCF).
 
 ---
 

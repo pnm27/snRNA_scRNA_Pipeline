@@ -27,6 +27,19 @@
 
 ### Rule restructuring
 
+- Split `demux_samples` into `demux_run_<tool>` (one h5ad per tool: `solo`, `vireo`, or `none` without demultiplexing) and `demux_final` (the final h5ad of each pool), with output paths in `lib/config_models.py` (`_output_cfg` removed)
+  - `demux_final` combines the runs in the pool's row of the new swap correction file (`demultiplex.swap_correction`, versions as `<tool>:<run_tag>`), else this run's tools; it adds a `Donor_final` column, renamed by the swap correction file
+  - `add_solo` / `add_vireo` take the other tool's run from `demultiplex.previous_run_tag` and no longer start from the earlier final h5ad
+  - `demultiplex.demux_count_matrix_dir` (was only for `both`) now holds the final h5ads of all runs; new `fold_struct_final` (default `{pool}`)
+  - `gt_demux_pipeline.swap_correction_df` is no longer used
+  - With `create_final_h5ad: False`, solo runs now also stop at calico_solo's output, as vireo runs did
+  - Resources: `demux_samples` → `demux_run` and `demux_final` (update `resources:` overrides in configs)
+- New `run_tag` config key: each demultiplexing run writes to its own sub-folder of the calico_solo, cellSNP, vireoSNP, final count matrix and demultiplex info dirs
+- Split the demultiplex info: `demux_run_<tool>` writes only its tool's stats (`_hashsolo_stats.tsv` / `_vireo_stats.tsv`) and keeps the QC stats in the h5ad (`uns['qc_stats']`); `demux_final` writes `_basic_stats.tsv` (QC and the versions used) and the combined info read by `update_logs.py`
+- New rule `collect_demux_versions` writes `final_demux_versions.tsv` (demultiplex versions, swap correction, donors and cells passing QC per pool)
+- `split_bams_pipeline.split_by.input: h5ad` reads the h5ad of `split_by.demux` (it always read hashsolo's); new `input: final` splits by the final h5ad (`Donor_final`)
+- Fixed `demul_samples.py` with calico_solo: `cols` used before being set, the classification run twice, and `args.pref` (doesn't exist)
+- Fixed `create_inp_splitBam_consolidated.py` with an h5ad input crashing without `--demux_suffix` and keeping hashsolo's doublets and negatives
 - Split the single `demux_samples` rule into three rules reflecting output type:
   - `demux_samples_solo`, `demux_samples_vireo`, `demux_samples_both`
 - Added `demultiplex` config section for `demux_samples_both`

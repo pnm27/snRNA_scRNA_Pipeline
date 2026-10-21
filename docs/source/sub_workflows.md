@@ -132,8 +132,8 @@ This pipeline divides each module into its self-contained individual workflows. 
   - It contains rules for the cellSNP-vireoSNP pipeline.
 * - split_bams_gt.snkmk [^consol]
   - It contains rules needed to split pooled bams into individual bams dependent on output produced by vireo.
-* - demultiplex_no_argp.snkmk
-  - It contains rules for demultiplexing using hashsolo and/or vireoSNP output and create a count matrix file.
+* - demultiplex.smk
+  - It contains the rules that create an h5ad per demultiplexing tool (`demux_run_<tool>`) and the final h5ad of each pool (`demux_final`). See [Demultiplexing outputs](#demultiplexing-outputs).
 * - identify_swaps.snkmk 
   - It contains rules for identifying swaps using QTLtools-mbv.
 ```
@@ -141,6 +141,31 @@ This pipeline divides each module into its self-contained individual workflows. 
 [^consol]: Consolidating into one
 
 [^not-yet]: Not yet implemented
+
+# Demultiplexing outputs
+
+Each demultiplexing run writes to its own sub-folder (`run_tag` in the config, e.g. `wo_gt` or `w_gt_2`) of the calico_solo, cellSNP, vireoSNP, final count matrix and demultiplex info dirs. With `run_tag: null` the dirs are used as they are.
+
+```{list-table} Demultiplexing rules
+:header-rows: 1
+:name: demux-rules-table
+
+* - Rule
+  - Outputs
+* - `demux_run_solo`, `demux_run_vireo` (`demux_run_none` without demultiplexing)
+  - An h5ad with the classification of one tool (QC stats in `uns['qc_stats']`) and the stats of that tool (`_hashsolo_stats.tsv` / `_vireo_stats.tsv`), in the tool's dirs.
+* - `demux_final`
+  - The final h5ad of each pool (`demultiplex: demux_count_matrix_dir`, `fold_struct_final`), with the donor of each cell in `Donor_final`; its basic stats (`_basic_stats.tsv`: QC and the demultiplex versions used) and its demultiplex info (basic and tool stats together, read by `update_logs.py`).
+* - `collect_demux_versions`
+  - `final_demux_versions.tsv` in `demultiplex: demultiplex_info_dir`: one row per pool with the demultiplex versions used, whether the swap correction was applied, and the number of donors and of cells passing QC.
+```
+
+`demux_final` combines, for each pool:
+
+1. the runs in its row of the swap correction file (`demultiplex: swap_correction`), given as `<tool>:<run_tag>` (tool: `solo`, `vireo` or `both`), whose `donor_from` → `donor_to` columns rename the donors (an empty `donor_to` marks the donor's cells `Removed`), else
+2. the tools of this run and, for `add_solo` / `add_vireo`, the other tool from the run `demultiplex: previous_run_tag`.
+
+To split the bams by the final h5ad (e.g. after the swap correction), set `split_bams_pipeline: split_by: input: final`.
 
 ```{eval-rst}
 .. autosummary::
