@@ -1,147 +1,205 @@
 # TODO
 
-## Architecture & Design
+Items are ordered roughly by priority: bugs first, then the config/schema
+groundwork that the larger refactors depend on.
 
-- [ ] Separate resources into a yaml file following a structure and heirarchy:
-  
+---
+
+## Bugs to fix first
+
+- [ ] `demux_type: null` crashes: `get_inputs_demux` (`lib/io.py`), `get_params_demux` (`lib/params.py`) and `get_filt_barcodes` call `config['demux_type'].lower()` on `None`. Only the string `"none"` works today, although the config comment says `null` is allowed.
+- [ ] `get_inp_splitBam` (`lib/io.py`) checks `split_by` instead of `demux_type` in its hashsolo branch, so splitting by raw calico_solo output returns `None`.
+- [ ] `vcf_type` wildcard issue in `demux_samples`: `_inputs_vireo` / `_inputs_both` read `wildcards.vcf_type` when `last_step` ends in `multi_vcf`, but the rule's output path has no `{vcf_type}`. Add `{vcf_type}` to the output fold_struct for multi-VCF runs.
+- [ ] `get_vir_inputs`: with a 2-column `vcf_info` and `w_gt`, `donorFile` is set to `genome_1k_ref` (the 1kGP sites VCF). Should this be `donors_per_pool_file`?
+- [ ] `get_cmd_str_vireo` reads `vcf_info` unconditionally and indexes `input['donorFile']`, which fails when `vcf_info` is null or no donor file is set.
+- [ ] Resource functions are defined twice with different values (`allocate_mem_cS`, `allocate_mem_vS`, etc. in both `resources.smk` and `genotype_demux.smk`; the later include wins). Also: typo `allocate_timem_RN`, and `allocate_mem_QM` takes no `attempt`. Resolved by the resources item below.
+- [ ] `run_update_logs.sh` still passes `--pc_gc`.
+- [ ] Multiome branch of `_inputs_vireo` lists the same `donors_classification` path twice (likely meant one per modality).
+
+---
+
+## Groundwork: config & schemas
+
+- [ ] Write schemas and re-enable `validate()` in the `Snakefile` (`schema/config.schema.json` is currently gitignored). Consider growing `lib/config_models.py` (`DemuxConfig`) into typed config.
+- [ ] Restructure `new_config.yaml` to separate:
+  - [ ] static resources
+  - [ ] experiment definitions
+  - [ ] workflow behavior (RE-ASSESS `last_step`):
+
+    **OLD STYLE**
+
+    ```yaml
+    demux_type: solo
+    demux_run_type: wo_gt
+    hto_demux_type: single
+    ```
+
+    **NEW STYLE**
+
+    ```yaml
+    experiment:
+      demultiplexing:
+        method: solo
+        genotype:
+          enabled: false
+
+    hto:
+      enabled: true
+      multiplexing: single
+    ```
+
+  - [ ] execution modules
+  - [ ] output naming conventions
+- [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`, which is not in this repo yet).
+- [ ] Add a tiny test dataset (one small pool) and `snakemake -n` dry runs for each `demux_type`.
+
+---
+
+## Resources
+
+- [ ] Move all resource definitions out of the rule files into `rules/resources.smk`, so the rules only reference them (goal: readability of the rules). Back it with a per-rule spec using the same keys as the rules; `time_min` is an integer in minutes:
+
   ```yaml
   resources:
-  cellsnp:
-    cpus_per_task: 8
-    mem_mb: 32000
-    time_min: "04:00:00"
+    cellsnp:
+      cpus_per_task: 8
+      mem_mb:
+        base: 1500
+        factor: 1.15
+        max: 32000
+      time_min: 240
 
-  vireo:
-    cpus_per_task: 2
-    mem_mb: 8000
-    time_min: "01:00:00"
+    vireo:
+      cpus_per_task: 7
+      mem_mb: 22000
+      time_min: 180
 
-  star:
-    cpus_per_task: 16
-    mem_mb: 64000
-    time_min: "08:00:00"
-    ```
+    star:
+      cpus_per_task: 20
+      mem_mb: 25000
+      time_min: 1440
+  ```
 
-    **Helper Function**
+  **Helper Function** (in `rules/resources.smk`)
 
-    ```python
-    def mem(rule, attempt):
-    cfg = config["resources"][rule]["mem_mb"]
+  ```python
+  def resource(rule, name, attempt=1):
+      value = config["resources"][rule][name]
 
-    return min(
-        cfg["base"] * cfg.get("factor", 1) ** (attempt - 1),
-        cfg.get("max", float("inf")),
-    )
-    ```
+      if isinstance(value, int):
+          return value
 
-    **Usage in a Rule**
+      if isinstance(value, dict):
+          base = value["base"]
+          factor = value.get("factor", 1)
+          maximum = value.get("max", float("inf"))
+          return int(min(base * factor ** (attempt - 1), maximum))
 
-    ```python
-    rule vireo:
-    threads:
-        config["resources"]["vireo"]["threads"]
+      raise ValueError(f"Unknown resource spec: {rule}/{name}")
+  ```
 
-    resources:
-        mem_mb=lambda wc, attempt: mem("vireo", attempt)
-    ```
+  **Usage in a Rule**
 
-    **OR**
-    **HELPER FUNCTION**
+  ```python
+  rule cellSNP:
+      resources:
+          cpus_per_task=resource("cellsnp", "cpus_per_task"),
+          mem_mb=lambda wc, attempt: resource("cellsnp", "mem_mb", attempt),
+          time_min=lambda wc, attempt: resource("cellsnp", "time_min", attempt),
+  ```
 
-    ```python
-    def resource(rule, name, attempt=1):
-    value = config["resources"][rule][name]
+  - [ ] Support overrides by VCF suffix for `cellSNP` / `vireoSNP` (currently scaled on `vcf_type` endings `_max50k`, `25pct`, `gencode`).
 
-    if isinstance(value, int):
-        return value
+---
 
-    if isinstance(value, dict):
-        base = value["base"]
-        factor = value.get("factor", 1)
-        maximum = value.get("max", float("inf"))
-        return min(base * factor ** (attempt - 1), maximum)
+## Demultiplexing outputs & stats (one design)
 
-    raise ValueError(f"Unknown resource spec: {rule}/{name}")
-    ```
+Design the output/stats file layout once; the items below follow from it.
 
-    **Usage in a Rule**
-
-    ```python
-    rule cellsnp:
-    threads:
-        resource("cellsnp", "threads")
-
-    resources:
-        mem_mb=lambda wc, attempt: resource("cellsnp", "mem_mb", attempt)
-    ```
-
-- [ ] Currently, the creation of h5ad lies within the rule `demux_samples`. Split that rule into 2 rules:
-  - [ ] RULE A: An h5ad is created after vireo output
-  - [ ] RULE B: `demux_samples` picks proper version of vireo demultiplexing, corrects swaps and creates a final h5ad.
-- [ ] Creation of h5ad when there's no need for demultiplexing is needed.
-- [ ] Need a way to run the rule `vireoSNP` using a previous run of `cellSNP` (useful when there's a vcf for w_gt run but the SNPs haven't changed - many WGS)
-- [ ] Currently, the checkpoint `create_inp_splitBams` is handling the exact donors that will undergo splitting and further qtltools check, if needed. Make it to filter based on if cellSNP produces an empty `cellSNP.base.vcf.gz` too.
-- [ ] Change method for creating *Final* per-donor bams after genotype checks.
- *BEFORE* : For each group of samples that require the same round of demultiplexing, run with **new_config.yaml** setup like:
-
- ```yaml
- gt_check: yes # yes or no
- select_fastqs: subsetA_samples
- split_bams_pipeline:
-  subset_chr: null
- ```
-
-  *UPGRADE*: Use `Final_swap_correction` file to utilize the final version of demultiplexing results to produce the per-donor bams.
-
-- [ ] Currently, the dash app can't compare samples. Make it so that a pair-wise sample (can be donor vs donor or pool vs pool) sub-plot pop up.
-- [ ] Next update will be split the design for sc/snRNA seq, scATAC and multiome. Pipeline will be restructured.
-- [ ] `wildcards.modality` will handle cDNA/RNA, HTO or ATAC rather than functions (Input, params, etc.)
-- [ ] Split the demultiplexing info. It should be like basic stats (common file), hashsolo to hashsolo_stats file and vireo to vireo_stats file. This would make all things distinct (stats saved per demux per config/params). Not only will it be organized well but also mark the final version for each pool (by specifying in swap_correction_df).
-- [ ] Use `branch` function to handle rules with varied inputs
-- [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`)
-- [ ] Change how demultiplexing directory variants are handled — replace separate config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file
-- [ ] Employ a clear strategy for `final_count_matrix_dir` across demux scenarios:
+- [ ] Split `demux_samples` into 2 rules:
+  - [ ] RULE A: an h5ad is created after vireo output
+  - [ ] RULE B: `demux_samples` picks the proper version of vireo demultiplexing, corrects swaps and creates a final h5ad
+- [ ] Split the demultiplexing info into basic stats (common file), `hashsolo_stats` and `vireo_stats`, saved per demux per config/params. Mark the final version for each pool in `swap_correction_df`.
+- [ ] When adding calico_solo or vireo results, take the existing demux stats file as input and append to it.
+- [ ] Fix automatic output directory selection in `demux_samples` (`_output_cfg`).
+- [ ] Clear strategy for `final_count_matrix_dir` across demux scenarios:
   - Both tools run simultaneously
   - Tools run sequentially (name each run separately or record the order)
-- [ ] Simplify wildcard structure so folder structure encodes wildcards naturally.
-- [ ] Revamp wildcards to correctly handle varying output dirs for:
+- [ ] Replace separate demux config dirs (e.g. `wo_gt`, `w_gt`) with a suffix set at the top of the config file.
+- [ ] Use the `Final_swap_correction` file to produce the *Final* per-donor bams.
+  *BEFORE*: for each group of samples that require the same round of demultiplexing, run with **new_config.yaml** set up like:
+
+  ```yaml
+  gt_check: yes # yes or no
+  select_fastqs: subsetA_samples
+  split_bams_pipeline:
+    subset_chr: null
+  ```
+
+- [ ] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
+  - [x] *swap correction* addresses proper demultiplex file per each pool.
+  - [ ] *swap correction* has appropriately identified donors per each pool.
+
+---
+
+## Demultiplexing
+
+- [ ] Option to reuse a previous `cellSNP` run for `vireoSNP` (e.g. `gt_demux_pipeline.reuse_cellsnp_dir` read in `get_vir_inputs`); useful when there's a vcf for a w_gt run but the SNPs haven't changed (many WGS). Needs the `get_cmd_str_vireo` fix above.
+- [ ] Option to use a per-pool vcf only for pileups and not for vireo (e.g. `pool_vcf_use: [pileup, vireo]`).
+- [ ] Handle pools whose `cellSNP.base.vcf.gz` is empty. vireo fails before `create_inp_splitBams` runs, so either make cellSNP/vireo a checkpoint or have vireo write a sentinel the checkpoint reads.
+- [ ] Retain variant matching stats (variants matched to donor VCF out of total pileup): add a `log:` directive to `vireoSNP` and parse "variants matched to donor VCF" in `update_logs.py`, instead of searching `.snakemake/log`.
+- [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`.
+- [ ] Resolve the multi-HTO setup in `kite.smk` (document what currently fails).
+- [ ] Beautify `get_filt_barcodes` in `genotype_demux.smk`.
+
+---
+
+## Wildcards & modality (one refactor)
+
+Prerequisite for the Compatibility section.
+
+- [ ] `wildcards.modality` handles cDNA/RNA, HTO or ATAC rather than functions (input, params, etc.).
+- [ ] Simplify the wildcard structure so the folder structure encodes wildcards naturally.
+- [ ] Handle varying output dirs for:
   - Demux output (single method vs. simultaneous both)
   - BAM splitting (finalizing vs. genotype purposes)
-- [ ] Remove dependency on STARsolo as the only aligner
-- [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project
-- [ ] Resolve the issue of multi-HTO setup in `kite.smk`.
-- [ ] Restructure `new_config.yaml` to:
-  - separate:
-    - [ ]  static resources
-    - [ ]  experiment definitions
-    - [ ]  workflow behavior \( RE-ASSESS 'last_step'\) :
-      **OLD STYLE**
+- [ ] Use the `branch` function to handle rules with varied inputs.
+- [ ] Simplify target functions in `produce_targets` (`solo` / `both` targets are still TODO).
 
-      ```sh
-      demux_type: solo
-      demux_run_type: wo_gt
-      hto_demux_type: single
-      ```
+---
 
-      **NEW STYLE**
+## Aligner abstraction
 
-      ```sh
-      experiment:
-        demultiplexing:
-          method: solo
-          genotype:
-            enabled: false
+- [ ] Remove dependency on STARsolo as the only aligner.
+- [ ] Add `cellranger count` (GEX-only); only `cellranger-arc count` exists today.
+- [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project. Make the `gene_*` / `genefull_*` config paths consistent (`.mtx` vs `.mtx.gz`).
+- [ ] STARsolo WASP mode: `--waspOutputMode SAMtag --varVCFfile` can already go through `extra_params`; the work is supplying a per-pool VCF and adding `vW` to `SAM_attr`. `wo_gt` runs have no VCF until after demultiplexing.
 
-      hto:
-        enabled: true
-        multiplexing: single
-      ```
+---
 
-    - [ ]  execution modules
-    - [ ]  Output naming conventions
-- [ ]  Support ArchR and Signac QC for ATAC QC metrics.
-- [ ]  It will be easy to modify suffixes for files in `run_update_logs.sh`:
-  
+## Compatibility
+
+- [ ] Split the design for sc/snRNA-seq, scATAC and multiome; the pipeline will be restructured.
+- [ ] Make the pipeline compatible with:
+  - [ ] Multiome
+  - [ ] Multi-module
+  - [ ] Multi-VCF
+- [ ] Generalize outputs to accommodate multiome:
+  - [ ] `split_bams.smk` (entire split bam pipeline)
+  - [ ] `filt_chr_bams` (→ `filt_chr_bams_multiome`)
+- [ ] Permanent fix for rule `filt_chr_bams_multiome`.
+- [ ] Add `CollectInsertSizeMetrics` for the ATAC modality in multiome (`picard_metrics`).
+- [ ] Add multiome support in `update_logs.py`.
+- [ ] Support ArchR and Signac QC for ATAC QC metrics.
+
+---
+
+## run_update_logs.sh (one change)
+
+- [ ] Build `cmd_args` as a bash array, not a concatenated string (paths with spaces currently break).
+- [ ] Add a lightweight `check_required_args` for REQUIRED ARGS that fails fast with a clear message.
+- [ ] Make file suffixes easy to modify:
+
   ```sh
   declare -A opt_values=(
     [ss_l]="5"
@@ -150,66 +208,13 @@
   )
   ```
 
-- [ ] in `run_update_logs.sh`, cmd_args is built as a bash array, not a concatenated string
-- [ ] in `run_update_logs.sh`, Add a lightweight check_required_args for REQUIRED ARGS - fails fast with a clear message.
-- [ ] append_optional_flags warns (not fails) if key not in opt_flags.
-
----
-
-## Compatibility
-
-- [ ] Make the pipeline compatible with:
-  - [ ] Multiome
-  - [ ] Multi-module
-  - [ ] Multi-VCF
-- [ ] Generalize outputs to accommodate multiome:
-  - [ ] `split_bams.smk` (entire split bam pipeline)
-  - [ ] `filt_chr_bams` (→ `filt_chr_bams_multiome`)
-- [ ] Add `CollectInsertSizeMetrics` for the ATAC modality in multiome (`picard_metrics`)
-- [ ] Add multiome support in `update_logs.py`
-- [ ] Permanent fix for rule `filt_chr_bams_multiome`
-
----
-
-## Demultiplexing
-
-- [ ] Fix `vcf_type` wildcard issue in the rule `demux_samples`
-- [ ] Fix automatic output directory selection in `demux_samples`
-- [ ] Currently, when per pool vcf is provided then it automatically uses it for vireo too. Provide an option to just use it for pileups and not for vireo.
-- [ ] Think in terms of Shannon entropy for a better selection of SNPs
-- [ ] When adding calico_solo or vireo results, include the existing demux stats file as input and append to it
-- [ ] Retain vireo rerun information in both the demultiplex info file and `update_logs`:
-  - [x] *swap correction* addresses proper demultiplex file per each pool.
-  - [ ] *swap correction* has appropriately identified donors per each pool.
-- [ ] Retain variant matching stats from log runs (variants matched to donor VCF out of total pileup):
-
-  ```shell
-  find -mindepth 1 -maxdepth 1 -type d -exec sh -c \
-    'a=$(sed "s#\./##g" <<< {}); b=$(ls -ltr ${a} | tail -1 | rev | cut -d " " -f1 | rev); \
-     grep "variants matched to donor VCF" ${a}/${b}' \;
-  ```
-
-- [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`
-- [ ] Beautify `get_filt_barcodes` in `genotype_demux.smk`
-
----
-
-## cellranger
-
-- [ ] Add support for cellranger.
-
----
-
-## STARsolo
-
-- [ ] Add WASP mode
+- [ ] `append_optional_flags` warns (not fails) if a key is not in `opt_flags`.
 
 ---
 
 ## Code Quality
 
-- [ ] Add Python logging support using the `logging` module
-- [ ] Simplify target functions in `produce_targets`
+- [ ] Python logging with the `logging` module in the remaining helper scripts (`update_logs.py` already uses it).
 - [x] Remove `run` directive from `kite`, `pheno_demux3`, and `STARsolo`
 - [x] Combine sub-workflows `split_bams` and `split_bams_gt`
 - [x] Add config options for extra software parameters
@@ -218,17 +223,23 @@
 
 ## Experimental / Future
 
-- [ ] Agentic AI support for genotype-based demultiplexing using Ollama (with support for public vLLMs)
 - [ ] Add new Picard metrics
-- [ ] Incorporate git submodules for external repos
+- [ ] Incorporate git submodules for external repos (e.g. kite `featuremap`)
 
 ---
 
-## Documentation & Schemas
+## Documentation
 
-- [ ] Write schemas
 - [ ] Add tutorials:
   - Pooled snRNA-seq: single wildcard, multiple wildcards
   - scRNA-seq: single wildcard, multiple wildcards
   - Double HTOs
-- [ ] Search ranking config for ReadTheDocs
+- [ ] Search ranking config for ReadTheDocs (`search.ranking` in `.readthedocs.yaml`)
+
+---
+
+## Benched
+
+- [ ] Dash app: pair-wise sample comparison (donor vs donor or pool vs pool) sub-plot pop up.
+- [ ] Agentic AI support for genotype-based demultiplexing using Ollama (with support for public vLLMs).
+- [ ] Shannon entropy for a better selection of SNPs (benchmark against the existing `max50k` / `25pct` sets first).
