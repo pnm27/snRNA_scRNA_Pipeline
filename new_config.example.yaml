@@ -351,21 +351,17 @@ split_bams_pipeline:
     column: null # h5ad/final only; null: SubID_vs, SubID_cs or Donor_final
   min_cells_per_donor: 200
   subset_chr: 1 # Subset BAM files
+  # These four dirs get a sub-folder: gt_check/ (gt_check: yes) or final/
   inp_split_bams_dir: projdir/inp_split_filt_bams/
-  bams_per_barcode_dir: projdir/temp_split_filt_bams/
   split_bams_dir: projdir/STARsolo_split_filt_bams/
-  split_bams_proxy_dir: projdir/split_bam_logs/
+  per_donor_split_log_dir: projdir/logs_per_donor/
+  new_temp_dir: projdir/n_temp_d/
+  bams_per_barcode_dir: projdir/temp_split_filt_bams/
   reads_v_barcodes_dir: projdir/reads_info/
   temp_dir: projdir/split_bams_temp/
   sort_temp_dir: projdir/bam_sort_temp/temp_bc/
-  new_temp_dir: projdir/n_temp_d/
   # overwrite: yes
   # split_bams_script_dir: projdir/split_filt_bams_scripts/
-  split_bams_dir2: projdir/STARsolo_split_filt_bams2/ # For gt-only
-  per_donor_split_log_dir: projdir/logs_per_donor/
-  per_donor_split_log_dir2: projdir/logs_per_donor2/ # For gt-only
-  split_bams_proxy_dir2: projdir/split_bam_logs2/ # For gt-only
-  new_temp_dir2: projdir/n_temp_d2/ # For gt-only
   donor_name_converter:
     file: null # Accepts files or null
     from_column: null # Accepts str (column in the above file) or null

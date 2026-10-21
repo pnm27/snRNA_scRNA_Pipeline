@@ -45,6 +45,28 @@ def apply_run_tag(config) -> None:
             )
 
 
+# Dirs of the split bams pipeline; bams split for genotype checks
+# (gt_check) and the final per-donor bams each get a sub-folder
+SPLIT_PURPOSE_DIRS = [
+    'inp_split_bams_dir', 'split_bams_dir', 'per_donor_split_log_dir',
+    'new_temp_dir',
+]
+
+
+def split_purpose(config) -> str:
+    return 'gt_check' if config['gt_check'] else 'final'
+
+
+def apply_split_purpose(config) -> None:
+    """Add the split_purpose sub-folder to the dirs in SPLIT_PURPOSE_DIRS."""
+    if '_split_purpose' in config:
+        return
+    config['_split_purpose'] = split_purpose(config)
+    sb = config['split_bams_pipeline']
+    for key in SPLIT_PURPOSE_DIRS:
+        sb[key] = f"{sb[key]}{config['_split_purpose']}/"
+
+
 def run_dir(config, section: str, key: str, run_tag: Union[None, str]) -> str:
     """config[section][key] of the run tagged 'run_tag' (None: untagged)."""
     base = config['_untagged_dirs'][section][key]

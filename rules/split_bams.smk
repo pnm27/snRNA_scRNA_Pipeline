@@ -17,14 +17,15 @@ from lib.modality import bam_modalities, bam_paths, is_multiome
 
 
 # Donor classification the bams are split by ('split_by: input'): the
-# output of the demultiplexing tool itself ('raw'), its h5ad in this run
+# output of the demultiplexing tool itself ('raw'; multiome: vireo's cDNA
+# output, as only cDNA bams are split for now), its h5ad in this run
 # ('h5ad'), or the final h5ad of the pool, e.g. after the swap correction
 checkpoint create_inp_splitBams:
     input:
         branch(
             lambda _: config['split_bams_pipeline']['split_by']['input'].lower(),
             cases={
-                'raw': lambda _: raw_output(config, split_tool(config)),
+                'raw': lambda _: raw_output(config, split_tool(config)).replace('{modality}', 'cDNA'),
                 'h5ad': lambda _: demux_run(config, split_tool(config), config['run_tag']).h5ad,
                 'final': lambda _: final_paths(config).h5ad,
             },
@@ -79,7 +80,7 @@ rule bamfilt_by_CB:
         )
 
     params:
-        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{{pool}}_bc.txt",
+        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{wc.pool}_bc.txt",
         threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
 

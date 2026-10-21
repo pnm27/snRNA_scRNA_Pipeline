@@ -585,6 +585,7 @@ properties:
         type: string
       split_bams_proxy_dir:
         type: string
+        description: Unused (split bams go to gt_check/ or final/ sub-folders)
       reads_v_barcodes_dir:
         type: string
       temp_dir:
@@ -595,14 +596,18 @@ properties:
         type: string
       split_bams_dir2:
         type: string
+        description: Unused (split bams go to gt_check/ or final/ sub-folders)
       per_donor_split_log_dir:
         type: string
       per_donor_split_log_dir2:
         type: string
+        description: Unused (split bams go to gt_check/ or final/ sub-folders)
       split_bams_proxy_dir2:
         type: string
+        description: Unused (split bams go to gt_check/ or final/ sub-folders)
       new_temp_dir2:
         type: string
+        description: Unused (split bams go to gt_check/ or final/ sub-folders)
       donor_name_converter:
         type: object
         properties:

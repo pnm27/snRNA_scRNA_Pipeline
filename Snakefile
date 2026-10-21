@@ -29,9 +29,11 @@ configfile: "new_config.yaml"
 # Also fills in defaults for optional keys missing from older configs
 validate(config, "schema/config.schema.yaml")
 
-# Each demultiplexing run gets its own sub-folder ('run_tag')
-from lib.utils import apply_run_tag
+# Each demultiplexing run gets its own sub-folder ('run_tag'), and so do
+# bams split for genotype checks and the final per-donor bams
+from lib.utils import apply_run_tag, apply_split_purpose
 apply_run_tag(config)
+apply_split_purpose(config)
 
 
 # Wildcards hold a single folder or file name part, so they can't

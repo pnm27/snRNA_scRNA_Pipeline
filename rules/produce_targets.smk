@@ -113,21 +113,8 @@ def targets_gt_demux2(multiome: bool = False) -> list:
     ]
 
 
-def targets_SplitBams(multiome: bool = False) -> list:
-    sub_dirs = ["ATAC", "cDNA"] if multiome else ["cDNA"]
-    out_dir  = (
-        config["split_bams_pipeline"]["split_bams_proxy_dir2"]
-        if config["gt_check"]
-        else config["split_bams_pipeline"]["split_bams_proxy_dir"]
-    )
-    op = config["fold_struct_bam_split1"]
-    return [
-        os.path.join(out_dir, op, d)
-        for d in sub_dirs
-    ]
-
-
-def targets_SplitBams_new(multiome: bool = False) -> list:
+def targets_SplitBams() -> list:
+    """Per-donor bams (split_bams_dir has the gt_check/ or final/ sub-folder)."""
     out_dir  = f"{config['split_bams_pipeline']['split_bams_dir']}"
     op = config["fold_struct_bam_split2"]
     return [
@@ -171,9 +158,7 @@ def targets_multiome(last: str) -> list:
 
         "vireo": targets_demux,
 
-        "splitBams": lambda: targets_SplitBams(
-            multiome=True
-        ),
+        "splitBams": targets_SplitBams,
 
         "identifySwaps": lambda: targets_gt_demux_identify_swaps(
             multiome=True
@@ -318,19 +303,8 @@ def produce_targets(wildcards) -> list:
 def produce_targets_dynamic(wildcards) -> list:
     step = config["last_step"].lower()
 
-    if step == "starsolo_split_bams":
+    if step in ("starsolo_split_bams", "starsolo_split_bams_gt_demux"):
         return _expand_pools_donors(targets_SplitBams()[0], wildcards)
-
-    elif step == "starsolo_split_bams_gt_demux":
-        # targets = targets_SplitBams()
-        # return [
-        #     f
-        #     for i, t in enumerate(targets)
-        #     for f in _expand_pools_donors(f"{t}.txt" if i == 0 else t, wildcards)
-        # ]
-        return _expand_pools_donors(
-            targets_SplitBams_new(multiome=False)[0], wildcards
-        )
 
     elif step == "starsolo_split_bams_gt_demux_multi_vcf":
         suff_h5ad = config["gt_demux_pipeline"]["final_count_matrix_h5ad"]
@@ -355,12 +329,7 @@ def produce_targets_dynamic(wildcards) -> list:
         )
 
     elif step == "multiome_split_bams_gt_demux":
-        targets = targets_multiome("splitBams")
-        return [
-            f
-            for i, t in enumerate(targets)
-            for f in _expand_pools(f"{t}.txt" if i <= 1 else t, modality=MODALITY)
-        ]
+        return _expand_pools_donors(targets_multiome("splitBams")[0], wildcards)
 
     elif step == "multiome_gt_demux_identify_swaps":
         return [f for t in targets_multiome("identifySwaps")
