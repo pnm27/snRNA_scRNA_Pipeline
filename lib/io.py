@@ -307,11 +307,16 @@ def get_inp_splitBam(wildcards, config):
                 f"{config['fold_struct_gt_demux']}"
                 f"{config['gt_demux_pipeline']['donors_classification']}"
             )
-        elif split_by in ["cs", "calico", "calico_solo", "hashsolo"]:
+        elif demux_type in ["cs", "calico", "calico_solo", "hashsolo"]:
             return (
                 f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}"
                 f"{config['fold_struct_demux']}"
                 f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+            )
+        else:
+            raise ValueError(
+                "Unknown 'split_bams_pipeline: split_by: demux' value: "
+                f"'{demux_type}'"
             )
     else:
         return (
