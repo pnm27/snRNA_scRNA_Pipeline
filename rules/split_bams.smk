@@ -14,20 +14,6 @@ from lib.params import (
 from functools import partial
 
 
-# Resource Allocation ------------------
-def allocate_mem_FCB(wildcards, attempt):
-    return 1000+200*(attempt-1)
-
-
-def allocate_time_FCB(wildcards, attempt):
-    return 20+20*(attempt-1)
-
-
-def allocate_mem_SB(wildcards, attempt):
-    return 250+100*(attempt-1)
-
-# --------------------------------------
-
 # FIX THE INPUT: INPUT SHOULD TAKE IN EITHER VIREO OR CALICO_SOLO'S H5AD AS INPUT, AS REQUIRED.
 checkpoint create_inp_splitBams:
     input:
@@ -50,13 +36,8 @@ checkpoint create_inp_splitBams:
         extra = partial(get_params_create_inp_splitBams, config=config),
         script="helper_py_scripts/create_inp_splitBam_consolidated.py"
 
-    # For snakemake < v8
-    # threads: 2
-
     resources:
-        cpus_per_task=2, # For snakemake > v8
-        mem_mb=1000,
-        time_min=10
+        **get_resources("create_inp_splitBams")
 
     shell:
         """
@@ -91,13 +72,8 @@ rule bamfilt_by_CB:
         threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
 
-    # For snakemake < v8
-    # threads: 1
-
     resources:
-        cpus_per_task=1, # For snakemake > v8
-        mem_mb=250,
-        time_min=300
+        **get_resources("bamfilt_by_CB")
 
     conda: "../envs/pysam.yaml"
 
@@ -136,13 +112,8 @@ rule filt_chr_bams:
         sub_chr=partial(subset_to_chr, config=config),
         threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
-    # For snakemake < v8
-    # threads: 1
-
     resources:
-        cpus_per_task=1, # For snakemake > v8
-        mem_mb=allocate_mem_FCB,
-        time_min=allocate_time_FCB
+        **get_resources("filt_chr_bams")
 
     conda: "../envs/pysam.yaml"
 
@@ -206,9 +177,7 @@ rule filt_chr_bams_multiome_cdna:
         sub_chr=partial(subset_to_chr, config=config),
         threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
     resources:
-        cpus_per_task=1,
-        mem_mb=allocate_mem_FCB,
-        time_min=allocate_time_FCB
+        **get_resources("filt_chr_bams_multiome_cdna")
     conda: "../envs/pysam.yaml"
     envmodules:
         "samtools"
@@ -234,9 +203,7 @@ rule filt_chr_bams_multiome_atac:
         sub_chr=partial(subset_to_chr, config=config),
         threads=lambda _, resources: max(resources.cpus_per_task * 6, 10)
     resources:
-        cpus_per_task=1,
-        mem_mb=allocate_mem_FCB,
-        time_min=allocate_time_FCB
+        **get_resources("filt_chr_bams_multiome_atac")
     conda: "../envs/pysam.yaml"
     envmodules:
         "samtools"
@@ -322,9 +289,7 @@ rule split_bams:
         ),
         script        = "helper_sh_scripts/create_per_donor_bams.bash"
     resources:
-        cpus_per_task = 1,
-        mem_mb        = allocate_mem_SB,
-        time_min      = 30
+        **get_resources("split_bams")
     log:
         (
             f"{config["split_bams_pipeline"]["per_donor_split_log_dir"]}"

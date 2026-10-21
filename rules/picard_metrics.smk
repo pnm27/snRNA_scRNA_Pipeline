@@ -1,20 +1,3 @@
-# Resource Allocation ------------------
-def allocate_mem_PGCB(wildcards, attempt):
-    return 7500+2500*(attempt-1)
-
-
-def allocate_time_PGCB(wildcards, attempt):
-    return 360+60*(attempt-1)
-
-
-def allocate_mem_PRNA(wildcards, attempt):
-    return 2500+2500*(attempt-1)
-
-
-def allocate_time_PRNA(wildcards, attempt):
-    return 210+30*(attempt-1)
-
-# --------------------------------------
 
 rule Picard_GC_bias_metrics:
     input:
@@ -31,13 +14,8 @@ rule Picard_GC_bias_metrics:
         genome_fasta=config['STARsolo_pipeline']['genome_pick']['fasta'] # config["genome_fasta"]
 
     resources:
-        cpus_per_task=2, # For snakemake > v8
-        mem_mb=allocate_mem_PGCB,
-        time_min=allocate_time_PGCB
+        **get_resources("Picard_GC_bias_metrics")
        
-    # For snakemake < v8
-    # threads: 2
-
     conda: "../envs/picard.yaml"
 
     envmodules:
@@ -67,12 +45,7 @@ rule Picard_RNAseq_metrics:
         strand=config['picard_pipeline']['strand']
 
     resources:
-        cpus_per_task=4, # For snakemake > v8
-        mem_mb=allocate_mem_PRNA,
-        time_min=allocate_time_PRNA
-
-    # For snakemake < v8
-    # threads: 4
+        **get_resources("Picard_RNAseq_metrics")
 
     conda: "../envs/picard.yaml"
 

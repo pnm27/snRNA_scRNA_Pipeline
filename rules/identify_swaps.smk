@@ -2,16 +2,6 @@ from functools import partial
 from lib.io import get_bam_inputs
 
 
-# Resource Allocation ------------------
-def allocate_mem_QM(wildcards):
-    return 5000
-
-
-def allocate_time_QM(wildcards, attempt):
-    return 60 + 20*(attempt-1)
-
-# --------------------------------------
-
 rule qtltools_mbv:
     input:
         bam=partial(get_bam_inputs, config=config),
@@ -28,13 +18,8 @@ rule qtltools_mbv:
     params:
         extra_params=config['identify_swaps']['mbv_extra_opt']
 
-    # For snakemake < v8
-    # threads: 1
-
     resources:
-        cpus_per_task=1, # For snakemake > v8
-        mem_mb=allocate_mem_QM,
-        time_min=allocate_time_QM
+        **get_resources("qtltools_mbv")
 
     envmodules:
         "qtltools/1.3"

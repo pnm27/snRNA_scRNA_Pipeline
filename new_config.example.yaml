@@ -388,3 +388,13 @@ plotCorrelation:
   out_fmt: .png
 
 
+
+# Resource overrides-------------------------------------------------------
+# Defaults for every rule live in rules/resources.smk. Override any of
+# them here with the same layout (memory in MB, time in minutes), e.g.
+# resources:
+#   vireoSNP:
+#     cpus_per_task: 7
+#     mem_mb: {base: 30000, step: 1000, max: 60000}
+#     time_min: 240
+resources: null

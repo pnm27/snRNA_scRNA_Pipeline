@@ -10,24 +10,6 @@ def get_BC_input(wildcards):
     return all_bams
 
 
-# Resource Allocation ------------------
-def allocate_mem_MBS(wildcards, attempt):
-    return 400 + 200*(attempt-1)
-
-
-def allocate_time_MBS(wildcards, attempt):
-    return 300 + 30*(attempt-1)
-
-
-def allocate_mem_PC(wildcards, attempt):
-    return 200 + 500*(attempt-1)
-
-
-def allocate_time_PC(wildcards, attempt):
-    return 10 + 200*(attempt-1)
-
-# --------------------------------------
-
 rule multiBamSummary:
     input:
         get_BC_input
@@ -42,13 +24,8 @@ rule multiBamSummary:
     conda: "../envs/deeptools.yaml"
 
     resources:
-        cpus_per_task=5, # For snakemake > v8
-        mem_mb=allocate_mem_MBS,
-        time_min=allocate_time_MBS
+        **get_resources("multiBamSummary")
        
-    # For snakemake < v8
-    # threads: 5
-
     # group: "PICARD_metrics"
      
     shell:
@@ -74,13 +51,8 @@ rule plotCorrelation:
     conda: "../envs/deeptools.yaml"
 
     resources:
-        cpus_per_task=2, # For snakemake > v8
-        mem_mb=allocate_mem_PC,
-        time_min=allocate_time_PC
+        **get_resources("plotCorrelation")
        
-    # For snakemake < v8
-    # threads: 2
-
     # group: "PICARD_metrics"
      
     shell:

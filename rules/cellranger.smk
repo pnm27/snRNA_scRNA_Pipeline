@@ -3,22 +3,6 @@ from functools import partial
 from lib.io import get_fastqs
 
 
-# Resource Allocation ------------------
-
-def allocate_mem_ICAC(wildcards, attempt):
-    return 2000+1000*(attempt-1)
-
-def allocate_time_ICAC(wildcards, attempt):
-    return 10
-
-def allocate_mem_CAC(wildcards, attempt):
-    return 16000+2000*(attempt-1)
-
-def allocate_time_CAC(wildcards, attempt):
-    return 2880
-
-# --------------------------------------
-
 rule inp_cellranger_arc_count:
     input:
         partial(get_fastqs, config=config)
@@ -30,9 +14,7 @@ rule inp_cellranger_arc_count:
         "{pool}_metadata.csv"
 
     resources:
-        cpus_per_task=1, # For snakemake > v8
-        mem_mb=allocate_mem_ICAC,
-        time_min=allocate_time_ICAC
+        **get_resources("inp_cellranger_arc_count")
 
     conda: "../envs/basic_sctools.yaml"
 
@@ -88,13 +70,8 @@ rule cellranger_arc_count:
     #     pool=r"[^/]" #WILDCARDS
 
     resources:
-        cpus_per_task=20, # For snakemake > v8
-        mem_mb=allocate_mem_CAC,
-        time_min=allocate_time_CAC,
+        **get_resources("cellranger_arc_count"),
         attempt=lambda wildcards, attempt: attempt
-
-    # For snakemake < v8
-    # threads: 20
 
     envmodules:
         f"{config['cellranger-arc_version']}"

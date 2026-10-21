@@ -1,11 +1,3 @@
-# Resource Allocation ------------------
-def allocate_mem_RCS(wildcards, attempt):
-    return 4500*attempt+2500
-
-def allocate_time_RCS(wildcards, attempt):
-    return 5*attempt+5
-
-# --------------------------------------
 
 
 rule run_calico_solo:
@@ -24,15 +16,10 @@ rule run_calico_solo:
         mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
         script="helper_py_scripts/create_h5ad_from_calico_solo.py"
 
-    # For snakemake < v8
-    # threads: 2
-
     conda: "../envs/hashsolo.yaml"
 
     resources:
-        cpus_per_task=2, # For snakemake > v8
-        mem_mb=allocate_mem_RCS,
-        time_min=allocate_time_RCS
+        **get_resources("run_calico_solo")
 
     shell: 
         """

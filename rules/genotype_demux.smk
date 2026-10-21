@@ -32,72 +32,6 @@ from functools import partial
 # is used for calico_solo's input
 
 
-# Resource Allocation ------------------
-def allocate_mem_CICS(wildcards, attempt):
-    return 2000+500*(attempt-1)
-
-
-def allocate_time_CICS(wildcards, attempt):
-    return 2*attempt+1
-
-
-def allocate_mem_cS(wildcards, attempt): # WILDCARDS
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 200+80*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 800+100*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 1300+200*(attempt-1)
-        else:
-            return 1500+200*(attempt-1)
-    else:
-        return 200+200*(attempt-1)
-
-
-def allocate_time_cS(wildcards, attempt): # WILDCARDS
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 30+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 70+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 180+40*(attempt-1)
-        else:
-            return 240+60*(attempt-1)
-    else:
-        return 240+60*(attempt-1)
-
-
-def allocate_mem_vS(wildcards, attempt): # WILDCARDS
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 3000+100*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 5000+400*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 10000+600*(attempt-1)
-        else:
-            return 22000+500*(attempt-1)
-    else:
-        return 35000+500*(attempt-1)
-
-
-def allocate_time_vS(wildcards, attempt): # WILDCARDS
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 10+5*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 70+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 180+40*(attempt-1)
-        else:
-            return 180+60*(attempt-1)
-    else:
-        return 180+60*(attempt-1)
-
-# --------------------------------------
-
 rule create_inp_cellSNP:
     input:
         partial(get_filt_barcodes, config=config)
@@ -108,12 +42,7 @@ rule create_inp_cellSNP:
         extra=partial(get_params_cics, config=config, input=input)
 
     resources:
-        cpus_per_task=2, # For snakemake > v8
-        mem_mb=allocate_mem_CICS,
-        time_min=allocate_time_CICS
-
-    # For snakemake < v8
-    # threads: 2
+        **get_resources("create_inp_cellSNP")
 
     output:
         f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
@@ -155,13 +84,8 @@ rule cellSNP:
         threads=config['gt_demux_pipeline']['bcftools_thread']
 
 
-    # For snakemake < v8
-    # threads: 8
-
     resources:
-        cpus_per_task=8, # For snakemake > v8
-        mem_mb=allocate_mem_cS,
-        time_min=allocate_time_cS
+        **get_resources("cellSNP")
     
     conda: "../envs/gt_demux.yaml"
 
@@ -200,13 +124,8 @@ rule vireoSNP:
         ),
         cmd_str=partial(get_cmd_str_vireo, config=config)
 
-    # For snakemake < v8
-    # threads: 7
-
     resources:
-        cpus_per_task=7, # For snakemake > v8
-        mem_mb=allocate_mem_vS,
-        time_min=allocate_time_vS
+        **get_resources("vireoSNP")
         
     conda: "../envs/gt_demux.yaml"
 

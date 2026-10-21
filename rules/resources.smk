@@ -1,269 +1,257 @@
-# Mem allocation per thread (here thread is core/tasks), everything is in MB
+# Resources for every rule, kept here so the rules stay readable.
+# Memory is in MB and time is in minutes.
+#
+# Each value can be:
+#   - an int, used as is
+#   - a dict, scaled with the retry attempt and capped at 'max' (optional):
+#       base + step * (attempt - 1)
+#   - a function (wildcards, attempt), for special cases
+#
+# 'by_vcf_suffix' (optional) overrides a dict value when wildcards.vcf_type
+# ends with one of its keys (checked in order). The key "" matches any
+# vcf_type, so it is the fallback for runs that have one.
+#
+# Values under 'resources' in the config (same layout) override these, e.g.
+#   resources:
+#     vireoSNP:
+#       mem_mb: {base: 30000, step: 1000}
+#
+# Usage in a rule:
+#   resources:
+#       **get_resources("cellSNP")
+
+
+# Per-pool max RAM for STAR comes from the optional second column of
+# 'select_fastqs' (SS_MEM, see input_processing.smk)
 def allocate_mem_SS(wildcards, attempt):
-    return 25000+1000*(attempt-1)
-
-
-def allocate_mem_PGCB(wildcards, attempt):
-    return 2500*attempt+2500
-
-
-def allocate_mem_PRNA(wildcards, attempt):
-    return 2500*attempt+2500
-
-
-def allocate_mem_CFB(wildcards, attempt):
-    return 50*attempt+80
-
-
-def allocate_mem_CMF(wildcards, attempt):
-    return 50*attempt+70
-
-
-def allocate_mem_BKI(wildcards, attempt):
-    return 1000*attempt+1000
-
-
-def allocate_mem_RK(wildcards, attempt):
-    return 1000*attempt + 500
-
-
-def allocate_mem_RBCor(wildcards, attempt):
-    return 1500*attempt+1500
-
-
-def allocate_mem_RBS(wildcards, attempt):
-    return 3000*attempt+3000
-
-
-def allocate_mem_RBCnt(wildcards, attempt):
-    return 1500*attempt+1500
-
-
-def allocate_mem_CHB(wildcards, attempt):
-    return 1500*attempt+1500
-
-
-def allocate_mem_RCS(wildcards, attempt):
-    return 4500*attempt+2500
-
-
-def allocate_mem_DXP(wildcards, attempt):
-    return 3500*attempt+3500
-
-
-def allocate_mem_CICS(wildcards, attempt):
-    return 2000+500*(attempt-1)
-
-
-def allocate_mem_CISPD(wildcards, attempt):
-    return 500+500*(attempt-1)
-
-
-def allocate_mem_GIH(wildcards, attempt):
-    return 3500*attempt+3500 # Not finalised yet
-
-
-def allocate_mem_cS(wildcards, attempt):
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 200+80*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 800+100*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 1300+200*(attempt-1)
-        else:
-            return 1500+200*(attempt-1)
+    if not SS_MEM or wildcards.pool not in SS_MEM:
+        return 45000+1000*(attempt-1) # DEFAULT
     else:
-        return 1500+200*(attempt-1)
+        return SS_MEM[wildcards.pool] +4000*(attempt-1)
 
 
-def allocate_mem_vS(wildcards, attempt):
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 3000+100*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 5000+400*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 10000+600*(attempt-1)
+RESOURCES = {
+    # STARsolo.smk
+    "STARsolo_sort": {
+        "cpus_per_task": 10,
+        "mem_mb": allocate_mem_SS,
+        "time_min": 1440,
+    },
+    "samtools_index": {
+        "cpus_per_task": 4,
+        "mem_mb": 5000,
+        "time_min": 720,
+    },
+
+    # picard_metrics.smk
+    "Picard_GC_bias_metrics": {
+        "cpus_per_task": 2,
+        "mem_mb": {"base": 7500, "step": 2500},
+        "time_min": {"base": 360, "step": 60},
+    },
+    "Picard_RNAseq_metrics": {
+        "cpus_per_task": 4,
+        "mem_mb": {"base": 2500, "step": 2500},
+        "time_min": {"base": 210, "step": 30},
+    },
+
+    # kite.smk
+    "create_FB": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 130, "step": 50},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "create_mismatch_fasta": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 120, "step": 50},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "build_kallisto_index": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 2000, "step": 1000},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "run_kallisto": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 1500, "step": 1000},
+        "time_min": {"base": 40, "step": 20},
+    },
+    "run_bustools_correct": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 3000, "step": 1500},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "run_bustools_sort": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 6000, "step": 3000},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "run_bustools_count": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 3000, "step": 1500},
+        "time_min": {"base": 10, "step": 5},
+    },
+    "create_h5ad_bustools": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 3000, "step": 1500},
+        "time_min": {"base": 10, "step": 5},
+    },
+
+    # calico_solo_demux.smk
+    "run_calico_solo": {
+        "cpus_per_task": 2,
+        "mem_mb": {"base": 7000, "step": 4500},
+        "time_min": {"base": 10, "step": 5},
+    },
+
+    # genotype_demux.smk
+    "create_inp_cellSNP": {
+        "cpus_per_task": 2,
+        "mem_mb": {"base": 2000, "step": 500},
+        "time_min": {"base": 3, "step": 2},
+    },
+    "cellSNP": {
+        "cpus_per_task": 8,
+        "mem_mb": {
+            "base": 200, "step": 200,
+            "by_vcf_suffix": {
+                "_max50k": {"base": 200, "step": 80},
+                "25pct": {"base": 800, "step": 100},
+                "gencode": {"base": 1300, "step": 200},
+                "": {"base": 1500, "step": 200},
+            },
+        },
+        "time_min": {
+            "base": 240, "step": 60,
+            "by_vcf_suffix": {
+                "_max50k": {"base": 30, "step": 20},
+                "25pct": {"base": 70, "step": 20},
+                "gencode": {"base": 180, "step": 40},
+            },
+        },
+    },
+    "vireoSNP": {
+        "cpus_per_task": 7,
+        "mem_mb": {
+            "base": 35000, "step": 500,
+            "by_vcf_suffix": {
+                "_max50k": {"base": 3000, "step": 100},
+                "25pct": {"base": 5000, "step": 400},
+                "gencode": {"base": 10000, "step": 600},
+                "": {"base": 22000, "step": 500},
+            },
+        },
+        "time_min": {
+            "base": 180, "step": 60,
+            "by_vcf_suffix": {
+                "_max50k": {"base": 10, "step": 5},
+                "25pct": {"base": 70, "step": 20},
+                "gencode": {"base": 180, "step": 40},
+            },
+        },
+    },
+
+    # demultiplex.smk
+    "demux_samples": {
+        "mem_mb": {"base": 7000, "step": 3500},
+        "time_min": {"base": 30, "step": 15},
+    },
+
+    # split_bams.smk
+    "create_inp_splitBams": {
+        "cpus_per_task": 2,
+        "mem_mb": 1000,
+        "time_min": 10,
+    },
+    "bamfilt_by_CB": {
+        "cpus_per_task": 1,
+        "mem_mb": 250,
+        "time_min": 300,
+    },
+    "filt_chr_bams": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 1000, "step": 200},
+        "time_min": {"base": 20, "step": 20},
+    },
+    "filt_chr_bams_multiome_cdna": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 1000, "step": 200},
+        "time_min": {"base": 20, "step": 20},
+    },
+    "filt_chr_bams_multiome_atac": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 1000, "step": 200},
+        "time_min": {"base": 20, "step": 20},
+    },
+    "split_bams": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 250, "step": 100},
+        "time_min": 30,
+    },
+
+    # identify_swaps.smk
+    "qtltools_mbv": {
+        "cpus_per_task": 1,
+        "mem_mb": 5000,
+        "time_min": {"base": 60, "step": 20},
+    },
+
+    # deeptools.smk
+    "multiBamSummary": {
+        "cpus_per_task": 5,
+        "mem_mb": {"base": 400, "step": 200},
+        "time_min": {"base": 300, "step": 30},
+    },
+    "plotCorrelation": {
+        "cpus_per_task": 2,
+        "mem_mb": {"base": 200, "step": 500},
+        "time_min": {"base": 10, "step": 200},
+    },
+
+    # cellranger.smk
+    "inp_cellranger_arc_count": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 2000, "step": 1000},
+        "time_min": 10,
+    },
+    "cellranger_arc_count": {
+        "cpus_per_task": 20,
+        "mem_mb": {"base": 16000, "step": 2000},
+        "time_min": 2880,
+    },
+}
+
+
+def _resolve(spec, wildcards, attempt):
+    """Value of one resource spec for a job (see the top of this file)."""
+    if callable(spec):
+        return spec(wildcards, attempt)
+
+    vcf_type = getattr(wildcards, 'vcf_type', None)
+    if vcf_type is not None:
+        for suffix, sub_spec in spec.get("by_vcf_suffix", {}).items():
+            if vcf_type.endswith(suffix):
+                spec = sub_spec
+                break
+
+    value = spec["base"] + spec.get("step", 0) * (attempt - 1)
+    return min(value, spec.get("max", value))
+
+
+def get_resources(rule):
+    """Keyword arguments for the 'resources' directive of a rule."""
+    specs = {
+        **RESOURCES[rule],
+        **((config.get("resources") or {}).get(rule) or {}),
+    }
+
+    ret = {}
+    for name, spec in specs.items():
+        if isinstance(spec, int):
+            ret[name] = spec
         else:
-            return 22000+500*(attempt-1)
-    else:
-        return 22000+500*(attempt-1)
-
-
-def allocate_mem_AOTFCM(wildcards, attempt):
-    return 2000+500*(attempt-1)
-
-def allocate_mem_US(wildcards, attempt):
-    return 250*attempt+250
-
-
-def allocate_mem_CIS(wildcards, attempt):
-    return 500*attempt+500
-
-
-def allocate_mem_FCB(wildcards, attempt):
-    return 150*attempt+150
-
-
-def allocate_mem_SB(wildcards, attempt):
-    return 75*attempt+75
-
-
-def allocate_mem_SSSA(wildcards, attempt):
-    return 6000+1000*(attempt-1)
-
-
-def allocate_mem_CPDV(wildcards, attempt):
-    return 75*attempt+75
-
-
-def allocate_mem_SDB(wildcards, attempt):
-    return 2500
-
-
-def allocate_mem_RN(wildcards, attempt):
-    return 20000+10000*(attempt-1)
-
-
-def allocate_mem_QM(wildcards):
-    return 5000
-
-
-def allocate_mem_MBS(wildcards, attempt):
-    return 400 + 200*(attempt-1)
-
-
-def allocate_mem_PC(wildcards, attempt):
-    return 200 + 500*(attempt-1)
-
-
-# Time allocation in minutes (doesn't include for the rules cellSNP and vireoSNP)
-# CAREFULL about exceeding time limits
-def allocate_time_SS(wildcards, attempt):
-    return 1440
-
-
-def allocate_time_PGCB(wildcards, attempt):
-    return 60*attempt+60
-
-
-def allocate_time_PRNA(wildcards, attempt):
-    return 210*attempt+210
-
-
-def allocate_time_CFB(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_CMF(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_BKI(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_RK(wildcards, attempt):
-    return 20*attempt + 20
-
-
-def allocate_time_RBCor(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_RBS(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_RBCnt(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_CHB(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_RCS(wildcards, attempt):
-    return 5*attempt+5
-
-
-def allocate_time_DXP(wildcards, attempt):
-    return 15*attempt+15
-
-
-def allocate_time_CICS(wildcards, attempt):
-    return 2*attempt+1
-
-
-def allocate_time_GIH(wildcards, attempt):
-    return 3500*attempt+3500 # Not finalised yet
-
-
-def allocate_time_cS(wildcards, attempt):
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 30+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 70+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 180+40*(attempt-1)
-        else:
-            return 240+60*(attempt-1)
-    else:
-        return 240+60*(attempt-1)
-
-
-def allocate_time_vS(wildcards, attempt):
-    if 'vcf_type' in wildcards:
-        if wildcards.vcf_type.endswith('_max50k'):
-            return 10+5*(attempt-1)
-        elif wildcards.vcf_type.endswith('25pct'):
-            return 70+20*(attempt-1)
-        elif wildcards.vcf_type.endswith('gencode'):
-            return 180+40*(attempt-1)
-        else:
-            return 180+60*(attempt-1)
-    else:
-        return 180+60*(attempt-1)
-
-
-def allocate_time_AOTFCM(wildcards, attempt):
-    return 15+10*(attempt-1)
-
-
-def allocate_time_US(wildcards, attempt):
-    return 15*attempt+15
-
-
-def allocate_time_FCB(wildcards, attempt):
-    return 20*attempt+20
-
-
-def allocate_time_SSSA(wildcards, attempt):
-    return 120
-
-
-def allocate_time_CPDV(wildcards, attempt):
-    return 300
-
-
-def allocate_time_SDB(wildcards, attempt):
-    return 180
-
-
-def allocate_timem_RN(wildcards, attempt):
-    return 360
-
-
-def allocate_time_QM(wildcards, attempt):
-    return 60 + 20*(attempt-1)
-
-
-def allocate_time_MBS(wildcards, attempt):
-    return 300 + 30*(attempt-1)
-
-
-def allocate_time_PC(wildcards, attempt):
-    return 10 + 200*(attempt-1)
-
+            ret[name] = (
+                lambda wildcards, attempt, spec=spec:
+                    _resolve(spec, wildcards, attempt)
+            )
+    return ret

@@ -9,16 +9,6 @@ from lib.utils import get_demux_type
 from functools import partial
 
 
-# Resource Allocation ------------------
-def allocate_mem_DMX(wildcards, attempt):
-    return 3500 * attempt + 3500
-
-
-def allocate_time_DMX(wildcards, attempt):
-    return 15 * attempt + 15
-
-
-# --------------------------------------
 # ── Output resolver ───────────────────────────────────────────────────────────
 
 def _output_cfg(config):
@@ -85,8 +75,7 @@ rule demux_samples:
         extra     = partial(get_params_demux, config=config)
 
     resources:
-        mem_mb   = allocate_mem_DMX,
-        time_min = allocate_time_DMX
+        **get_resources("demux_samples")
 
     conda: "../envs/basic_sctools.yaml"
 

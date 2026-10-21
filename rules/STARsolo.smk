@@ -5,20 +5,6 @@ from lib.params import get_limitsjdbval_coll
 
 
 
-# Resource Allocation ------------------
-
-def allocate_mem_SS(wildcards, attempt):
-    if not SS_MEM or wildcards.pool not in SS_MEM:
-        return 45000+1000*(attempt-1) # DEFAULT
-    else:
-        return SS_MEM[wildcards.pool] +4000*(attempt-1)
-
-def allocate_time_SS(wildcards, attempt):
-    return 1440
-
-# --------------------------------------
-
-
 rule STARsolo_sort:
     input:
         R1=partial(get_r1_fastqs, config=config),
@@ -79,13 +65,8 @@ rule STARsolo_sort:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
    
     resources:
-        cpus_per_task=10, # For snakemake > v8
-        mem_mb=allocate_mem_SS,
-        time_min=allocate_time_SS,
+        **get_resources("STARsolo_sort"),
         attempt=lambda wildcards, attempt: attempt
-
-    # For snakemake < v8
-    # threads: 6
 
     envmodules:
         f"{config['STAR_version']}"
@@ -145,9 +126,7 @@ rule samtools_index:
         bai=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
 
     resources:
-        cpus_per_task=4, # For snakemake > v8
-        mem_mb=5000,
-        time_min=720,
+        **get_resources("samtools_index"),
         attempt=lambda wildcards, attempt: attempt
     
     log:
