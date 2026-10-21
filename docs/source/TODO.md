@@ -25,38 +25,11 @@ groundwork that the larger refactors depend on.
 
 ## Groundwork: config & schemas
 
-- [ ] Write schemas and re-enable `validate()` in the `Snakefile` (`schema/config.schema.json` is currently gitignored). Consider growing `lib/config_models.py` (`DemuxConfig`) into typed config.
-- [ ] Restructure `new_config.yaml` to separate:
-  - [ ] static resources
-  - [ ] experiment definitions
-  - [ ] workflow behavior (RE-ASSESS `last_step`):
-
-    **OLD STYLE**
-
-    ```yaml
-    demux_type: solo
-    demux_run_type: wo_gt
-    hto_demux_type: single
-    ```
-
-    **NEW STYLE**
-
-    ```yaml
-    experiment:
-      demultiplexing:
-        method: solo
-        genotype:
-          enabled: false
-
-    hto:
-      enabled: true
-      multiplexing: single
-    ```
-
-  - [ ] execution modules
-  - [ ] output naming conventions
-- [ ] Move pool calculation logic from `input_processing.smk` into config (inspired by `downloadFromSynapse.py`, which is not in this repo yet).
-- [ ] Add a tiny test dataset (one small pool) and `snakemake -n` dry runs for each `demux_type`.
+- [x] Write a config schema (`schema/config.schema.yaml`) and re-enable `validate()` in the `Snakefile`; defaults fill in optional keys missing from older configs.
+  - [ ] Tighten the schema once the config is restructured (required nested keys, enums for `last_step`).
+  - [ ] Consider growing `lib/config_models.py` (`DemuxConfig`) into typed config.
+- [x] Add a tiny test dataset (one small pool) and `snakemake -n` dry runs for each `demux_type` (`tests/dryrun/run_dryruns.sh`).
+  - [ ] Add scenarios for multi-VCF and the split-bams/identify-swaps steps once their targets are fixed.
 
 ---
 
@@ -109,13 +82,10 @@ Design the output/stats file layout once; the items below follow from it.
 
 ## Demultiplexing
 
-- [ ] Option to reuse a previous `cellSNP` run for `vireoSNP` (e.g. `gt_demux_pipeline.reuse_cellsnp_dir` read in `get_vir_inputs`); useful when there's a vcf for a w_gt run but the SNPs haven't changed (many WGS). Needs the `get_cmd_str_vireo` fix above.
-- [ ] Option to use a per-pool vcf only for pileups and not for vireo (e.g. `pool_vcf_use: [pileup, vireo]`).
-- [ ] Handle pools whose `cellSNP.base.vcf.gz` is empty. vireo fails before `create_inp_splitBams` runs, so either make cellSNP/vireo a checkpoint or have vireo write a sentinel the checkpoint reads.
-- [ ] Retain variant matching stats (variants matched to donor VCF out of total pileup): add a `log:` directive to `vireoSNP` and parse "variants matched to donor VCF" in `update_logs.py`, instead of searching `.snakemake/log`.
-- [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`.
-- [ ] Resolve the multi-HTO setup in `kite.smk` (document what currently fails).
-- [ ] Beautify `get_filt_barcodes` in `genotype_demux.smk`.
+- [x] Option to reuse a previous `cellSNP` run for `vireoSNP` (`gt_demux_pipeline.reuse_cellsnp_dir`); useful when there's a vcf for a w_gt run but the SNPs haven't changed (many WGS).
+- [x] Option to use a per-pool vcf only for pileups and not for vireo (`gt_demux_pipeline.pool_vcf_use`).
+- [x] Retain variant matching stats (variants matched to donor VCF out of total pileup): `vireoSNP` writes `vireo.log`, `demul_samples.py` adds the counts to the demux info and the MAP files map them for `update_logs.py`.
+- [x] Beautify `get_filt_barcodes` (now in `lib/io.py`).
 
 ---
 
@@ -192,6 +162,46 @@ Prerequisite for the Compatibility section.
   - scRNA-seq: single wildcard, multiple wildcards
   - Double HTOs
 - [ ] Search ranking config for ReadTheDocs (`search.ranking` in `.readthedocs.yaml`)
+
+---
+
+## Needs your input
+
+These can't be done from the code alone; each needs a decision or details from you.
+
+- [ ] Restructure `new_config.yaml`: pick the new layout. It renames most keys, so every existing config must be migrated (a migration script could convert old configs). Separate:
+  - [ ] static resources
+  - [ ] experiment definitions
+  - [ ] workflow behavior (RE-ASSESS `last_step`):
+
+    **OLD STYLE**
+
+    ```yaml
+    demux_type: solo
+    demux_run_type: wo_gt
+    hto_demux_type: single
+    ```
+
+    **NEW STYLE**
+
+    ```yaml
+    experiment:
+      demultiplexing:
+        method: solo
+        genotype:
+          enabled: false
+
+    hto:
+      enabled: true
+      multiplexing: single
+    ```
+
+  - [ ] execution modules
+  - [ ] output naming conventions
+- [ ] Move pool calculation logic from `input_processing.smk` into config, inspired by `downloadFromSynapse.py`: that script isn't in this repo, so share it or describe the logic.
+- [ ] Handle pools whose `cellSNP.base.vcf.gz` is empty: which failure do you see? vireo fails before `create_inp_splitBams` runs, so either make cellSNP/vireo a checkpoint or have vireo write a sentinel the checkpoint reads.
+- [ ] Fix `demultiplex_helper_funcs.py` for double HTOs in `parse_file`: what input fails, and how?
+- [ ] Resolve the multi-HTO setup in `kite.smk`: what currently fails?
 
 ---
 

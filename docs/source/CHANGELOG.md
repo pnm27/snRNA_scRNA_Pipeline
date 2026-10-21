@@ -7,7 +7,9 @@
   - `demultiplex_no_argp.snkmk` → `demultiplex.snkmk`
   - `demul_samples_no_argp.py` → `demul_samples.py`
 - Removed unused sub-snakefiles: `helper_functions.smk` and `analyse_vireo.smk`
-- Removed dependence on `resources.smk`; all resource requirements are now defined within each Snakemake file
+- All resource requirements are now defined in one table in `rules/resources.smk`; rules use `**get_resources("<rule>")` (int, or `base + step * (attempt - 1)` with an optional `max`), and the config's `resources` block can override any rule. Removed the duplicated and unused `allocate_*` functions and the `# threads` comments for Snakemake < v8
+- The config is validated against `schema/config.schema.yaml` at the start of every run; defaults fill in optional keys missing from older configs (e.g. `swap_correction_df`)
+- Added dry-run tests (`tests/dryrun/run_dryruns.sh`) that check the DAG of each scenario in `tests/dryrun/scenarios/` without data or a cluster
 - Added support for Snakemake ≥ v8:
   - Added `workflow_profile/config.yaml`, reflected in `run_snakemake.sh`
   - Replaced `threads` directive with `resources: cpus_per_task`
@@ -29,6 +31,10 @@
   - `demux_samples_solo`, `demux_samples_vireo`, `demux_samples_both`
 - Added `demultiplex` config section for `demux_samples_both`
 - Added `create_h5ad_only` rule for experiments not requiring demultiplexing (no new config option needed)
+- Fixed `demux_type: null` (h5ad without demultiplexing) crashing; null, `none` and empty values are now handled by `get_demux_type()` in `lib/utils.py`
+- Fixed `demux_type: both` targets not matching the single combined h5ad written by `demux_samples`; its demux info file now goes to `demultiplex.demultiplex_info_dir`
+- Fixed doubled `{vcf_type}` directories in multi-VCF runs; `demux_samples` outputs now carry `_{vcf_type}` when their fold struct lacks it
+- Fixed multiome `demux_samples` passing the same modality's vireo output twice (now ATAC and cDNA)
 - Made `demux_info` parameter optional (previously positional) in the rule handling addition of new demux to a final count matrix
 - Simplified shell scripts in `demux_samples` and `add_obs_to_final_count_matrix`
 - `demux_info` parameter changed from positional to optional in the add-demux rule
@@ -48,6 +54,7 @@
   - Added a new `process_swap_correction` function which now processes donor name correction.
 - Changed `vcf_type` wildcard to support both multi-vcf and multiome setups
 - Function `ret_htos_calico_solo` now returns a tuple instead of a list
+- `demul_samples.py` adds vireo's variant counts (pileup, matched to donor VCF, used) to the demux info, read from `vireo.log` next to `donor_ids.tsv` (function `vireo_log_stats`)
 - hashsolo now runs via `scanpy.external` (deprecated: `solo-sc`)
 - Add `--keep-going` parameter in `run_snakemake.sh` so that independent jobs get submitted even if some other job fails.
 
@@ -63,12 +70,18 @@
 - Fixed UMI tag selection for multiome-ATAC
 - Fixed barcode handling for multiome (appends `-1` suffix to match cellranger BAM barcodes)
 - Replaced indexed array shell logic with `cmd_str_csnp` parameter function (was broken in Snakemake ≥ v8)
+- Added `gt_demux_pipeline.pool_vcf_use` to use a per-pool vcf only for the pileup and/or for vireo (default: both)
+- Memory/time scaling by `vcf_type` suffix now applies (`'vcf_type' in wildcards` checked wildcard values, so it never did)
 
 ### vireoSNP
 
 - Replaced indexed array shell logic with `cmd_str_vireo` parameter function (was broken in Snakemake ≥ v8)
 - `vcf_info` file is now expected to have headers
 - Simplified command-line execution
+- Added `gt_demux_pipeline.reuse_cellsnp_dir` to run vireo on the cellSNP outputs of a previous run
+- vireo's output is now also written to `vireo.log` (rule `log`), next to `donor_ids.tsv`
+- With a 2-column `vcf_info` and a genotyped run, vireo now gets `donors_per_pool_file` as donor genotypes (was the 1kGP sites VCF)
+- Clear error when `vcf_info` (needed for `-N`) is missing
 
 ### `vcf_info` file specification
 
@@ -97,6 +110,7 @@
   - h5ad-only input supported for calico_solo; vireo output supported as-is
 - Added multiome BAM splitting support (cDNA and ATAC modalities)
 - Fixed wrong inputs in `split_bams.smk`
+- Fixed `get_inp_splitBam` returning nothing when splitting by raw hashsolo output; unknown `split_by.demux` values now raise an error
 - Added wildcard constraint for `qtltools_mbv` to handle:
   - Multiome: `<path>/BD2-Set-4-a/cDNA_Pitt-DNA-PFC-694.bamstat.txt`
   - Standard: `BD2-Set-10-a/donor4.bamstat.txt`
@@ -118,6 +132,7 @@
 - Fixed logic issue for single-cell/nucleus processing
 - Removed dead code and last_step branches: `targets_resolve_swaps_gt_demux`, `targets_multibamsummary`, `targets_multibamsummaryPlotCorr`, `targets_all`
 - For the function `targets_demux`, now argument type has changed from list to dict for better documentation.
+- Fixed missing `modality` expansion in the `STARsolo_kb_solo` target
   
 ---
 
@@ -149,6 +164,10 @@
 - Supports *swap correction*.
 - To support newer demultiplexing info output names (*cDNA_STARsolo_vS_info.tsv*, *ATAC_STARsolo_vS_info.tsv*).
 - Changed the function `process_swap_correction`
+- Builds the command as a bash array (paths with spaces work) and passes samples with `--samples`
+- `check_required_args` fails fast when a required arg or `INPUT_FILE` is missing
+- Output suffixes are set in one `opt_values` map (empty = default suffix, remove a line to skip that output); unknown keys are warned about and skipped
+- MAP files (`Final_out_MAP_*_latest*.tsv`) map the new vireo variant counts: `N_VARIANTS_PILEUP_VS`, `N_VARIANTS_MATCHED_VS`, `N_VARIANTS_USED_VS`
 
 ---
 
@@ -176,6 +195,8 @@
 - Fixed genome/GTF/FASTA incompatibility: selecting `genome_pick` in `STARsolo_pipeline` now automatically resolves `gtf`, `fasta`, `genome`, `overhang`, and `gene_info_file` via anchors and references
 - Deprecated `vcf_info_columns`.
 - Removed `cellranger_arc_ref` and replaced it with genome selection (similar to STARsolo's)
+- Added `cellranger_arc_count.ref` to `new_config.example.yaml` (it failed to load without it)
+- New optional keys: `gt_demux_pipeline.reuse_cellsnp_dir`, `gt_demux_pipeline.pool_vcf_use` and top-level `resources`
 
 ---
 
