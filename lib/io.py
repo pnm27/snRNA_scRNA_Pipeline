@@ -174,6 +174,14 @@ def get_vir_inputs(wildcards, config):
 
 # Demultiplex ---------------------------------------------------------------------------
 
+def _vcf_seg(wildcards, config):
+    """vireo sub-dir for a multi-VCF run, unless 'fold_struct_gt_demux' already has it."""
+    if not config['last_step'].lower().endswith('multi_vcf') \
+        or '{vcf_type}' in config['fold_struct_gt_demux']:
+        return ""
+    return f"{wildcards.vcf_type}/"
+
+
 def _inputs_solo(wildcards, config):
     demux_type = get_demux_type(config)
     ret = []
@@ -229,10 +237,7 @@ def _inputs_vireo(wildcards, config):
                 f"{config['fold_struct']}"
                 f"{config['STARsolo_pipeline']['genefull_matrix']}"
             )
-            vcf_seg = (
-                f"{wildcards.vcf_type}/"
-                if last_step.endswith('multi_vcf') else ""
-            )
+            vcf_seg = _vcf_seg(wildcards, config)
             ret.append(
                 f"{config['gt_demux_pipeline']['vireosnp_dir']}"
                 f"{config['fold_struct_gt_demux']}{vcf_seg}"
@@ -246,7 +251,6 @@ def _inputs_vireo(wildcards, config):
 
 
 def _inputs_both(wildcards, config):
-    last_step = config['last_step'].lower()
     ret = [
         f"{config['STARsolo_pipeline']['bams_dir']}"
         f"{config['fold_struct']}"
@@ -256,10 +260,7 @@ def _inputs_both(wildcards, config):
         f"{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}",
     ]
 
-    vcf_seg = (
-        f"{wildcards.vcf_type}/"
-        if last_step.endswith('multi_vcf') else ""
-    )
+    vcf_seg = _vcf_seg(wildcards, config)
     ret.append(
         f"{config['gt_demux_pipeline']['vireosnp_dir']}"
         f"{config['fold_struct_gt_demux']}{vcf_seg}"

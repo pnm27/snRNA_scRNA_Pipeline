@@ -59,6 +59,9 @@ def _output_cfg(config):
 
 def _make_outputs(config):
     mat_dir, fold, mat_h5ad, demux_dir, demux_info= _output_cfg(config)
+    # Multi-VCF inputs carry the 'vcf_type' wildcard, so the outputs must too
+    if config['last_step'].lower().endswith('multi_vcf') and '{vcf_type}' not in fold:
+        fold += "_{vcf_type}"
     return (
         f"{mat_dir}{fold}{mat_h5ad}",
         f"{demux_dir}{fold}{demux_info}",
