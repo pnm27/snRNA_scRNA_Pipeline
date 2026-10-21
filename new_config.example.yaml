@@ -180,6 +180,7 @@ STARsolo_pipeline:
 # cellranger-arc count pipeline------------------------------------------------
 cellranger_arc_count:
   bams_dir: projdir/cellranger_outputs/
+  ref: *cellR_gen44
   # optional
   atac_fragments: atac_fragments.tsv.gz
   filtered_h5_matrix: filtered_feature_bc_matrix.h5
