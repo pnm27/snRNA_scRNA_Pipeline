@@ -19,12 +19,11 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ---
 
-## Aligner abstraction
+## Aligners
 
-- [ ] Remove dependency on STARsolo as the only aligner.
-- [ ] Add `cellranger count` (GEX-only); only `cellranger-arc count` exists today.
-- [ ] Add input function for rules using `genefull_matrices` to select either `Gene` or `GeneFull` per project. Make the `gene_*` / `genefull_*` config paths consistent (`.mtx` vs `.mtx.gz`).
-- [ ] STARsolo WASP mode: `--waspOutputMode SAMtag --varVCFfile` can already go through `extra_params`; the work is supplying a per-pool VCF and adding `vW` to `SAM_attr`. `wo_gt` runs have no VCF until after demultiplexing.
+- [ ] hashsolo with `cellranger count`: its barcodes end with `-1` and the HTO counts' (kite) don't, so they need matching (raises an error for now).
+- [ ] Picard metrics for `cellranger count` and multiome runs: Picard runs on STARsolo runs only (it uses STARsolo's `genome_pick` reference).
+- [ ] `update_logs.py`: compile `cellranger count`'s `metrics_summary.csv`.
 
 ---
 
@@ -47,6 +46,7 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 ## Code Quality
 
 - [ ] Python logging with the `logging` module in the remaining helper scripts (`update_logs.py` already uses it).
+- [ ] `update_logs.py` needs `--common_annotations`: without it, `data`, `cols_list` and the demux paths are never set and it crashes. Make the annotations optional (and read the annotation schema relative to the script, not the working directory).
 
 ---
 
@@ -59,11 +59,9 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ## Documentation
 
-- [ ] Add tutorials:
-  - Pooled snRNA-seq: single wildcard, multiple wildcards
-  - scRNA-seq: single wildcard, multiple wildcards
-  - Double HTOs
-- [ ] Search ranking config for ReadTheDocs (`search.ranking` in `.readthedocs.yaml`)
+- [ ] Add tutorials (they wait on items in Needs your input):
+  - Pooled snRNA-seq and scRNA-seq with multiple wildcards (the YAML input of `input_processing.smk` is still being reworked)
+  - Double HTOs (see the double- and multi-HTO items)
 
 ---
 

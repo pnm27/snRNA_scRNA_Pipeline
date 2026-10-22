@@ -18,6 +18,7 @@
 - Multiome split bams use vireo's cDNA output and the cDNA bam
 - Fixed: `STARsolo_cellsnp` and split bams targets pointing at files no rule makes; multi-VCF targets (undefined `VCF_TYPE`); `identify_swaps` running only for the first donor of each pool; missing `SimpleNamespace` import for multiome; `bamfilt_by_CB` sharing one `{pool}_bc.txt` across pools
 - Dry-run tests can mark the jobs up to the donor checkpoint as done (`# donors:`) to check per-donor jobs, and check expected errors (`# fails:`)
+- Unit test for STARsolo's run time (`tests/unit/`)
 - Added support for Snakemake ≥ v8:
   - Added `workflow_profile/config.yaml`, reflected in `run_snakemake.sh`
   - Replaced `threads` directive with `resources: cpus_per_task`
@@ -46,6 +47,7 @@
   - Resources: `demux_samples` → `demux_run` and `demux_final` (update `resources:` overrides in configs)
 - New `run_tag` config key: each demultiplexing run writes to its own sub-folder of the calico_solo, cellSNP, vireoSNP, final count matrix and demultiplex info dirs
 - Split the demultiplex info: `demux_run_<tool>` writes only its tool's stats (`_hashsolo_stats.tsv` / `_vireo_stats.tsv`) and keeps the QC stats in the h5ad (`uns['qc_stats']`); `demux_final` writes `_basic_stats.tsv` (QC and the versions used) and the combined info read by `update_logs.py`
+- Swap correction versions can name runs of two tools, e.g. `solo:hto,vireo:w_gt`
 - New rule `collect_demux_versions` writes `final_demux_versions.tsv` (demultiplex versions, swap correction, donors and cells passing QC per pool); multi-VCF runs get one table per `vcf_type` (`final_demux_versions_<vcf_type>.tsv`)
 - Multiome demultiplexing runs once per pool (`demux_samples` ran once per modality and wrote the same h5ad twice)
 - `split_bams_pipeline.split_by.input: h5ad` reads the h5ad of `split_by.demux` (it always read hashsolo's); new `input: final` splits by the final h5ad (`Donor_final`)
@@ -190,6 +192,7 @@
 - `check_required_args` fails fast when a required arg or `INPUT_FILE` is missing
 - Output suffixes are set in one `opt_values` map (empty = default suffix, remove a line to skip that output); unknown keys are warned about and skipped
 - MAP files (`Final_out_MAP_*_latest*.tsv`) map the new vireo variant counts: `N_VARIANTS_PILEUP_VS`, `N_VARIANTS_MATCHED_VS`, `N_VARIANTS_USED_VS`
+- STARsolo's run time: new `(STAR, REG, RUN_TIME)` column after `JOB_FINISH` (`JOB_FINISH - JOB_START` as HH:MM:SS) in the latest MAP files, computed once all samples are compiled; reads `2025-05-13 19:51:55` and STAR's year-less times
 
 ---
 
@@ -224,17 +227,30 @@
 
 ## Alignment Support
 
+- The aligner's outputs (count matrix, bams, Picard outputs) come from `lib/aligner.py`, so rules don't build STARsolo paths themselves; the prefix of `last_step` picks the aligner (`starsolo_*`, `cellranger_*` or `multiome_*`)
+- `bamfilt_by_CB` writes the aligner's cell-filtered bam (multiome splits read cellranger-arc's, which no rule wrote)
+
 ### cellranger
 
+- Added `cellranger count` for GEX-only runs (`last_step: cellranger_*`, config section `cellranger_count`: reference, `include_introns`, `extra_params`); its count matrix and bam are used for demultiplexing (vireo or none) and split bams. hashsolo with it raises an error for now (barcodes end with `-1`)
 - Supports ATAC-based (along with RNA-based) vireo demultiplexing via cellranger-arc count.
 - Supports cellranger-arc count for multiome preprocessing.
 
 ### STARsolo
 
+- `STARsolo_pipeline.count_matrix` picks the count matrix used after the alignment: `GeneFull` (default) or `Gene`; Gene's matrix files are gzipped like GeneFull's and the example config's `gene_*` paths end in `.gz`
+- WASP mode (`STARsolo_pipeline.wasp`): `--waspOutputMode SAMtag` with the pool's vcf from `vcf_info`, and `vW` in the SAM attributes. STAR reads only the first sample's genotypes, so rule `wasp_vcf` writes every biallelic SNV of the pool's vcf as heterozygous. Pools without a vcf raise an error
 - Per-pool memory allocation for `STARsolo_sort` based on input type (`wildcards.pool`)
 - Modelled resource consumption approach for STARsolo
 - `samtools index` is now a separate rule to prevent deletion of `STARsolo_sort` outputs on indexing errors
 - Input file lines are now sorted when accessed via path in `input_processing.smk`
+
+---
+
+## Documentation
+
+- Added tutorials: scRNA-seq and pooled snRNA-seq (one wildcard)
+- ReadTheDocs search ranks the tutorials first and the API reference and development notes last (`search.ranking` in `.readthedocs.yaml`)
 
 ---
 
