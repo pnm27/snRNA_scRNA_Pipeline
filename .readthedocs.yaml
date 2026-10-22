@@ -28,6 +28,18 @@ sphinx:
 formats:
   - pdf
 
+# Search results: tutorials and the pipeline's description first, the
+# API reference and development notes last
+search:
+  ranking:
+    tutorial_*.html: 4
+    sub_workflows.html: 3
+    basic_run.html: 2
+    complex_tutorials.html: 2
+    autoapi/*: -2
+    CHANGELOG.html: -3
+    TODO.html: -5
+
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:

@@ -30,6 +30,14 @@ sub_workflows
 ```
 
 ```{toctree}
+:caption: Tutorials
+:maxdepth: 2
+
+tutorial_scrnaseq
+tutorial_pooled_snrnaseq
+```
+
+```{toctree}
 :caption: Advanced Tutorials
 :maxdepth: 2
 
