@@ -7,13 +7,13 @@ rule Picard_GC_bias_metrics:
         bais=bam_paths(config, 'cDNA')['bai']
 
     output:
-        f"{out_prefix(config)}{config['picard_pipeline']['gc_bias_metrics']}",
-        f"{out_prefix(config)}{config['picard_pipeline']['gc_summary_metrics']}"
+        f"{out_prefix(config)}{config['modules']['picard']['gc_bias_metrics']}",
+        f"{out_prefix(config)}{config['modules']['picard']['gc_summary_metrics']}"
 
     params:
         output_pref=lambda wildcards, output: output[0].replace(".txt", '.pdf'),
-        window_size=config['picard_pipeline']["window_size"],
-        genome_fasta=config['STARsolo_pipeline']['genome_pick']['fasta'] # config["genome_fasta"]
+        window_size=config['modules']['picard']["window_size"],
+        genome_fasta=config['modules']['STARsolo']['genome_pick']['fasta'] # config["genome_fasta"]
 
     resources:
         **get_resources("Picard_GC_bias_metrics")
@@ -40,11 +40,11 @@ rule Picard_RNAseq_metrics:
         bais=bam_paths(config, 'cDNA')['bai']
 
     output:
-        f"{out_prefix(config)}{config['picard_pipeline']['rnaseq_metrics']}"
+        f"{out_prefix(config)}{config['modules']['picard']['rnaseq_metrics']}"
 
     params:
-        flat_ref=config['STARsolo_pipeline']['genome_pick']['flat_ref'], # config['picard_pipeline']['flat_ref'],
-        strand=config['picard_pipeline']['strand']
+        flat_ref=config['modules']['STARsolo']['genome_pick']['flat_ref'], # config['modules']['picard']['flat_ref'],
+        strand=config['modules']['picard']['strand']
 
     resources:
         **get_resources("Picard_RNAseq_metrics")

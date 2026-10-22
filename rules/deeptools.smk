@@ -4,8 +4,8 @@ import glob2, os
 def get_BC_input(wildcards):
     # WILDCARDS
     all_bams = sorted(glob2.glob(
-        f"{config['multiBamSummary']['bams_dir']}{config['fold_struct_deeptools']}*{config['R1_suffix']}/".format(id2=wildcards.id2) + 
-        f"{config['fold_struct_deeptools']}*{config['multiBamSummary']['bam']}".format(id2=wildcards.id2)))
+        f"{config['modules']['deeptools']['multiBamSummary']['bams_dir']}{config['modules']['deeptools']['fold_struct']}*{config['experiment']['inputs']['R1_suffix']}/".format(id2=wildcards.id2) + 
+        f"{config['modules']['deeptools']['fold_struct']}*{config['modules']['deeptools']['multiBamSummary']['bam']}".format(id2=wildcards.id2)))
 
     return all_bams
 
@@ -16,10 +16,10 @@ rule multiBamSummary:
     # priority: 9
 
     output:
-        f"{config['multiBamSummary']['outdir']}{config['fold_struct_deeptools']}.npz"
+        f"{config['modules']['deeptools']['multiBamSummary']['outdir']}{config['modules']['deeptools']['fold_struct']}.npz"
         
     # params:
-    #     outfile_fmt=config['multiBamSummary']['out_format'] if not config['multiBamSummary']['out_format'].startswith('.') else config['multiBamSummary']['out_format'][1:]
+    #     outfile_fmt=config['modules']['deeptools']['multiBamSummary']['out_format'] if not config['modules']['deeptools']['multiBamSummary']['out_format'].startswith('.') else config['modules']['deeptools']['multiBamSummary']['out_format'][1:]
 
     conda: "../envs/deeptools.yaml"
 
@@ -36,16 +36,16 @@ rule multiBamSummary:
 
 rule plotCorrelation:
     input:
-        f"{config['multiBamSummary']['outdir']}{config['fold_struct_deeptools']}.npz"
+        f"{config['modules']['deeptools']['multiBamSummary']['outdir']}{config['modules']['deeptools']['fold_struct']}.npz"
     # priority: 9
 
     output:
-        f"{config['plotCorrelation']['outdir']}{config['fold_struct_deeptools']}{config['plotCorrelation']['out_fmt']}"
+        f"{config['modules']['deeptools']['plotCorrelation']['outdir']}{config['modules']['deeptools']['fold_struct']}{config['modules']['deeptools']['plotCorrelation']['out_fmt']}"
         
     params:
-        correlation_method=config['plotCorrelation']['corr_method'],
-        plot_type=config['plotCorrelation']['plot_type'],
-        corr_matrix=lambda wildcards, output: output[0].replace(config['plotCorrelation']['out_fmt'], '.txt'),
+        correlation_method=config['modules']['deeptools']['plotCorrelation']['corr_method'],
+        plot_type=config['modules']['deeptools']['plotCorrelation']['plot_type'],
+        corr_matrix=lambda wildcards, output: output[0].replace(config['modules']['deeptools']['plotCorrelation']['out_fmt'], '.txt'),
         labels=lambda wildcards, input: [os.path.basename(i).replace('.bam', '') for i in input ]
 
     conda: "../envs/deeptools.yaml"

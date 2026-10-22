@@ -1,5 +1,10 @@
-"""migrate_config.py: old -> new config layout (needs ruamel.yaml and
-pandas; run with pytest)."""
+"""migrate_config.py: old -> new config layout (needs ruamel.yaml,
+pandas and snakemake; run with pytest).
+
+old_layout/ has the example config and the dry-run scenarios in the old
+layout; migrated, they must match the files the pipeline uses now. The
+new keys are checked against the old keys' meaning (OLD_* below, as the
+pipeline read them before the restructure)."""
 
 import ast, copy, glob, os, sys
 import pytest
@@ -11,22 +16,65 @@ sys.path.insert(0, REPO)
 from migrate_config import MOVES, UNUSED, migrate_text
 from lib.aligner import get_aligner
 from lib.config_models import demux_tools, is_multi_vcf
+from lib.utils import is_genotyped
 
+OLD = os.path.join(os.path.dirname(__file__), "old_layout")
 EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
-SCENARIOS = sorted(glob.glob(os.path.join(REPO, "tests", "dryrun", "scenarios", "*.yaml")))
+OLD_EXAMPLE = os.path.join(OLD, "new_config.example.yaml")
+OLD_SCENARIOS = sorted(glob.glob(os.path.join(OLD, "scenarios", "*.yaml")))
 # Old keys whose meaning moved to new keys (checked by check_derived)
 DERIVED = {'last_step', 'demux_type', 'demux_run_type', 'hto_demux_type'}
 
 
-def last_step_stages(step):
-    """rules/produce_targets.smk's last_step_stages (the .smk can't be imported)."""
+# How the pipeline read the old keys ---------------------------------------
+OLD_SPECIAL_STEPS = {
+    "starsolo_kb_solo":            ["align"],
+    "starsolo_cellsnp":            ["cellsnp", "picard"],
+    "starsolo_demux":              ["demux", "picard"],
+    "starsolo_gt_demux_multi_vcf": ["demux"],
+    "all_multi_vcf":               ["align", "demux"],
+    "cellranger_cellsnp":          ["cellsnp"],
+    "cellranger_demux":            ["demux"],
+    "multiome_alignment":          ["align"],
+    "multiome_gt_demux":           ["demux"],
+}
+
+
+def old_stages(step):
+    step = step.lower()
+    if step in OLD_SPECIAL_STEPS:
+        return OLD_SPECIAL_STEPS[step]
+    stages = ["align"]
+    if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
+        stages.append("demux")
+    if any(s in step for s in ["split_bams", "identify_swaps"]):
+        stages.append("split_bams")
+    if "identify_swaps" in step:
+        stages.append("identify_swaps")
+    return stages
+
+
+def old_aligner(step):
+    step = step.lower()
+    for prefix, aligner in [('starsolo', 'starsolo'), ('cellranger', 'cellranger'),
+                            ('multiome', 'cellranger_arc')]:
+        if step.startswith(prefix):
+            return aligner
+    return 'starsolo'
+
+
+OLD_TOOLS = {None: ['none'], 'solo': ['solo'], 'add_solo': ['solo'], 'vireo': ['vireo'],
+             'add_vireo': ['vireo'], 'both': ['solo', 'vireo']}
+
+
+def until_stages(until):
+    """rules/produce_targets.smk's UNTIL_STAGES (the .smk can't be imported)."""
     src = open(os.path.join(REPO, "rules", "produce_targets.smk")).read()
     keep = [n for n in ast.parse(src).body
-            if (isinstance(n, ast.Assign) and n.targets[0].id == 'SPECIAL_STEPS')
-            or (isinstance(n, ast.FunctionDef) and n.name == 'last_step_stages')]
+            if isinstance(n, ast.Assign) and n.targets[0].id == 'UNTIL_STAGES']
     ns = {}
     exec(compile(ast.Module(keep, []), "produce_targets.smk", "exec"), ns)
-    return ns['last_step_stages'](step.lower())
+    return ns['UNTIL_STAGES'][until]
 
 
 def load(path):
@@ -70,24 +118,23 @@ def merge(base, over):
 
 
 def check_derived(old, new):
-    """The new keys mean what the old ones did."""
+    """The new keys mean, to the pipeline, what the old ones did."""
     exp, wf = new.get('experiment', {}), new.get('workflow', {})
     if 'last_step' in old:
         step = old['last_step']
-        assert wf['aligner'].lower() == get_aligner(old)
-        stages = [s for s in last_step_stages(step) if s != 'picard']
-        assert wf['until'] == stages[-1]
-        assert exp['demultiplexing']['genotype']['multi_vcf'] == is_multi_vcf(old)
+        assert get_aligner(new) == old_aligner(step)
+        # 'until' always runs the alignment (Picard's metrics are part of it)
+        before = set(old_stages(step)) - {'picard'}
+        after = set(until_stages(wf['until']))
+        assert before <= after and after - before <= {'align'}
+        assert is_multi_vcf(new) == step.lower().endswith('multi_vcf')
     if 'demux_type' in old:
-        d = exp['demultiplexing']
-        tools = demux_tools(old)
-        if d['method'] is None:
-            assert tools == ['none']
-        else:
-            assert tools == (['solo', 'vireo'] if d['method'] == 'both' else [d['method']])
-        assert (d['add_to_previous'] is not None) == str(old['demux_type']).startswith('add_')
+        demux_type = old['demux_type']
+        demux_type = None if str(demux_type).lower() in ('none', 'null') else demux_type
+        assert demux_tools(new) == OLD_TOOLS[demux_type and demux_type.lower()]
+        assert (exp['demultiplexing']['add_to_previous'] is not None) == str(demux_type).startswith('add_')
     if 'demux_run_type' in old:
-        assert exp['demultiplexing']['genotype']['enabled'] == (old['demux_run_type'] != 'wo_gt')
+        assert is_genotyped(new) == (old['demux_run_type'] != 'wo_gt')
     if 'hto_demux_type' in old:
         hto = exp['hto']
         assert hto['enabled'] == (old['hto_demux_type'] is not None)
@@ -117,19 +164,34 @@ def check_round_trip(text):
 
 
 def test_example():
-    check_round_trip(load(EXAMPLE))
+    check_round_trip(load(OLD_EXAMPLE))
+    assert migrated(load(OLD_EXAMPLE)) == yaml.safe_load(load(EXAMPLE))
 
 
-@pytest.mark.parametrize("scenario", SCENARIOS, ids=os.path.basename)
+@pytest.mark.parametrize("scenario", OLD_SCENARIOS, ids=os.path.basename)
 def test_scenario(scenario):
     check_round_trip(load(scenario))
+    now = os.path.join(REPO, "tests", "dryrun", "scenarios", os.path.basename(scenario))
+    assert migrated(load(scenario)) == yaml.safe_load(load(now))
 
 
-@pytest.mark.parametrize("scenario", SCENARIOS, ids=os.path.basename)
+def test_header_comments():
+    text = load(OLD_SCENARIOS[0])
+    header = [l for l in text.splitlines() if l.startswith('#')]
+    assert migrate_text(text).splitlines()[:len(header)] == header
+
+
+def test_example_valid():
+    """The new example config passes the schema."""
+    from snakemake.utils import validate
+    validate(yaml.safe_load(load(EXAMPLE)), os.path.join(REPO, "schema", "config.schema.yaml"))
+
+
+@pytest.mark.parametrize("scenario", OLD_SCENARIOS, ids=os.path.basename)
 def test_scenario_merged(scenario):
     """Migrating the example and a scenario apart and merging them (as the
-    dry runs will) is the same as migrating them merged."""
-    ex, sc = load(EXAMPLE), load(scenario)
+    dry runs do) is the same as migrating them merged."""
+    ex, sc = load(OLD_EXAMPLE), load(scenario)
     together = merge(yaml.safe_load(ex), yaml.safe_load(sc) or {})
     check_round_trip(yaml.safe_dump(together, sort_keys=False))
     assert merge(migrated(ex), migrated(sc)) == migrated(
@@ -149,7 +211,7 @@ def test_last_step(step):
 
 
 def test_comments_and_anchors():
-    out = migrate_text(load(EXAMPLE))
+    out = migrate_text(load(OLD_EXAMPLE))
     assert "whitelist: *3v3" in out
     assert "&gencode38o150" in out          # anchors no alias uses are kept
     assert "    # sjdboverhang: 89\n" in out  # comments follow their keys' indent

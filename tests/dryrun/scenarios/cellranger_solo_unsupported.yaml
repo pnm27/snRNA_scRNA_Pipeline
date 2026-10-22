@@ -1,5 +1,15 @@
 # hashsolo isn't supported with cellranger count yet
 # fails: hashsolo isn't supported with cellranger count yet
-last_step: cellranger_demux
-demux_type: solo
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: cellranger
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: solo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

@@ -6,11 +6,10 @@ Open items only: completed ones are listed in `CHANGELOG.md`.
 
 ## Config restructure
 
-New layout (`helper_py_scripts/migrate_config.py` has the full key mapping): `references` (genomes, barcodes, regions, tool versions), `workflow` (aligner, until, picard_metrics, gt_check), `experiment` (inputs, hto, demultiplexing, qc), `modules` (the `*_pipeline` blocks, each with its `fold_struct*`) and `execution` (rule `resources`; site defaults, Minerva first). `last_step` becomes `workflow.aligner` + `workflow.until` (+ `experiment.demultiplexing.genotype.multi_vcf`); `demux_run_type` is absorbed by `run_tag`, with `experiment.demultiplexing.genotype.enabled` replacing the `wo_gt` checks in `lib/io.py`. Old configs are converted by the migration script only. Each stage is checked with the dry-run tests.
+New layout (`helper_py_scripts/migrate_config.py` has the full key mapping): `references` (genomes, barcodes, regions, tool versions), `workflow` (aligner, until, picard_metrics, gt_check), `experiment` (inputs, hto, demultiplexing, qc), `modules` (the `*_pipeline` blocks, each with its `fold_struct*`) and `execution` (rule `resources`; site defaults, Minerva first). `last_step` becomes `workflow.aligner` + `workflow.until` (+ `experiment.demultiplexing.genotype.multi_vcf`); `demux_run_type` is absorbed by `run_tag`, with `experiment.demultiplexing.genotype.enabled` replacing the `wo_gt` checks in `lib/io.py`. Old configs are converted by the migration script only (the pipeline reads the new layout since stage 2). Each stage is checked with the dry-run tests.
 
-- [ ] Stage 2: the `Snakefile`, `rules/` and `lib/` read the new keys; migrate `new_config.example.yaml`, the dry-run scenarios and the tutorials (`migrate_config.py --in-place`). Check that each scenario's DAG is the same as before (old `last_step` values without the `align` stage, e.g. `STARsolo_demux` or `*_cellsnp`, depend on what `until` runs).
 - [ ] Stage 3: tighten the schema (`schema/config.schema.yaml`: required nested keys, an enum for `workflow.until`) and grow `lib/config_models.py` (`DemuxConfig`) into typed config mirroring it.
-- [ ] The shared `fold_struct` (`Sample_{pool}-cDNA/{pool}-cDNA`) moves to `modules.STARsolo.fold_struct`, but other modules still use it: `kite.smk` (the fastq folder, with `-cDNA` → `-HTO`), `lib/io.py` and `lib/params.py` (fastq folders), `lib/config_models.py` (`gt_demux_pipeline`'s folder). Give each of them its own `fold_struct` so only STARsolo uses `modules.STARsolo.fold_struct`.
+- [ ] The shared `fold_struct` (`Sample_{pool}-cDNA/{pool}-cDNA`) moved to `modules.STARsolo.fold_struct`, but other modules still use it: `kite.smk` (the fastq folder, with `-cDNA` → `-HTO`), `lib/io.py` and `lib/params.py` (fastq folders), `lib/config_models.py` (`modules.gt_demux`'s h5ad without demultiplexing). Give each of them its own `fold_struct` so only STARsolo uses `modules.STARsolo.fold_struct`.
 
 ---
 
@@ -70,6 +69,7 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ## Documentation
 
+- [ ] `sub_workflows.md`: the Module description table still lists the old `last_step` values (and its rows are placeholders); describe the stages of `workflow: until` instead.
 - [ ] Add tutorials (they wait on items in Needs your input):
   - Pooled snRNA-seq and scRNA-seq with multiple wildcards (the YAML input of `input_processing.smk` is still being reworked)
   - Double HTOs (see the double- and multi-HTO items)

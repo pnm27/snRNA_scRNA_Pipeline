@@ -24,28 +24,28 @@ from lib.aligner import bam_paths
 checkpoint create_inp_splitBams:
     input:
         branch(
-            lambda _: config['split_bams_pipeline']['split_by']['input'].lower(),
+            lambda _: config['modules']['split_bams']['split_by']['input'].lower(),
             cases={
                 'raw': lambda _: raw_output(config, split_tool(config)).replace('{modality}', 'cDNA'),
-                'h5ad': lambda _: demux_run(config, split_tool(config), config['run_tag']).h5ad,
+                'h5ad': lambda _: demux_run(config, split_tool(config), config['experiment']['demultiplexing']['run_tag']).h5ad,
                 'final': lambda _: final_paths(config).h5ad,
             },
         )
 
     output:
         (
-            f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
-            f"{config['fold_struct_bam_split1']}_bc_hash.txt"
+            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
         )
 
     params:
         # DEPRACATED
-        # conv=config['split_bams_pipeline']['donor_name_converter']['file'],
-        # from_col=config['split_bams_pipeline']['donor_name_converter']['from_column'],
-        # to_col=config['split_bams_pipeline']['donor_name_converter']['to_column'],
-        # demux_method=config['split_bams_pipeline']['split_by']['demux'],
-        # inp_ext=config['split_bams_pipeline']['split_by']['input'],
-        # h5ad_col=config['split_bams_pipeline']['split_by']['column'],
+        # conv=config['modules']['split_bams']['donor_name_converter']['file'],
+        # from_col=config['modules']['split_bams']['donor_name_converter']['from_column'],
+        # to_col=config['modules']['split_bams']['donor_name_converter']['to_column'],
+        # demux_method=config['modules']['split_bams']['split_by']['demux'],
+        # inp_ext=config['modules']['split_bams']['split_by']['input'],
+        # h5ad_col=config['modules']['split_bams']['split_by']['column'],
         extra = partial(get_params_create_inp_splitBams, config=config),
         script="helper_py_scripts/create_inp_splitBam_consolidated.py"
 
@@ -64,16 +64,16 @@ rule bamfilt_by_CB:
     input:
         unpack(partial(get_bam, config=config)),
         hash_file=(
-            f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
-            f"{config['fold_struct_bam_split1']}_bc_hash.txt"
+            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
             )
 
     # cDNA only for now (see TODO: split bams for multiome)
     output:
-        **bam_paths(config, 'cDNA', config['split_bams_pipeline']['filt_bam'])
+        **bam_paths(config, 'cDNA', config['modules']['split_bams']['filt_bam'])
 
     params:
-        temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{wc.pool}_bc.txt",
+        temp_bc=lambda wc: f"{config['modules']['split_bams']['sort_temp_dir']}{wc.pool}_bc.txt",
         threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
 
 
@@ -87,7 +87,7 @@ rule bamfilt_by_CB:
 
     shell:
         r"""
-        mkdir -p {config[split_bams_pipeline][sort_temp_dir]}
+        mkdir -p {config[modules][split_bams][sort_temp_dir]}
         cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
         samtools view -@ {params.threads} -q 255 -D CB:{params.temp_bc} \
             {input.bam} -bho {output.bam}
@@ -111,7 +111,7 @@ for _modality in bam_modalities(config):
             **bam_paths(config, _modality)
 
         output:
-            **bam_paths(config, _modality, config['split_bams_pipeline']['short_bam'])
+            **bam_paths(config, _modality, config['modules']['split_bams']['short_bam'])
 
         params:
             sub_chr=partial(subset_to_chr, config=config),
@@ -134,16 +134,16 @@ for _modality in bam_modalities(config):
 
 rule create_bed:
     input:
-        config['STARsolo_pipeline']['genome_pick']['fasta']
+        config['modules']['STARsolo']['genome_pick']['fasta']
 
     params:
         chr_prefix= lambda _: (
-            '' if config['chr_prefix'] is None 
-            else config['chr_prefix']
+            '' if config['references']['chr_prefix'] is None 
+            else config['references']['chr_prefix']
         )
 
     output:
-        config['reg_chr_bed']
+        config['references']['reg_chr_bed']
 
     shell:
         r"""
@@ -161,7 +161,7 @@ def get_real_donors(wildcards):
 
     ckpt = checkpoints.create_inp_splitBams.get(**wildcards)
     demux_out = ckpt.output[0]
-    min_cells_threshold = config['split_bams_pipeline']['min_cells_per_donor']
+    min_cells_threshold = config['modules']['split_bams']['min_cells_per_donor']
 
     df = pd.read_csv(demux_out, sep="\t")
 
@@ -182,45 +182,45 @@ rule split_bams:
             cases={
                 'whole': partial(get_bam, config=config),
                 'chr_subset': partial(get_bam, config=config,
-                    suffix=config['split_bams_pipeline']['short_bam']),
+                    suffix=config['modules']['split_bams']['short_bam']),
                 'cell_filtered': partial(get_bam, config=config,
-                    suffix=config['split_bams_pipeline']['filt_bam']),
+                    suffix=config['modules']['split_bams']['filt_bam']),
             },
         )),
         barcodes_vs_donor = (
-            f"{config['split_bams_pipeline']['inp_split_bams_dir']}"
-            f"{config['fold_struct_bam_split1']}_bc_hash.txt"
+            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
         )
     output:
         bam = (
-            f"{config['split_bams_pipeline']['split_bams_dir']}"
-            f"{config['fold_struct_bam_split2']}"
+            f"{config['modules']['split_bams']['split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_bams']}"
             "{donor}.bam"
         ),
         bai = (
-            f"{config['split_bams_pipeline']['split_bams_dir']}"
-            f"{config['fold_struct_bam_split2']}"
+            f"{config['modules']['split_bams']['split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_bams']}"
             "{donor}.bam.bai"
         )
     params:
         temp_dir      = (
-            f"{config['split_bams_pipeline']['new_temp_dir']}"
-            f"{config['fold_struct_bam_split2']}"
+            f"{config['modules']['split_bams']['new_temp_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_bams']}"
         ),
-        gt_check      = config["gt_check"],
+        gt_check      = config["workflow"]["gt_check"],
         chr_mito      = partial(get_mito, config=config),
         mito_info     = partial(get_mito_file, config=config),
         filter_bed    = lambda _: (
-            None if config["gt_check"]
-            else config.get("reg_chr_bed")
+            None if config["workflow"]["gt_check"]
+            else config["references"].get("reg_chr_bed")
         ),
         script        = "helper_sh_scripts/create_per_donor_bams.bash"
     resources:
         **get_resources("split_bams")
     log:
         (
-            f"{config["split_bams_pipeline"]["per_donor_split_log_dir"]}"
-            f"{config['fold_struct_bam_split2']}"
+            f"{config["modules"]["split_bams"]["per_donor_split_log_dir"]}"
+            f"{config['modules']['split_bams']['fold_struct_bams']}"
             "{donor}.log",
         )
     shell:

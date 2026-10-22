@@ -1,6 +1,6 @@
 # This rule will create multiple runs of cellSNP and vireoSNP for each sample
 # Provided a file that contains multiple vcfs per each sample
-# present as config['gt_demux_pipeline']['vcf_info']
+# present as config['modules']['gt_demux']['vcf_info']
 from lib.io import (
     count_matrix,
     previous_solo_h5ad,
@@ -20,11 +20,11 @@ from functools import partial
 
 # Multi_module branch related function
 # def multi_vcfs(wildcards):
-#     temp_df = read_files_ext(config['gt_demux_pipeline']['vcf_info'])
-#     wet_lab_df = read_files_ext(config['wet_lab_info'])
+#     temp_df = read_files_ext(config['modules']['gt_demux']['vcf_info'])
+#     wet_lab_df = read_files_ext(config['experiment']['inputs']['wet_lab_info'])
 #     samp = wildcards.id1.replace('-', '_')+'_cDNA'
-#     cols1 = config['gt_demux_pipeline']['vcf_info_columns']
-#     cols2 = config['gt_demux_pipeline']['wet_lab_file_cols']
+#     cols1 = config['modules']['gt_demux']['vcf_info_columns']
+#     cols2 = config['modules']['gt_demux']['wet_lab_file_cols']
 #     set_num = wet_lab_df.loc[wet_lab_df[cols2[1]].str.lower() == samp.lower(), cols2[0]].values[0]
 #     col = wildcards.vcf_type
 
@@ -53,7 +53,7 @@ rule create_inp_cellSNP:
         **get_resources("create_inp_cellSNP")
 
     output:
-        f"{config['gt_demux_pipeline']['inp_for_cellsnp_dir']}{config['fold_struct_filt_bc']}.txt"
+        f"{config['modules']['gt_demux']['inp_for_cellsnp_dir']}{config['modules']['gt_demux']['fold_struct_filt_bc']}.txt"
     
     conda: "../envs/basic_sctools.yaml"
 
@@ -73,23 +73,23 @@ rule cellSNP:
         unpack(partial(get_cellsnp_inputs, config=config))
 
     output:
-        f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_cells']}",
-        f"{config['gt_demux_pipeline']['cellsnp_dir']}{config['fold_struct_gt_demux']}{config['gt_demux_pipeline']['cellsnp_base']}"
+        f"{config['modules']['gt_demux']['cellsnp_dir']}{config['modules']['gt_demux']['fold_struct']}{config['modules']['gt_demux']['cellsnp_cells']}",
+        f"{config['modules']['gt_demux']['cellsnp_dir']}{config['modules']['gt_demux']['fold_struct']}{config['modules']['gt_demux']['cellsnp_base']}"
 
     params:
-        # ref_snps=config['gt_demux_pipeline']['ref_snps'],
+        # ref_snps=config['modules']['gt_demux']['ref_snps'],
         umi_tag=partial(get_umiTag, config=config),
-        cell_tag=config['gt_demux_pipeline']['cell_tag'],
+        cell_tag=config['modules']['gt_demux']['cell_tag'],
         processors=partial(get_procs_csnp, config=config),
-        min_maf=config['gt_demux_pipeline']['min_maf'],
-        min_ct=config['gt_demux_pipeline']['min_aggr_count'],
+        min_maf=config['modules']['gt_demux']['min_maf'],
+        min_ct=config['modules']['gt_demux']['min_aggr_count'],
         output_prefix=lambda _, output: (
             output[0].replace(
-                f"/{config['gt_demux_pipeline']['cellsnp_cells']}", 
+                f"/{config['modules']['gt_demux']['cellsnp_cells']}", 
                 ''
             )
         ),
-        threads=config['gt_demux_pipeline']['bcftools_thread']
+        threads=config['modules']['gt_demux']['bcftools_thread']
 
 
     resources:
@@ -117,24 +117,24 @@ rule vireoSNP:
         
     output:
         (
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}"
-            f"{config['gt_demux_pipeline']['donors_classification']}"
+            f"{config['modules']['gt_demux']['vireosnp_dir']}"
+            f"{config['modules']['gt_demux']['fold_struct']}"
+            f"{config['modules']['gt_demux']['donors_classification']}"
         )
 
     # Read by demul_samples.py (next to donor_ids.tsv) for variant matching stats
     log:
         (
-            f"{config['gt_demux_pipeline']['vireosnp_dir']}"
-            f"{config['fold_struct_gt_demux']}"
+            f"{config['modules']['gt_demux']['vireosnp_dir']}"
+            f"{config['modules']['gt_demux']['fold_struct']}"
             "vireo.log"
         )
 
     params:
-        geno_tag=config['gt_demux_pipeline']['donor_genotype'],
+        geno_tag=config['modules']['gt_demux']['donor_genotype'],
         output_prefix=lambda _, output: (
             output[0].replace(
-                f"/{config['gt_demux_pipeline']['donors_classification']}", 
+                f"/{config['modules']['gt_demux']['donors_classification']}", 
                 ''
             )
         ),

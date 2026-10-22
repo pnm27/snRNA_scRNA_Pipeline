@@ -1,0 +1,7 @@
+# vireo once per vcf column of vcf_info (vcf_type)
+# expect: cellSNP vireoSNP demux_run_vireo demux_final collect_demux_versions
+# path: vireoSNP/Sample_P1-cDNA/pool_vcf_gencode/donor_ids.tsv final/P1_pool_vcf_gencode_maf_25pct_final.h5ad final_demux_versions_pool_vcf.tsv
+last_step: STARsolo_gt_demux_multi_vcf
+demux_type: vireo
+picard_metrics: null
+fold_struct_gt_demux: "Sample_{pool}-cDNA/{vcf_type}/"

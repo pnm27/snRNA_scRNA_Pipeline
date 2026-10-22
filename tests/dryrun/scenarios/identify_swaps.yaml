@@ -2,7 +2,17 @@
 # donors: D1 D2
 # expect: qtltools_mbv split_bams filt_chr_bams
 # path: qtltools_mbv/P1_D1_cDNA.bamstat.txt qtltools_mbv/P1_D2_cDNA.bamstat.txt
-last_step: STARsolo_gt_demux_identify_swaps
-demux_type: vireo
-gt_check: yes
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: identify_swaps
+  picard_metrics: null
+  gt_check: yes
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

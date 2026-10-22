@@ -260,7 +260,7 @@ def get_resources(rule):
     """Keyword arguments for the 'resources' directive of a rule."""
     specs = {
         **RESOURCES[rule],
-        **((config.get("resources") or {}).get(rule) or {}),
+        **((config["execution"].get("resources") or {}).get(rule) or {}),
     }
 
     ret = {}

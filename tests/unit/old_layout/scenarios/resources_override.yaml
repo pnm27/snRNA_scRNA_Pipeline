@@ -1,0 +1,10 @@
+# a 'resources' override from the config
+# expect: vireoSNP
+# resources: vireoSNP cpus_per_task=3 mem_mb=12345
+last_step: STARsolo_demux
+demux_type: vireo
+picard_metrics: null
+resources:
+  vireoSNP:
+    cpus_per_task: 3
+    mem_mb: 12345

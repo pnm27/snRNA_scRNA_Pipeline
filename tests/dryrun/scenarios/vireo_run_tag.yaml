@@ -1,7 +1,17 @@
 # vireo outputs in the 'run_tag' sub-folder
 # expect: vireoSNP cellSNP
 # path: vireoSNP/w_gt_2/Sample_P1-cDNA/donor_ids.tsv cellSNP/w_gt_2/Sample_P1-cDNA/
-last_step: STARsolo_demux
-demux_type: vireo
-run_tag: w_gt_2
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    run_tag: w_gt_2
+    genotype:
+      multi_vcf: false

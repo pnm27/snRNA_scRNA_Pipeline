@@ -2,9 +2,23 @@
 # donors: D1 D2
 # expect: filt_chr_bams_multiome_cdna split_bams
 # path: cellranger_outputs/P1/gex_possorted_bam_chr1.bam
-last_step: multiome_split_bams_gt_demux
-demux_type: vireo
-gt_check: yes
-picard_metrics: null
-fold_struct_gt_demux: "Sample_{pool}/{modality}/"
-fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}_{modality}"
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: cellranger_arc
+  until: split_bams
+  picard_metrics: null
+  gt_check: yes
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  gt_demux:
+    fold_struct: "Sample_{pool}/{modality}/"
+    fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}_{modality}"

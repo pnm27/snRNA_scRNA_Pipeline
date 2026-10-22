@@ -1,0 +1,10 @@
+# vireo on the cellSNP outputs of a previous run
+# expect: vireoSNP
+# absent: cellSNP
+last_step: STARsolo_demux
+demux_type: vireo
+demux_run_type: w_gt
+picard_metrics: null
+gt_demux_pipeline:
+  vcf_info: projdir/pool_info4.tsv
+  reuse_cellsnp_dir: prev/cellSNP/

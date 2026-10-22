@@ -1,0 +1,6 @@
+# WASP needs a per-pool vcf (vcf_info here has none)
+# fails: STARsolo's WASP mode needs a vcf column
+last_step: STARsolo_kb_solo
+picard_metrics: null
+STARsolo_pipeline:
+  wasp: true

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Modalities ('modality' wildcard) of a run.
 
-Multiome runs ('last_step' starts with 'multiome') are aligned by
-cellranger-arc, which writes one bam per modality (cDNA and ATAC) for each
+Multiome runs are aligned by cellranger-arc (workflow: aligner:
+cellranger_arc), which writes one bam per modality (cDNA and ATAC) for each
 pool. Other runs have only cDNA. Their bams are in lib/aligner.py.
 """
 
@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 
 # Per modality of a cellranger-arc run: keys of its bam and bai in
-# config['cellranger_arc_count'], and whether its reads carry UMIs
+# config['modules']['cellranger_arc'], and whether its reads carry UMIs
 CELLRANGER_ARC = {
     'cDNA': SimpleNamespace(bam='gex_bam', bai='gex_bai', umi=True),
     'ATAC': SimpleNamespace(bam='atac_bam', bai='atac_bai', umi=False),
@@ -18,7 +18,7 @@ CELLRANGER_ARC = {
 
 
 def is_multiome(config) -> bool:
-    return 'multiome' in config['last_step'].lower()
+    return config['workflow']['aligner'].lower() == 'cellranger_arc'
 
 
 def bam_modalities(config) -> list[str]:

@@ -24,8 +24,8 @@ def get_limitsjdbval_coll(wildcards, config, resources):
     Serially produce output as a list in the sequence "limitsjdbInsertNsj", "limitOutSJcollapsed", etc.
     '''
     # This is to check the log file produced after each attempt for the error value
-    file_p_temp = f"{config['fold_struct']}".format(**wildcards)
-    SS_params_file = "{}{pool}-cDNA.txt".format(config['STARsolo_pipeline']['star_params_dir'], **wildcards)
+    file_p_temp = f"{config['modules']['STARsolo']['fold_struct']}".format(**wildcards)
+    SS_params_file = "{}{pool}-cDNA.txt".format(config['modules']['STARsolo']['star_params_dir'], **wildcards)
     
     ins_nsj = 1000000 # DEFAULT
     sj_collap = 1000000 # DEFAULT
@@ -65,7 +65,7 @@ def get_limitsjdbval_coll(wildcards, config, resources):
         }
     
     log_list = glob2.glob(
-        "{}{}_STARsolo_log.txt*".format(config['STARsolo_pipeline']['bams_dir'], 
+        "{}{}_STARsolo_log.txt*".format(config['modules']['STARsolo']['bams_dir'], 
             file_p_temp)
     )
     # limitbamsortram = int(resources.mem_mb * 0.5 * 1000000) # resources.mem_mb * (resources.cpus_per_task - 1) * 1000000 # DEFAULT
@@ -110,19 +110,19 @@ col_set = [
 
 def get_params_cics(wildcards, config, input):
     params_dict = {
-        "col_name": [config['gt_demux_pipeline']['demux_col'], "-c"],
-        "bc_len": [config['gt_demux_pipeline']['barcode_len'], "-b"],
-        "doub": [config['gt_demux_pipeline']['doublet'], "-d"],
-        "neg": [config['gt_demux_pipeline']['negative'], "-n"],
-        "na": [config['gt_demux_pipeline']['na'], "-e"],
-        "max_mito": [config['max_mito_percentage'], "-m"],
-        "min_genes": [config['min_genes_per_cell'], "-g"],
-        "min_cells": [config['min_cells_per_gene'], "--min_cells"],
+        "col_name": [config['modules']['gt_demux']['demux_col'], "-c"],
+        "bc_len": [config['modules']['gt_demux']['barcode_len'], "-b"],
+        "doub": [config['modules']['gt_demux']['doublet'], "-d"],
+        "neg": [config['modules']['gt_demux']['negative'], "-n"],
+        "na": [config['modules']['gt_demux']['na'], "-e"],
+        "max_mito": [config['experiment']['qc']['max_mito_percentage'], "-m"],
+        "min_genes": [config['experiment']['qc']['min_genes_per_cell'], "-g"],
+        "min_cells": [config['experiment']['qc']['min_cells_per_gene'], "--min_cells"],
         "genes_info": [
-            config['STARsolo_pipeline']['genome_pick']['gene_info_file'], 
+            config['modules']['STARsolo']['genome_pick']['gene_info_file'], 
             "--id2name"
             ],
-        "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
+        "mito_prefix": [config['references']['mito_prefix'], "--mito_prefix"],
  
     }
     ret_str = ''
@@ -139,14 +139,14 @@ def get_params_cics(wildcards, config, input):
     if barcodes_have_suffix(config):
         ret_str += '--keep_barcode_suffix '
     
-    if config['gt_demux_pipeline']['include_all_cells']:
+    if config['modules']['gt_demux']['include_all_cells']:
         ret_str += '--keep_all_cells '
 
     return ret_str
 
 
 def get_procs_csnp(wildcards, config, resources):
-    user_def = config['gt_demux_pipeline']['n_proc']
+    user_def = config['modules']['gt_demux']['n_proc']
     expected_thresh = resources.cpus_per_task * 2
     return user_def if user_def > expected_thresh else expected_thresh
         
@@ -155,11 +155,11 @@ def get_umiTag(wildcards, config):
     # None for reads without UMIs (ATAC)
     if not has_umi(config, get_modality(wildcards)):
         return None
-    return config['gt_demux_pipeline']['umi_tag']
+    return config['modules']['gt_demux']['umi_tag']
     
 
 def get_cmd_str_vireo(wildcards, input, config) -> str:
-    vcf_info = config['gt_demux_pipeline']['vcf_info']
+    vcf_info = config['modules']['gt_demux']['vcf_info']
     # Make snakemake's wildcard same as the value in the "pool" column
     samp_name = wildcards.pool # WILDCARDS
     ret_str = ""
@@ -171,7 +171,7 @@ def get_cmd_str_vireo(wildcards, input, config) -> str:
     if vcf_info is None or not os.path.isfile(vcf_info):
         raise ValueError(
             "vireoSNP needs the number of donors per pool: set "
-            "'gt_demux_pipeline: vcf_info' to an existing file "
+            "'modules: gt_demux: vcf_info' to an existing file "
             f"(currently: {vcf_info})"
         )
 
@@ -194,31 +194,31 @@ def get_cmd_str_vireo(wildcards, input, config) -> str:
 def get_params_demux(wildcards, input, output, config, tool):
     """Arguments of demul_samples.py for Rule A ('demux_run_<tool>')."""
     params_dict = {
-        "cols": [config['hashsolo_demux_pipeline']['columns_to_pick'], "--columns"],
-        "wet_lab_file": [config['wet_lab_info'], "--wet_lab_file"],
-        "hto_sep": [config['hashsolo_demux_pipeline']['hto_sep'], "--hto_sep"],
-        "max_mito": [config['max_mito_percentage'], "-m"],
-        "min_genes": [config['min_genes_per_cell'], "-g"],
-        "min_cells": [config['min_cells_per_gene'], "--min_cells"],
-        "mito_prefix": [config['mito_prefix'], "--mito_prefix"],
-        "cs_conv": [config['hashsolo_demux_pipeline']['SubID_convert'], "--no-subid_convert"],
+        "cols": [config['modules']['hashsolo']['columns_to_pick'], "--columns"],
+        "wet_lab_file": [config['experiment']['inputs']['wet_lab_info'], "--wet_lab_file"],
+        "hto_sep": [config['modules']['hashsolo']['hto_sep'], "--hto_sep"],
+        "max_mito": [config['experiment']['qc']['max_mito_percentage'], "-m"],
+        "min_genes": [config['experiment']['qc']['min_genes_per_cell'], "-g"],
+        "min_cells": [config['experiment']['qc']['min_cells_per_gene'], "--min_cells"],
+        "mito_prefix": [config['references']['mito_prefix'], "--mito_prefix"],
+        "cs_conv": [config['modules']['hashsolo']['SubID_convert'], "--no-subid_convert"],
         "conv_f_nheaders": [
-            config['gt_demux_pipeline']['donorName_conv']['header_lev'], 
+            config['modules']['gt_demux']['donorName_conv']['header_lev'], 
             "--converter_file_headerNlev"],
         "conv_f_pool_col": [
-            config['gt_demux_pipeline']['donorName_conv']['pool_col'], 
+            config['modules']['gt_demux']['donorName_conv']['pool_col'], 
             "--conv_file_pool_column"],
         "conv_f_donor_col": [
-            config['gt_demux_pipeline']['donorName_conv']['donor_col'], 
+            config['modules']['gt_demux']['donorName_conv']['donor_col'], 
             "--conv_file_donor_column"],
         "conv_f_conv_col": [
-            config['gt_demux_pipeline']['donorName_conv']['convert_col'], 
+            config['modules']['gt_demux']['donorName_conv']['convert_col'], 
             "--conv_file_conv_column"],
         "new_h5ad_col": [
-            config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname'], 
+            config['modules']['gt_demux']['donorName_conv']['new_h5ad_colname'], 
             "--h5ad_new_classify_colname"],
     }
-    gene_info_file = config['STARsolo_pipeline']['genome_pick']['gene_info_file']
+    gene_info_file = config['modules']['STARsolo']['genome_pick']['gene_info_file']
     ret_str = f"{input.mtx} {output.h5ad} {gene_info_file} "
 
     for k, v in params_dict.items():
@@ -252,7 +252,7 @@ def get_params_demux_final(wildcards, input, config):
     sources = final_sources(config, wildcards.pool) # WILDCARDS
     ret_str = "--sources " + " ".join(f"'{s.label}'" for s in sources) + " "
 
-    new_col = config['gt_demux_pipeline']['donorName_conv']['new_h5ad_colname']
+    new_col = config['modules']['gt_demux']['donorName_conv']['new_h5ad_colname']
     if new_col:
         ret_str += f"--donor_column {new_col} "
 
@@ -287,8 +287,8 @@ def _split_h5ad_column(split_by):
 
 def get_params_create_inp_splitBams(wildcards, config):
     ret_str = ''
-    donor_params = config['split_bams_pipeline']['donor_name_converter']
-    demuxSplit_params = config['split_bams_pipeline']['split_by']
+    donor_params = config['modules']['split_bams']['donor_name_converter']
+    demuxSplit_params = config['modules']['split_bams']['split_by']
 
     params_dict = {
         "conv_file": [ donor_params.get('file', None), "--conv_file"],
@@ -306,25 +306,25 @@ def get_params_create_inp_splitBams(wildcards, config):
 
 
 def get_mito(wildcards, config):
-    if config['chr_prefix'] == None or config['mito_prefix'].startswith(config['chr_prefix']):
-        ret_val = config['mito_prefix'] if not config['mito_prefix'].endswith('-') else config['mito_prefix'][:-1]
+    if config['references']['chr_prefix'] == None or config['references']['mito_prefix'].startswith(config['references']['chr_prefix']):
+        ret_val = config['references']['mito_prefix'] if not config['references']['mito_prefix'].endswith('-') else config['references']['mito_prefix'][:-1]
         return ret_val
     else:
-        ret_val = config['chr_prefix'] + config['mito_prefix']
+        ret_val = config['references']['chr_prefix'] + config['references']['mito_prefix']
         ret_val =  ret_val if not ret_val.endswith('-') else ret_val[:-1]
         return ret_val
 
 
 def subset_to_chr(wildcards, config):
-    if config['chr_prefix'] == None or str(config['split_bams_pipeline']['subset_chr']).startswith(config['chr_prefix']):
-        return config['split_bams_pipeline']['subset_chr']
+    if config['references']['chr_prefix'] == None or str(config['modules']['split_bams']['subset_chr']).startswith(config['references']['chr_prefix']):
+        return config['modules']['split_bams']['subset_chr']
     else:
-        return config['chr_prefix'] + str(config['split_bams_pipeline']['subset_chr'])
+        return config['references']['chr_prefix'] + str(config['modules']['split_bams']['subset_chr'])
 
 
 def get_mito_file(wildcards, config):
-    if config['gt_check']:
+    if config['workflow']['gt_check']:
         return False
-    elif not config['gt_check']:
-        return f"{out_prefix(config)}{config['split_bams_pipeline']['mito_reads_file']}"
+    elif not config['workflow']['gt_check']:
+        return f"{out_prefix(config)}{config['modules']['split_bams']['mito_reads_file']}"
     

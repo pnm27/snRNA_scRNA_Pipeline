@@ -1,0 +1,7 @@
+# vireo outputs in the 'run_tag' sub-folder
+# expect: vireoSNP cellSNP
+# path: vireoSNP/w_gt_2/Sample_P1-cDNA/donor_ids.tsv cellSNP/w_gt_2/Sample_P1-cDNA/
+last_step: STARsolo_demux
+demux_type: vireo
+run_tag: w_gt_2
+picard_metrics: null

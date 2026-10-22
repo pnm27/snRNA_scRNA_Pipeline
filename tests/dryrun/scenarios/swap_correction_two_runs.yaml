@@ -1,14 +1,27 @@
 # the swap correction file picks hashsolo from run wo_gt and vireo from this run
 # expect: demux_final demux_run_vireo vireoSNP
 # path: final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad final_count_matrix/vireoSNP/w_gt/
-last_step: STARsolo_demux
-demux_type: vireo
-run_tag: w_gt
-picard_metrics: null
-demultiplex:
-  swap_correction:
-    file: projdir/swap_two_runs.tsv
-    pool_column: pool
-    version_column: version
-    donor_from: from
-    donor_to: to
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    run_tag: w_gt
+    genotype:
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  demultiplex:
+    swap_correction:
+      file: projdir/swap_two_runs.tsv
+      pool_column: pool
+      version_column: version
+      donor_from: from
+      donor_to: to

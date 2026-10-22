@@ -14,12 +14,12 @@ POOLS = []
 SS_MEM = {}
 # Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
-if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endswith('.yaml') and not config['select_fastqs'].endswith('.yml'):
+if os.path.isfile(config['experiment']['inputs']['select_fastqs']) and not config['experiment']['inputs']['select_fastqs'].endswith('.yaml') and not config['experiment']['inputs']['select_fastqs'].endswith('.yml'):
 
     #Lists that will contain wildcards
     # If fastq files are called Sample_xxxxx-cDNA/xxxxx-cDNA_R1.fastq.gz
 
-    with open(config['select_fastqs']) as fq:
+    with open(config['experiment']['inputs']['select_fastqs']) as fq:
         for line in fq:
             if not line.strip():
                 continue  # Skips the empty line
@@ -47,15 +47,15 @@ if os.path.isfile(config['select_fastqs']) and not config['select_fastqs'].endsw
 # If the input is yaml file then validate it and process it
 # The example in here is for more than one wildcards
 # RE-EVALUTE
-elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswith('.yaml') or config['select_fastqs'].endswith('.yml')):
-    # Validating config['select_fastqs']
-    # with open(config['select_fastqs']) as fout:
+elif os.path.isfile(config['experiment']['inputs']['select_fastqs']) and (config['experiment']['inputs']['select_fastqs'].endswith('.yaml') or config['experiment']['inputs']['select_fastqs'].endswith('.yml')):
+    # Validating config['experiment']['inputs']['select_fastqs']
+    # with open(config['experiment']['inputs']['select_fastqs']) as fout:
     #     samples_df = pd.json_normalize(yaml.load(fout, Loader=yaml.SafeLoader))
     # validate(samples_df, "samples.schema.json")
 
 
     # Parse the samples containing yaml file
-    with open(config['select_fastqs']) as fout:
+    with open(config['experiment']['inputs']['select_fastqs']) as fout:
         sample_dict = yaml.load(fout, Loader=yaml.SafeLoader)
 
 
@@ -66,7 +66,7 @@ elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswi
     # Checking with respect to fastq folders
     if isinstance(sample_dict, dict):
         for k, v in sample_dict.items():
-            if all([ isfolder_struct(config['cDNA_fastqs_dir'], x) for x in v ]):
+            if all([ isfolder_struct(config['experiment']['inputs']['fastqs_dir']['cDNA'], x) for x in v ]):
                 continue
             elif all(list(map(os.path.isdir, v))):
                 continue
@@ -75,7 +75,7 @@ elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswi
 
     elif isinstance(sample_dict, list):
         # If it contains folder_structure for all samples
-        if all([ isfolder_struct(config['cDNA_fastqs_dir'], x) for x in sample_dict ]):
+        if all([ isfolder_struct(config['experiment']['inputs']['fastqs_dir']['cDNA'], x) for x in sample_dict ]):
             FOLD_STRUCT = True
             FASTQ_DIR = False
 
@@ -134,12 +134,12 @@ elif os.path.isfile(config['select_fastqs']) and (config['select_fastqs'].endswi
 # If the input is a dir containing all the fastqs or files
 # Extract the required wildcards here
 # RE-EVALUATE
-elif os.path.isdir(config['select_fastqs']):
-    assert config['wildcards_select'] is not None, "if 'select_fastqs' option in the yaml file is a dir then 'wildcards_select' can't be 'None'!"
+elif os.path.isdir(config['experiment']['inputs']['select_fastqs']):
+    assert config['experiment']['inputs']['wildcards_select'] is not None, "if 'select_fastqs' option in the yaml file is a dir then 'wildcards_select' can't be 'None'!"
     # Example for one wildcard extraction
-    # ID1, = glob_wildcards(config['select_fastqs'])
+    # ID1, = glob_wildcards(config['experiment']['inputs']['select_fastqs'])
     # REMOVED sorted as it behaves weirdly: it sorts the tuples rather the values it contains
-    ID1, DONOR = glob_wildcards(os.path.join(config['select_fastqs'], config['wildcards_select']))
+    ID1, DONOR = glob_wildcards(os.path.join(config['experiment']['inputs']['select_fastqs'], config['experiment']['inputs']['wildcards_select']))
     
     # Example of how to filter out a list of files
     # In here some of the values in ID1 (wildcard)
@@ -170,4 +170,4 @@ else:
 
 
 # For multiruns of cellSNP and vireoSNP
-# VCF_TYPE=config['gt_demux_pipeline']['vcf_info_columns'][2:]
+# VCF_TYPE=config['modules']['gt_demux']['vcf_info_columns'][2:]

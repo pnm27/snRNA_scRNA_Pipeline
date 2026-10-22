@@ -40,30 +40,30 @@ rule cellranger_arc_count:
         partial(get_fastqs, config=config)
 
     params:
-        ref=config['cellranger_arc_count']['ref']['genome'],
+        ref=config['modules']['cellranger_arc']['ref']['genome'],
         max_localcores=lambda wildcards, resources: resources.cpus_per_task*4,
         max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task/1000,
         samp_id=lambda wildcards: wildcards.pool, # Same as samp_id in rule "inp_cellranger_arc_count"
-        outputdir=f"{config['cellranger_arc_count']['bams_dir']}{{pool}}",
-        pipestance=f"{config['cellranger_arc_count']['pipestance_struct']}"
+        outputdir=f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}",
+        pipestance=f"{config['modules']['cellranger_arc']['pipestance_struct']}"
 
     output:
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bam']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['gex_bai']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_bam']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_bai']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['atac_fragments']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['filtered_h5_matrix']}",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/{config['cellranger_arc_count']['pipestance_struct']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['gex_bam']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['gex_bai']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['atac_bam']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['atac_bai']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['atac_fragments']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['filtered_h5_matrix']}",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/barcodes.tsv.gz",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/features.tsv.gz",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/filtered_feature_bc_matrix/matrix.mtx.gz",
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/{config['modules']['cellranger_arc']['pipestance_struct']}",
         outdir=directory(
-            f"{config['cellranger_arc_count']['bams_dir']}{{pool}}"
+            f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}"
             )
 
     log:
-        f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/cellranger-arc-count.txt"
+        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/cellranger-arc-count.txt"
     
     # Restrict wildcards so that ATAC and cDNA filt or subset bams 
     # (from split_bams.smk) won't get triggerred
@@ -75,7 +75,7 @@ rule cellranger_arc_count:
         attempt=lambda wildcards, attempt: attempt
 
     envmodules:
-        f"{config['cellranger-arc_version']}"
+        f"{config['references']['tools']['cellranger_arc']}"
 
     shell:
         r"""
@@ -92,7 +92,7 @@ rule cellranger_arc_count:
         """
 
 
-# cellranger count (GEX-only runs, last_step 'cellranger_*') ----------------
+# cellranger count (GEX-only runs, aligner 'cellranger') -------------------
 
 def _fastq_sample(fastq: str) -> str:
     """cellranger's --sample of a fastq (its name before _S<n>_L<nnn>_R1)."""
@@ -116,13 +116,13 @@ rule cellranger_count:
         R2=partial(get_r2_fastqs, config=config)
 
     params:
-        ref=config['cellranger_count']['ref']['genome'],
+        ref=config['modules']['cellranger']['ref']['genome'],
         fastqs_dir=lambda wildcards, input: os.path.dirname(input.R1[0]),
         sample=lambda wildcards, input: ",".join(
             sorted({_fastq_sample(f) for f in input.R1})
         ),
-        include_introns=str(config['cellranger_count']['include_introns']).lower(),
-        extra=config['cellranger_count']['extra_params'] or "",
+        include_introns=str(config['modules']['cellranger']['include_introns']).lower(),
+        extra=config['modules']['cellranger']['extra_params'] or "",
         max_localcores=lambda wildcards, resources: resources.cpus_per_task,
         max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task//1000,
         outputdir=out_prefix(config, 'cellranger')
@@ -142,7 +142,7 @@ rule cellranger_count:
         attempt=lambda wildcards, attempt: attempt
 
     envmodules:
-        f"{config['cellranger_version']}"
+        f"{config['references']['tools']['cellranger']}"
 
     shell:
         r"""

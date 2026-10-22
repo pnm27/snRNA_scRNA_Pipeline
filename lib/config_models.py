@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import List, Optional
 from .utils import get_demux_type, read_files_ext, run_dir
+from .aligner import get_aligner
+from .modality import is_multiome
 
 
 # Tools run by Rule A for each demux_type ('none': only create the h5ad)
@@ -37,48 +39,44 @@ def demux_tools(config) -> List[str]:
 
 
 def is_multi_vcf(config) -> bool:
-    return config['last_step'].lower().endswith('multi_vcf')
-
-
-def is_multiome(config) -> bool:
-    return 'multiome' in config['last_step'].lower()
+    return bool(config['experiment']['demultiplexing']['genotype'].get('multi_vcf'))
 
 
 def vcf_types(config) -> List[str]:
     """Values of the 'vcf_type' wildcard in multi-VCF runs: the vcf columns
-    of 'vcf_info' ('gt_demux_pipeline: vcf_info_columns: vcf')."""
+    of 'vcf_info' ('modules: gt_demux: vcf_info_columns: vcf')."""
     if not is_multi_vcf(config):
         return []
-    if '{vcf_type}' not in config['fold_struct_gt_demux']:
+    if '{vcf_type}' not in config['modules']['gt_demux']['fold_struct']:
         raise ValueError(
-            "Multi-VCF runs need '{vcf_type}' in 'fold_struct_gt_demux' "
+            "Multi-VCF runs need '{vcf_type}' in 'modules: gt_demux: fold_struct' "
             "(e.g. \"Sample_{pool}-cDNA/{vcf_type}/\")"
         )
-    cols = config['gt_demux_pipeline']['vcf_info_columns']['vcf']
+    cols = config['modules']['gt_demux']['vcf_info_columns']['vcf']
     if not cols:
         raise ValueError(
             "Multi-VCF runs need the vcf columns in "
-            "'gt_demux_pipeline: vcf_info_columns: vcf'"
+            "'modules: gt_demux: vcf_info_columns: vcf'"
         )
     return [cols] if isinstance(cols, str) else list(cols)
 
 
 def check_supported(config) -> None:
-    """Raise for combinations of last_step and demux_type not supported yet."""
+    """Raise for combinations of aligner and demultiplexing not supported yet."""
     tools = demux_tools(config)
     if is_multiome(config) and 'solo' in tools:
         raise ValueError(
-            "hashsolo (demux_type solo, add_solo, both or add_vireo) isn't "
+            "hashsolo (method solo or both) isn't "
             "supported for multiome runs yet"
         )
-    if config['last_step'].lower().startswith('cellranger') and 'solo' in tools:
+    if get_aligner(config) == 'cellranger' and 'solo' in tools:
         raise ValueError(
             "hashsolo isn't supported with cellranger count yet (its "
             "barcodes end with '-1', the HTO counts' don't)"
         )
     if is_multi_vcf(config) and tools != ['vireo']:
         raise ValueError(
-            "Multi-VCF runs support only demux_type vireo for now"
+            "Multi-VCF runs support only the demultiplexing method vireo for now"
         )
 
 
@@ -114,16 +112,16 @@ class DemuxRun:
 
 def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
     if tool == 'solo':
-        section, fold = 'hashsolo_demux_pipeline', config['fold_struct_demux']
+        section, fold = 'hashsolo', config['modules']['hashsolo']['fold_struct']
     elif tool == 'vireo':
-        section, fold = 'gt_demux_pipeline', pool_fold(config['fold_struct_gt_demux'])
+        section, fold = 'gt_demux', pool_fold(config['modules']['gt_demux']['fold_struct'])
     elif tool == 'none':
-        section, fold = 'gt_demux_pipeline', config['fold_struct']
+        section, fold = 'gt_demux', config['modules']['STARsolo']['fold_struct']
     else:
         raise ValueError(f"Unknown demultiplexing tool: '{tool}'")
 
     fold = _vcf_fold(config, fold)
-    h5ad = config[section]['final_count_matrix_h5ad']
+    h5ad = config['modules'][section]['final_count_matrix_h5ad']
     if tool == 'none':
         h5ad = h5ad.replace("_vS", "")
 
@@ -169,7 +167,7 @@ def _read_swap_file(fname: str):
 
 
 def swap_correction(config) -> dict:
-    return config['demultiplex'].get('swap_correction') or {}
+    return config['modules']['demultiplex'].get('swap_correction') or {}
 
 
 def swap_version(config, pool: str) -> Optional[str]:
@@ -179,7 +177,7 @@ def swap_version(config, pool: str) -> Optional[str]:
         return None
     if not os.path.isfile(swap['file']):
         raise ValueError(
-            "'demultiplex: swap_correction: file' doesn't exist: "
+            "'modules: demultiplex: swap_correction: file' doesn't exist: "
             f"{swap['file']}"
         )
     df = _read_swap_file(swap['file'])
@@ -206,10 +204,10 @@ def final_sources(config, pool: str) -> List[DemuxRun]:
     if demux_type in PREVIOUS_TOOL:
         ret.append(demux_run(
             config, PREVIOUS_TOOL[demux_type],
-            config['demultiplex'].get('previous_run_tag')
+            config['modules']['demultiplex'].get('previous_run_tag')
         ))
     ret.extend(
-        demux_run(config, t, config.get('run_tag')) for t in demux_tools(config)
+        demux_run(config, t, config['experiment']['demultiplexing'].get('run_tag')) for t in demux_tools(config)
     )
     return ret
 
@@ -224,13 +222,13 @@ class FinalPaths:
 
 
 def final_paths(config) -> FinalPaths:
-    c = config['demultiplex']
+    c = config['modules']['demultiplex']
     if not c.get('demux_count_matrix_dir'):
         raise ValueError(
-            "Set 'demultiplex: demux_count_matrix_dir', where the final "
+            "Set 'modules: demultiplex: demux_count_matrix_dir', where the final "
             "h5ad of each pool is written"
         )
-    fold = _vcf_fold(config, config['fold_struct_final'])
+    fold = _vcf_fold(config, config['modules']['demultiplex']['fold_struct'])
     return FinalPaths(
         h5ad=f"{c['demux_count_matrix_dir']}{fold}{c['final_count_matrix_h5ad']}",
         basic_stats=f"{c['demultiplex_info_dir']}{fold}_basic_stats.tsv",
@@ -245,10 +243,10 @@ def final_paths(config) -> FinalPaths:
 def raw_output(config, tool: str) -> str:
     """Output of the demultiplexing tool itself (before Rule A)."""
     if tool == 'vireo':
-        c = config['gt_demux_pipeline']
-        return f"{c['vireosnp_dir']}{config['fold_struct_gt_demux']}{c['donors_classification']}"
-    c = config['hashsolo_demux_pipeline']
-    return f"{c['calico_solo_dir']}{config['fold_struct_demux']}{c['calico_solo_h5ad']}"
+        c = config['modules']['gt_demux']
+        return f"{c['vireosnp_dir']}{config['modules']['gt_demux']['fold_struct']}{c['donors_classification']}"
+    c = config['modules']['hashsolo']
+    return f"{c['calico_solo_dir']}{config['modules']['hashsolo']['fold_struct']}{c['calico_solo_h5ad']}"
 
 
 @dataclass
@@ -264,7 +262,7 @@ class DemuxConfig:
     @classmethod
     def from_snakemake(cls, config):
         check_supported(config)
-        create_h5ad = bool(config.get("create_final_h5ad", False))
+        create_h5ad = bool(config["experiment"]["demultiplexing"].get("create_final_h5ad", False))
         tools = demux_tools(config)
 
         summary_targets = []

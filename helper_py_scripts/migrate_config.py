@@ -353,9 +353,15 @@ def migrate_text(text: str, quiet: bool = True) -> str:
             f"other one first.\n{e.problem}\n{e.problem_mark}")
     if not quiet:
         print('\n'.join(changes(old)), file=sys.stderr)
+    # The comment lines the file starts with (e.g. a dry-run scenario's checks)
+    header = []
+    for line in text.splitlines(keepends=True):
+        if line.strip() and not line.lstrip().startswith('#'):
+            break
+        header.append(line)
     out = io.StringIO()
     y.dump(migrate(old), out)
-    return out.getvalue()
+    return ''.join(header) + out.getvalue()
 
 
 def main():

@@ -5,18 +5,18 @@ from lib.io import get_bam_inputs
 rule qtltools_mbv:
     input:
         bam=partial(get_bam_inputs, config=config),
-        ref_snps=config['identify_swaps']['ref_vcf']
+        ref_snps=config['modules']['identify_swaps']['ref_vcf']
 
     output:
         (
-            f"{config['identify_swaps']['mbv_out_dir']}"
-            f"{config['fold_struct_swaps_check']}"
-            f"{config['identify_swaps']['mbv_suffix']}"
+            f"{config['modules']['identify_swaps']['mbv_out_dir']}"
+            f"{config['modules']['identify_swaps']['fold_struct']}"
+            f"{config['modules']['identify_swaps']['mbv_suffix']}"
         )
         
 
     params:
-        extra_params=config['identify_swaps']['mbv_extra_opt']
+        extra_params=config['modules']['identify_swaps']['mbv_extra_opt']
 
     resources:
         **get_resources("qtltools_mbv")

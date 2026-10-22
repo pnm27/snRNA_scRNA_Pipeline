@@ -5,19 +5,28 @@ import pandas as pd, os
 
 
 def get_demux_type(config) -> Union[None, str]:
-    """Return config['demux_type'] lowercased, or None when no demux is needed."""
-    demux_type = config.get('demux_type')
-    if not demux_type or str(demux_type).lower() in ('none', 'null'):
+    """Demultiplexing of this run: solo, vireo or both, add_solo or add_vireo
+    (the method added to a run of the other tool, 'add_to_previous'), or
+    None when no demux is needed."""
+    d = config['experiment']['demultiplexing']
+    method = d.get('method')
+    if not method or str(method).lower() in ('none', 'null'):
         return None
-    return str(demux_type).lower()
+    method = str(method).lower()
+    return f"add_{method}" if d.get('add_to_previous') else method
+
+
+def is_genotyped(config) -> bool:
+    """Whether donor genotypes are used (else vireo names donors donor0, donor1, ...)."""
+    return bool(config['experiment']['demultiplexing']['genotype']['enabled'])
 
 
 # Output dirs of a demultiplexing run; 'run_tag' adds a sub-folder to each
 RUN_TAGGED_DIRS = {
-    'hashsolo_demux_pipeline': [
+    'hashsolo': [
         'calico_solo_dir', 'final_count_matrix_dir', 'demultiplex_info_dir',
     ],
-    'gt_demux_pipeline': [
+    'gt_demux': [
         'inp_for_cellsnp_dir', 'cellsnp_dir', 'vireosnp_dir',
         'final_count_matrix_dir', 'demultiplex_info_dir',
     ],
@@ -35,13 +44,13 @@ def apply_run_tag(config) -> None:
         return
 
     config['_untagged_dirs'] = {
-        section: {key: config[section][key] for key in keys}
+        section: {key: config['modules'][section][key] for key in keys}
         for section, keys in RUN_TAGGED_DIRS.items()
     }
     for section, keys in RUN_TAGGED_DIRS.items():
         for key in keys:
-            config[section][key] = run_dir(
-                config, section, key, config.get('run_tag')
+            config['modules'][section][key] = run_dir(
+                config, section, key, config['experiment']['demultiplexing'].get('run_tag')
             )
 
 
@@ -54,7 +63,7 @@ SPLIT_PURPOSE_DIRS = [
 
 
 def split_purpose(config) -> str:
-    return 'gt_check' if config['gt_check'] else 'final'
+    return 'gt_check' if config['workflow']['gt_check'] else 'final'
 
 
 def apply_split_purpose(config) -> None:
@@ -62,13 +71,13 @@ def apply_split_purpose(config) -> None:
     if '_split_purpose' in config:
         return
     config['_split_purpose'] = split_purpose(config)
-    sb = config['split_bams_pipeline']
+    sb = config['modules']['split_bams']
     for key in SPLIT_PURPOSE_DIRS:
         sb[key] = f"{sb[key]}{config['_split_purpose']}/"
 
 
 def run_dir(config, section: str, key: str, run_tag: Union[None, str]) -> str:
-    """config[section][key] of the run tagged 'run_tag' (None: untagged)."""
+    """config['modules'][section][key] of the run tagged 'run_tag' (None: untagged)."""
     base = config['_untagged_dirs'][section][key]
     return f"{base}{run_tag}/" if run_tag else base
 

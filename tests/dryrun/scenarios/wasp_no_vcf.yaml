@@ -1,6 +1,18 @@
 # WASP needs a per-pool vcf (vcf_info here has none)
 # fails: STARsolo's WASP mode needs a vcf column
-last_step: STARsolo_kb_solo
-picard_metrics: null
-STARsolo_pipeline:
-  wasp: true
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: align
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    genotype:
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  STARsolo:
+    wasp: true

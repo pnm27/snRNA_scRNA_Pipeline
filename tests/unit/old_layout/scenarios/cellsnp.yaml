@@ -1,0 +1,7 @@
+# cellSNP's pileup only
+# expect: cellSNP create_inp_cellSNP
+# absent: vireoSNP
+# path: cellSNP/Sample_P1-cDNA/cellSNP.cells.vcf.gz
+last_step: STARsolo_cellsnp
+demux_type: vireo
+picard_metrics: null

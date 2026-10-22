@@ -114,8 +114,8 @@ new_config.yaml (Part 3)
 
 #### Module selector
 
-**last_step**:
-    This is the key which needs to be fed one of the {ref}`pre-selected modules <sub_workflows:Selectable Modules>`
+**workflow: aligner** and **workflow: until**:
+    The aligner and the last stage to run (see {ref}`selectable modules <sub_workflows:Selectable Modules>`)
 
 ## Project-specific changes to rules
 

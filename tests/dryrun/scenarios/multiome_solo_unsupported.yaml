@@ -1,5 +1,15 @@
 # hashsolo isn't supported for multiome runs yet
 # fails: isn't supported for multiome runs yet
-last_step: multiome_gt_demux
-demux_type: both
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: cellranger_arc
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: both
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

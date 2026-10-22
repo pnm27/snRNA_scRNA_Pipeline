@@ -2,6 +2,16 @@
 # expect: cellranger_count create_inp_cellSNP cellSNP vireoSNP demux_run_vireo demux_final
 # absent: STARsolo_sort
 # path: cellranger_count_outputs/P1/possorted_genome_bam.bam cellranger_count_outputs/P1/filtered_feature_bc_matrix/matrix.mtx.gz
-last_step: cellranger_demux
-demux_type: vireo
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: cellranger
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

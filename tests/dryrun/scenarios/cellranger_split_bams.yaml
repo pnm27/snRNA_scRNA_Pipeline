@@ -2,7 +2,17 @@
 # donors: D1 D2
 # expect: bamfilt_by_CB split_bams
 # path: cellranger_count_outputs/P1/possorted_genome_bam_filt.bam
-last_step: cellranger_split_bams_gt_demux
-demux_type: vireo
-gt_check: no
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: cellranger
+  until: split_bams
+  picard_metrics: null
+  gt_check: no
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

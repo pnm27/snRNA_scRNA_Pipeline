@@ -4,18 +4,18 @@ from lib.aligner import count_matrix as aligner_count_matrix
 
 rule run_calico_solo:
     input:
-        bustools_h5ad=f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['bustools_h5ad']}",
+        bustools_h5ad=f"{config['modules']['hashsolo']['h5ad_bustools_dir']}{config['modules']['hashsolo']['fold_struct']}{config['modules']['hashsolo']['bustools_h5ad']}",
         starsolo_out=aligner_count_matrix(config)
 
     output:
-        f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"
+        f"{config['modules']['hashsolo']['calico_solo_dir']}{config['modules']['hashsolo']['fold_struct']}{config['modules']['hashsolo']['calico_solo_h5ad']}"
   
     params:
-        mito=config['max_mito_percentage'],  # Max mitochodrial genes content per cell
-        min_genes=config['min_genes_per_cell'], # Min #genes per cell
-        min_cells=config['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
-        genes_info=config['STARsolo_pipeline']['genome_pick']['gene_info_file'], # File containing gene names and gene ids for annotations
-        mito_prefix=config['mito_prefix'], # Mitochondrial genes' (names') prefix
+        mito=config['experiment']['qc']['max_mito_percentage'],  # Max mitochodrial genes content per cell
+        min_genes=config['experiment']['qc']['min_genes_per_cell'], # Min #genes per cell
+        min_cells=config['experiment']['qc']['min_cells_per_gene'],  # Min #cells expressing a gene for it to pass the filter
+        genes_info=config['modules']['STARsolo']['genome_pick']['gene_info_file'], # File containing gene names and gene ids for annotations
+        mito_prefix=config['references']['mito_prefix'], # Mitochondrial genes' (names') prefix
         script="helper_py_scripts/create_h5ad_from_calico_solo.py"
 
     conda: "../envs/hashsolo.yaml"

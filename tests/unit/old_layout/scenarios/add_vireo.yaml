@@ -1,0 +1,10 @@
+# vireo added to the hashsolo run tagged wo_gt
+# expect: demux_run_vireo demux_final vireoSNP create_inp_cellSNP
+# absent: demux_run_solo run_calico_solo
+# path: final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad vireoSNP/w_gt/
+last_step: STARsolo_demux
+demux_type: add_vireo
+run_tag: w_gt
+picard_metrics: null
+demultiplex:
+  previous_run_tag: wo_gt

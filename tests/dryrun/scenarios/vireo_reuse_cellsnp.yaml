@@ -1,10 +1,23 @@
 # vireo on the cellSNP outputs of a previous run
 # expect: vireoSNP
 # absent: cellSNP
-last_step: STARsolo_demux
-demux_type: vireo
-demux_run_type: w_gt
-picard_metrics: null
-gt_demux_pipeline:
-  vcf_info: projdir/pool_info4.tsv
-  reuse_cellsnp_dir: prev/cellSNP/
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      enabled: true
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  gt_demux:
+    vcf_info: projdir/pool_info4.tsv
+    reuse_cellsnp_dir: prev/cellSNP/

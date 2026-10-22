@@ -1,0 +1,8 @@
+# cellranger count, then per-donor bams from the cell-filtered bam
+# donors: D1 D2
+# expect: bamfilt_by_CB split_bams
+# path: cellranger_count_outputs/P1/possorted_genome_bam_filt.bam
+last_step: cellranger_split_bams_gt_demux
+demux_type: vireo
+gt_check: no
+picard_metrics: null

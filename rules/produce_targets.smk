@@ -4,50 +4,39 @@ from lib.aligner import bam_paths, get_aligner, out_prefix
 from lib.aligner import count_matrix as aligner_count_matrix
 
 
-# Targets of 'rule all' come from the stages that 'last_step' runs:
-#   align           alignment (or Picard's metrics, when 'picard_metrics' is set)
-#   picard          Picard's metrics, when 'picard_metrics' is set
-#   cellsnp         cellSNP's pileup
+# Targets of 'rule all' come from the stages run up to 'workflow: until':
+#   align           alignment (Picard's metrics instead, when 'picard_metrics'
+#                   is set), always run
+#   cellsnp         cellSNP's pileup (only when until is cellsnp)
 #   demux           demultiplexing (see DemuxConfig)
 #   split_bams      per-donor bams      } known once the donors of each pool
 #   identify_swaps  QTLtools-mbv        } are (checkpoint 'create_inp_splitBams')
 
-# last_step values whose stages don't follow from their name (see last_step_stages)
-SPECIAL_STEPS = {
-    "starsolo_kb_solo":            ["align"],
-    "starsolo_cellsnp":            ["cellsnp", "picard"],
-    "starsolo_demux":              ["demux", "picard"],
-    "starsolo_gt_demux_multi_vcf": ["demux"],
-    "all_multi_vcf":               ["align", "demux"],
-    "cellranger_cellsnp":          ["cellsnp"],
-    "cellranger_demux":            ["demux"],
-    "multiome_alignment":          ["align"],
-    "multiome_gt_demux":           ["demux"],
+# Stages run for each value of 'until'
+UNTIL_STAGES = {
+    "align":          ["align"],
+    "cellsnp":        ["align", "cellsnp"],
+    "demux":          ["align", "demux"],
+    "split_bams":     ["align", "demux", "split_bams"],
+    "identify_swaps": ["align", "demux", "split_bams", "identify_swaps"],
 }
 
 
-def last_step_stages(step: str) -> list:
-    """Stages run for 'last_step' (lowercase)."""
-    if step in SPECIAL_STEPS:
-        return SPECIAL_STEPS[step]
-    if not step.startswith(("starsolo", "cellranger", "multiome")):
-        raise ValueError(f"Unrecognised last_step: '{step}'")
-
-    stages = ["align"]
-    if any(s in step for s in ["gt_demux", "split_bams", "identify_swaps"]):
-        stages.append("demux")
-    if any(s in step for s in ["split_bams", "identify_swaps"]):
-        stages.append("split_bams")
-    if "identify_swaps" in step:
-        stages.append("identify_swaps")
-    return stages
+def until_stages(until: str) -> list:
+    """Stages run for 'workflow: until'."""
+    if until not in UNTIL_STAGES:
+        raise ValueError(
+            f"Unrecognised 'workflow: until': '{until}' (expected one of "
+            f"{', '.join(UNTIL_STAGES)})"
+        )
+    return UNTIL_STAGES[until]
 
 
 # ---------------------------------------------------------------------------
 # This run
 # ---------------------------------------------------------------------------
-STEP = config["last_step"].lower()
-STAGES = last_step_stages(STEP)
+UNTIL = str(config["workflow"]["until"]).lower()
+STAGES = until_stages(UNTIL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
 VCF_TYPES = vcf_types(config)
@@ -86,12 +75,12 @@ def _expand_pools_donors(template: str, wildcards) -> list:
 
 def _picard_targets() -> list:
     """Picard's outputs for 'picard_metrics' (all, gc or rnaseq; null: none)."""
-    progs = (config.get("picard_metrics") or "").lower()
+    progs = (config["workflow"].get("picard_metrics") or "").lower()
     if not progs or get_aligner(config) != "starsolo":
         return []
     files = {
-        "rnaseq": config["picard_pipeline"]["rnaseq_metrics"],
-        "gc":     config["picard_pipeline"]["gc_summary_metrics"],
+        "rnaseq": config["modules"]["picard"]["rnaseq_metrics"],
+        "gc":     config["modules"]["picard"]["gc_summary_metrics"],
     }
     keys = files.keys() if progs == "all" else [progs]
     return [f"{out_prefix(config)}{files[k]}" for k in keys]
@@ -103,7 +92,7 @@ def _picard_targets() -> list:
 
 def targets_align() -> list:
     if get_aligner(config) == "cellranger_arc":
-        out_dir = config['cellranger_arc_count']['bams_dir']
+        out_dir = config['modules']['cellranger_arc']['bams_dir']
         return [
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/{f}"
             for f in ["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"]
@@ -115,8 +104,8 @@ def targets_align() -> list:
 
 
 def targets_cellSNP() -> list:
-    c = config["gt_demux_pipeline"]
-    return [f"{c['cellsnp_dir']}{config['fold_struct_gt_demux']}{c['cellsnp_cells']}"]
+    c = config["modules"]["gt_demux"]
+    return [f"{c['cellsnp_dir']}{config['modules']['gt_demux']['fold_struct']}{c['cellsnp_cells']}"]
 
 
 def targets_demux() -> list:
@@ -128,23 +117,22 @@ def targets_demux() -> list:
 
 def targets_SplitBams() -> list:
     """Per-donor bams (split_bams_dir has the gt_check/ or final/ sub-folder)."""
-    out_dir  = f"{config['split_bams_pipeline']['split_bams_dir']}"
-    op = config["fold_struct_bam_split2"]
+    out_dir  = f"{config['modules']['split_bams']['split_bams_dir']}"
+    op = config["modules"]["split_bams"]["fold_struct_bams"]
     return [
         os.path.join(out_dir, op, "{donor}.bam")
     ]
 
 
 def targets_identify_swaps() -> list:
-    out_dir = config["identify_swaps"]["mbv_out_dir"]
-    fs      = config["fold_struct_swaps_check"]
-    suff    = config["identify_swaps"]["mbv_suffix"]
+    out_dir = config["modules"]["identify_swaps"]["mbv_out_dir"]
+    fs      = config["modules"]["identify_swaps"]["fold_struct"]
+    suff    = config["modules"]["identify_swaps"]["mbv_suffix"]
     return [os.path.join(out_dir, f"{fs}{suff}")]
 
 
 STATIC_TARGETS = {
     "align":   targets_align,
-    "picard":  _picard_targets,
     "cellsnp": targets_cellSNP,
     "demux":   targets_demux,
 }
@@ -177,5 +165,5 @@ def produce_targets_dynamic(wildcards) -> list:
     if "split_bams" in STAGES:
         return _expand_pools_donors(targets_SplitBams()[0], wildcards)
     raise ValueError(
-        f"produce_targets_dynamic: last_step '{STEP}' has no per-donor targets"
+        f"produce_targets_dynamic: until '{UNTIL}' has no per-donor targets"
     )

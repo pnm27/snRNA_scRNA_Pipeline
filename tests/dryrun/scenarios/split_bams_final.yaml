@@ -1,11 +1,24 @@
 # split bams by the final h5ad (after the swap correction)
 # expect: create_inp_splitBams demux_final
 # path: final_count_matrix/final/P1_final.h5ad
-last_step: STARsolo_split_bams
-demux_type: solo
-picard_metrics: null
-split_bams_pipeline:
-  split_by:
-    demux: hashsolo
-    input: final
-    column: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: split_bams
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: solo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  split_bams:
+    split_by:
+      demux: hashsolo
+      input: final
+      column: null

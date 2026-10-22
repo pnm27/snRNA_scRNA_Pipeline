@@ -3,7 +3,17 @@
 # expect: bamfilt_by_CB split_bams resolve_pool_targets
 # absent: filt_chr_bams
 # path: STARsolo_split_filt_bams/final/Sample_P1-cDNA/D1.bam _filt.bam
-last_step: STARsolo_split_bams_gt_demux
-demux_type: vireo
-gt_check: no
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: split_bams
+  picard_metrics: null
+  gt_check: no
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

@@ -1,0 +1,5 @@
+# hashsolo isn't supported for multiome runs yet
+# fails: isn't supported for multiome runs yet
+last_step: multiome_gt_demux
+demux_type: both
+picard_metrics: null

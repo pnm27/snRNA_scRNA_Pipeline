@@ -1,5 +1,15 @@
 # h5ad from STARsolo output without demultiplexing
 # expect: demux_run_none demux_final collect_demux_versions STARsolo_sort
-last_step: STARsolo_demux
-demux_type: null
-picard_metrics: null
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: demux
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    method: null
+    add_to_previous: null
+    genotype:
+      multi_vcf: false

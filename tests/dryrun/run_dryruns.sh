@@ -7,6 +7,9 @@
 #   SNAKEMAKE  snakemake command (default: snakemake)
 #   SNAKEFILE  Snakefile to run (default: <repo>/Snakefile)
 #   KEEP_TMP   set to keep the throwaway project
+#   JOBS_DIR   dir to write each scenario's jobs and output paths to
+#              (<scenario>.txt), e.g. to compare them before and after a
+#              refactor with diff -r
 #
 # Each scenario is a config override with header comments:
 #   # expect: <rules that must be in the DAG>
@@ -116,6 +119,11 @@ for sc in "${scenarios[@]}"; do
 
     jobs=$(grep -oE "^(local)?(rule|checkpoint) [A-Za-z0-9_]+" <<< "${out}" \
         | awk '{print $2}' | sort -u)
+    if [[ -n "${JOBS_DIR:-}" ]]; then
+        mkdir -p "${JOBS_DIR}"
+        awk '/^(local)?(rule|checkpoint) / {r=$2} /^    output: / {sub(/^    output: /, ""); print r, $0}' <<< "${out}" \
+            | sort > "${JOBS_DIR}/${name}.txt"
+    fi
     for r in $(sed -n 's/^# expect://p' "${sc}"); do
         grep -qx "${r}" <<< "${jobs}" || errors+=("missing rule ${r}")
     done

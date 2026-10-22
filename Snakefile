@@ -26,7 +26,13 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 
 
 configfile: "new_config.yaml"
-# Also fills in defaults for optional keys missing from older configs
+# Configs in the old (flat) layout have 'last_step' instead of 'workflow'
+if 'last_step' in config or 'workflow' not in config:
+    raise ValueError(
+        "The config is in the old layout. Convert it with: python3 "
+        "helper_py_scripts/migrate_config.py <config> -o <new config>"
+    )
+# Also fills in defaults for optional keys
 validate(config, "schema/config.schema.yaml")
 
 # Each demultiplexing run gets its own sub-folder ('run_tag'), and so do
@@ -83,8 +89,8 @@ rule all:
 
 
 # dummy rule to accommodate checkpoints output
-# Gets triggered by presence of any of 'split_bams' or 
-# 'identify_swaps' in last_step
+# Gets triggered when 'workflow: until' is 'split_bams' or
+# 'identify_swaps'
 rule resolve_pool_targets:
     input:
         produce_targets_dynamic

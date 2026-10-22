@@ -1,0 +1,9 @@
+# per-donor bams for genotype checks (chr1 subset), in split_bams_dir/gt_check/
+# donors: D1 D2
+# expect: filt_chr_bams split_bams resolve_pool_targets
+# absent: bamfilt_by_CB
+# path: STARsolo_split_filt_bams/gt_check/Sample_P1-cDNA/D2.bam inp_split_filt_bams/gt_check/ _chr1.bam
+last_step: STARsolo_split_bams_gt_demux
+demux_type: vireo
+gt_check: yes
+picard_metrics: null

@@ -12,7 +12,7 @@ from functools import partial
 # ── Rule A: one h5ad per demultiplexing tool of this run ─────────────────────
 
 for _tool in demux_tools(config):
-    _run = demux_run(config, _tool, config['run_tag'])
+    _run = demux_run(config, _tool, config['experiment']['demultiplexing']['run_tag'])
 
     rule:
         name: f"demux_run_{_tool}"

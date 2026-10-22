@@ -1,0 +1,8 @@
+# STARsolo's Gene (exon) count matrix instead of GeneFull
+# expect: demux_run_vireo create_inp_cellSNP STARsolo_sort
+# path: _Solo.out/Gene/filtered/matrix.mtx.gz _Solo.out/Gene/filtered/barcodes.tsv.gz
+last_step: STARsolo_demux
+demux_type: vireo
+picard_metrics: null
+STARsolo_pipeline:
+  count_matrix: Gene

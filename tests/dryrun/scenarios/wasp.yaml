@@ -1,9 +1,21 @@
 # STARsolo's WASP mode with the per-pool vcf of vcf_info
 # expect: wasp_vcf STARsolo_sort
 # path: Sample_P1-cDNA/P1-cDNA_wasp.vcf projdir/P1.vcf.gz
-last_step: STARsolo_kb_solo
-picard_metrics: null
-STARsolo_pipeline:
-  wasp: true
-gt_demux_pipeline:
-  vcf_info: projdir/pool_info4.tsv
+# What to run: the aligner and the last stage ('until')
+workflow:
+  aligner: STARsolo
+  until: align
+  picard_metrics: null
+
+# What was sequenced and how it's multiplexed
+experiment:
+  demultiplexing:
+    genotype:
+      multi_vcf: false
+
+# Parameters, output dirs and folder structures of each module
+modules:
+  STARsolo:
+    wasp: true
+  gt_demux:
+    vcf_info: projdir/pool_info4.tsv

@@ -6,7 +6,7 @@ from lib.aligner import starsolo_matrix_keys
 
 
 
-WASP = config['STARsolo_pipeline']['wasp']
+WASP = config['modules']['STARsolo']['wasp']
 
 
 rule STARsolo_sort:
@@ -27,76 +27,76 @@ rule STARsolo_sort:
             if input.R1[0].endswith(".gz") 
             else ""
         ),
-        gtf=config['STARsolo_pipeline']['genome_pick']['gtf'], # USED to be ['gtf_file']
-        genome_dir=config['STARsolo_pipeline']['genome_pick']['genome'], # USED to be ['STARsolo_pipeline']['genome_dir']
-        overhang=config['STARsolo_pipeline']['genome_pick']['overhang'], # USED to be ['STARsolo_pipeline']['sjdboverhang']
+        gtf=config['modules']['STARsolo']['genome_pick']['gtf'], # USED to be ['gtf_file']
+        genome_dir=config['modules']['STARsolo']['genome_pick']['genome'], # USED to be ['STARsolo_pipeline']['genome_dir']
+        overhang=config['modules']['STARsolo']['genome_pick']['overhang'], # USED to be ['STARsolo_pipeline']['sjdboverhang']
         opt_params=lambda wildcards, resources: (
             partial(get_limitsjdbval_coll, 
                 config=config, resources=resources)
         ), # To change STARsolo params based on the log file of the previous attempt
-        chemistry=config['STARsolo_pipeline']['soloType'], # For STARsolo
-        whitelist=config['whitelist'], # V3 whitelist
-        UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
+        chemistry=config['modules']['STARsolo']['soloType'], # For STARsolo
+        whitelist=config['references']['whitelist'], # V3 whitelist
+        UMI_length=config['modules']['STARsolo']['umi_len'], # V3 
         SAM_attr=(
-            config['STARsolo_pipeline']['SAM_attr']
-            + (" vW" if WASP and "vW" not in config['STARsolo_pipeline']['SAM_attr'].split() else "")
+            config['modules']['STARsolo']['SAM_attr']
+            + (" vW" if WASP and "vW" not in config['modules']['STARsolo']['SAM_attr'].split() else "")
         ),
         wasp=lambda wildcards, input: (
             f"--waspOutputMode SAMtag --varVCFfile {input.wasp_vcf}" if WASP else ""
         ),
-        features=config['STARsolo_pipeline']['features'],
-        save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{pool}}-cDNA.txt",  # WILDCARDS
+        features=config['modules']['STARsolo']['features'],
+        save_params=f"{config['modules']['STARsolo']['star_params_dir']}{{pool}}-cDNA.txt",  # WILDCARDS
         star_def_log_out=lambda wildcards, output: (
             output.bam.replace(
-                config['STARsolo_pipeline']['bam'], 
+                config['modules']['STARsolo']['bam'], 
                 "_Log.out"
             )
         ),
-        solo_cell_filter=config['STARsolo_pipeline']['solo_cell_filter'],
+        solo_cell_filter=config['modules']['STARsolo']['solo_cell_filter'],
         out_pref=lambda wildcards, output: (
             output.bam.replace(
-                config['STARsolo_pipeline']['bam'], 
+                config['modules']['STARsolo']['bam'], 
                 '_'
             )
         ),
-        threads=config['STARsolo_pipeline']['run_threads'],
+        threads=config['modules']['STARsolo']['run_threads'],
         gene_files=lambda wildcards, output: " ".join(
             output[k] for k in ['gene_mat', 'gene_bc'] if k in output.keys()
         )
 
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
-        g_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
-        gf_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
-        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        gf_mat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}",
-        gf_bc=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}",
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['STAR_log_final']}",
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['genefull_summary']}",
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['gene_summary']}",
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['barcodes_stats']}",
+        g_feat=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['gene_features']}",
+        gf_feat=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['genefull_features']}",
+        bam=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['bam']}",
+        gf_mat=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['genefull_matrix']}",
+        gf_bc=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['genefull_barcodes']}",
         # Gene's matrix and barcodes, when it's the count matrix
         **{
-            name: f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline'][key]}"
+            name: f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo'][key]}"
             for name, key in zip(['gene_mat', 'gene_bc'], starsolo_matrix_keys(config)[:2])
             if key.startswith('gene_')
         }
 
     log:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}_STARsolo_log.txt"
    
     resources:
         **get_resources("STARsolo_sort"),
         attempt=lambda wildcards, attempt: attempt
 
     envmodules:
-        f"{config['STAR_version']}"
+        f"{config['references']['tools']['star']}"
 
     shell:
         r"""
         echo "Attempt: {resources.attempt}"
-        if [ ! -d {config[STARsolo_pipeline][star_params_dir]} ]; then mkdir -p {config[STARsolo_pipeline][star_params_dir]}; fi
-        if [[ "{config[STARsolo_pipeline][extra_params]}" == "None" ]]; then
+        if [ ! -d {config[modules][STARsolo][star_params_dir]} ]; then mkdir -p {config[modules][STARsolo][star_params_dir]}; fi
+        if [[ "{config[modules][STARsolo][extra_params]}" == "None" ]]; then
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[ins_nsj]} \
             --twopassMode Basic {params.gzip_inputs} --readFilesIn {params.ss_style_r2} {params.ss_style_r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
@@ -107,7 +107,7 @@ rule STARsolo_sort:
             --twopassMode Basic {params.gzip_inputs} --readFilesIn {params.ss_style_r2} {params.ss_style_r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[sj_collap]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
-            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {params.wasp} {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
+            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {params.wasp} {config[modules][STARsolo][extra_params]} &> {log}_{resources.attempt}
         fi
         # gzip the matrix files (paths ending in .gz in the config)
         files=( {output.gf_feat} {output.gf_mat} {output.gf_bc} {output.g_feat} {params.gene_files} )
@@ -139,20 +139,20 @@ rule STARsolo_sort:
 
 rule samtools_index:
     input:
-        bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}"
+        bam=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['bam']}"
 
     params:
         threads=lambda wildcards, resources: resources.cpus_per_task*4-2
 
     output:
-        bai=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
+        bai=f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}{config['modules']['STARsolo']['bai']}"
 
     resources:
         **get_resources("samtools_index"),
         attempt=lambda wildcards, attempt: attempt
     
     log:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_samtools_index_log.txt"
+        f"{config['modules']['STARsolo']['bams_dir']}{config['modules']['STARsolo']['fold_struct']}_samtools_index_log.txt"
 
     envmodules:
         "samtools/1.21"
