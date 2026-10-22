@@ -1,6 +1,7 @@
 import os
 from lib.config_models import DemuxConfig, vcf_types
 from lib.aligner import bam_paths, get_aligner, out_prefix
+from lib.utils import run_settings
 from lib.aligner import count_matrix as aligner_count_matrix
 
 
@@ -35,7 +36,7 @@ def until_stages(until: str) -> list:
 # ---------------------------------------------------------------------------
 # This run
 # ---------------------------------------------------------------------------
-UNTIL = str(config["workflow"]["until"]).lower()
+UNTIL = run_settings(config).until
 STAGES = until_stages(UNTIL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]

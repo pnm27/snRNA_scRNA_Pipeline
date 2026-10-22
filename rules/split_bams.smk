@@ -15,6 +15,7 @@ from lib.params import (
 from functools import partial
 from lib.modality import bam_modalities, is_multiome
 from lib.aligner import bam_paths
+from lib.utils import run_settings
 
 
 # Donor classification the bams are split by ('split_by: input'): the
@@ -27,7 +28,7 @@ checkpoint create_inp_splitBams:
             lambda _: config['modules']['split_bams']['split_by']['input'].lower(),
             cases={
                 'raw': lambda _: raw_output(config, split_tool(config)).replace('{modality}', 'cDNA'),
-                'h5ad': lambda _: demux_run(config, split_tool(config), config['experiment']['demultiplexing']['run_tag']).h5ad,
+                'h5ad': lambda _: demux_run(config, split_tool(config), run_settings(config).run_tag).h5ad,
                 'final': lambda _: final_paths(config).h5ad,
             },
         )

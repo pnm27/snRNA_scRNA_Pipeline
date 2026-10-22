@@ -1,0 +1,5 @@
+# a key given twice stops the run (YAML would keep only the last value)
+# fails: Duplicate key 'until'
+workflow:
+  until: demux
+  until: align

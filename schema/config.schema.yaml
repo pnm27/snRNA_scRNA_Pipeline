@@ -101,6 +101,7 @@ properties:
     - gt_check
     - aligner
     - until
+    additionalProperties: false
   experiment:
     type: object
     description: What was sequenced and how it's multiplexed
@@ -123,15 +124,22 @@ properties:
             type:
             - string
             - 'null'
-            pattern: (?i)^(none|null|solo|vireo|both)$
-            description: null (or none) creates the h5ad without demultiplexing
+            description: 'Tool run now: solo (hashsolo), vireo, both, or null (the h5ad without demultiplexing)'
+            enum:
+            - solo
+            - vireo
+            - both
+            - null
           add_to_previous:
             type:
             - string
             - 'null'
-            pattern: (?i)^(solo|vireo)$
             default: null
             description: "Tool of an earlier run ('modules: demultiplex: previous_run_tag') this run's method is added to"
+            enum:
+            - solo
+            - vireo
+            - null
           genotype:
             type: object
             properties:
@@ -144,10 +152,12 @@ properties:
                 description: One vireo run per vcf column of 'vcf_info' ('vcf_type' wildcard)
             required:
             - enabled
+            additionalProperties: false
         required:
         - create_final_h5ad
         - method
         - genotype
+        additionalProperties: false
       inputs:
         type: object
         properties:
@@ -170,6 +180,7 @@ properties:
             - HTO
             - cDNA
             - ATAC
+            additionalProperties: false
           R1_suffix:
             type: string
           R2_suffix:
@@ -188,6 +199,7 @@ properties:
         - R2_suffix
         - multiome_suffix
         - wet_lab_info
+        additionalProperties: false
       qc:
         type: object
         properties:
@@ -201,6 +213,7 @@ properties:
         - max_mito_percentage
         - min_genes_per_cell
         - min_cells_per_gene
+        additionalProperties: false
       hto:
         type: object
         properties:
@@ -211,16 +224,21 @@ properties:
             type:
             - string
             - 'null'
-            pattern: (?i)^(single|multiple)$
             default: null
             description: single (one HTO per cell) or multiple
+            enum:
+            - single
+            - multiple
+            - null
         required:
         - enabled
+        additionalProperties: false
     required:
     - demultiplexing
     - inputs
     - qc
     - hto
+    additionalProperties: false
   modules:
     type: object
     description: Parameters, output dirs and folder structures of each module
@@ -603,7 +621,7 @@ properties:
             - string
             - 'null'
             default: null
-            description: run_tag of the earlier run that add_solo/add_vireo adds to
+            description: "run_tag of the earlier run that 'experiment: demultiplexing: add_to_previous' adds to"
           swap_correction:
             type: object
             default: {}
@@ -866,3 +884,63 @@ properties:
                       type: object
             time_min: *id001
     default: {}
+    additionalProperties: false
+additionalProperties: false
+
+# Rules across keys. 'x-explain' (or a key's 'description') is shown with
+# the error by lib/config_check.py; 'x-warnings' are only printed.
+allOf:
+- x-explain: "add_to_previous names the tool of the earlier run and method the tool run now, so adding to a solo (hashsolo) run means method: vireo (the old demux_type add_vireo)"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {add_to_previous: {const: solo}}, required: [add_to_previous]}}}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {const: vireo}}}}}}}
+- x-explain: "add_to_previous names the tool of the earlier run and method the tool run now, so adding to a vireo run means method: solo (the old demux_type add_solo)"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {add_to_previous: {const: vireo}}, required: [add_to_previous]}}}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {const: solo}}}}}}}
+- x-explain: "The earlier run that add_to_previous adds to is found by its run_tag: set 'modules: demultiplex: previous_run_tag' (null is the run without a run_tag sub-folder, so it must be set explicitly)"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {add_to_previous: {enum: [solo, vireo]}}, required: [add_to_previous]}}}}}
+  then: {properties: {modules: {properties: {demultiplex: {required: [previous_run_tag], properties: {previous_run_tag: {type: string}}}}}}}
+- x-explain: "Multi-VCF runs (one vireo run per vcf column of vcf_info) support only vireo, without adding to an earlier run"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {const: vireo}, add_to_previous: {const: null}}}}}}}
+- x-explain: "Multi-VCF runs write one output per vcf column: the 'vcf_type' wildcard must be in 'modules: gt_demux: fold_struct' (e.g. Sample_{pool}-cDNA/{vcf_type}/), and 'modules: gt_demux: vcf_info_columns: vcf' must list the vcf columns"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
+  then:
+    properties:
+      modules:
+        properties:
+          gt_demux:
+            properties:
+              fold_struct: {pattern: "\\{vcf_type\\}"}
+              vcf_info_columns:
+                required: [vcf]
+                properties: {vcf: {anyOf: [type: string, {type: array, minItems: 1}]}}
+- x-explain: "Splitting bams (and identifying swaps) isn't supported for multi-VCF runs yet"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
+  then: {properties: {workflow: {properties: {until: {not: {enum: [split_bams, identify_swaps]}}}}}}
+- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both)"
+  if: {properties: {workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}, required: [until]}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {enum: [solo, vireo, both]}}}}}}}
+- x-explain: "hashsolo (method solo or both) isn't supported for multiome runs yet (aligner cellranger_arc)"
+  if: {properties: {workflow: {properties: {aligner: {const: cellranger_arc}}, required: [aligner]}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {not: {enum: [solo, both]}}}}}}}}
+- x-explain: "hashsolo (method solo or both) isn't supported with cellranger count yet: its cell barcodes end with '-1' and the HTO counts' (kite) don't"
+  if: {properties: {workflow: {properties: {aligner: {const: cellranger}}, required: [aligner]}}}
+  then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {not: {enum: [solo, both]}}}}}}}}
+- x-explain: "cellranger count runs need 'modules: cellranger' (its bams_dir and ref)"
+  if: {properties: {workflow: {properties: {aligner: {const: cellranger}}, required: [aligner]}}}
+  then: {properties: {modules: {required: [cellranger], properties: {cellranger: {type: object, required: [bams_dir, ref]}}}}}
+- x-explain: "hashsolo (method solo or both) demultiplexes by the HTO counts: it needs 'experiment: hto: enabled: true', 'experiment: hto: multiplexing' and the wet lab file ('experiment: inputs: wet_lab_info') that maps hashtags to samples"
+  if: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {enum: [solo, both]}}, required: [method]}}}}}
+  then:
+    properties:
+      experiment:
+        properties:
+          hto: {properties: {enabled: {const: true}, multiplexing: {enum: [single, multiple]}}, required: [multiplexing]}
+          inputs: {properties: {wet_lab_info: {type: string}}}
+- x-explain: "With HTO libraries, 'experiment: hto: multiplexing' picks the kite rules: single (one HTO per cell) or multiple"
+  if: {properties: {experiment: {properties: {hto: {properties: {enabled: {const: true}}, required: [enabled]}}}}}
+  then: {properties: {experiment: {properties: {hto: {properties: {multiplexing: {enum: [single, multiple]}}, required: [multiplexing]}}}}}
+x-warnings:
+- x-warn: "Picard runs on STARsolo runs only: 'workflow: picard_metrics' is ignored for this aligner"
+  if: {properties: {workflow: {properties: {aligner: {enum: [cellranger, cellranger_arc]}}, required: [aligner]}}}
+  then: {properties: {workflow: {properties: {picard_metrics: {const: null}}}}}

@@ -1,0 +1,4 @@
+# an unknown key (a typo of until) stops the run, with the keys read there
+# fails: Unknown key(s) 'untill' in workflow
+workflow:
+  untill: demux

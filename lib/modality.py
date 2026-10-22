@@ -7,6 +7,7 @@ pool. Other runs have only cDNA. Their bams are in lib/aligner.py.
 """
 
 from types import SimpleNamespace
+from .utils import run_settings
 
 
 # Per modality of a cellranger-arc run: keys of its bam and bai in
@@ -18,7 +19,7 @@ CELLRANGER_ARC = {
 
 
 def is_multiome(config) -> bool:
-    return config['workflow']['aligner'].lower() == 'cellranger_arc'
+    return run_settings(config).aligner == 'cellranger_arc'
 
 
 def bam_modalities(config) -> list[str]:

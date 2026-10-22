@@ -1,5 +1,5 @@
 # hashsolo isn't supported with cellranger count yet
-# fails: hashsolo isn't supported with cellranger count yet
+# fails: isn't supported with cellranger count yet
 # What to run: the aligner and the last stage ('until')
 workflow:
   aligner: cellranger

@@ -13,6 +13,7 @@ All paths are templates with {pool} (and the wildcards of 'fold_struct').
 
 from types import SimpleNamespace
 from .modality import CELLRANGER_ARC
+from .utils import run_settings
 
 
 # Keys of the bam and bai of STARsolo and cellranger count (cDNA only)
@@ -29,7 +30,7 @@ SECTIONS = {
 
 def get_aligner(config) -> str:
     """'workflow: aligner', lowercase (a key of SECTIONS)."""
-    aligner = config['workflow']['aligner'].lower()
+    aligner = run_settings(config).aligner
     if aligner not in SECTIONS:
         raise ValueError(f"Unrecognised aligner: '{config['workflow']['aligner']}'")
     return aligner

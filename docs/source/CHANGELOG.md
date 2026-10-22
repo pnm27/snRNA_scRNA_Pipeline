@@ -232,6 +232,11 @@
   - `migrate_config.py` keeps the comment lines a config starts with (the dry-run scenarios' checks)
   - Dry runs: `JOBS_DIR` writes each scenario's jobs and output paths, to compare them before and after a refactor. All 28 scenarios have the same jobs as before stage 2, except for the indexed bam of the 4 that used `STARsolo_demux` without Picard (and, for `swap_correction`, the alignment it needs)
   - Unit tests check the migration against old-layout copies of the example config and scenarios (`tests/unit/old_layout/`), and that the new example config passes the schema
+- Config restructure, stage 3: the config check explains what's wrong (`docs/source/config_caveats.md` lists the caveats, caught or not)
+  - `lib/config_check.py` checks the config before snakemake's `validate()` and lists every problem at once, each with why: the `x-explain` of the schema rule it breaks, or the key's `description`. It also stops on duplicate keys in the config files (YAML keeps the last value) and on the old layout
+  - Schema: unknown keys stop the run at the top level and in `workflow`, `experiment` and `execution` (`modules` and `references` stay open); enums for `method`, `add_to_previous` and `hto: multiplexing`; rules across keys (`allOf`): `add_to_previous` must be the other tool and needs `previous_run_tag`, multi-VCF runs (vireo only, `{vcf_type}` in the fold_struct, vcf columns, no split bams), split bams need a demultiplexing method, hashsolo needs HTOs and the wet lab file and isn't supported with cellranger or multiome, HTOs need `multiplexing`, cellranger needs `modules: cellranger`. Warning (`x-warnings`): `picard_metrics` is ignored for cellranger and cellranger-arc
+  - `RunSettings` (`lib/utils.py`, `run_settings(config)`) reads the `workflow` and `experiment` keys the rules branch on in one place; `get_aligner`, `get_demux_type`, `is_genotyped`, `is_multi_vcf`, `is_multiome`, kite's `SINGLE_HTO` / `MULTI_HTO`, `until` and `run_tag` use it
+  - Tests: `tests/unit/test_config_check.py` (a case per rule: the error and its explanation); dry-run scenarios `unknown_key` and `duplicate_key`. The jobs of the other scenarios are the same as after stage 2
 
 ---
 

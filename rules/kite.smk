@@ -3,9 +3,9 @@ import pandas as pd
 
 
 # HTO multiplexing: one HTO per cell ('single') or more ('multiple')
-HTO = config['experiment']['hto']
-SINGLE_HTO = bool(HTO['enabled']) and str(HTO['multiplexing']).lower() == 'single'
-MULTI_HTO = bool(HTO['enabled']) and not SINGLE_HTO
+from lib.utils import run_settings
+SINGLE_HTO = run_settings(config).hto_multiplexing == 'single'
+MULTI_HTO = run_settings(config).hto_multiplexing == 'multiple'
 
 
 def get_r1_hto_fastqs(wildcards):

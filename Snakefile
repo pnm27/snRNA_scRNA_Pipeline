@@ -26,12 +26,13 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 
 
 configfile: "new_config.yaml"
-# Configs in the old (flat) layout have 'last_step' instead of 'workflow'
-if 'last_step' in config or 'workflow' not in config:
-    raise ValueError(
-        "The config is in the old layout. Convert it with: python3 "
-        "helper_py_scripts/migrate_config.py <config> -o <new config>"
-    )
+# Every problem in the config (old layout, unknown or duplicate keys, keys
+# that don't go together), each with why (docs/source/config_caveats.md)
+from lib.config_check import check_config
+check_config(
+    config, os.path.join(workflow.basedir, "schema/config.schema.yaml"),
+    workflow.configfiles,
+)
 # Also fills in defaults for optional keys
 validate(config, "schema/config.schema.yaml")
 

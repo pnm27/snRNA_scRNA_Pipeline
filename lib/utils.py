@@ -1,24 +1,64 @@
 #!/usr/bin/env python3
 
-from typing import Any, Union # Need verion > 3.10
+from dataclasses import dataclass
+from typing import Any, Optional, Union # Need verion > 3.10
 import pandas as pd, os
 
 
-def get_demux_type(config) -> Union[None, str]:
-    """Demultiplexing of this run: solo, vireo or both, add_solo or add_vireo
-    (the method added to a run of the other tool, 'add_to_previous'), or
-    None when no demux is needed."""
-    d = config['experiment']['demultiplexing']
-    method = d.get('method')
-    if not method or str(method).lower() in ('none', 'null'):
+@dataclass(frozen=True)
+class RunSettings:
+    """What this run does: the 'workflow' and 'experiment' keys the rules
+    branch on (checked by schema/config.schema.yaml), read in one place."""
+    aligner: Optional[str]          # starsolo, cellranger or cellranger_arc
+    until: Optional[str]            # last stage (rules/produce_targets.smk)
+    method: Optional[str]           # solo, vireo, both or None
+    add_to_previous: Optional[str]  # tool of the earlier run added to
+    run_tag: Optional[str]
+    genotyped: bool                 # else vireo names donors donor0, donor1, ...
+    multi_vcf: bool
+    hto_multiplexing: Optional[str] # single or multiple; None without HTOs
+
+    @property
+    def demux_type(self) -> Optional[str]:
+        """solo, vireo, both, add_solo / add_vireo (method added to a run of
+        the other tool), or None when no demux is needed."""
+        if self.method is None:
+            return None
+        return f"add_{self.method}" if self.add_to_previous else self.method
+
+
+def _lower(value) -> Optional[str]:
+    if value is None or str(value).lower() in ('none', 'null', ''):
         return None
-    method = str(method).lower()
-    return f"add_{method}" if d.get('add_to_previous') else method
+    return str(value).lower()
+
+
+def run_settings(config) -> RunSettings:
+    wf = config.get('workflow') or {}
+    exp = config.get('experiment') or {}
+    d = exp.get('demultiplexing') or {}
+    gt = d.get('genotype') or {}
+    hto = exp.get('hto') or {}
+    return RunSettings(
+        aligner=_lower(wf.get('aligner')),
+        until=_lower(wf.get('until')),
+        method=_lower(d.get('method')),
+        add_to_previous=_lower(d.get('add_to_previous')),
+        run_tag=d.get('run_tag'),
+        genotyped=bool(gt.get('enabled')),
+        multi_vcf=bool(gt.get('multi_vcf')),
+        hto_multiplexing=_lower(hto.get('multiplexing')) if hto.get('enabled') else None,
+    )
+
+
+def get_demux_type(config) -> Union[None, str]:
+    """See RunSettings.demux_type."""
+    return run_settings(config).demux_type
 
 
 def is_genotyped(config) -> bool:
     """Whether donor genotypes are used (else vireo names donors donor0, donor1, ...)."""
-    return bool(config['experiment']['demultiplexing']['genotype']['enabled'])
+    return run_settings(config).genotyped
 
 
 # Output dirs of a demultiplexing run; 'run_tag' adds a sub-folder to each
@@ -50,7 +90,7 @@ def apply_run_tag(config) -> None:
     for section, keys in RUN_TAGGED_DIRS.items():
         for key in keys:
             config['modules'][section][key] = run_dir(
-                config, section, key, config['experiment']['demultiplexing'].get('run_tag')
+                config, section, key, run_settings(config).run_tag
             )
 
 

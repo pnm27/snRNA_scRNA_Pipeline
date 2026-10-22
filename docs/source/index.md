@@ -27,6 +27,7 @@ basic_run
 :maxdepth: 2
 
 sub_workflows
+config_caveats
 ```
 
 ```{toctree}

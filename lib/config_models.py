@@ -15,7 +15,7 @@ import os
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import List, Optional
-from .utils import get_demux_type, read_files_ext, run_dir
+from .utils import get_demux_type, read_files_ext, run_dir, run_settings
 from .aligner import get_aligner
 from .modality import is_multiome
 
@@ -39,7 +39,7 @@ def demux_tools(config) -> List[str]:
 
 
 def is_multi_vcf(config) -> bool:
-    return bool(config['experiment']['demultiplexing']['genotype'].get('multi_vcf'))
+    return run_settings(config).multi_vcf
 
 
 def vcf_types(config) -> List[str]:
@@ -207,7 +207,7 @@ def final_sources(config, pool: str) -> List[DemuxRun]:
             config['modules']['demultiplex'].get('previous_run_tag')
         ))
     ret.extend(
-        demux_run(config, t, config['experiment']['demultiplexing'].get('run_tag')) for t in demux_tools(config)
+        demux_run(config, t, run_settings(config).run_tag) for t in demux_tools(config)
     )
     return ret
 

@@ -4,6 +4,7 @@ from lib.io import (
 )
 from lib.params import get_params_demux, get_params_demux_final
 from lib.config_models import demux_tools, demux_run, final_paths
+from lib.utils import run_settings
 from functools import partial
 
 
@@ -12,7 +13,7 @@ from functools import partial
 # ── Rule A: one h5ad per demultiplexing tool of this run ─────────────────────
 
 for _tool in demux_tools(config):
-    _run = demux_run(config, _tool, config['experiment']['demultiplexing']['run_tag'])
+    _run = demux_run(config, _tool, run_settings(config).run_tag)
 
     rule:
         name: f"demux_run_{_tool}"
