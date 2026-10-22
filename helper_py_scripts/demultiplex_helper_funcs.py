@@ -1348,6 +1348,13 @@ def _load_file(sub_prog: str,
     return cache[loader_key]
 
 
+# Metrics computed by update_logs.py once all samples are compiled, so
+# they aren't looked up in the source files
+DERIVED_METRICS = {
+    ("STAR", "REG", "RUN_TIME"),
+}
+
+
 _SKIP_METRICS =[
     "N_DOUBLET_CELLS",
     "N_NEGATIVE_CELLS",
@@ -1465,6 +1472,10 @@ def write_logs(columns: NDArray,
 
         # Skip excluded sub_progs (exact match or prefix match)
         if sub_prog in no_progs or any(sub_prog.startswith(p) for p in no_progs):
+            new_row.append("")
+            continue
+
+        if (prog, sub_prog, metric) in DERIVED_METRICS:
             new_row.append("")
             continue
 

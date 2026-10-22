@@ -49,6 +49,37 @@ def calc_ratio(numer, denom):
     return ratios
 
 
+def _parse_job_times(times: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """Times of STAR's log ('2025-05-13 19:51:55', or 'May 13 19:51:55'
+    without a year, which this script writes as 'May/13/19:51:55') and
+    whether each one had a year."""
+    times = times.astype(str).str.strip().str.replace("/", " ")
+    with_year = pd.to_datetime(times, format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    no_year = pd.to_datetime(times, format="%b %d %H:%M:%S", errors="coerce")
+    return with_year.fillna(no_year), with_year.notna()
+
+
+def star_run_time(start: pd.Series, finish: pd.Series) -> pd.Series:
+    """STARsolo's run time (finish - start) as HH:MM:SS (hours can be > 24).
+
+    Empty when a time is missing or can't be parsed. Times without a year
+    that finish "before" they start crossed a new year.
+    """
+    start_t, start_has_year = _parse_job_times(start)
+    finish_t, finish_has_year = _parse_job_times(finish)
+    run_time = finish_t - start_t
+    new_year = (run_time < pd.Timedelta(0)) & ~start_has_year & ~finish_has_year
+    run_time[new_year] += pd.Timedelta(days=365)
+
+    def hhmmss(t):
+        if pd.isna(t) or t < pd.Timedelta(0):
+            return ""
+        secs = int(t.total_seconds())
+        return f"{secs // 3600:02d}:{secs % 3600 // 60:02d}:{secs % 60:02d}"
+
+    return run_time.map(hhmmss)
+
+
 def get_all_columns(map_df: pd.DataFrame, 
     new_cols_to_add: list[list[str]]) -> pd.DataFrame:
 
@@ -429,6 +460,13 @@ def main():
 
     for col in cols_to_convert:
         combo_log[col] = pd.to_numeric(combo_log[col], errors="coerce")
+
+    # STARsolo's run time, when the map file has its column
+    if ("STAR", "REG", "RUN_TIME") in combo_log.columns:
+        combo_log[("STAR", "REG", "RUN_TIME")] = star_run_time(
+            combo_log[("STAR", "REG", "JOB_START")],
+            combo_log[("STAR", "REG", "JOB_FINISH")],
+        )
 
     # If the demux file is not used for compilation then skip these steps
     if args.dem_info != None:
