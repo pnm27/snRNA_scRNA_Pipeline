@@ -214,6 +214,10 @@ properties:
         type: string
       solo_cell_filter:
         type: string
+      wasp:
+        type: boolean
+        default: false
+        description: STAR's WASP mode, with the per-pool vcf of gt_demux_pipeline.vcf_info
       SAM_attr:
         type: string
       features:

@@ -37,6 +37,11 @@ RESOURCES = {
         "mem_mb": allocate_mem_SS,
         "time_min": 1440,
     },
+    "wasp_vcf": {
+        "cpus_per_task": 1,
+        "mem_mb": 1000,
+        "time_min": {"base": 30, "step": 30},
+    },
     "samtools_index": {
         "cpus_per_task": 4,
         "mem_mb": 5000,

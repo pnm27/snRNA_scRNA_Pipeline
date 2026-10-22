@@ -1,15 +1,20 @@
 
-from lib.io import get_r1_fastqs, get_r2_fastqs
+from lib.io import get_r1_fastqs, get_r2_fastqs, pool_vcf, wasp_vcf
 from functools import partial
 from lib.params import get_limitsjdbval_coll
 from lib.aligner import starsolo_matrix_keys
 
 
 
+WASP = config['STARsolo_pipeline']['wasp']
+
+
 rule STARsolo_sort:
     input:
         R1=partial(get_r1_fastqs, config=config),
-        R2=partial(get_r2_fastqs, config=config)
+        R2=partial(get_r2_fastqs, config=config),
+        # WASP mode: the pool's vcf (rule 'wasp_vcf')
+        wasp_vcf=wasp_vcf(config) if WASP else []
 
     # priority: 10
 
@@ -32,7 +37,13 @@ rule STARsolo_sort:
         chemistry=config['STARsolo_pipeline']['soloType'], # For STARsolo
         whitelist=config['whitelist'], # V3 whitelist
         UMI_length=config['STARsolo_pipeline']['umi_len'], # V3 
-        SAM_attr=config['STARsolo_pipeline']['SAM_attr'],
+        SAM_attr=(
+            config['STARsolo_pipeline']['SAM_attr']
+            + (" vW" if WASP and "vW" not in config['STARsolo_pipeline']['SAM_attr'].split() else "")
+        ),
+        wasp=lambda wildcards, input: (
+            f"--waspOutputMode SAMtag --varVCFfile {input.wasp_vcf}" if WASP else ""
+        ),
         features=config['STARsolo_pipeline']['features'],
         save_params=f"{config['STARsolo_pipeline']['star_params_dir']}{{pool}}-cDNA.txt",  # WILDCARDS
         star_def_log_out=lambda wildcards, output: (
@@ -90,13 +101,13 @@ rule STARsolo_sort:
             --twopassMode Basic {params.gzip_inputs} --readFilesIn {params.ss_style_r2} {params.ss_style_r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[sj_collap]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
-            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 &> {log}_{resources.attempt}
+            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {params.wasp} &> {log}_{resources.attempt}
         else
             STAR --genomeDir {params.genome_dir} --sjdbGTFfile {params.gtf} --sjdbOverhang {params.overhang} --limitSjdbInsertNsj {params.opt_params[ins_nsj]} \
             --twopassMode Basic {params.gzip_inputs} --readFilesIn {params.ss_style_r2} {params.ss_style_r1} --soloType {params.chemistry} --soloUMIlen {params.UMI_length} \
             --soloCBwhitelist {params.whitelist} --soloFeatures {params.features} --soloCellFilter {params.solo_cell_filter} --outSAMattributes {params.SAM_attr} \
             --limitOutSJcollapsed {params.opt_params[sj_collap]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
-            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
+            --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {params.wasp} {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
         # gzip the matrix files (paths ending in .gz in the config)
         files=( {output.gf_feat} {output.gf_mat} {output.gf_bc} {output.g_feat} {params.gene_files} )
@@ -149,4 +160,27 @@ rule samtools_index:
     shell:
         """
         samtools index -@ {params.threads} {input.bam} &>> {log}
+        """
+
+
+# STAR reads the genotype of the vcf's first sample only, so for a pool of
+# donors every biallelic SNV is written as heterozygous (0|1): WASP then
+# checks the reads over all the pool's variants
+rule wasp_vcf:
+    input:
+        partial(pool_vcf, config=config)
+
+    output:
+        temp(wasp_vcf(config))
+
+    resources:
+        **get_resources("wasp_vcf")
+
+    shell:
+        r"""
+        zcat -f {input} | awk 'BEGIN {{OFS="\t"}}
+            /^##/ {{ next }}
+            /^#/ {{ print "##fileformat=VCFv4.2"; print "#CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","POOL"; next }}
+            length($4) == 1 && length($5) == 1 && $5 != "." {{ print $1,$2,$3,$4,$5,".",".",".","GT","0|1" }}' \
+            > {output}
         """

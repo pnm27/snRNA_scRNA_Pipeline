@@ -24,6 +24,38 @@ def get_fastqs(wildcards, config):
 # ---------------------------------------------------------------------------------------
 
 # STARsolo ------------------------------------------------------------------------------
+def pool_vcf(wildcards, config):
+    """Per-pool vcf of the pool (the 'vcf' column of a 4-column 'vcf_info')."""
+    vcf_info = config['gt_demux_pipeline']['vcf_info']
+    if vcf_info is None or not os.path.isfile(vcf_info):
+        raise ValueError(
+            "STARsolo's WASP mode needs a per-pool vcf: set "
+            "'gt_demux_pipeline: vcf_info' to a file with a vcf column "
+            f"(currently: {vcf_info})"
+        )
+    temp_df = read_files_ext(vcf_info)
+    if temp_df.shape[1] < 4:
+        raise ValueError(
+            f"STARsolo's WASP mode needs a vcf column in {vcf_info} "
+            "(pool, n_donors, donors, vcf); it has no per-pool vcf"
+        )
+    temp_df = temp_df.iloc[:, :4]
+    temp_df.columns = col_set
+    vcf = temp_df.loc[temp_df["pool"] == wildcards.pool, "vcf"].dropna() # WILDCARDS
+    if vcf.empty:
+        raise ValueError(
+            f"No vcf for the pool '{wildcards.pool}' in {vcf_info}, which "
+            "STARsolo's WASP mode needs"
+        )
+    return vcf.values[0]
+
+
+def wasp_vcf(config) -> str:
+    """Pool's vcf for STAR's WASP mode (see rule 'wasp_vcf')."""
+    c = config['STARsolo_pipeline']
+    return f"{c['bams_dir']}{config['fold_struct']}_wasp.vcf"
+
+
 def get_r1_fastqs(wildcards, config):
     temp_fold=f"{config['fold_struct']}".format(**wildcards) # Add wildcards
     r1_files = sorted(glob2.glob(f"{config['cDNA_fastqs_dir']}{temp_fold}*{config['R1_suffix']}"))

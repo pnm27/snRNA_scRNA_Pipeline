@@ -164,6 +164,9 @@ STARsolo_pipeline:
   soloType: CB_UMI_Simple
   solo_cell_filter: EmptyDrops_CR
   SAM_attr: NH HI AS nM NM MD CB UB CR UR CY UY GX GN sS sQ sM
+  # WASP filtering of allele-specific mapping bias: needs a per-pool vcf in
+  # 'gt_demux_pipeline: vcf_info' (adds vW to SAM_attr)
+  wasp: false
   features: Gene GeneFull SJ Velocyto
   count_matrix: GeneFull # GeneFull (exons and introns, e.g. nuclei) or Gene (exons) for the steps after alignment
   misc_reads_file: _discarded_reads_stats.txt
