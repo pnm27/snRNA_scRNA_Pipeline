@@ -2,21 +2,35 @@
 """Outputs of the aligner of this run.
 
 The prefix of 'last_step' picks the aligner:
-- starsolo_*  : STARsolo (cDNA)
-- multiome_*  : cellranger-arc count (cDNA and ATAC)
+- starsolo_*   : STARsolo (cDNA)
+- cellranger_* : cellranger count (cDNA)
+- multiome_*   : cellranger-arc count (cDNA and ATAC)
 
 Rules and input functions ask this module for the count matrix, bams and
 other alignment outputs instead of building the paths of one aligner.
 All paths are templates with {pool} (and the wildcards of 'fold_struct').
 """
 
+from types import SimpleNamespace
 from .modality import CELLRANGER_ARC
+
+
+# Keys of the bam and bai of STARsolo and cellranger count (cDNA only)
+BAM_KEYS = SimpleNamespace(bam='bam', bai='bai')
 
 
 # last_step prefix -> aligner
 ALIGNERS = {
     'starsolo': 'starsolo',
+    'cellranger': 'cellranger',
     'multiome': 'cellranger_arc',
+}
+
+# Config section of each aligner
+SECTIONS = {
+    'starsolo': 'STARsolo_pipeline',
+    'cellranger': 'cellranger_count',
+    'cellranger_arc': 'cellranger_arc_count',
 }
 
 
@@ -29,11 +43,12 @@ def get_aligner(config) -> str:
     return 'starsolo'
 
 
-def out_prefix(config) -> str:
-    """Prefix of the aligner's outputs for a pool."""
-    if get_aligner(config) == 'starsolo':
+def out_prefix(config, aligner: str | None = None) -> str:
+    """Prefix of the outputs of a pool (aligner: this run's, by default)."""
+    aligner = aligner or get_aligner(config)
+    if aligner == 'starsolo':
         return f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}"
-    return f"{config['cellranger_arc_count']['bams_dir']}{{pool}}/"
+    return f"{config[SECTIONS[aligner]]['bams_dir']}{{pool}}/"
 
 
 def barcodes_have_suffix(config) -> bool:
@@ -69,24 +84,25 @@ def count_matrix(config) -> str:
     return f"{out_prefix(config)}{c[key]}"
 
 
-def bam_paths(config, modality: str, suffix: str | None = None) -> dict:
+def bam_paths(config, modality: str, suffix: str | None = None,
+    aligner: str | None = None) -> dict:
     """bam and bai of 'modality'.
 
     suffix: a derived bam, e.g. config['split_bams_pipeline']['short_bam']
     (subset to a chromosome) or ['filt_bam'] (filtered by cell barcode).
     STARsolo's are named <prefix><suffix>; cellranger's replace '.bam' of
     the bam's name with the suffix.
+    aligner: this run's, by default.
     """
-    prefix = out_prefix(config)
-    if get_aligner(config) == 'starsolo':
-        c = config['STARsolo_pipeline']
-        if suffix is None:
-            return {'bam': f"{prefix}{c['bam']}", 'bai': f"{prefix}{c['bai']}"}
+    aligner = aligner or get_aligner(config)
+    prefix = out_prefix(config, aligner)
+    c = config[SECTIONS[aligner]]
+    # Keys of the bam and bai in the aligner's config section
+    keys = CELLRANGER_ARC[modality] if aligner == 'cellranger_arc' else BAM_KEYS
+    if suffix is None:
+        return {'bam': f"{prefix}{c[keys.bam]}", 'bai': f"{prefix}{c[keys.bai]}"}
+    if aligner == 'starsolo':
         bam = f"{prefix}{suffix}"
     else:
-        c = config['cellranger_arc_count']
-        keys = CELLRANGER_ARC[modality]
-        if suffix is None:
-            return {'bam': f"{prefix}{c[keys.bam]}", 'bai': f"{prefix}{c[keys.bai]}"}
         bam = f"{prefix}{c[keys.bam]}".replace('.bam', suffix)
     return {'bam': bam, 'bai': f"{bam}.bai"}

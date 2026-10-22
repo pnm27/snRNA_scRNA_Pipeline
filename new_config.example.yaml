@@ -61,6 +61,11 @@ cellranger_arc_genome_dir:
   gencode38: &cellR_gen38
     genome: references/cellranger_GRCh38_Gencode_38
 
+# References for cellranger count (GEX)
+cellranger_genome_dir:
+  gex2024: &cellR_gex2024
+    genome: references/refdata-gex-GRCh38-2024-A
+
 # -----------------------------------------------------------------------------
 # Common Params----------------------------------------------------------------
 # Select pipeline module
@@ -147,6 +152,7 @@ STAR_version: star/2.7.10a
 featuremap_script: projdir/kite/featuremap/featuremap.py
 STAR_snv_aware_version: star/2.7.10a
 cellranger-arc_version: cellranger-arc/2.0.2
+cellranger_version: cellranger/8.0.1
 
 # BAM processing pipeline----------------------------------------------------
 STARsolo_pipeline:
@@ -183,6 +189,16 @@ STARsolo_pipeline:
   extra_params: "--outReadsUnmapped Fastx" # or valid extra parameters in STARsolo, as above
   run_threads: 20
 
+
+# cellranger count pipeline (last_step: cellranger_*)--------------------------
+cellranger_count:
+  bams_dir: projdir/cellranger_count_outputs/
+  ref: *cellR_gex2024
+  include_introns: true # true for nuclei
+  extra_params: null # or other cellranger count options
+  # optional
+  bam: possorted_genome_bam.bam
+  bai: possorted_genome_bam.bam.bai
 
 # cellranger-arc count pipeline------------------------------------------------
 cellranger_arc_count:

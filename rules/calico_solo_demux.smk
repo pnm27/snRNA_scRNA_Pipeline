@@ -1,11 +1,11 @@
-from lib.aligner import count_matrix
+from lib.aligner import count_matrix as aligner_count_matrix
 
 
 
 rule run_calico_solo:
     input:
         bustools_h5ad=f"{config['hashsolo_demux_pipeline']['h5ad_bustools_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['bustools_h5ad']}",
-        starsolo_out=count_matrix(config)
+        starsolo_out=aligner_count_matrix(config)
 
     output:
         f"{config['hashsolo_demux_pipeline']['calico_solo_dir']}{config['fold_struct_demux']}{config['hashsolo_demux_pipeline']['calico_solo_h5ad']}"

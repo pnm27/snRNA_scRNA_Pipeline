@@ -72,9 +72,10 @@ properties:
     description: Reference sets, picked through YAML anchors
   last_step:
     type: string
-    pattern: (?i)^(all_multi_vcf|starsolo.*|multiome.*)$
+    pattern: (?i)^(all_multi_vcf|starsolo.*|cellranger.*|multiome.*)$
     description: Last module to run, e.g. STARsolo_kb_solo, STARsolo_demux, STARsolo_split_bams_gt_demux,
-      multiome_gt_demux
+      cellranger_demux, multiome_gt_demux. The prefix picks the aligner (STARsolo, cellranger count
+      or cellranger-arc count)
   picard_metrics:
     type:
     - string
@@ -257,6 +258,35 @@ properties:
         - 'null'
       run_threads:
         type: integer
+  cellranger_version:
+    type: string
+    default: cellranger/8.0.1
+  cellranger_count:
+    type: object
+    properties:
+      bams_dir:
+        type: string
+      ref:
+        type: object
+        properties:
+          genome:
+            type: string
+        required:
+        - genome
+      include_introns:
+        type: boolean
+        default: true
+      extra_params:
+        type:
+        - string
+        - 'null'
+        default: null
+      bam:
+        type: string
+        default: possorted_genome_bam.bam
+      bai:
+        type: string
+        default: possorted_genome_bam.bam.bai
   cellranger_arc_count:
     type: object
     properties:

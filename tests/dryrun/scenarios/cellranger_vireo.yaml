@@ -1,0 +1,7 @@
+# cellranger count (GEX), then vireo
+# expect: cellranger_count create_inp_cellSNP cellSNP vireoSNP demux_run_vireo demux_final
+# absent: STARsolo_sort
+# path: cellranger_count_outputs/P1/possorted_genome_bam.bam cellranger_count_outputs/P1/filtered_feature_bc_matrix/matrix.mtx.gz
+last_step: cellranger_demux
+demux_type: vireo
+picard_metrics: null

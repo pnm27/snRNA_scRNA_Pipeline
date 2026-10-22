@@ -1,6 +1,7 @@
 import os
 from lib.config_models import DemuxConfig, vcf_types
 from lib.aligner import bam_paths, get_aligner, out_prefix
+from lib.aligner import count_matrix as aligner_count_matrix
 
 
 # Targets of 'rule all' come from the stages that 'last_step' runs:
@@ -18,6 +19,8 @@ SPECIAL_STEPS = {
     "starsolo_demux":              ["demux", "picard"],
     "starsolo_gt_demux_multi_vcf": ["demux"],
     "all_multi_vcf":               ["align", "demux"],
+    "cellranger_cellsnp":          ["cellsnp"],
+    "cellranger_demux":            ["demux"],
     "multiome_alignment":          ["align"],
     "multiome_gt_demux":           ["demux"],
 }
@@ -27,7 +30,7 @@ def last_step_stages(step: str) -> list:
     """Stages run for 'last_step' (lowercase)."""
     if step in SPECIAL_STEPS:
         return SPECIAL_STEPS[step]
-    if not step.startswith(("starsolo", "multiome")):
+    if not step.startswith(("starsolo", "cellranger", "multiome")):
         raise ValueError(f"Unrecognised last_step: '{step}'")
 
     stages = ["align"]
@@ -84,7 +87,7 @@ def _expand_pools_donors(template: str, wildcards) -> list:
 def _picard_targets() -> list:
     """Picard's outputs for 'picard_metrics' (all, gc or rnaseq; null: none)."""
     progs = (config.get("picard_metrics") or "").lower()
-    if not progs:
+    if not progs or get_aligner(config) != "starsolo":
         return []
     files = {
         "rnaseq": config["picard_pipeline"]["rnaseq_metrics"],
@@ -105,6 +108,8 @@ def targets_align() -> list:
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/{f}"
             for f in ["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"]
         ]
+    if get_aligner(config) == "cellranger":
+        return [aligner_count_matrix(config), bam_paths(config, "cDNA")["bai"]]
     # Picard's outputs stand for the alignment when they are asked for
     return _picard_targets() or [bam_paths(config, "cDNA")["bai"]]
 

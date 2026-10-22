@@ -71,6 +71,11 @@ def check_supported(config) -> None:
             "hashsolo (demux_type solo, add_solo, both or add_vireo) isn't "
             "supported for multiome runs yet"
         )
+    if config['last_step'].lower().startswith('cellranger') and 'solo' in tools:
+        raise ValueError(
+            "hashsolo isn't supported with cellranger count yet (its "
+            "barcodes end with '-1', the HTO counts' don't)"
+        )
     if is_multi_vcf(config) and tools != ['vireo']:
         raise ValueError(
             "Multi-VCF runs support only demux_type vireo for now"

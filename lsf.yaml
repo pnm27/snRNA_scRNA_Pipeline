@@ -96,3 +96,6 @@ qtltools_mbv:
 multiBamSummary:
   - "-q express"
   
+
+cellranger_count:
+  - "-q premium"

@@ -222,6 +222,11 @@ RESOURCES = {
         "mem_mb": {"base": 2000, "step": 1000},
         "time_min": 10,
     },
+    "cellranger_count": {
+        "cpus_per_task": 16,
+        "mem_mb": {"base": 4000, "step": 1000},
+        "time_min": 1440,
+    },
     "cellranger_arc_count": {
         "cpus_per_task": 20,
         "mem_mb": {"base": 16000, "step": 2000},
