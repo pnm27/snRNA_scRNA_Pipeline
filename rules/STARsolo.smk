@@ -2,6 +2,7 @@
 from lib.io import get_r1_fastqs, get_r2_fastqs
 from functools import partial
 from lib.params import get_limitsjdbval_coll
+from lib.aligner import starsolo_matrix_keys
 
 
 
@@ -47,19 +48,28 @@ rule STARsolo_sort:
                 '_'
             )
         ),
-        threads=config['STARsolo_pipeline']['run_threads']
+        threads=config['STARsolo_pipeline']['run_threads'],
+        gene_files=lambda wildcards, output: " ".join(
+            output[k] for k in ['gene_mat', 'gene_bc'] if k in output.keys()
+        )
 
 
     output:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['STAR_log_final']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_summary']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_summary']}",
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['barcodes_stats']}",
+        g_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['gene_features']}",
         gf_feat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_features']}",
         bam=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
         gf_mat=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_matrix']}",
-        gf_bc=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}"
+        gf_bc=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['genefull_barcodes']}",
+        # Gene's matrix and barcodes, when it's the count matrix
+        **{
+            name: f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline'][key]}"
+            for name, key in zip(['gene_mat', 'gene_bc'], starsolo_matrix_keys(config)[:2])
+            if key.startswith('gene_')
+        }
 
     log:
         f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}_STARsolo_log.txt"
@@ -88,7 +98,8 @@ rule STARsolo_sort:
             --limitOutSJcollapsed {params.opt_params[sj_collap]} --outSAMtype BAM SortedByCoordinate --runThreadN {params.threads} --outFileNamePrefix {params.out_pref} \
             --limitBAMsortRAM {params.opt_params[limitbamsortram]} --outBAMsortingBinsN 50 {config[STARsolo_pipeline][extra_params]} &> {log}_{resources.attempt}
         fi
-        files=( {output.gf_feat} {output.gf_mat} {output.gf_bc} )
+        # gzip the matrix files (paths ending in .gz in the config)
+        files=( {output.gf_feat} {output.gf_mat} {output.gf_bc} {output.g_feat} {params.gene_files} )
         for i in ${{files[@]}}; do
             base=${{i%".gz"}}
             if [ -f "${{base}}" ] && [ ! -f "${{i}}" ]; then

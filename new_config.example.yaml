@@ -159,6 +159,7 @@ STARsolo_pipeline:
   solo_cell_filter: EmptyDrops_CR
   SAM_attr: NH HI AS nM NM MD CB UB CR UR CY UY GX GN sS sQ sM
   features: Gene GeneFull SJ Velocyto
+  count_matrix: GeneFull # GeneFull (exons and introns, e.g. nuclei) or Gene (exons) for the steps after alignment
   misc_reads_file: _discarded_reads_stats.txt
   # Optional params
   bai: _Aligned.sortedByCoord.out.bam.bai
@@ -167,8 +168,9 @@ STARsolo_pipeline:
   barcodes_stats: _Solo.out/Barcodes.stats
   gene_features_stats: _Solo.out/Gene/Features.stats
   gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
-  gene_features: _Solo.out/Gene/filtered/features.tsv
-  gene_matrix: _Solo.out/Gene/filtered/matrix.mtx
+  gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
+  gene_features: _Solo.out/Gene/filtered/features.tsv.gz
+  gene_matrix: _Solo.out/Gene/filtered/matrix.mtx.gz
   gene_raw_matrix: _Solo.out/Gene/raw/matrix.mtx
   gene_summary: _Solo.out/Gene/Summary.csv
   genefull_features_stats: _Solo.out/GeneFull/Features.stats

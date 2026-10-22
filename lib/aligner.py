@@ -41,11 +41,32 @@ def barcodes_have_suffix(config) -> bool:
     return get_aligner(config) != 'starsolo'
 
 
+# STARsolo's count matrix ('STARsolo_pipeline: count_matrix') -> its
+# matrix, barcodes and features keys in 'STARsolo_pipeline'
+STARSOLO_MATRIX_KEYS = {
+    'GeneFull': ('genefull_matrix', 'genefull_barcodes', 'genefull_features'),
+    'Gene': ('gene_matrix', 'gene_barcodes', 'gene_features'),
+}
+
+
+def starsolo_matrix_keys(config) -> tuple:
+    return STARSOLO_MATRIX_KEYS[config['STARsolo_pipeline'].get('count_matrix', 'GeneFull')]
+
+
 def count_matrix(config) -> str:
     """Filtered count matrix (matrix.mtx.gz) of a pool."""
-    if get_aligner(config) == 'starsolo':
-        return f"{out_prefix(config)}{config['STARsolo_pipeline']['genefull_matrix']}"
-    return f"{out_prefix(config)}filtered_feature_bc_matrix/matrix.mtx.gz"
+    if get_aligner(config) != 'starsolo':
+        return f"{out_prefix(config)}filtered_feature_bc_matrix/matrix.mtx.gz"
+
+    c = config['STARsolo_pipeline']
+    key = starsolo_matrix_keys(config)[0]
+    # The scripts read the dir of 'matrix.mtx.gz' (scanpy's read_10x_mtx)
+    if not c[key].endswith('matrix.mtx.gz'):
+        raise ValueError(
+            f"'STARsolo_pipeline: {key}' should end with 'matrix.mtx.gz' "
+            f"(it's gzipped after STARsolo runs), not: {c[key]}"
+        )
+    return f"{out_prefix(config)}{c[key]}"
 
 
 def bam_paths(config, modality: str, suffix: str | None = None) -> dict:

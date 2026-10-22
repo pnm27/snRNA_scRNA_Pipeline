@@ -190,6 +190,17 @@ properties:
   STARsolo_pipeline:
     type: object
     properties:
+      count_matrix:
+        type: string
+        enum:
+        - GeneFull
+        - Gene
+        default: GeneFull
+        description: STARsolo's count matrix used downstream (its *_matrix, *_barcodes and *_features
+          keys)
+      gene_barcodes:
+        type: string
+        default: _Solo.out/Gene/filtered/barcodes.tsv.gz
       bams_dir:
         type: string
       genome_pick:
