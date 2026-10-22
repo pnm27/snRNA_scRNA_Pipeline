@@ -176,7 +176,6 @@ STARsolo_pipeline:
   STAR_log_final: _Log.final.out
   barcodes_stats: _Solo.out/Barcodes.stats
   gene_features_stats: _Solo.out/Gene/Features.stats
-  gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv
   gene_barcodes: _Solo.out/Gene/filtered/barcodes.tsv.gz
   gene_features: _Solo.out/Gene/filtered/features.tsv.gz
   gene_matrix: _Solo.out/Gene/filtered/matrix.mtx.gz

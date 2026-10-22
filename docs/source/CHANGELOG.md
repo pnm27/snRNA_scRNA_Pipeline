@@ -222,6 +222,9 @@
 - Removed `cellranger_arc_ref` and replaced it with genome selection (similar to STARsolo's)
 - Added `cellranger_arc_count.ref` to `new_config.example.yaml` (it failed to load without it)
 - New optional keys: `gt_demux_pipeline.reuse_cellsnp_dir`, `gt_demux_pipeline.pool_vcf_use` and top-level `resources`
+- Config restructure, stage 1: `helper_py_scripts/migrate_config.py` converts configs to the new layout (`references`, `workflow`, `experiment`, `modules`, `execution`; see TODO). It keeps comments and anchors and also converts partial configs such as the dry-run scenarios. `last_step` becomes `workflow.aligner` + `workflow.until` (+ `genotype.multi_vcf`), `demux_type` becomes `demultiplexing.method` + `add_to_previous`, `demux_run_type` becomes `genotype.enabled`, `hto_demux_type` becomes `hto.enabled` + `multiplexing`, the `fold_struct_*` keys move into their modules (`fold_struct` into `modules.STARsolo`), and the unused `fold_struct_gt_demux2` is dropped. It stops on duplicate keys, since snakemake keeps the last value. The pipeline still reads the old layout until stage 2.
+- Unit tests for the migration (`tests/unit/test_migrate_config.py`): no key of `new_config.example.yaml` or of any dry-run scenario is lost, the new keys mean what `last_step`, `demux_type`, `demux_run_type` and `hto_demux_type` did, and migrating a scenario apart from the example gives the same merged config
+- Removed the duplicate `STARsolo_pipeline.gene_barcodes` from `new_config.example.yaml` (snakemake used the second, `.tsv.gz`)
 
 ---
 
