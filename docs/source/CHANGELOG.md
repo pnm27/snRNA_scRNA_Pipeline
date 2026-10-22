@@ -7,7 +7,7 @@
   - `demultiplex_no_argp.snkmk` → `demultiplex.snkmk`
   - `demul_samples_no_argp.py` → `demul_samples.py`
 - Removed unused sub-snakefiles: `helper_functions.smk` and `analyse_vireo.smk`
-- All resource requirements are now defined in one table in `rules/resources.smk`; rules use `**get_resources("<rule>")` (int, or `base + step * (attempt - 1)` with an optional `max`), and the config's `resources` block can override any rule. Removed the duplicated and unused `allocate_*` functions and the `# threads` comments for Snakemake < v8
+- All resource requirements are now defined in one table in `rules/resources.smk`; rules use `**get_resources("<rule>")` (int, or `base + step * (attempt - 1)` with an optional `max`), and the config's `resources` block can override any rule. `cellSNP` / `vireoSNP` values can differ by VCF suffix (`by_vcf_suffix`). Removed the duplicated and unused `allocate_*` functions and the `# threads` comments for Snakemake < v8
 - The config is validated against `schema/config.schema.yaml` at the start of every run; defaults fill in optional keys missing from older configs (e.g. `swap_correction_df`)
 - Added dry-run tests (`tests/dryrun/run_dryruns.sh`) that check the DAG of each scenario in `tests/dryrun/scenarios/` without data or a cluster
 - Global `wildcard_constraints` in the `Snakefile`: `pool` and `donor` can't contain `/`, `modality` is `cDNA|ATAC|HTO`, and `vcf_type` is one of the vcf columns of `vcf_info`
@@ -25,6 +25,8 @@
 - Standardized single wildcard name to `pool` (previously mixed: `num`, `id1`, `id2`); double wildcards retained
 - Added `multiome_alignment` as a new module with `cellranger.smk` (currently supports cellranger arc count only)
 - Consolidate demultiplexing into a single rule (combine all 4 `demux_samples_*` rules)
+- Removed the `run` directives from the `kite`, `genotype_demux` (was `pheno_demux3`) and `STARsolo` rules
+- Config options for extra command-line parameters of the tools (`extra_params`, `mbv_extra_opt`)
 - Most of the parameter functions have been moved to `lib/params.py`.
 - Most of the input functions have been moved to `lib/io.py`.
 - Input file now supports a 2-columned (tab-separated) file containing *pool*, *SS_MEM*, where *SS_MEM* is RAM memory per thread/task.
@@ -44,7 +46,8 @@
   - Resources: `demux_samples` → `demux_run` and `demux_final` (update `resources:` overrides in configs)
 - New `run_tag` config key: each demultiplexing run writes to its own sub-folder of the calico_solo, cellSNP, vireoSNP, final count matrix and demultiplex info dirs
 - Split the demultiplex info: `demux_run_<tool>` writes only its tool's stats (`_hashsolo_stats.tsv` / `_vireo_stats.tsv`) and keeps the QC stats in the h5ad (`uns['qc_stats']`); `demux_final` writes `_basic_stats.tsv` (QC and the versions used) and the combined info read by `update_logs.py`
-- New rule `collect_demux_versions` writes `final_demux_versions.tsv` (demultiplex versions, swap correction, donors and cells passing QC per pool)
+- New rule `collect_demux_versions` writes `final_demux_versions.tsv` (demultiplex versions, swap correction, donors and cells passing QC per pool); multi-VCF runs get one table per `vcf_type` (`final_demux_versions_<vcf_type>.tsv`)
+- Multiome demultiplexing runs once per pool (`demux_samples` ran once per modality and wrote the same h5ad twice)
 - `split_bams_pipeline.split_by.input: h5ad` reads the h5ad of `split_by.demux` (it always read hashsolo's); new `input: final` splits by the final h5ad (`Donor_final`)
 - Fixed `demul_samples.py` with calico_solo: `cols` used before being set, the classification run twice, and `args.pref` (doesn't exist)
 - Fixed `create_inp_splitBam_consolidated.py` with an h5ad input crashing without `--demux_suffix` and keeping hashsolo's doublets and negatives
@@ -110,7 +113,7 @@
 - Accepted column orders:
   - Without genotypes: `pool, n_donors`
   - With genotypes (partial or full): `pool, n_donors, donor_names, vcf[, vcf2, vcf3, ...]`
-- Deprecated `vcf_info_columns`; column names are free but order is fixed as above
+- Deprecated `vcf_info_columns`, except `vcf_info_columns: vcf`, which names the vcf columns of multi-VCF runs (the values of `vcf_type`); column names are free but order is fixed as above
 - `precursor_to_perPoolVcf.ipynb` now templates the `vcf_info` file
 
 ---
@@ -143,16 +146,14 @@
 - Eliminated `wc_d`; all `expand(..., zip, **wc_d)` calls replaced with:
   - `_expand_pools(template)` — static, pool-only expansion
   - `_expand_pools_donors(template, wildcards)` — runtime, pool+donor expansion
-  - `_expand_pools_multiome_donors(template, wildcards)` — runtime, pool+donor expansion (TEMPORARY)
 - Target builder functions now consistently return lists
 - Extracted `_picard_targets` to eliminate duplicated config key lookups
-- `targets_multiome` now uses a dispatch dict instead of an if/elif chain
 - Both dispatcher functions now raise on unrecognised steps (previously returned empty lists silently)
 - Moved the following to a new function to accommodate checkpointed `split_bams`:
   - `starsolo_split_bams`, `starsolo_split_bams_gt_demux`, `starsolo_split_bams_gt_demux_multi_vcf`, `starsolo_gt_demux_identify_swaps`
 - Fixed logic issue for single-cell/nucleus processing
 - Removed dead code and last_step branches: `targets_resolve_swaps_gt_demux`, `targets_multibamsummary`, `targets_multibamsummaryPlotCorr`, `targets_all`
-- For the function `targets_demux`, now argument type has changed from list to dict for better documentation.
+- `targets_demux` takes no arguments; its targets come from `DemuxConfig` (`lib/config_models.py`)
 - Fixed missing `modality` expansion in the `STARsolo_kb_solo` target
   
 ---
@@ -214,7 +215,7 @@
 - Added `demultiplex` section for `demux_samples_both`
 - Added PICARD option
 - Fixed genome/GTF/FASTA incompatibility: selecting `genome_pick` in `STARsolo_pipeline` now automatically resolves `gtf`, `fasta`, `genome`, `overhang`, and `gene_info_file` via anchors and references
-- Deprecated `vcf_info_columns`.
+- Deprecated `vcf_info_columns` (except `vcf_info_columns: vcf`, for multi-VCF runs).
 - Removed `cellranger_arc_ref` and replaced it with genome selection (similar to STARsolo's)
 - Added `cellranger_arc_count.ref` to `new_config.example.yaml` (it failed to load without it)
 - New optional keys: `gt_demux_pipeline.reuse_cellsnp_dir`, `gt_demux_pipeline.pool_vcf_use` and top-level `resources`
