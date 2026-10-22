@@ -53,6 +53,7 @@ mkdir -p projdir/final_count_matrix/solo/wo_gt/P1 projdir/demultiplex/info/solo/
 touch projdir/final_count_matrix/solo/wo_gt/P1/P1-HTO_STARsolo_out.h5ad \
     projdir/demultiplex/info/solo/wo_gt/P1/P1-HTO_hashsolo_stats.tsv
 printf "pool\tversion\tfrom\tto\nP1\tsolo:wo_gt\tdonor0\tD1\n" > projdir/swap.tsv
+printf "pool\tversion\tfrom\tto\nP1\tsolo:wo_gt,vireo:w_gt\tdonor0\tD1\n" > projdir/swap_two_runs.tsv
 # identify_swaps
 mkdir -p outdir && touch outdir/reference.vcf.gz
 

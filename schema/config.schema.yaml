@@ -573,7 +573,8 @@ properties:
             - string
             - 'null'
             default: null
-            description: 'Demultiplex version of each pool: <tool>:<run_tag> (tool: solo, vireo or both)'
+            description: 'Demultiplex version of each pool: <tool>:<run_tag> (tool: solo, vireo or both),
+              comma-separated for runs of two tools'
           donor_from:
             type:
             - string

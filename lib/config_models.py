@@ -145,8 +145,11 @@ def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
 def parse_label(label: str) -> List[tuple]:
     """'vireo:w_gt_2' -> [('vireo', 'w_gt_2')]; 'both:x' -> solo and vireo.
 
-    No run_tag ('vireo' or 'vireo:') means the untagged dirs.
+    No run_tag ('vireo' or 'vireo:') means the untagged dirs. Runs of
+    different tools are separated by commas: 'solo:hto,vireo:w_gt'.
     """
+    if ',' in str(label):
+        return [run for part in str(label).split(',') for run in parse_label(part)]
     tool, _, run_tag = str(label).strip().partition(':')
     tool = tool.strip().lower()
     run_tag = run_tag.strip() or None

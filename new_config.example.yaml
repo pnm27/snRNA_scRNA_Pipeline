@@ -352,8 +352,8 @@ demultiplex:
   previous_run_tag: null
   # Pools whose final demultiplexing (and donor names) were confirmed, e.g.
   # by identify_swaps. One row per pool and donor; 'version_column' has
-  # <tool>:<run_tag> (tool: solo, vireo or both; e.g. vireo:w_gt_2) and an
-  # empty 'donor_to' drops that donor
+  # <tool>:<run_tag> (tool: solo, vireo or both; e.g. vireo:w_gt_2, or runs
+  # of two tools: solo:hto,vireo:w_gt) and an empty 'donor_to' drops that donor
   swap_correction:
     file: null
     pool_column: null
