@@ -2,7 +2,8 @@
 
 import os, glob2
 from .utils import read_files_ext, get_demux_type
-from .modality import bam_paths, get_modality
+from .modality import get_modality
+from .aligner import bam_paths, count_matrix as aligner_count_matrix
 from .config_models import (
     demux_run, final_paths, final_sources, raw_output, swap_correction
 )
@@ -145,16 +146,7 @@ def get_vir_inputs(wildcards, config):
 
 def count_matrix(wildcards, config):
     """Count matrix (mtx) of the alignment, which Rule A starts from."""
-    if 'multiome' in config['last_step'].lower():
-        return (
-            f"{config['cellranger_arc_count']['bams_dir']}"
-            f"{wildcards.pool}/filtered_feature_bc_matrix/matrix.mtx.gz" # WILDCARDS
-        )
-    return (
-        f"{config['STARsolo_pipeline']['bams_dir']}"
-        f"{config['fold_struct']}"
-        f"{config['STARsolo_pipeline']['genefull_matrix']}"
-    )
+    return aligner_count_matrix(config)
 
 
 def get_inputs_demux_run(wildcards, config, tool):

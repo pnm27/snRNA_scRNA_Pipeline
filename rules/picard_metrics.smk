@@ -1,12 +1,14 @@
+from lib.aligner import bam_paths, out_prefix
+
 
 rule Picard_GC_bias_metrics:
     input:
-        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        bais=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
+        bams=bam_paths(config, 'cDNA')['bam'],
+        bais=bam_paths(config, 'cDNA')['bai']
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_bias_metrics']}",
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['gc_summary_metrics']}"
+        f"{out_prefix(config)}{config['picard_pipeline']['gc_bias_metrics']}",
+        f"{out_prefix(config)}{config['picard_pipeline']['gc_summary_metrics']}"
 
     params:
         output_pref=lambda wildcards, output: output[0].replace(".txt", '.pdf'),
@@ -34,11 +36,11 @@ rule Picard_GC_bias_metrics:
 
 rule Picard_RNAseq_metrics:
     input:
-        bams=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bam']}",
-        bais=f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['STARsolo_pipeline']['bai']}"
+        bams=bam_paths(config, 'cDNA')['bam'],
+        bais=bam_paths(config, 'cDNA')['bai']
 
     output:
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}{config['picard_pipeline']['rnaseq_metrics']}"
+        f"{out_prefix(config)}{config['picard_pipeline']['rnaseq_metrics']}"
 
     params:
         flat_ref=config['STARsolo_pipeline']['genome_pick']['flat_ref'], # config['picard_pipeline']['flat_ref'],

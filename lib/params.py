@@ -3,6 +3,7 @@
 from .utils import read_files_ext, get_demux_type
 from .config_models import final_sources, swap_correction
 from .modality import get_modality, has_umi
+from .aligner import barcodes_have_suffix, out_prefix
 import re, glob2, os
 
 # STARsolo ------------------------------------------------------------------------------
@@ -135,7 +136,7 @@ def get_params_cics(wildcards, config, input):
     if get_demux_type(config) in ['add_solo', 'add_vireo'] or input[0].endswith('.h5ad'):
         ret_str += '--prev '
     
-    if 'multiome' in config['last_step'].lower():
+    if barcodes_have_suffix(config):
         ret_str += '--keep_barcode_suffix '
     
     if config['gt_demux_pipeline']['include_all_cells']:
@@ -325,9 +326,5 @@ def get_mito_file(wildcards, config):
     if config['gt_check']:
         return False
     elif not config['gt_check']:
-        return (
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['split_bams_pipeline']['mito_reads_file']}"
-            )
+        return f"{out_prefix(config)}{config['split_bams_pipeline']['mito_reads_file']}"
     

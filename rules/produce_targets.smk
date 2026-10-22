@@ -1,5 +1,6 @@
 import os
 from lib.config_models import DemuxConfig, vcf_types
+from lib.aligner import bam_paths, get_aligner, out_prefix
 
 
 # Targets of 'rule all' come from the stages that 'last_step' runs:
@@ -90,8 +91,7 @@ def _picard_targets() -> list:
         "gc":     config["picard_pipeline"]["gc_summary_metrics"],
     }
     keys = files.keys() if progs == "all" else [progs]
-    prefix = f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}"
-    return [f"{prefix}{files[k]}" for k in keys]
+    return [f"{out_prefix(config)}{files[k]}" for k in keys]
 
 
 # ---------------------------------------------------------------------------
@@ -99,17 +99,14 @@ def _picard_targets() -> list:
 # ---------------------------------------------------------------------------
 
 def targets_align() -> list:
-    if CFG.multiome:
+    if get_aligner(config) == "cellranger_arc":
         out_dir = config['cellranger_arc_count']['bams_dir']
         return [
             f"{out_dir}{{pool}}/filtered_feature_bc_matrix/{f}"
             for f in ["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"]
         ]
     # Picard's outputs stand for the alignment when they are asked for
-    return _picard_targets() or [
-        f"{config['STARsolo_pipeline']['bams_dir']}{config['fold_struct']}"
-        f"{config['STARsolo_pipeline']['bai']}"
-    ]
+    return _picard_targets() or [bam_paths(config, "cDNA")["bai"]]
 
 
 def targets_cellSNP() -> list:

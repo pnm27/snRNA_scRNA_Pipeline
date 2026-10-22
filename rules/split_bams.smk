@@ -13,7 +13,8 @@ from lib.params import (
     get_mito_file,
 )
 from functools import partial
-from lib.modality import bam_modalities, bam_paths, is_multiome
+from lib.modality import bam_modalities, is_multiome
+from lib.aligner import bam_paths
 
 
 # Donor classification the bams are split by ('split_by: input'): the
@@ -67,17 +68,9 @@ rule bamfilt_by_CB:
             f"{config['fold_struct_bam_split1']}_bc_hash.txt"
             )
 
+    # cDNA only for now (see TODO: split bams for multiome)
     output:
-        bam=(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['split_bams_pipeline']['filt_bam']}"
-        ),
-        bai=(
-            f"{config['STARsolo_pipeline']['bams_dir']}"
-            f"{config['fold_struct']}"
-            f"{config['split_bams_pipeline']['filt_bam']}.bai"
-        )
+        **bam_paths(config, 'cDNA', config['split_bams_pipeline']['filt_bam'])
 
     params:
         temp_bc=lambda wc: f"{config['split_bams_pipeline']['sort_temp_dir']}{wc.pool}_bc.txt",
