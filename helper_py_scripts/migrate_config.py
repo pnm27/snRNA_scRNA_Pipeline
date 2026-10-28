@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Convert a config from the old (flat) layout to the new one.
 
-New layout:
+New layout::
+
   references  genomes, barcodes, regions and tool versions
   workflow    aligner, until (replaces 'last_step'), picard_metrics, gt_check
   experiment  inputs, hto, demultiplexing (replaces 'demux_type',
@@ -9,13 +10,14 @@ New layout:
   modules     the '*_pipeline' blocks, each with its own 'fold_struct*'
   execution   rule resources (was 'resources')
 
-Comments inside the moved blocks and the anchors (e.g. '*3v3') are kept.
+Comments inside the moved blocks and the anchors (e.g. ``*3v3``) are kept.
 Configs that only override some keys (e.g. the dry-run scenarios) are
 converted too: only the keys they have are moved.
 
-Usage:
-python3 migrate_config.py new_config.yaml -o new_config.migrated.yaml
-python3 migrate_config.py tests/dryrun/scenarios/*.yaml --in-place
+Usage::
+
+    python3 migrate_config.py new_config.yaml -o new_config.migrated.yaml
+    python3 migrate_config.py tests/dryrun/scenarios/*.yaml --in-place
 """
 
 import argparse, io, sys

@@ -8,16 +8,18 @@ taken from vireo when present (else hashsolo) and renamed by the swap
 correction file, if one is given.
 
 Writes two stats files (columns 'Observations' and 'Vals'):
+
 - basic stats: the QC stats (uns['qc_stats'] of the first h5ad) and the
   demultiplex versions used
 - demultiplex info: the basic stats and the stats of each tool, as read by
   update_logs.py
 
-Example:
-python3 demux_final.py --h5ad solo/wo_gt/P1.h5ad vireo/w_gt/P1.h5ad \
-    --stats solo/wo_gt/P1_hashsolo_stats.tsv vireo/w_gt/P1_vireo_stats.tsv \
-    --sources solo:wo_gt vireo:w_gt --pool_name P1 -o final/P1_final.h5ad \
-    --basic_stats final/P1_basic_stats.tsv --info_out final/P1_final_info.tsv
+Example::
+
+    python3 demux_final.py --h5ad solo/wo_gt/P1.h5ad vireo/w_gt/P1.h5ad \
+        --stats solo/wo_gt/P1_hashsolo_stats.tsv vireo/w_gt/P1_vireo_stats.tsv \
+        --sources solo:wo_gt vireo:w_gt --pool_name P1 -o final/P1_final.h5ad \
+        --basic_stats final/P1_basic_stats.tsv --info_out final/P1_final_info.tsv
 """
 
 import argparse, os
