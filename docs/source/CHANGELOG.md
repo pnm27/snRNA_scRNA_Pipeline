@@ -254,6 +254,9 @@
   - Pools of the labels missing from the table, or without their bam or bai, stop the run at planning, listed with the reason (`missing_pool_bams`); pools only in the table aren't split (a note). The table rejects duplicate pools, pool names with `/` and empty cells
   - Schema: `split_by: external: pools` (default null); rules: a table needs `start: split_bams`, and isn't supported with `aligner: cellranger_arc`. `migrate_config.py` and `new_config.example.yaml` add `pools: null` to the `external` block
   - Dry runs: `external_pools_table`, `external_pools_gt_check`, `external_pools_missing_bam`, `external_pools_with_align`; `external_missing_bam` checks the new message. Unit tests: `tests/unit/test_pools_table.py` and new cases in `test_config_check.py`
+- A config of existing bams (`workflow: start: split_bams`) needs only what differs from the defaults: keys left out take the values of `new_config.example.yaml` with `schema/split_bams_defaults.yaml` on top (no demultiplexing, Picard metrics or genotype check; `split_by: input: external`), so the labels and a pools table can be the whole config. No fastq list is read for such runs. Configs starting at `align` get no defaults
+  - `lib/config_defaults.py` (`fill_defaults`, run before the config check); unit tests `tests/unit/test_config_defaults.py`; dry run `external_pools_minimal` (the scenario is the whole config: new `# standalone:` header)
+- Fixed: a duplicate `split_by: external: pools` key in `new_config.example.yaml`
 - `pythonic` steps (h5ad annotations, `demul_samples_annotate_h5ad_template.json`): `lower`, `upper`, `title`, `strip`, `rstrip` and `lstrip`, allowed by the schema, returned `None`; `regex` steps' `flags` (e.g. `IGNORECASE`) were passed as a string. Both step types now live in `helper_py_scripts/transform_steps.py`, shared by `demultiplex_helper_funcs.py` and `normalize_external_labels.py`
 
 ---

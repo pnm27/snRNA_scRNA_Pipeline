@@ -1,0 +1,25 @@
+# a config of existing bams with only what differs from the defaults
+# (schema/split_bams_defaults.yaml): the external labels and a pools table;
+# no fastq list is needed
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p root/dayA/samp1 root/dayB/samp3 projdir/inp_split_filt_bams/final && touch -d '1 min ago' cellBC_vs_origin.txt
+# setup: for s in dayA/samp1 dayB/samp3; do touch root/$s/$(basename $s).bam root/$s/$(basename $s).bam.bai; done
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\nsamp3\troot/dayB/samp3/samp3.bam\n" > bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC-1\nsamp3\tD2\tAAAG-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# donors: D1 D2
+# expect: check_external_barcodes bamfilt_by_CB split_bams
+# absent: normalize_external_labels STARsolo_sort filt_chr_bams demux_final
+# path: root/dayB/samp3/samp3.bam Sample_samp1-cDNA/D1.bam
+workflow:
+  start: split_bams
+  until: split_bams
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: cellBC_vs_origin.txt
+        barcode_column: barcode
+        pool_column: pool
+        pools: bams.tsv

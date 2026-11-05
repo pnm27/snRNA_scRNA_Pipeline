@@ -76,7 +76,9 @@ references:
 # What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:
   aligner: STARsolo
-  start: align  # align (from the fastqs) or split_bams (existing bams, split_by: input: external)
+  # align (from the fastqs) or split_bams (existing bams, split_by: input: external);
+  # a split_bams config needs only what differs from schema/split_bams_defaults.yaml
+  start: align
   until: align
   picard_metrics: all  # can be null, all, rnaseq or gc
   gt_check: yes # yes or no
@@ -305,8 +307,9 @@ modules:
     fold_struct_hash: "Sample-{pool}-cDNA"  # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
     fold_struct_bams: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
     fold_struct_donor: "{donor}" # for donor bams and h5ads
-    split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
+    split_by: # 'demux' below Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
       demux: vireo
+      # 'input' below Accepts 'raw', 'h5ad', 'final' or 'external'
       # raw: output of vireo or solo; h5ad: h5ad of that tool in this run;
       # final: final h5ad of the pool (e.g. after the swap correction);
       # external: donor labels from outside the pipeline (see 'external')
@@ -320,7 +323,6 @@ modules:
         # Steps (pythonic or regex, as in demul_samples_annotate_h5ad.schema.json)
         # from the file's unique barcodes to the bam's CB tags: here, the part
         # after the last '_' (P12_L1_AAACCTGAGC-1 -> AAACCTGAGC-1)
-        pools: /abs/path/bams.tsv   # columns: pool, bam[, bai]
         barcode_transformations:
           - {type: pythonic, operation: split, by: "_"}
           - {type: pythonic, operation: select_index, index: -1}

@@ -92,7 +92,7 @@ properties:
         enum:
         - align
         - split_bams
-        description: "First stage to run. align: from the fastqs; split_bams: split bams already aligned by the pipeline (in the aligner's bams_dir) by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external')"
+        description: "First stage to run. align: from the fastqs; split_bams: split existing bams (in the aligner's bams_dir, or listed in 'split_by: external: pools') by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external'); keys left out of such a config take the values of new_config.example.yaml with schema/split_bams_defaults.yaml on top"
       until:
         type: string
         enum:

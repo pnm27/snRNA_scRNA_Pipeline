@@ -1,0 +1,31 @@
+# Defaults of a 'workflow: start: split_bams' run (lib/config_defaults.py).
+# They go over new_config.example.yaml, and the run's config goes over both,
+# so a config of existing bams needs only what differs, e.g.
+#
+#   workflow:
+#     start: split_bams
+#     until: split_bams
+#   modules:
+#     split_bams:
+#       split_by:
+#         input: external
+#         external:
+#           file: cellBC_vs_origin.txt
+#           pool_column: pool
+#           barcode_column: barcode
+#           pools: bams.tsv
+#
+# Bams split by external labels need no demultiplexing, alignment metrics
+# or genotype check (set 'gt_check: yes' and 'gt_demux: vcf_info' for one)
+workflow:
+  start: split_bams
+  until: split_bams
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: null
+modules:
+  split_bams:
+    split_by:
+      input: external

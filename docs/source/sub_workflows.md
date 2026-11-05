@@ -227,6 +227,9 @@ samp3   /abs/root/dayB/samp3/samp3_Aligned.sortedByCoord.out.bam
 ```
 
 ```yaml
+workflow:
+  start: split_bams
+  until: split_bams
 modules:
   split_bams:
     split_by:
@@ -237,6 +240,8 @@ modules:
         barcode_column: barcode
         pools: projdir/bams.tsv
 ```
+
+That can be the whole config: with `start: split_bams`, keys left out take the values of `new_config.example.yaml`, with `schema/split_bams_defaults.yaml` on top (no demultiplexing, Picard metrics or genotype check; `aligner: STARsolo`; `donor_column: individualID`; the barcode steps keep the part after the last `_`). No fastq list is read. Set what differs, e.g. the output dirs of `modules: split_bams` (default `projdir/...` in the run's dir), `barcode_transformations: []` when the labels' barcodes are the CB tags, or `gt_check: yes` with `gt_demux: vcf_info`. Runs from the fastqs (`start: align`) get no defaults.
 
 - The `pool` names are the labels' pools after `pool_transformations`; they can't contain `/`. Pools of the labels missing from the table, or whose bam or bai is missing, stop the run (listed); pools only in the table aren't split (noted once).
 - The bams are only read: the cell-filtered and chromosome-subset bams (`filt_bam`, `short_bam`) go to `split_bams: temp_dir` (`<temp_dir><pool>/<pool>_filt.bam`) instead of next to the bam.

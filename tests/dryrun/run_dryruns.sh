@@ -19,6 +19,9 @@
 #   # fails: <text>                       (snakemake must fail with this text)
 #   # setup: <shell command>              (run in the scenario's project first,
 #                                          e.g. to create existing bams)
+#   # standalone:                       (the scenario is the whole config, as
+#                                          a config of existing bams can be;
+#                                          not over the example)
 #   # donors: <donor ...>                 (the jobs up to the donor checkpoint
 #                                          'create_inp_splitBams' are done and
 #                                          found these donors, so per-donor
@@ -103,6 +106,7 @@ for sc in "${scenarios[@]}"; do
     name=$(basename "${sc}" .yaml)
     cp -r "${TMP}/base" "${TMP}/${name}"
     cd "${TMP}/${name}"
+    grep -q '^# standalone:' "${sc}" && cp "${sc}" new_config.yaml
 
     while read -r cmd; do
         [[ -n "${cmd}" ]] && bash -c "${cmd}"

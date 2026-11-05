@@ -26,6 +26,10 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 
 
 configfile: "new_config.yaml"
+# A config of existing bams ('workflow: start: split_bams') needs only what
+# differs from the example (schema/split_bams_defaults.yaml)
+from lib.config_defaults import fill_defaults
+fill_defaults(config)
 # Every problem in the config (old layout, unknown or duplicate keys, keys
 # that don't go together), each with why (docs/source/config_caveats.md)
 from lib.config_check import check_config
