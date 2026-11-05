@@ -3,6 +3,7 @@ import pandas as pd
 from lib.io import (
     split_tool,
     get_bam,
+    derived_bam_paths,
     bam_to_split,
     is_external,
     external_labels,
@@ -137,8 +138,9 @@ rule bamfilt_by_CB:
         barcode_check=partial(external_barcode_check, config=config),
 
     # cDNA only for now (see TODO: split bams for multiome)
+    # Next to the bam, or under 'split_bams: temp_dir' with a pools table
     output:
-        **bam_paths(config, 'cDNA', config['modules']['split_bams']['filt_bam'])
+        **derived_bam_paths(config, 'cDNA', config['modules']['split_bams']['filt_bam'])
 
     params:
         temp_bc=lambda wc: f"{config['modules']['split_bams']['sort_temp_dir']}{wc.pool}_bc.txt",
@@ -176,10 +178,10 @@ for _modality in bam_modalities(config):
         name: _name
 
         input:
-            **bam_paths(config, _modality)
+            unpack(partial(get_bam, config=config, modality=_modality))
 
         output:
-            **bam_paths(config, _modality, config['modules']['split_bams']['short_bam'])
+            **derived_bam_paths(config, _modality, config['modules']['split_bams']['short_bam'])
 
         params:
             sub_chr=partial(subset_to_chr, config=config),

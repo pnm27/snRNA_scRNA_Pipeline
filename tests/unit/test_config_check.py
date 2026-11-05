@@ -115,6 +115,13 @@ CASES = {
         external(file='p.h5ad', pool_column='pool',
                  barcode_transformations=[{'type': 'pythonic', 'operation': 'split'}]),
         "is not valid under any of the given schemas", "Each step is"),
+    'pools table with start align': (
+        external(file='p.h5ad', pool_column='pool', pools='bams.tsv'),
+        "start: 'split_bams' was expected", "lists bams that are already there"),
+    'pools table on a multiome run': (
+        merge(merge(START_SPLIT, {'workflow': {'aligner': 'cellranger_arc'}}),
+              external(file='p.h5ad', pool_column='pool', pools='bams.tsv')),
+        "aligner", "isn't supported for multiome runs"),
     'HTO without multiplexing': (
         merge(demux(method='vireo'), {'experiment': {'hto': {'enabled': True, 'multiplexing': None}}}),
         "multiplexing: None is not one of ['single', 'multiple']", "picks the kite rules"),
@@ -166,3 +173,11 @@ def test_step_defs_match_h5ad_schema():
     import json
     with open(os.path.join(REPO, "schema", "demul_samples_annotate_h5ad.schema.json")) as f:
         assert SCHEMA['$defs'] == json.load(f)['$defs']
+
+
+def test_pools_table_with_start_split_bams():
+    """A pools table is fine for bams that are already there."""
+    config = merge(EXAMPLE, merge(merge(START_SPLIT, demux(method=None)),
+                                  external(file='p.h5ad', pool_column='pool',
+                                           pools='bams.tsv')))
+    assert config_problems(config, SCHEMA) == ([], [])

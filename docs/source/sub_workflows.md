@@ -212,6 +212,36 @@ The jobs:
 3. `check_external_barcodes` stops the run if the hash file's barcodes don't look like the bam's CB tags, before any bam is filtered or split.
 4. `bamfilt_by_CB` / `filt_chr_bams` and `split_bams` as for the other inputs.
 
+### Bams outside the aligner's folders (pools table)
+
+When the bams aren't where the aligner's `bams_dir` and `fold_struct` put them, e.g. `root/dayA/samp1/`, `root/dayB/samp3/`, list them in a pools table (`split_by: external: pools`, with `start: split_bams`). Columns: `pool`, `bam` and, optionally, `bai` (default: `<bam>.bai`); tab-separated, or comma-separated for `.csv`:
+
+```text
+pool    bam
+samp1   /abs/root/dayA/samp1/samp1_Aligned.sortedByCoord.out.bam
+samp3   /abs/root/dayB/samp3/samp3_Aligned.sortedByCoord.out.bam
+```
+
+```bash
+{ printf 'pool\tbam\n'; for b in root/day*/samp*/*_Aligned.sortedByCoord.out.bam; do printf '%s\t%s\n' "$(basename "$(dirname "$b")")" "$(realpath "$b")"; done; } > bams.tsv
+```
+
+```yaml
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/cellBC_vs_origin.txt
+        pool_column: origin
+        barcode_column: barcode
+        pools: projdir/bams.tsv
+```
+
+- The `pool` names are the labels' pools after `pool_transformations`; they can't contain `/`. Pools of the labels missing from the table, or whose bam or bai is missing, stop the run (listed); pools only in the table aren't split (noted once).
+- The bams are only read: the cell-filtered and chromosome-subset bams (`filt_bam`, `short_bam`) go to `split_bams: temp_dir` (`<temp_dir><pool>/<pool>_filt.bam`) instead of next to the bam.
+- `workflow: aligner` still sets the barcode format (cellranger's `-1`); multiome (`cellranger_arc`) isn't supported with a table.
+
 ```{eval-rst}
 .. autosummary::
   :nosignatures:

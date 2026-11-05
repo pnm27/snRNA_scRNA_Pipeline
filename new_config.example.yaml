@@ -320,10 +320,14 @@ modules:
         # Steps (pythonic or regex, as in demul_samples_annotate_h5ad.schema.json)
         # from the file's unique barcodes to the bam's CB tags: here, the part
         # after the last '_' (P12_L1_AAACCTGAGC-1 -> AAACCTGAGC-1)
+        pools: /abs/path/bams.tsv   # columns: pool, bam[, bai]
         barcode_transformations:
           - {type: pythonic, operation: split, by: "_"}
           - {type: pythonic, operation: select_index, index: -1}
         pool_transformations: [] # from the file's pool names to the bams' {pool}
+        # null: the aligner's bams_dir and fold_struct; or a table (pool, bam[, bai])
+        # of bams elsewhere (start: split_bams); derived bams go to temp_dir
+        pools: null
     min_cells_per_donor: 200
     subset_chr: 1 # Subset BAM files
     # These four dirs get a sub-folder: gt_check/ (gt_check: yes) or final/

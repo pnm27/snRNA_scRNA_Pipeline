@@ -190,9 +190,12 @@ def external_labels_block() -> CommentedMap:
     pools = CommentedSeq()
     pools.fa.set_flow_style()
     ext['pool_transformations'] = pools
+    ext['pools'] = None
     ext.yaml_add_eol_comment('pooled h5ad, or csv/tsv/txt(.gz) table, one row per cell', 'file')
     ext.yaml_add_eol_comment('obs (h5ad) or table column with the pool of origin', 'pool_column')
     ext.yaml_add_eol_comment('null: obs names (h5ad only)', 'barcode_column')
+    ext.yaml_add_eol_comment(
+        "null: the aligner's bams_dir; or a table (pool, bam[, bai])", 'pools')
     ext.yaml_set_comment_before_after_key(
         'barcode_transformations',
         before="Steps from the file's unique barcodes to the bam's CB tags: the "

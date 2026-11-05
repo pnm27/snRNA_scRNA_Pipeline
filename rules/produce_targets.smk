@@ -2,7 +2,7 @@ import os
 from lib.config_models import DemuxConfig, vcf_types
 from lib.aligner import bam_paths, get_aligner, out_prefix
 from lib.utils import run_settings
-from lib.io import is_external
+from lib.io import is_external, external_pools_file, missing_pool_bams, read_pools_table
 from lib.aligner import count_matrix as aligner_count_matrix
 
 
@@ -60,6 +60,7 @@ def until_stages(until: str, start: str = "align", external: bool = False) -> li
 UNTIL = run_settings(config).until
 START = run_settings(config).start
 EXTERNAL = is_external(config)
+POOLS_TABLE = external_pools_file(config)
 STAGES = until_stages(UNTIL, START, EXTERNAL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
@@ -110,6 +111,9 @@ def _picard_targets() -> list:
     return [f"{out_prefix(config)}{files[k]}" for k in keys]
 
 
+_NOTED_EXTRA_POOLS = []  # print the note once
+
+
 def split_pools() -> list:
     """Pools whose bams are split: those of the external labels
     (checkpoint 'normalize_external_labels'), else the run's pools."""
@@ -120,16 +124,27 @@ def split_pools() -> list:
     pools = sorted(pd.read_csv(labels, sep="\t", usecols=["pool"], dtype=str)["pool"].unique())
     if START == "split_bams":
         # The bams must be there already: nothing aligns them in this run
-        bam = bam_paths(config, "cDNA")["bam"]
-        missing = [p for p in pools if not os.path.isfile(bam.format(pool=p))]
+        missing = missing_pool_bams(config, pools)
         if missing:
-            raise ValueError(
-                f"No bam for pool(s) {', '.join(missing)} of the external "
-                f"labels ({labels}), expected at "
-                f"{bam.format(pool='<pool>')}. 'workflow: start: split_bams' "
-                "splits existing bams: check the aligner's bams_dir and "
-                "fold_struct, or 'pool_transformations'"
+            where = (
+                f"check the pools table ('split_by: external: pools')"
+                if POOLS_TABLE else
+                f"expected at {bam_paths(config, 'cDNA')['bam'].format(pool='<pool>')}: "
+                "check the aligner's bams_dir and fold_struct (or list the "
+                "bams in 'split_by: external: pools')"
             )
+            raise ValueError(
+                f"No bam for pool(s) of the external labels ({labels}):\n  "
+                + "\n  ".join(missing)
+                + f"\n'workflow: start: split_bams' splits existing bams: {where}, "
+                "or 'pool_transformations'"
+            )
+        if POOLS_TABLE:
+            extra = sorted(set(read_pools_table(POOLS_TABLE)) - set(pools))
+            if extra and not _NOTED_EXTRA_POOLS:
+                _NOTED_EXTRA_POOLS.append(True)
+                print(f"Pools table {POOLS_TABLE}: pool(s) without external "
+                      f"labels, not split: {', '.join(extra)}")
     return pools
 
 

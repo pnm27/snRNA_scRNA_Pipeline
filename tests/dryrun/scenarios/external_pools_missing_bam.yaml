@@ -1,0 +1,20 @@
+# a pool of the external labels missing from the pools table stops the run
+# setup: mkdir -p root/dayA/samp1 projdir/inp_split_filt_bams/final && touch -d '1 min ago' projdir/labels.tsv
+# setup: touch root/dayA/samp1/samp1.bam root/dayA/samp1/samp1.bam.bai
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\n" > projdir/bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC\nsamp9\tD2\tAAAG\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# fails: samp9: not in the pools table projdir/bams.tsv
+workflow:
+  start: split_bams
+  until: split_bams
+  gt_check: no
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin
+        pools: projdir/bams.tsv

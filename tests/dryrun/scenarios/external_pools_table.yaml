@@ -1,0 +1,25 @@
+# split bams outside the aligner's bams_dir (root/day*/samp*), listed in a
+# pools table: its bams are read where they are, and the cell-filtered bams
+# go to split_bams: temp_dir; a table pool without labels (samp2) isn't split
+# setup: mkdir -p root/dayA/samp1 root/dayA/samp2 root/dayB/samp3 projdir/inp_split_filt_bams/final && touch -d '1 min ago' projdir/labels.tsv
+# setup: for s in dayA/samp1 dayA/samp2 dayB/samp3; do touch root/$s/$(basename $s).bam root/$s/$(basename $s).bam.bai; done
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\nsamp2\troot/dayA/samp2/samp2.bam\nsamp3\troot/dayB/samp3/samp3.bam\n" > projdir/bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC\nsamp3\tD2\tAAAG\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# donors: D1 D2
+# expect: check_external_barcodes bamfilt_by_CB split_bams
+# absent: normalize_external_labels STARsolo_sort filt_chr_bams demux_final
+# path: root/dayB/samp3/samp3.bam projdir/split_bams_temp/samp3/samp3_filt.bam Sample_samp1-cDNA/D1.bam
+workflow:
+  start: split_bams
+  until: split_bams
+  gt_check: no
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin
+        pools: projdir/bams.tsv

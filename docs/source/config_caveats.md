@@ -26,6 +26,7 @@ The rules across keys are the `allOf` list of the schema, each with its explanat
 | `until: split_bams` or `identify_swaps` needs a demultiplexing method: bams are split by the donors it finds, unless they're split by external labels (`split_by: input: external`). | |
 | `workflow: start` is required: `align` runs from the fastqs (as configs before it did); `split_bams` needs `split_by: input: external` and `until: split_bams` or `identify_swaps`. | Old configs: `migrate_config.py` writes `start: align`. |
 | `split_by: input: external` needs `split_by: external: file` and `pool_column`; tables also need `barcode_column`. Transformation steps are checked against the h5ad annotation schema's step definitions. | |
+| `split_by: external: pools` (a table of the bam of each pool) needs `workflow: start: split_bams`, and isn't supported with `aligner: cellranger_arc`. Its pools are the labels' pools after `pool_transformations`. | Pools of the labels without a row, bam or bai stop the run at planning. |
 | hashsolo (`method: solo` or `both`) needs `experiment: hto: enabled: true` with `multiplexing`, and `experiment: inputs: wet_lab_info`. It isn't supported with cellranger count (barcodes end with `-1`) or multiome (`cellranger_arc`) yet. | |
 | With `experiment: hto: enabled: true`, `multiplexing` (`single` or `multiple`) picks the kite rules; without it no HTO rule exists. | |
 | `aligner: cellranger` needs `modules: cellranger` (`bams_dir`, `ref`). | |

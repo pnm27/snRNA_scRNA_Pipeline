@@ -1,0 +1,15 @@
+# a pools table lists bams that are already there: start: align is refused
+# fails: lists bams that are already there
+workflow:
+  start: align
+  until: split_bams
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin
+        pools: projdir/bams.tsv

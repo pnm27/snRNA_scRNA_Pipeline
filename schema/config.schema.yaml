@@ -734,6 +734,12 @@ properties:
                     items: {oneOf: [{$ref: '#/$defs/pythonic_step'}, {$ref: '#/$defs/regex_step'}]}
                     default: []
                     description: "Steps that turn the pool names of the file into the {pool} names of the bams (steps as in barcode_transformations)"
+                  pools:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "Table of the bam of each pool (workflow: start: split_bams), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
           min_cells_per_donor:
             type: integer
           subset_chr:
@@ -1010,6 +1016,12 @@ allOf:
                   external:
                     required: [file, pool_column]
                     properties: {file: {type: string}, pool_column: {type: string}}
+- x-explain: "A pools table ('split_by: external: pools') lists bams that are already there, so it needs 'workflow: start: split_bams' (with start: align the aligner writes the bams in its bams_dir)"
+  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}, external: {properties: {pools: {type: string}}, required: [pools]}}, required: [input, external]}}, required: [split_by]}}, required: [split_bams]}}}
+  then: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
+- x-explain: "A pools table ('split_by: external: pools') has one bam per pool, so it isn't supported for multiome runs (aligner cellranger_arc) yet"
+  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}, external: {properties: {pools: {type: string}}, required: [pools]}}, required: [input, external]}}, required: [split_by]}}, required: [split_bams]}}}
+  then: {properties: {workflow: {properties: {aligner: {not: {pattern: '(?i)^cellranger_arc$'}}}}}}
 x-warnings:
 - x-warn: "Picard runs on STARsolo runs only: 'workflow: picard_metrics' is ignored for this aligner"
   if: {properties: {workflow: {properties: {aligner: {enum: [cellranger, cellranger_arc]}}, required: [aligner]}}}

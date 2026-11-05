@@ -1,0 +1,25 @@
+# genotype checks of bams from a pools table (with a bai column): the bams
+# subset to a chromosome go to split_bams: temp_dir
+# setup: mkdir -p root/dayB/samp4 idx projdir/inp_split_filt_bams/gt_check && touch -d '1 min ago' projdir/labels.tsv
+# setup: touch root/dayB/samp4/samp4.bam idx/samp4.bai
+# setup: printf "pool\tbam\tbai\nsamp4\troot/dayB/samp4/samp4.bam\tidx/samp4.bai\n" > projdir/bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp4\tD1\tAAAC\n" > projdir/inp_split_filt_bams/gt_check/external_labels.tsv
+# donors: D1 D2
+# expect: check_external_barcodes filt_chr_bams split_bams
+# absent: bamfilt_by_CB STARsolo_sort
+# path: idx/samp4.bai projdir/split_bams_temp/samp4/samp4_chr1.bam
+workflow:
+  start: split_bams
+  until: split_bams
+  gt_check: yes
+
+modules:
+  split_bams:
+    subset_chr: 1
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin
+        pools: projdir/bams.tsv

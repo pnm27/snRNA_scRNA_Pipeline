@@ -272,9 +272,109 @@ def get_params_normalize_external(wildcards, config) -> str:
                     if v is not None)
 
 
-def get_bam(wildcards, config, suffix=None):
-    """bam and bai of the pool's modality (suffix: see lib/modality.py)."""
-    return bam_paths(config, get_modality(wildcards), suffix)
+def get_bam(wildcards, config, suffix=None, modality=None):
+    """bam and bai of the pool's modality (suffix: see lib/aligner.py).
+
+    With a pools table ('split_by: external: pools'), the bam of the
+    table, and the derived bams (suffix) under 'split_bams: temp_dir'.
+    modality: the rule's, when its paths have no 'modality' wildcard.
+    """
+    modality = modality or get_modality(wildcards)
+    if external_pools_file(config):
+        if suffix is None:
+            return pool_bam(config, wildcards.pool)
+        return derived_bam_paths(config, modality, suffix)
+    return bam_paths(config, modality, suffix)
+
+
+def derived_bam_paths(config, modality: str, suffix: str) -> dict:
+    """bam and bai derived from the pool's bam (e.g. filt_bam, short_bam).
+
+    Next to the bam, or under 'split_bams: temp_dir' with a pools table
+    (its bams may be read-only).
+    """
+    if external_pools_file(config):
+        bam = f"{config['modules']['split_bams']['temp_dir']}{{pool}}/{{pool}}{suffix}"
+        return {'bam': bam, 'bai': f"{bam}.bai"}
+    return bam_paths(config, modality, suffix)
+
+
+# Pools table ('split_by: external: pools'): the bam of each pool ---------
+
+POOLS_COLUMNS = ('pool', 'bam', 'bai')
+_POOLS_TABLES: dict = {}
+
+
+def external_pools_file(config) -> str | None:
+    """'split_by: external: pools' (None unless splitting by external labels)."""
+    if not is_external(config):
+        return None
+    ext = config['modules']['split_bams']['split_by'].get('external') or {}
+    return ext.get('pools') or None
+
+
+def read_pools_table(path: str) -> dict:
+    """{pool: {'bam': ..., 'bai': ...}} of a pools table.
+
+    Columns: pool, bam and, optionally, bai (default: <bam>.bai);
+    tab-separated, or comma-separated for .csv. Read once per path.
+    """
+    if path in _POOLS_TABLES:
+        return _POOLS_TABLES[path]
+    import csv
+    with open(path, newline='') as f:
+        rows = list(csv.DictReader(f, delimiter=',' if path.endswith('.csv') else '\t'))
+        header = rows[0].keys() if rows else []
+    missing = [c for c in ('pool', 'bam') if c not in header]
+    if not rows or missing:
+        raise ValueError(
+            f"Pools table {path}: needs a header with the columns pool, bam "
+            f"(and optionally bai), and one row per pool"
+            + (f"; missing: {', '.join(missing)}" if rows else ""))
+    table, dups = {}, set()
+    for row in rows:
+        pool = (row['pool'] or '').strip()
+        bam = (row['bam'] or '').strip()
+        if not pool or not bam:
+            raise ValueError(f"Pools table {path}: empty pool or bam in {dict(row)}")
+        if '/' in pool:
+            raise ValueError(f"Pools table {path}: pool names can't contain '/' ({pool})")
+        if pool in table:
+            dups.add(pool)
+        bai = (row.get('bai') or '').strip() or f"{bam}.bai"
+        table[pool] = {'bam': bam, 'bai': bai}
+    if dups:
+        raise ValueError(f"Pools table {path}: pool(s) listed twice: {', '.join(sorted(dups))}")
+    _POOLS_TABLES[path] = table
+    return table
+
+
+def pool_bam(config, pool: str) -> dict:
+    """bam and bai of 'pool' in the pools table."""
+    path = external_pools_file(config)
+    table = read_pools_table(path)
+    if pool not in table:
+        raise ValueError(f"Pool {pool} isn't in the pools table {path}")
+    return dict(table[pool])
+
+
+def missing_pool_bams(config, pools: list) -> list:
+    """'<pool>: <why>' for each of 'pools' without a bam (and bai) to split."""
+    path = external_pools_file(config)
+    out = []
+    if path:
+        table = read_pools_table(path)
+        for p in pools:
+            if p not in table:
+                out.append(f"{p}: not in the pools table {path}")
+                continue
+            for k in ('bam', 'bai'):
+                if not os.path.isfile(table[p][k]):
+                    out.append(f"{p}: no {k} {table[p][k]}")
+        return out
+    bam = bam_paths(config, 'cDNA')['bam']
+    return [f"{p}: no bam {bam.format(pool=p)}" for p in pools
+            if not os.path.isfile(bam.format(pool=p))]
 
 
 def bam_to_split(wildcards, config) -> str:
