@@ -1,0 +1,21 @@
+# none of the pools of the external labels in the pools table stops the run
+# (e.g. pool names that need 'pool_transformations')
+# setup: mkdir -p root/dayA/samp1 projdir/inp_split_filt_bams/final && touch -d '1 min ago' projdir/labels.tsv
+# setup: touch root/dayA/samp1/samp1.bam root/dayA/samp1/samp1.bam.bai
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\n" > projdir/bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nS1\tD1\tAAAC\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# fails: are in the pools table projdir/bams.tsv: S1
+workflow:
+  start: split_bams
+  until: split_bams
+  gt_check: no
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin
+        pools: projdir/bams.tsv

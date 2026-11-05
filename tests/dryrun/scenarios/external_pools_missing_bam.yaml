@@ -1,9 +1,9 @@
-# a pool of the external labels missing from the pools table stops the run
+# a pool listed in the pools table whose bam isn't there stops the run
 # setup: mkdir -p root/dayA/samp1 projdir/inp_split_filt_bams/final && touch -d '1 min ago' projdir/labels.tsv
 # setup: touch root/dayA/samp1/samp1.bam root/dayA/samp1/samp1.bam.bai
-# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\n" > projdir/bams.tsv
-# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC\nsamp9\tD2\tAAAG\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
-# fails: samp9: not in the pools table projdir/bams.tsv
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\nsamp3\troot/dayB/samp3/samp3.bam\n" > projdir/bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC\nsamp3\tD2\tAAAG\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# fails: samp3: no bam root/dayB/samp3/samp3.bam
 workflow:
   start: split_bams
   until: split_bams

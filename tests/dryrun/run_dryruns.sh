@@ -17,6 +17,7 @@
 #   # resources: <rule> <key=value ...>   (resolved resources of that rule)
 #   # path: <text>                        (must be in an input/output path)
 #   # fails: <text>                       (snakemake must fail with this text)
+#   # says: <text>                        (must be in the output, e.g. a warning)
 #   # setup: <shell command>              (run in the scenario's project first,
 #                                          e.g. to create existing bams)
 #   # standalone:                       (the scenario is the whole config, as
@@ -126,6 +127,11 @@ for sc in "${scenarios[@]}"; do
     elif (( status != 0 )); then
         errors+=("snakemake exited with ${status}")
     fi
+
+    while read -r txt; do
+        [[ -z "${txt}" ]] && continue
+        grep -qF "${txt}" <<< "${out}" || errors+=("no '${txt}' in the output")
+    done < <(sed -n 's/^# says: *//p' "${sc}")
 
     jobs=$(grep -oE "^(local)?(rule|checkpoint) [A-Za-z0-9_]+" <<< "${out}" \
         | awk '{print $2}' | sort -u)

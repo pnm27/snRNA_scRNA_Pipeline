@@ -1,4 +1,4 @@
-import os
+import os, sys
 from lib.config_models import DemuxConfig, vcf_types
 from lib.aligner import bam_paths, get_aligner, out_prefix
 from lib.utils import run_settings
@@ -111,7 +111,13 @@ def _picard_targets() -> list:
     return [f"{out_prefix(config)}{files[k]}" for k in keys]
 
 
-_NOTED_EXTRA_POOLS = []  # print the note once
+_NOTED = set()  # print each note once (split_pools runs more than once)
+
+
+def _note_once(key: str, msg: str):
+    if key not in _NOTED:
+        _NOTED.add(key)
+        print(msg, file=sys.stderr)
 
 
 def split_pools() -> list:
@@ -123,6 +129,27 @@ def split_pools() -> list:
     labels = checkpoints.normalize_external_labels.get().output[0]
     pools = sorted(pd.read_csv(labels, sep="\t", usecols=["pool"], dtype=str)["pool"].unique())
     if START == "split_bams":
+        if POOLS_TABLE:
+            # Fewer bams kept than labelled pools (e.g. for disk space): the
+            # pools of the labels missing from the table aren't split
+            table = read_pools_table(POOLS_TABLE)
+            unlisted = [p for p in pools if p not in table]
+            pools = [p for p in pools if p in table]
+            if not pools:
+                raise ValueError(
+                    f"None of the pools of the external labels ({labels}) are "
+                    f"in the pools table {POOLS_TABLE}: {', '.join(unlisted)}. "
+                    "Check the table's 'pool' column, or 'pool_transformations'"
+                )
+            if unlisted:
+                _note_once("unlisted", (
+                    f"Warning: pool(s) of the external labels not in the pools "
+                    f"table {POOLS_TABLE}, not split: {', '.join(unlisted)}"))
+            extra = sorted(set(table) - set(pools))
+            if extra:
+                _note_once("extra", (
+                    f"Pools table {POOLS_TABLE}: pool(s) without external "
+                    f"labels, not split: {', '.join(extra)}"))
         # The bams must be there already: nothing aligns them in this run
         missing = missing_pool_bams(config, pools)
         if missing:
@@ -139,12 +166,6 @@ def split_pools() -> list:
                 + f"\n'workflow: start: split_bams' splits existing bams: {where}, "
                 "or 'pool_transformations'"
             )
-        if POOLS_TABLE:
-            extra = sorted(set(read_pools_table(POOLS_TABLE)) - set(pools))
-            if extra and not _NOTED_EXTRA_POOLS:
-                _NOTED_EXTRA_POOLS.append(True)
-                print(f"Pools table {POOLS_TABLE}: pool(s) without external "
-                      f"labels, not split: {', '.join(extra)}")
     return pools
 
 

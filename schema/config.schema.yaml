@@ -739,7 +739,7 @@ properties:
                     - string
                     - 'null'
                     default: null
-                    description: "Table of the bam of each pool (workflow: start: split_bams), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
+                    description: "Table of the bam of each pool (workflow: start: split_bams), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. Pools of the labels missing from the table aren't split (a warning). The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
           min_cells_per_donor:
             type: integer
           subset_chr:

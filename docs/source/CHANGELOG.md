@@ -257,6 +257,8 @@
 - A config of existing bams (`workflow: start: split_bams`) needs only what differs from the defaults: keys left out take the values of `new_config.example.yaml` with `schema/split_bams_defaults.yaml` on top (no demultiplexing, Picard metrics or genotype check; `split_by: input: external`), so the labels and a pools table can be the whole config. No fastq list is read for such runs. Configs starting at `align` get no defaults
   - `lib/config_defaults.py` (`fill_defaults`, run before the config check); unit tests `tests/unit/test_config_defaults.py`; dry run `external_pools_minimal` (the scenario is the whole config: new `# standalone:` header)
 - Fixed: a duplicate `split_by: external: pools` key in `new_config.example.yaml`
+- Pools of the external labels missing from the pools table are no longer an error: they aren't split, with a warning (e.g. only some bams kept, for disk space). The run still stops when none of the labels' pools is in the table, or when a listed pool's bam or bai is missing
+  - Dry runs: `external_pools_unlisted` (was `external_pools_missing_bam`), `external_pools_none_listed`, and `external_pools_missing_bam` now for a listed pool without its bam; new `# says:` header (text the output must have)
 - `pythonic` steps (h5ad annotations, `demul_samples_annotate_h5ad_template.json`): `lower`, `upper`, `title`, `strip`, `rstrip` and `lstrip`, allowed by the schema, returned `None`; `regex` steps' `flags` (e.g. `IGNORECASE`) were passed as a string. Both step types now live in `helper_py_scripts/transform_steps.py`, shared by `demultiplex_helper_funcs.py` and `normalize_external_labels.py`
 
 ---
