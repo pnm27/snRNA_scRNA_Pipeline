@@ -4,11 +4,17 @@
 New layout::
 
   references  genomes, barcodes, regions and tool versions
-  workflow    aligner, until (replaces 'last_step'), picard_metrics, gt_check
+  workflow    aligner, start, until (replace 'last_step'), picard_metrics,
+              gt_check
   experiment  inputs, hto, demultiplexing (replaces 'demux_type',
               'demux_run_type' and 'hto_demux_type'), qc
   modules     the '*_pipeline' blocks, each with its own 'fold_struct*'
   execution   rule resources (was 'resources')
+
+New keys are written out with their values for the old configs:
+'workflow: start: align' (wherever 'last_step' is converted) and, in a
+whole split bams block, 'split_by: external' (donor labels from outside
+the pipeline, unused unless 'split_by: input: external').
 
 Comments inside the moved blocks and the anchors (e.g. ``*3v3``) are kept.
 Configs that only override some keys (e.g. the dry-run scenarios) are
@@ -95,7 +101,7 @@ UNUSED = {'fold_struct_gt_demux2'}
 
 SECTIONS = {
     'references': "Genomes, barcodes, regions and tool versions",
-    'workflow':   "What to run: the aligner and the last stage ('until')",
+    'workflow':   "What to run: the aligner, the first stage ('start') and the last ('until')",
     'experiment': "What was sequenced and how it's multiplexed",
     'modules':    "Parameters, output dirs and folder structures of each module",
     'execution':  "Rule resources (override rules/resources.smk)",
@@ -103,7 +109,7 @@ SECTIONS = {
 
 # Order of the keys made by the migration (other keys follow)
 ORDER = {
-    'workflow':                 ['aligner', 'until', 'picard_metrics', 'gt_check'],
+    'workflow':                 ['aligner', 'start', 'until', 'picard_metrics', 'gt_check'],
     'experiment':               ['inputs', 'hto', 'demultiplexing', 'qc'],
     'experiment.demultiplexing': ['method', 'add_to_previous', 'run_tag',
                                   'genotype', 'create_final_h5ad'],
@@ -166,12 +172,42 @@ def demux_method(demux_type):
     raise ValueError(f"Unrecognised demux_type: '{demux_type}'")
 
 
+def external_labels_block() -> CommentedMap:
+    """'split_by: external' with its defaults (see new_config.example.yaml)."""
+    def step(**kw):
+        m = CommentedMap(type='pythonic', **kw)
+        m.fa.set_flow_style()
+        return m
+    ext = CommentedMap()
+    ext['file'] = None
+    ext['donor_column'] = 'individualID'
+    ext['pool_column'] = None
+    ext['barcode_column'] = None
+    ext['barcode_transformations'] = CommentedSeq([
+        step(operation='split', by='_'),
+        step(operation='select_index', index=-1),
+    ])
+    pools = CommentedSeq()
+    pools.fa.set_flow_style()
+    ext['pool_transformations'] = pools
+    ext.yaml_add_eol_comment('pooled h5ad, or csv/tsv/txt(.gz) table, one row per cell', 'file')
+    ext.yaml_add_eol_comment('obs (h5ad) or table column with the pool of origin', 'pool_column')
+    ext.yaml_add_eol_comment('null: obs names (h5ad only)', 'barcode_column')
+    ext.yaml_set_comment_before_after_key(
+        'barcode_transformations',
+        before="Steps from the file's unique barcodes to the bam's CB tags: the "
+               "part after the last '_'", indent=8)
+    return ext
+
+
 def derived(old) -> dict:
-    """New path -> value, for the old keys whose meaning changed."""
+    """New path -> value, for the old keys whose meaning changed, and the
+    new keys written out for old configs."""
     new = {}
     if 'last_step' in old:
         step = str(old['last_step'])
         new['workflow.aligner'] = aligner(step)
+        new['workflow.start'] = 'align'  # from the fastqs, as before
         new['workflow.until'] = until(step)
         new['experiment.demultiplexing.genotype.multi_vcf'] = (
             step.lower().endswith('multi_vcf'))
@@ -188,6 +224,12 @@ def derived(old) -> dict:
         new['experiment.hto.enabled'] = hto is not None
         new['experiment.hto.multiplexing'] = (
             str(hto).lower() if hto is not None else None)
+    # A whole split bams block (not a config overriding some of its keys)
+    sb = old.get('split_bams_pipeline')
+    if (isinstance(sb, dict) and 'inp_split_bams_dir' in sb
+            and isinstance(sb.get('split_by'), dict)
+            and 'external' not in sb['split_by']):
+        new['modules.split_bams.split_by.external'] = external_labels_block()
     return new
 
 
@@ -328,7 +370,8 @@ def changes(old) -> list:
         lines.append(
             f"demux_run_type '{old['demux_run_type']}': only its genotype "
             "use is kept; set run_tag if it named the run's sub-folder")
-    lines += [f"{p} = {v}" for p, v in derived(old).items()]
+    lines += [f"{p} = {v}" if not isinstance(v, dict) else f"{p}: added (defaults)"
+              for p, v in derived(old).items()]
     return lines
 
 

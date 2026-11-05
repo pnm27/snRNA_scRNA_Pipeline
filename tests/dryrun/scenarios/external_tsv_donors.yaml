@@ -1,0 +1,23 @@
+# split existing bams by donor labels of a table, once the labels are read
+# (cell-filtered bams, gt_check: no); the barcodes are checked against the
+# bam first
+# setup: mkdir -p projdir/STARsolo_bams/Sample_P1-cDNA projdir/inp_split_filt_bams/final && touch -d '1 min ago' projdir/labels.tsv
+# setup: touch projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam.bai
+# setup: printf "pool\tSubj_ID\tbarcodes\nP1\tD1\tAAAC\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# donors: D1 D2
+# expect: check_external_barcodes bamfilt_by_CB split_bams
+# absent: normalize_external_labels STARsolo_sort run_calico_solo demux_final
+# path: Sample-P1-cDNA_bc_check.txt
+workflow:
+  start: split_bams
+  until: split_bams
+  gt_check: no
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin

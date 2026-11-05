@@ -844,63 +844,8 @@ class ParsedColumns:
     
     
 
-def apply_pythonic(value, t):
-    r"""Apply regex substitution.
-    
-    Paramters
-    ---------
-    value
-        Any value on which python operation(s) needs to be applied
-    t
-        A dict containing different set of values for different
-        python operations
-
-    Returns
-    -------
-    str
-        Output of regex operation
-    """
-
-    op = t["operation"]
-
-    if op == "split":
-        return value.split(t.get("by", " "))
-
-    elif op == "join":
-        return t.get("by", " ").join(value)
-
-    elif op == "select_index":
-        return value[t["index"]]
-
-    elif op == "select_range":
-        return value[t.get("start"): t.get("end")]
-
-    elif op == "replace":
-        return value.replace(t["old"], t["new"])
-    
-
-def apply_regex(value: Any, t: dict[str, Any]) -> str:
-    r"""Apply regex substitution.
-    
-    Paramters
-    ---------
-    value
-        Any value on which the regex pattern needs to be applied
-    t
-        A dict containing 'pattern' and 'replacement' (including flags)
-
-    Returns
-    -------
-    str
-        Output of regex operation
-
-    """
-    pattern = t["pattern"]
-    replacement = t["replacement"]
-    flags = t.get("flags")
-    if flags:
-        return regex.sub(pattern, replacement, value, flags=flags)
-    return regex.sub(pattern, replacement, value)
+# The 'pythonic' and 'regex' steps (shared with normalize_external_labels.py)
+from transform_steps import apply_pythonic, apply_regex, apply_steps  # noqa: E402
 
 
 # EXTRA ANNOTATIONS: PROCESS EACH COLUMN
@@ -947,11 +892,7 @@ def process_columns(config: dict[str, Any],
             current_value = df.loc[df[lookup_column] == current_value, col2use].values[0]
 
         if "transformations" in col:
-            for t in col["transformations"]:
-                if t["type"] == "pythonic":
-                    current_value = apply_pythonic(current_value, t)
-                elif t["type"] == "regex":
-                    current_value = apply_regex(current_value, t)
+            current_value = apply_steps(current_value, col["transformations"])
 
         result.append(
             ColumnResult(

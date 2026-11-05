@@ -1,0 +1,5 @@
+# start: split_bams needs external labels
+# fails: start: split_bams splits bams that are already there
+workflow:
+  start: split_bams
+  until: split_bams

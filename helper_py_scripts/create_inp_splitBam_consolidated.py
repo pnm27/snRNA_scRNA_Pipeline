@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
-import pandas as pd, anndata as ad
+import pandas as pd
 import os, re, argparse
 from collections import Counter
 
@@ -43,15 +43,16 @@ def get_argument_parser():
             help="Flag describing whether to overwrite or not. "
             "If not, \"_2\" will be appended."
             )
-    parser.add_argument('--converter_file', 
+    # lib/params.py passes the short names (--conv_file*)
+    parser.add_argument('--converter_file', '--conv_file', 
             help="If names in the h5ad classification or donor_ids.tsv "
             " need to be changed. Only csv file is supported."
             )
-    parser.add_argument('--converter_file_from_col', 
+    parser.add_argument('--converter_file_from_col', '--conv_file_from_col', 
             help="Column containing matching, with respect to that in "
             "vireo output or h5ad donor columns, donor names.", dest='from_col',
             )
-    parser.add_argument('--converter_file_to_col', 
+    parser.add_argument('--converter_file_to_col', '--conv_file_to_col', 
             help="Column containing the final donor names", dest='to_col',
             )
     parser.add_argument('--h5ad_donor_column', 
@@ -65,6 +66,10 @@ def get_argument_parser():
             "that contain the classification. If vireo, specify 'vireo'. "
             "Use when a h5ad containing classification is provided as input.",
             dest="method",
+            )
+    parser.add_argument('--external_pool',
+            help="The input is the table of normalize_external_labels.py "
+            "(pool, Subj_ID, barcodes): keep the cells of this pool.",
             )
     parser.add_argument('--demux_suffix', nargs='*', 
             help="Suffix(es) to use for naming the output files according "
@@ -80,6 +85,26 @@ def get_argument_parser():
     # demux_vireo.set_defaults(func=demuxByVireo)
 
     return parser
+
+
+def external_pool(args):
+    r"""Donors and barcodes of one pool from normalize_external_labels.py.
+
+    Donor names are converted with the converter file, if given.
+    """
+    df = pd.read_csv(args.inp, sep='\t', dtype=str)
+    df = df.loc[df['pool'] == args.external_pool, ['Subj_ID', 'barcodes']]
+    if df.empty:
+        raise ValueError(f"No cells of pool '{args.external_pool}' in {args.inp}")
+    if args.converter_file is not None:
+        conv_df = pd.read_csv(args.converter_file)
+        for c in [args.from_col, args.to_col]:
+            assert c in conv_df.columns, f"No column '{c}' in the converter file!"
+        conv_map = conv_df.set_index(args.from_col)[args.to_col].astype(str).to_dict()
+        # Donors missing from the converter keep their names
+        df['Subj_ID'] = df['Subj_ID'].map(lambda d: conv_map.get(d, d))
+    file_ext = re.search(r'(\.[^.]+)$', args.output)
+    save_df(df, file_ext.group(0) if file_ext else None, args.output)
 
 
 def main():
@@ -99,6 +124,10 @@ def main():
     inp_h5ad = False if os.path.basename(args.inp) == 'donor_ids.tsv' else True
     fout = args.output
 
+    if args.external_pool is not None:
+        external_pool(args)
+        return
+
     if args.converter_file is not None:
         conv_df = pd.read_csv(args.converter_file)
         assert args.from_col in conv_df.columns, "The provided 'from' column is not present in the converter file!"
@@ -111,6 +140,7 @@ def main():
 
     # This is for splitting the bam files after finalizing genotypes
     if inp_h5ad:
+        import anndata as ad
         adata = ad.read_h5ad(args.inp)
         assert args.h5ad_don_col in adata.obs.columns, ("The provided h5ad 'donor' column is not "
             "present in the h5ad file!")

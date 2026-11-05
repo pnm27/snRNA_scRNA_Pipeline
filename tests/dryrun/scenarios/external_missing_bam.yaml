@@ -1,0 +1,16 @@
+# a pool of the external labels without a bam stops the run
+# setup: mkdir -p projdir/inp_split_filt_bams/gt_check && touch -d '1 min ago' projdir/labels.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nP2\tD1\tAAAC\n" > projdir/inp_split_filt_bams/gt_check/external_labels.tsv
+# fails: No bam for pool(s) P2
+workflow:
+  start: split_bams
+  until: split_bams
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin

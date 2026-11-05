@@ -2,6 +2,7 @@ import os
 from lib.config_models import DemuxConfig, vcf_types
 from lib.aligner import bam_paths, get_aligner, out_prefix
 from lib.utils import run_settings
+from lib.io import is_external
 from lib.aligner import count_matrix as aligner_count_matrix
 
 
@@ -12,6 +13,11 @@ from lib.aligner import count_matrix as aligner_count_matrix
 #   demux           demultiplexing (see DemuxConfig)
 #   split_bams      per-donor bams      } known once the donors of each pool
 #   identify_swaps  QTLtools-mbv        } are (checkpoint 'create_inp_splitBams')
+#
+# Donor labels from outside the pipeline ('split_by: input: external') need
+# no demux stage, and with 'workflow: start: split_bams' the bams are
+# already there (no align stage); the pools are then the ones in the labels
+# (checkpoint 'normalize_external_labels')
 
 # Stages run for each value of 'until'
 UNTIL_STAGES = {
@@ -23,21 +29,38 @@ UNTIL_STAGES = {
 }
 
 
-def until_stages(until: str) -> list:
-    """Stages run for 'workflow: until'."""
+# Stages skipped for each value of 'start'
+START_SKIPS = {
+    "align":      [],
+    "split_bams": ["align", "cellsnp", "demux"],
+}
+
+
+def until_stages(until: str, start: str = "align", external: bool = False) -> list:
+    """Stages run from 'workflow: start' to 'workflow: until'."""
     if until not in UNTIL_STAGES:
         raise ValueError(
             f"Unrecognised 'workflow: until': '{until}' (expected one of "
             f"{', '.join(UNTIL_STAGES)})"
         )
-    return UNTIL_STAGES[until]
+    if start not in START_SKIPS:
+        raise ValueError(
+            f"Unrecognised 'workflow: start': '{start}' (expected one of "
+            f"{', '.join(START_SKIPS)})"
+        )
+    skip = set(START_SKIPS[start])
+    if external and until in ("split_bams", "identify_swaps"):
+        skip.add("demux")  # donors come from the external labels
+    return [s for s in UNTIL_STAGES[until] if s not in skip]
 
 
 # ---------------------------------------------------------------------------
 # This run
 # ---------------------------------------------------------------------------
 UNTIL = run_settings(config).until
-STAGES = until_stages(UNTIL)
+START = run_settings(config).start
+EXTERNAL = is_external(config)
+STAGES = until_stages(UNTIL, START, EXTERNAL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
 VCF_TYPES = vcf_types(config)
@@ -85,6 +108,29 @@ def _picard_targets() -> list:
     }
     keys = files.keys() if progs == "all" else [progs]
     return [f"{out_prefix(config)}{files[k]}" for k in keys]
+
+
+def split_pools() -> list:
+    """Pools whose bams are split: those of the external labels
+    (checkpoint 'normalize_external_labels'), else the run's pools."""
+    if not EXTERNAL:
+        return POOLS
+    import pandas as pd
+    labels = checkpoints.normalize_external_labels.get().output[0]
+    pools = sorted(pd.read_csv(labels, sep="\t", usecols=["pool"], dtype=str)["pool"].unique())
+    if START == "split_bams":
+        # The bams must be there already: nothing aligns them in this run
+        bam = bam_paths(config, "cDNA")["bam"]
+        missing = [p for p in pools if not os.path.isfile(bam.format(pool=p))]
+        if missing:
+            raise ValueError(
+                f"No bam for pool(s) {', '.join(missing)} of the external "
+                f"labels ({labels}), expected at "
+                f"{bam.format(pool='<pool>')}. 'workflow: start: split_bams' "
+                "splits existing bams: check the aligner's bams_dir and "
+                "fold_struct, or 'pool_transformations'"
+            )
+    return pools
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +196,11 @@ def produce_targets(wildcards) -> list:
             targets += _expand_pools(STATIC_TARGETS[stage]())
 
     # Per-donor targets are resolved by 'resolve_pool_targets' (Snakefile)
-    if "split_bams" in STAGES:
+    if "split_bams" in STAGES and EXTERNAL:
+        # Pools known once the labels are read ('resolve_external_pools'),
+        # so the other targets don't wait for them
+        targets.append("resolved/external_pools.done")
+    elif "split_bams" in STAGES:
         targets += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
 
     return targets
@@ -159,6 +209,11 @@ def produce_targets(wildcards) -> list:
 # ---------------------------------------------------------------------------
 # produce_targets_dynamic — runtime expansion (after hash file exists)
 # ---------------------------------------------------------------------------
+
+def external_pool_targets(wildcards) -> list:
+    """Per-pool targets of the pools of the external labels."""
+    return expand("resolved/{pool}/{modality}.done", pool=split_pools(), modality=MODALITY)
+
 
 def produce_targets_dynamic(wildcards) -> list:
     if "identify_swaps" in STAGES:

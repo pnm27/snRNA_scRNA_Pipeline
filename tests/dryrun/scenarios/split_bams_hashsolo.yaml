@@ -3,6 +3,7 @@
 # What to run: the aligner and the last stage ('until')
 workflow:
   aligner: STARsolo
+  start: align
   until: split_bams
   picard_metrics: null
 

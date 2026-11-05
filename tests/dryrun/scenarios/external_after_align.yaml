@@ -1,0 +1,14 @@
+# align, then split by external labels: no demultiplexing
+# setup: touch projdir/pooled.h5ad
+# expect: STARsolo_sort normalize_external_labels
+# absent: run_calico_solo demux_final
+workflow:
+  until: split_bams
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/pooled.h5ad
+        pool_column: pool_of_origin

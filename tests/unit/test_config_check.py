@@ -25,6 +25,13 @@ def demux(**kw):
     return {'experiment': {'demultiplexing': kw}}
 
 
+def external(**kw):
+    return {'modules': {'split_bams': {'split_by': {'input': 'external', 'external': kw}}}}
+
+
+START_SPLIT = {'workflow': {'start': 'split_bams', 'until': 'split_bams'}}
+
+
 def test_example_is_valid():
     assert config_problems(EXAMPLE, SCHEMA) == ([], [])
 
@@ -85,6 +92,29 @@ CASES = {
     'hashsolo without the wet lab file': (
         {'experiment': {'inputs': {'wet_lab_info': None}}},
         "wet_lab_info: None is not of type 'string'", "maps hashtags to samples"),
+    'no start': (
+        {'workflow': {'start': None}},
+        "start: None is not of type 'string'", "First stage to run"),
+    'start split_bams without external labels': (
+        START_SPLIT,
+        "input: 'raw' does not match", "splits bams that are already there"),
+    'start split_bams until demux': (
+        merge({'workflow': {'start': 'split_bams', 'until': 'demux'}},
+              external(file='p.h5ad', pool_column='pool')),
+        "until: 'demux' is not one of", "splits bams that are already there"),
+    'external without file': (
+        external(pool_column='pool'),
+        "external: file: None is not of type 'string'", "needs 'split_by: external: file'"),
+    'external without pool_column': (
+        external(file='p.h5ad'),
+        "pool_column: None is not of type 'string'", "needs 'split_by: external: file'"),
+    'external key typo': (
+        external(file='p.h5ad', pool_column='pool', pool_col='x'),
+        "Unknown key(s) 'pool_col' in modules: split_bams: split_by: external", "only these keys"),
+    'external step without its argument': (
+        external(file='p.h5ad', pool_column='pool',
+                 barcode_transformations=[{'type': 'pythonic', 'operation': 'split'}]),
+        "is not valid under any of the given schemas", "Each step is"),
     'HTO without multiplexing': (
         merge(demux(method='vireo'), {'experiment': {'hto': {'enabled': True, 'multiplexing': None}}}),
         "multiplexing: None is not one of ['single', 'multiple']", "picks the kite rules"),
@@ -122,3 +152,17 @@ def test_duplicate_keys(tmp_path):
     assert "Duplicate key 'j' (lines 5 and 6)" in msg and "YAML keeps the last value" in msg
     f.write_text("a: &x\n  k: 1\nb:\n  <<: *x\n  k: 2\n")  # overriding a merged key is fine
     assert duplicate_keys(str(f)) is None
+
+
+def test_external_needs_no_demux():
+    """Bams split by external labels need no demultiplexing method."""
+    config = merge(EXAMPLE, merge(merge(START_SPLIT, demux(method=None)),
+                                  external(file='p.h5ad', pool_column='pool')))
+    assert config_problems(config, SCHEMA) == ([], [])
+
+
+def test_step_defs_match_h5ad_schema():
+    """The steps of split_by: external are those of the h5ad annotations."""
+    import json
+    with open(os.path.join(REPO, "schema", "demul_samples_annotate_h5ad.schema.json")) as f:
+        assert SCHEMA['$defs'] == json.load(f)['$defs']

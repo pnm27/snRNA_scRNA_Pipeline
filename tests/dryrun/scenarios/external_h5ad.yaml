@@ -1,0 +1,17 @@
+# split existing bams by donor labels of a pooled h5ad: no alignment or
+# demultiplexing; the pools are known once the labels are read
+# setup: touch projdir/pooled.h5ad
+# expect: normalize_external_labels
+# absent: STARsolo_sort samtools_index run_calico_solo demux_final
+# path: inp_split_filt_bams/gt_check/external_labels.tsv
+workflow:
+  start: split_bams
+  until: split_bams
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/pooled.h5ad
+        pool_column: pool_of_origin

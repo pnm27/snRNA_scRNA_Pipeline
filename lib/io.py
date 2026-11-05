@@ -230,6 +230,48 @@ def split_tool(config) -> str:
     )
 
 
+# Donor labels from outside the pipeline ('split_by: input: external') ----
+
+def is_external(config) -> bool:
+    """Whether bams are split by donor labels from outside the pipeline."""
+    return config['modules']['split_bams']['split_by']['input'].lower() == 'external'
+
+
+def external_labels(config) -> str:
+    """Table of normalize_external_labels.py (pool, Subj_ID, barcodes)."""
+    return f"{config['modules']['split_bams']['inp_split_bams_dir']}external_labels.tsv"
+
+
+def external_barcode_check(wildcards=None, config=None) -> list:
+    """Report of check_external_barcodes.py for the pool ([] unless external).
+
+    An input of the rules that read the bam by the hash file's barcodes,
+    so a barcode format mismatch stops the run before them.
+    """
+    if not is_external(config):
+        return []
+    sb = config['modules']['split_bams']
+    path = f"{sb['inp_split_bams_dir']}{sb['fold_struct_hash']}_bc_check.txt"
+    return [path.format(**dict(wildcards.items())) if wildcards else path]
+
+
+def get_params_normalize_external(wildcards, config) -> str:
+    """Options of normalize_external_labels.py, quoted for the shell."""
+    import json, shlex
+    ext = config['modules']['split_bams']['split_by']['external']
+    opts = {
+        '--donor_column': ext.get('donor_column'),
+        '--pool_column': ext.get('pool_column'),
+        '--barcode_column': ext.get('barcode_column'),
+        '--barcode_steps': json.dumps(ext['barcode_transformations'])
+            if ext.get('barcode_transformations') else None,
+        '--pool_steps': json.dumps(ext['pool_transformations'])
+            if ext.get('pool_transformations') else None,
+    }
+    return ' '.join(f"{k} {shlex.quote(str(v))}" for k, v in opts.items()
+                    if v is not None)
+
+
 def get_bam(wildcards, config, suffix=None):
     """bam and bai of the pool's modality (suffix: see lib/modality.py)."""
     return bam_paths(config, get_modality(wildcards), suffix)

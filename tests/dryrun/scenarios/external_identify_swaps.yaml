@@ -1,0 +1,19 @@
+# genotype checks (gt_check) of existing bams split by external labels
+# setup: mkdir -p projdir/STARsolo_bams/Sample_P1-cDNA projdir/inp_split_filt_bams/gt_check && touch -d '1 min ago' projdir/labels.tsv
+# setup: touch projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam.bai
+# setup: printf "pool\tSubj_ID\tbarcodes\nP1\tD1\tAAAC\n" > projdir/inp_split_filt_bams/gt_check/external_labels.tsv
+# donors: D1 D2
+# expect: check_external_barcodes filt_chr_bams split_bams qtltools_mbv
+# absent: normalize_external_labels STARsolo_sort demux_final
+workflow:
+  start: split_bams
+  until: identify_swaps
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/labels.tsv
+        barcode_column: barcode
+        pool_column: pool_of_origin

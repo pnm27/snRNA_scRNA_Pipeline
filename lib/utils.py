@@ -10,6 +10,7 @@ class RunSettings:
     """What this run does: the 'workflow' and 'experiment' keys the rules
     branch on (checked by schema/config.schema.yaml), read in one place."""
     aligner: Optional[str]          # starsolo, cellranger or cellranger_arc
+    start: Optional[str]            # first stage: align or split_bams
     until: Optional[str]            # last stage (rules/produce_targets.smk)
     method: Optional[str]           # solo, vireo, both or None
     add_to_previous: Optional[str]  # tool of the earlier run added to
@@ -41,6 +42,7 @@ def run_settings(config) -> RunSettings:
     hto = exp.get('hto') or {}
     return RunSettings(
         aligner=_lower(wf.get('aligner')),
+        start=_lower(wf.get('start')) or 'align',
         until=_lower(wf.get('until')),
         method=_lower(d.get('method')),
         add_to_previous=_lower(d.get('add_to_previous')),

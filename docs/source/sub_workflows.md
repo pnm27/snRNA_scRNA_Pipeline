@@ -30,10 +30,11 @@ This pipeline has many combinations of the aforementioned programs as a built-in
 ```
 
 # Selectable Modules
-What a run does is set by `workflow: aligner` and `workflow: until` in the config:
+What a run does is set by `workflow: aligner`, `workflow: start` and `workflow: until` in the config:
 
 - `aligner`: `STARsolo`, `cellranger` (cellranger count) or `cellranger_arc` (cellranger-arc count, multiome)
-- `until`: the last stage to run. The alignment is always a target: the indexed bam, or Picard's metrics when `workflow: picard_metrics` is set (STARsolo only).
+- `start`: the first stage to run: `align` (from the fastqs) or `split_bams` (split bams that are already there by donor labels from outside the pipeline; see [Splitting bams by external donor labels](#splitting-bams-by-external-donor-labels))
+- `until`: the last stage to run. The alignment is always a target (unless `start: split_bams`): the indexed bam, or Picard's metrics when `workflow: picard_metrics` is set (STARsolo only).
 
 | `until` | Stages run |
 |---|---|
@@ -162,6 +163,54 @@ Each demultiplexing run writes to its own sub-folder (`experiment: demultiplexin
 To split the bams by the final h5ad (e.g. after the swap correction), set `modules: split_bams: split_by: input: final`.
 
 Split bams go to a sub-folder of `inp_split_bams_dir`, `split_bams_dir`, `per_donor_split_log_dir` and `new_temp_dir`: `gt_check/` for genotype checks (`workflow: gt_check: yes`; the whole bam, or the one subset to `subset_chr`) and `final/` otherwise (the bam filtered by cell barcode).
+
+## Splitting bams by external donor labels
+
+Bams can be split by donor labels made outside the pipeline, e.g. a pooled h5ad annotated after the analysis of many pools. The file has, for each cell, its donor and its pool of origin:
+
+- a pooled h5ad: obs columns (the barcodes are the obs names, unless `barcode_column` is set), or
+- a table (`.csv`, or tab-separated `.tsv` / `.txt`; optionally `.gz`), one row per cell:
+
+```text
+barcode                     individualID   pool_of_origin
+NPSAD-P12_L1_AAACCTGAGC-1   R1234567       P12
+```
+
+To split the bams the pipeline aligned earlier (in the aligner's `bams_dir`, named by its `fold_struct`), without aligning or demultiplexing again:
+
+```yaml
+workflow:
+  aligner: STARsolo
+  start: split_bams
+  until: split_bams     # or identify_swaps
+  gt_check: no          # yes: bams for genotype checks
+
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: projdir/pooled_annotated.h5ad
+        donor_column: individualID
+        pool_column: pool_of_origin
+        barcode_column: null
+        # From the file's unique barcodes to the bam's CB tags
+        barcode_transformations:
+          - {type: pythonic, operation: split, by: "_"}
+          - {type: pythonic, operation: select_index, index: -1}
+        # From the file's pool names to the bams' {pool}, e.g. P12 -> NPSAD-P12
+        pool_transformations:
+          - {type: regex, pattern: "^", replacement: "NPSAD-"}
+```
+
+With `start: align`, the pools are aligned first and then split by the labels (no demultiplexing). The transformation steps are those of the h5ad annotations (`schema/demul_samples_annotate_h5ad.schema.json`): `pythonic` (`lower`, `upper`, `title`, `strip`, `rstrip`, `lstrip`, `split` / `join` with `by`, `select_index` with `index`, `select_range` with `start` / `end`, `replace` with `old` / `new`) and `regex` (`pattern`, `replacement`, optional `flags`). E.g. to add cellranger's `-1`: `{type: regex, pattern: "$", replacement: "-1"}`.
+
+The jobs:
+
+1. `normalize_external_labels` (checkpoint) reads the labels once, applies the steps and drops doublets, negatives and unassigned cells: `inp_split_bams_dir/external_labels.tsv` (pool, Subj_ID, barcodes). Its log lists the cells and donors of each pool and example barcodes. Pools without a bam stop the run (`start: split_bams`).
+2. `create_inp_splitBams` writes each pool's donor hash file (`donor_name_converter` and `min_cells_per_donor` apply).
+3. `check_external_barcodes` stops the run if the hash file's barcodes don't look like the bam's CB tags, before any bam is filtered or split.
+4. `bamfilt_by_CB` / `filt_chr_bams` and `split_bams` as for the other inputs.
 
 ```{eval-rst}
 .. autosummary::

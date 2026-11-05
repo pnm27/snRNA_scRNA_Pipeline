@@ -17,6 +17,8 @@
 #   # resources: <rule> <key=value ...>   (resolved resources of that rule)
 #   # path: <text>                        (must be in an input/output path)
 #   # fails: <text>                       (snakemake must fail with this text)
+#   # setup: <shell command>              (run in the scenario's project first,
+#                                          e.g. to create existing bams)
 #   # donors: <donor ...>                 (the jobs up to the donor checkpoint
 #                                          'create_inp_splitBams' are done and
 #                                          found these donors, so per-donor
@@ -101,6 +103,10 @@ for sc in "${scenarios[@]}"; do
     name=$(basename "${sc}" .yaml)
     cp -r "${TMP}/base" "${TMP}/${name}"
     cd "${TMP}/${name}"
+
+    while read -r cmd; do
+        [[ -n "${cmd}" ]] && bash -c "${cmd}"
+    done < <(sed -n 's/^# setup: *//p' "${sc}")
 
     donors=$(sed -n 's/^# donors://p' "${sc}")
     [[ -n "${donors}" ]] && mark_checkpoint_done "${sc}" ${donors}

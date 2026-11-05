@@ -294,9 +294,13 @@ def get_params_create_inp_splitBams(wildcards, config):
         "conv_file": [ donor_params.get('file', None), "--conv_file"],
         "conv_file_FromCol": [ donor_params.get('from_column', None), "--conv_file_from_col"],
         "conv_file_ToCol": [ donor_params.get('to_column', None), "--conv_file_to_col"],
-        "demux_split_method": [ demuxSplit_params.get('demux', None), "--split_by"],
-        "splitBy_h5adCol": [ _split_h5ad_column(demuxSplit_params), "--h5ad_donor_column"],
     }
+    if demuxSplit_params['input'].lower() == 'external':
+        # Cells of this pool in the table of normalize_external_labels.py
+        params_dict["external_pool"] = [wildcards.pool, "--external_pool"]
+    else:
+        params_dict["demux_split_method"] = [ demuxSplit_params.get('demux', None), "--split_by"]
+        params_dict["splitBy_h5adCol"] = [ _split_h5ad_column(demuxSplit_params), "--h5ad_donor_column"]
     
     for _, v in params_dict.items():
         if v[0]:

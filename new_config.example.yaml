@@ -73,9 +73,10 @@ references:
     cellranger_arc: cellranger-arc/2.0.2
     cellranger: cellranger/8.0.1
 
-# What to run: the aligner and the last stage ('until')
+# What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:
   aligner: STARsolo
+  start: align  # align (from the fastqs) or split_bams (existing bams, split_by: input: external)
   until: align
   picard_metrics: all  # can be null, all, rnaseq or gc
   gt_check: yes # yes or no
@@ -307,9 +308,22 @@ modules:
     split_by: # Accepts 'vireo':[vs, vireo] or 'solo':[cs, calico, calico_solo, hashsolo]
       demux: vireo
       # raw: output of vireo or solo; h5ad: h5ad of that tool in this run;
-      # final: final h5ad of the pool (e.g. after the swap correction)
+      # final: final h5ad of the pool (e.g. after the swap correction);
+      # external: donor labels from outside the pipeline (see 'external')
       input: raw
       column: null # h5ad/final only; null: SubID_vs, SubID_cs or Donor_final
+      external: # input: external only
+        file: null # pooled h5ad, or csv/tsv/txt(.gz) table, one row per cell
+        donor_column: individualID # obs (h5ad) or table column with the donors
+        pool_column: null # obs (h5ad) or table column with the pool of origin
+        barcode_column: null # null: obs names (h5ad only)
+        # Steps (pythonic or regex, as in demul_samples_annotate_h5ad.schema.json)
+        # from the file's unique barcodes to the bam's CB tags: here, the part
+        # after the last '_' (P12_L1_AAACCTGAGC-1 -> AAACCTGAGC-1)
+        barcode_transformations:
+          - {type: pythonic, operation: split, by: "_"}
+          - {type: pythonic, operation: select_index, index: -1}
+        pool_transformations: [] # from the file's pool names to the bams' {pool}
     min_cells_per_donor: 200
     subset_chr: 1 # Subset BAM files
     # These four dirs get a sub-folder: gt_check/ (gt_check: yes) or final/

@@ -176,6 +176,17 @@ RESOURCES = {
         "mem_mb": 1000,
         "time_min": 10,
     },
+    "normalize_external_labels": {
+        "cpus_per_task": 1,
+        # The obs of a large pooled h5ad (the matrix isn't read)
+        "mem_mb": {"base": 16000, "step": 16000},
+        "time_min": {"base": 30, "step": 30},
+    },
+    "check_external_barcodes": {
+        "cpus_per_task": 1,
+        "mem_mb": 1000,
+        "time_min": 10,
+    },
     "bamfilt_by_CB": {
         "cpus_per_task": 1,
         "mem_mb": 250,

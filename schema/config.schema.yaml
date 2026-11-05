@@ -67,7 +67,7 @@ properties:
     - tools
   workflow:
     type: object
-    description: 'What to run: the aligner and the last stage'
+    description: "What to run: the aligner, the first stage (start: align runs from the fastqs, as configs without 'start' did) and the last stage (until)"
     properties:
       picard_metrics:
         type:
@@ -87,6 +87,12 @@ properties:
         - cellranger
         - cellranger_arc
         description: STARsolo, cellranger (cellranger count) or cellranger_arc (cellranger-arc count, multiome)
+      start:
+        type: string
+        enum:
+        - align
+        - split_bams
+        description: "First stage to run. align: from the fastqs; split_bams: split bams already aligned by the pipeline (in the aligner's bams_dir) by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external')"
       until:
         type: string
         enum:
@@ -95,11 +101,12 @@ properties:
         - demux
         - split_bams
         - identify_swaps
-        description: "Last stage to run; the alignment (or Picard's metrics) is always a target. cellsnp: cellSNP's pileup only; split_bams and identify_swaps include the demultiplexing"
+        description: "Last stage to run; the alignment (or Picard's metrics) is always a target, unless start is split_bams. cellsnp: cellSNP's pileup only; split_bams and identify_swaps include the demultiplexing, unless the bams are split by external labels"
     required:
     - picard_metrics
     - gt_check
     - aligner
+    - start
     - until
     additionalProperties: false
   experiment:
@@ -682,11 +689,51 @@ properties:
                 type: string
               input:
                 type: string
-                pattern: (?i)^(raw|h5ad|final)$
+                pattern: (?i)^(raw|h5ad|final|external)$
+                description: "raw: output of the demultiplexing tool; h5ad: its h5ad in this run; final: final h5ad of the pool; external: donor labels from outside the pipeline (see 'external')"
               column:
                 type:
                 - string
                 - 'null'
+              external:
+                type: object
+                description: "Donor labels from outside the pipeline (input: external): a pooled h5ad, or a table, with the donor and the pool of origin of each cell"
+                additionalProperties: false
+                properties:
+                  file:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "Pooled h5ad (.h5ad) or table (.csv, .tsv or .txt, tab-separated; optionally .gz), one row per cell"
+                  donor_column:
+                    type: string
+                    default: individualID
+                    description: Column (h5ad obs or table) with the donor of each cell
+                  pool_column:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: Column (h5ad obs or table) with the pool of origin of each cell
+                  barcode_column:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "Column with the cell barcodes; null: the obs names (h5ad only)"
+                  barcode_transformations:
+                    type: array
+                    items: {oneOf: [{$ref: '#/$defs/pythonic_step'}, {$ref: '#/$defs/regex_step'}]}
+                    default:
+                    - {type: pythonic, operation: split, by: _}
+                    - {type: pythonic, operation: select_index, index: -1}
+                    description: "Steps that turn the unique barcodes of the file (e.g. P12_L1_AAACCTGAGC-1) into the bam's CB tags; the default keeps the part after the last '_'. Each step is {type: pythonic, operation: ..., and its by, index, start, end, old or new} or {type: regex, pattern: ..., replacement: ...}, as in schema/demul_samples_annotate_h5ad.schema.json"
+                  pool_transformations:
+                    type: array
+                    items: {oneOf: [{$ref: '#/$defs/pythonic_step'}, {$ref: '#/$defs/regex_step'}]}
+                    default: []
+                    description: "Steps that turn the pool names of the file into the {pool} names of the bams (steps as in barcode_transformations)"
           min_cells_per_donor:
             type: integer
           subset_chr:
@@ -917,8 +964,11 @@ allOf:
 - x-explain: "Splitting bams (and identifying swaps) isn't supported for multi-VCF runs yet"
   if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
   then: {properties: {workflow: {properties: {until: {not: {enum: [split_bams, identify_swaps]}}}}}}
-- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both)"
-  if: {properties: {workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}, required: [until]}}}
+- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both), unless they are split by external labels ('modules: split_bams: split_by: input: external')"
+  if:
+    properties:
+      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}, required: [until]}
+      modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {not: {pattern: '(?i)^external$'}}}}}}}}
   then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {enum: [solo, vireo, both]}}}}}}}
 - x-explain: "hashsolo (method solo or both) isn't supported for multiome runs yet (aligner cellranger_arc)"
   if: {properties: {workflow: {properties: {aligner: {const: cellranger_arc}}, required: [aligner]}}}
@@ -940,7 +990,131 @@ allOf:
 - x-explain: "With HTO libraries, 'experiment: hto: multiplexing' picks the kite rules: single (one HTO per cell) or multiple"
   if: {properties: {experiment: {properties: {hto: {properties: {enabled: {const: true}}, required: [enabled]}}}}}
   then: {properties: {experiment: {properties: {hto: {properties: {multiplexing: {enum: [single, multiple]}}, required: [multiplexing]}}}}}
+- x-explain: "start: split_bams splits bams that are already there by donor labels from outside the pipeline: it needs 'modules: split_bams: split_by: input: external' and until split_bams or identify_swaps"
+  if: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
+  then:
+    properties:
+      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}}
+      modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}}}}}}}
+- x-explain: "Splitting bams by external labels (split_by: input: external) needs 'split_by: external: file' (pooled h5ad or table) and 'pool_column' (the pool of origin of each cell)"
+  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}}, required: [input]}}, required: [split_by]}}, required: [split_bams]}}}
+  then:
+    properties:
+      modules:
+        properties:
+          split_bams:
+            properties:
+              split_by:
+                required: [external]
+                properties:
+                  external:
+                    required: [file, pool_column]
+                    properties: {file: {type: string}, pool_column: {type: string}}
 x-warnings:
 - x-warn: "Picard runs on STARsolo runs only: 'workflow: picard_metrics' is ignored for this aligner"
   if: {properties: {workflow: {properties: {aligner: {enum: [cellranger, cellranger_arc]}}, required: [aligner]}}}
   then: {properties: {workflow: {properties: {picard_metrics: {const: null}}}}}
+
+# Transformation steps of split_by: external. Copied from
+# schema/demul_samples_annotate_h5ad.schema.json ($defs), as the config
+# is checked without resolving other files; tests/unit/test_config_check.py
+# checks that the copies are the same
+$defs:
+  pythonic_step:
+    title: Pythonic Transformation
+    type: object
+    required:
+    - type
+    - operation
+    properties:
+      type:
+        const: pythonic
+      operation:
+        type: string
+        enum:
+        - lower
+        - upper
+        - title
+        - strip
+        - rstrip
+        - lstrip
+        - replace
+        - split
+        - join
+        - select_index
+        - select_range
+      by:
+        type: string
+        description: Delimiter used for split or join
+      index:
+        type: integer
+        description: Index used for select_index
+      start:
+        type: integer
+        description: Start index for select_range
+      end:
+        type: integer
+        description: End index for select_range
+      old:
+        type: string
+        description: Old substring for replace
+      new:
+        type: string
+        description: Replacement substring
+    allOf:
+    - if:
+        properties:
+          operation:
+            const: split
+      then:
+        required:
+        - by
+    - if:
+        properties:
+          operation:
+            const: join
+      then:
+        required:
+        - by
+    - if:
+        properties:
+          operation:
+            const: select_index
+      then:
+        required:
+        - index
+    - if:
+        properties:
+          operation:
+            const: select_range
+      then:
+        anyOf:
+        - required:
+          - start
+        - required:
+          - end
+    - if:
+        properties:
+          operation:
+            const: replace
+      then:
+        required:
+        - old
+        - new
+  regex_step:
+    title: Regex Transformation
+    type: object
+    required:
+    - type
+    - pattern
+    - replacement
+    properties:
+      type:
+        const: regex
+      pattern:
+        type: string
+      replacement:
+        type: string
+      flags:
+        type: string
+        description: Regex flags such as IGNORECASE

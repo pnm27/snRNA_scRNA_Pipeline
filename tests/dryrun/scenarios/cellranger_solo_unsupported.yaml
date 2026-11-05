@@ -3,6 +3,7 @@
 # What to run: the aligner and the last stage ('until')
 workflow:
   aligner: cellranger
+  start: align
   until: demux
   picard_metrics: null
 

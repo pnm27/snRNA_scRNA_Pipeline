@@ -89,6 +89,17 @@ rule all:
         produce_targets
 
 
+# dummy rule: the per-pool targets of the pools in the external donor
+# labels ('split_by: input: external'), known once they are read
+rule resolve_external_pools:
+    input:
+        external_pool_targets
+    output:
+        "resolved/external_pools.done"
+    shell:
+        "touch {output}"
+
+
 # dummy rule to accommodate checkpoints output
 # Gets triggered when 'workflow: until' is 'split_bams' or
 # 'identify_swaps'

@@ -19,6 +19,12 @@ from lib.config_models import demux_tools, is_multi_vcf
 from lib.utils import is_genotyped
 
 OLD = os.path.join(os.path.dirname(__file__), "old_layout")
+# Defaults of 'split_by: external', as the schema has them
+EXTERNAL_DEFAULTS = {
+    k: v.get('default') for k, v in yaml.safe_load(open(os.path.join(
+        REPO, "schema", "config.schema.yaml")))['properties']['modules']['properties']
+        ['split_bams']['properties']['split_by']['properties']['external']['properties'].items()
+}
 EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
 OLD_EXAMPLE = os.path.join(OLD, "new_config.example.yaml")
 OLD_SCENARIOS = sorted(glob.glob(os.path.join(OLD, "scenarios", "*.yaml")))
@@ -128,6 +134,8 @@ def check_derived(old, new):
         after = set(until_stages(wf['until']))
         assert before <= after and after - before <= {'align'}
         assert is_multi_vcf(new) == step.lower().endswith('multi_vcf')
+        # Old configs ran from the fastqs
+        assert wf['start'] == 'align'
     if 'demux_type' in old:
         demux_type = old['demux_type']
         demux_type = None if str(demux_type).lower() in ('none', 'null') else demux_type
@@ -142,16 +150,27 @@ def check_derived(old, new):
             assert hto['multiplexing'] == old['hto_demux_type'].lower()
 
 
+# New keys written out for old configs (not moved from old keys)
+NEW_KEYS = ['modules.split_bams.split_by.external']
+
+
 def check_round_trip(text):
     old = yaml.safe_load(text)
     new = migrated(text)
     check_derived(old, new)
+    for path in NEW_KEYS:
+        value = pop_path(new, path)
+        sb = old.get('split_bams_pipeline') or {}
+        # Only in a whole split bams block, with its defaults
+        assert (value is not KeyError) == ('inp_split_bams_dir' in sb)
+        if value is not KeyError:
+            assert value == EXTERNAL_DEFAULTS
     expected = {k: v for k, v in old.items() if k not in DERIVED | UNUSED}
     # A block holding only folder structures is empty once they are out
     moved = {k: v for k, v in back(new).items() if v != {} or k in expected}
     assert moved == expected
     # Nothing left but the derived keys
-    for path in ['workflow.aligner', 'workflow.until', 'experiment.hto.enabled',
+    for path in ['workflow.aligner', 'workflow.start', 'workflow.until', 'experiment.hto.enabled',
                  'experiment.hto.multiplexing', 'experiment.demultiplexing.method',
                  'experiment.demultiplexing.add_to_previous',
                  'experiment.demultiplexing.genotype.enabled',

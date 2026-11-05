@@ -42,6 +42,9 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
   - [ ] Multiome
   - [ ] Multi-module
   - [ ] Multi-VCF
+- [ ] Split bams by external labels (`split_by: input: external`): an optional `pools` table (pool, bam[, bai]) for bams that aren't where the aligner's `bams_dir` and `fold_struct` put them. With it, write the derived bams (`_filt.bam`, `_chr1.bam`) under `split_bams: temp_dir` instead of next to the bam, as such bams may be read-only.
+- [ ] `workflow: start: split_bams` with `split_by: input` `raw`, `h5ad` or `final` (outputs of an earlier demultiplexing run), not only `external`.
+- [ ] `workflow: start: identify_swaps`: run QTLtools-mbv on per-donor bams that are already there.
 - [ ] Generalize `split_bams.smk` (the entire split bam pipeline) for multiome: only the cDNA bam is split for now (`bamfilt_by_CB` and `split_bams` have no `{modality}`).
 - [ ] Multi-VCF: cellSNP's regions and vireo's donor genotypes don't vary by `vcf_type` yet (only the paths do); hashsolo and split bams aren't supported.
 - [ ] Multiome with hashsolo (`solo` / `both` / `add_*`).

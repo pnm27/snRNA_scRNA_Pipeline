@@ -23,7 +23,9 @@ The rules across keys are the `allOf` list of the schema, each with its explanat
 | Unknown keys stop the run at the top level and in `workflow`, `experiment` (and its sections) and `execution`: a typo would otherwise be ignored. | Fix the key; the error lists the keys read there. |
 | `add_to_previous` names the tool of the earlier run, `method` the tool run now: adding hashsolo to a vireo run is `method: solo`, `add_to_previous: vireo` (the old `add_solo`). | Set both, and `modules: demultiplex: previous_run_tag` (the earlier run's `run_tag`; null isn't accepted). |
 | Multi-VCF runs (`genotype: multi_vcf: true`) support only `method: vireo`, need `{vcf_type}` in `modules: gt_demux: fold_struct` and the vcf columns in `vcf_info_columns: vcf`, and can't split bams yet. | |
-| `until: split_bams` or `identify_swaps` needs a demultiplexing method: bams are split by the donors it finds. | |
+| `until: split_bams` or `identify_swaps` needs a demultiplexing method: bams are split by the donors it finds, unless they're split by external labels (`split_by: input: external`). | |
+| `workflow: start` is required: `align` runs from the fastqs (as configs before it did); `split_bams` needs `split_by: input: external` and `until: split_bams` or `identify_swaps`. | Old configs: `migrate_config.py` writes `start: align`. |
+| `split_by: input: external` needs `split_by: external: file` and `pool_column`; tables also need `barcode_column`. Transformation steps are checked against the h5ad annotation schema's step definitions. | |
 | hashsolo (`method: solo` or `both`) needs `experiment: hto: enabled: true` with `multiplexing`, and `experiment: inputs: wet_lab_info`. It isn't supported with cellranger count (barcodes end with `-1`) or multiome (`cellranger_arc`) yet. | |
 | With `experiment: hto: enabled: true`, `multiplexing` (`single` or `multiple`) picks the kite rules; without it no HTO rule exists. | |
 | `aligner: cellranger` needs `modules: cellranger` (`bams_dir`, `ref`). | |
@@ -41,3 +43,4 @@ The rules across keys are the `allOf` list of the schema, each with its explanat
 | The unused `fold_struct_gt_demux2` is dropped by `migrate_config.py`. | |
 | The schema's `modules: STARsolo: gene_barcodes` default (`_Solo.out/Gene/filtered/barcodes.tsv.gz`) now applies; a duplicate entry without a default overrode it before. It only matters for a config without the key. | |
 | The files the config points to (fastqs, `vcf_info` and its columns, VCFs, the wet lab file) are read when the rules are built or run, not by the check. | They are data, not config. |
+| External labels (`split_by: input: external`): whether the barcode and pool transformations give the bams' CB tags and `{pool}` names is only known once the labels are read. Missing bams stop the run when the pools are known; a barcode mismatch stops it at `check_external_barcodes`, before the bams are split. With `start: split_bams` the bams must be where the aligner's `bams_dir` and `fold_struct` put them. | They are data, not config. |

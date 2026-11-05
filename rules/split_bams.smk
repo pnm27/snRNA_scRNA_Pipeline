@@ -4,6 +4,10 @@ from lib.io import (
     split_tool,
     get_bam,
     bam_to_split,
+    is_external,
+    external_labels,
+    external_barcode_check,
+    get_params_normalize_external,
 )
 from lib.config_models import demux_run, final_paths, raw_output
 from lib.params import (
@@ -18,10 +22,38 @@ from lib.aligner import bam_paths
 from lib.utils import run_settings
 
 
+# Donor labels from outside the pipeline ('split_by: input: external'): a
+# pooled h5ad or a table with the donor and pool of origin of each cell,
+# as one pool, Subj_ID, barcodes table. A checkpoint: the pools to split
+# are the ones in this table ('workflow: start: split_bams')
+checkpoint normalize_external_labels:
+    input:
+        lambda _: config['modules']['split_bams']['split_by']['external']['file']
+
+    output:
+        external_labels(config)
+
+    params:
+        extra=partial(get_params_normalize_external, config=config),
+        script="helper_py_scripts/normalize_external_labels.py"
+
+    resources:
+        **get_resources("normalize_external_labels")
+
+    log:
+        f"{config['modules']['split_bams']['per_donor_split_log_dir']}normalize_external_labels.log"
+
+    shell:
+        """
+        python3 {params.script} {input} {output} {params.extra} > {log} 2>&1
+        """
+
+
 # Donor classification the bams are split by ('split_by: input'): the
 # output of the demultiplexing tool itself ('raw'; multiome: vireo's cDNA
 # output, as only cDNA bams are split for now), its h5ad in this run
-# ('h5ad'), or the final h5ad of the pool, e.g. after the swap correction
+# ('h5ad'), the final h5ad of the pool, e.g. after the swap correction
+# ('final'), or donor labels from outside the pipeline ('external')
 checkpoint create_inp_splitBams:
     input:
         branch(
@@ -30,6 +62,7 @@ checkpoint create_inp_splitBams:
                 'raw': lambda _: raw_output(config, split_tool(config)).replace('{modality}', 'cDNA'),
                 'h5ad': lambda _: demux_run(config, split_tool(config), run_settings(config).run_tag).h5ad,
                 'final': lambda _: final_paths(config).h5ad,
+                'external': lambda _: external_labels(config),
             },
         )
 
@@ -60,6 +93,39 @@ checkpoint create_inp_splitBams:
         sleep 30
         """
 
+# External donor labels: the hash file's barcodes must be the bam's CB
+# tags (see helper_py_scripts/check_external_barcodes.py)
+rule check_external_barcodes:
+    input:
+        unpack(partial(get_bam, config=config)),
+        hash_file=(
+            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
+        )
+
+    output:
+        (
+            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_check.txt"
+        )
+
+    params:
+        n_reads=200000,
+        script="helper_py_scripts/check_external_barcodes.py"
+
+    resources:
+        **get_resources("check_external_barcodes")
+
+    envmodules:
+        "samtools"
+
+    shell:
+        """
+        (samtools view {input.bam} || true) | head -n {params.n_reads} | \
+            python3 {params.script} --hash_file {input.hash_file} --out {output}
+        """
+
+
 # Generalize Output
 rule bamfilt_by_CB:
     input:
@@ -67,7 +133,8 @@ rule bamfilt_by_CB:
         hash_file=(
             f"{config['modules']['split_bams']['inp_split_bams_dir']}"
             f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
-            )
+            ),
+        barcode_check=partial(external_barcode_check, config=config),
 
     # cDNA only for now (see TODO: split bams for multiome)
     output:
@@ -162,6 +229,14 @@ def get_real_donors(wildcards):
 
     ckpt = checkpoints.create_inp_splitBams.get(**wildcards)
     demux_out = ckpt.output[0]
+    if not os.path.exists(demux_out):
+        # get() only checks the jobs already planned: with external labels
+        # the pools (and so this job) are known only after the checkpoint
+        # 'normalize_external_labels', so plan it now
+        from snakemake.exceptions import IncompleteCheckpointException
+        from snakemake.io import checkpoint_target
+        raise IncompleteCheckpointException(
+            checkpoints.create_inp_splitBams.rule, checkpoint_target(demux_out))
     min_cells_threshold = config['modules']['split_bams']['min_cells_per_donor']
 
     df = pd.read_csv(demux_out, sep="\t")
@@ -191,7 +266,8 @@ rule split_bams:
         barcodes_vs_donor = (
             f"{config['modules']['split_bams']['inp_split_bams_dir']}"
             f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
-        )
+        ),
+        barcode_check = partial(external_barcode_check, config=config),
     output:
         bam = (
             f"{config['modules']['split_bams']['split_bams_dir']}"
