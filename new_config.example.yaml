@@ -358,7 +358,7 @@ modules:
     bc_per_donor: 800
     time_per_donor: "02:00"
     short_bam: _chr1.bam
-    mito_reads_file: _mito_reads_stats.txt  # or null
+    mito_reads_file: _mito_reads_stats.txt  # or null; next to the per-donor bams
   identify_swaps:
     fold_struct: "{pool}_{donor}_{modality}"  # for qtltools-mbv
     mbv_inp: vireo_outs # value can be either 'vireo_outs' or 'snakemake-type' input file

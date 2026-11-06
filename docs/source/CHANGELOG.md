@@ -259,6 +259,7 @@
 - Fixed: a duplicate `split_by: external: pools` key in `new_config.example.yaml`
 - Pools of the external labels missing from the pools table are no longer an error: they aren't split, with a warning (e.g. only some bams kept, for disk space). The run still stops when none of the labels' pools is in the table, or when a listed pool's bam or bai is missing
   - Dry runs: `external_pools_unlisted` (was `external_pools_missing_bam`), `external_pools_none_listed`, and `external_pools_missing_bam` now for a listed pool without its bam; new `# says:` header (text the output must have)
+- Fixed: the per-donor mito read counts (`gt_check: no`) were written to the aligner's folder with `{pool}` never filled in, so `create_per_donor_bams.bash` failed with "No such file or directory". The file is now `<split_bams_dir><fold_struct_bams><pool><mito_reads_file>`, next to the pool's per-donor bams; `mito_reads_file: null` writes none
 - `pythonic` steps (h5ad annotations, `demul_samples_annotate_h5ad_template.json`): `lower`, `upper`, `title`, `strip`, `rstrip` and `lstrip`, allowed by the schema, returned `None`; `regex` steps' `flags` (e.g. `IGNORECASE`) were passed as a string. Both step types now live in `helper_py_scripts/transform_steps.py`, shared by `demultiplex_helper_funcs.py` and `normalize_external_labels.py`
 
 ---

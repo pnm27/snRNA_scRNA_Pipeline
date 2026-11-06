@@ -822,6 +822,10 @@ properties:
             type:
             - string
             - 'null'
+            description: Suffix of a pool's file of mito read counts per donor,
+              written next to its per-donor bams (split_bams_dir +
+              fold_struct_bams + pool + this) when 'gt_check' is off. null
+              for none
           fold_struct_hash:
             type: string
           fold_struct_bams:

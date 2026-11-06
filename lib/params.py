@@ -327,8 +327,14 @@ def subset_to_chr(wildcards, config):
 
 
 def get_mito_file(wildcards, config):
-    if config['workflow']['gt_check']:
+    """Mito read counts of a pool's donors, next to its per-donor bams.
+
+    Not in the aligner's folders: bams split with a pools table come from
+    elsewhere, so those folders may not exist.
+    """
+    split = config['modules']['split_bams']
+    if config['workflow']['gt_check'] or not split.get('mito_reads_file'):
         return False
-    elif not config['workflow']['gt_check']:
-        return f"{out_prefix(config)}{config['modules']['split_bams']['mito_reads_file']}"
+    pool_dir = split['fold_struct_bams'].replace('{pool}', wildcards.pool)
+    return f"{split['split_bams_dir']}{pool_dir}{wildcards.pool}{split['mito_reads_file']}"
     
