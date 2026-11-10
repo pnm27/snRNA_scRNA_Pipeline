@@ -131,7 +131,14 @@ if [ ! -d "${outdir}" ]; then mkdir -p ${outdir}; fi
 if [[ ${verbose} == "TRUE" ]]; then
     set -x
 fi
-if [[ ! -f "${tempdir%/}/${donor}.bam.bai" ]]; then
+# Re-use a bam extracted by an earlier (killed) run only when it is complete
+# and indexed: a run killed between moving the bam and the bai out of the
+# temp dir leaves the bai alone, which would otherwise fail every rerun
+temp_bam="${tempdir%/}/${donor}.bam"
+if [[ -f "${temp_bam}.bai" ]] && samtools quickcheck "${temp_bam}" &> /dev/null; then
+    echo "Re-using ${temp_bam} from an earlier run"
+else
+    rm -f "${temp_bam}" "${temp_bam}.bai"
     awk -v don="${donor}" '(NR> 1 && $1 == don){print $2}' ${hash_file} > ${tempdir%/}/${donor}.txt
     # samtools view -D CB:${3}${1}.txt ${5} -bho "${4}${1}.bam"
     samtools view -@ 10 -D CB:${tempdir%/}/${donor}.txt ${pooled_bam} -bho "${tempdir%/}/${donor}.bam"
