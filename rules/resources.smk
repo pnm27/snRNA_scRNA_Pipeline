@@ -188,8 +188,8 @@ RESOURCES = {
         "time_min": 10,
     },
     "bamfilt_by_CB": {
-        "cpus_per_task": 1,
-        "mem_mb": 250,
+        "cpus_per_task": 4,
+        "mem_mb": 500,
         "time_min": 300,
     },
     "filt_chr_bams": {
@@ -208,9 +208,9 @@ RESOURCES = {
         "time_min": {"base": 20, "step": 20},
     },
     "split_bams": {
-        "cpus_per_task": 1,
-        "mem_mb": {"base": 250, "step": 100},
-        "time_min": 30,
+        "cpus_per_task": 3,
+        "mem_mb": {"base": 200, "step": 100},
+        "time_min": 600,
     },
 
     # identify_swaps.smk
