@@ -263,6 +263,8 @@ def get_params_demux_final(wildcards, input, config):
             f"--swap_columns {swap['pool_column']} {swap['donor_from']} "
             f"{swap['donor_to']} "
         )
+        if swap.get('status_column'):
+            ret_str += f"--swap_status {swap['status_column']} "
     return ret_str
 
 

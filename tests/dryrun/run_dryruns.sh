@@ -123,14 +123,14 @@ for sc in "${scenarios[@]}"; do
     fails=$(sed -n 's/^# fails: *//p' "${sc}")
     if [[ -n "${fails}" ]]; then
         (( status == 0 )) && errors+=("snakemake didn't fail")
-        grep -qF "${fails}" <<< "${out}" || errors+=("no '${fails}' in the output")
+        grep -qF -- "${fails}" <<< "${out}" || errors+=("no '${fails}' in the output")
     elif (( status != 0 )); then
         errors+=("snakemake exited with ${status}")
     fi
 
     while read -r txt; do
         [[ -z "${txt}" ]] && continue
-        grep -qF "${txt}" <<< "${out}" || errors+=("no '${txt}' in the output")
+        grep -qF -- "${txt}" <<< "${out}" || errors+=("no '${txt}' in the output")
     done < <(sed -n 's/^# says: *//p' "${sc}")
 
     jobs=$(grep -oE "^(local)?(rule|checkpoint) [A-Za-z0-9_]+" <<< "${out}" \

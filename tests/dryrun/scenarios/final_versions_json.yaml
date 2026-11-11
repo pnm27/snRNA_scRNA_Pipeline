@@ -1,0 +1,35 @@
+# existing bams split by the final h5ads of the demultiplexing versions named
+# in the swap correction file, their dirs read from the 'demultiplex_paths'
+# of the h5ad annotation template; donors not True in final_status are
+# dropped, and S3 (none True) isn't split
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p root runs/w_gt runs/wo_gt info/w_gt info/wo_gt
+# setup: for s in S1 S2 S3; do touch root/$s.bam root/$s.bam.bai; done
+# setup: touch runs/w_gt/Sample_S1-cDNA_STARsolo_vS_out.h5ad info/w_gt/Sample_S1-cDNA_vireo_stats.tsv runs/wo_gt/Sample_S2-cDNA_STARsolo_vS_out.h5ad info/wo_gt/Sample_S2-cDNA_vireo_stats.tsv
+# setup: printf "pool\tbam\nS1\troot/S1.bam\nS2\troot/S2.bam\nS3\troot/S3.bam\n" > bams.tsv
+# setup: printf "Sample\tDonor_name\tSolution\tfinal_status\tVersion_used\nS1\tdonor2\tdonA\tTrue\tw_gt\nS1\tdonor3\tdonB\tFalse\tw_gt\nS2\tdonor4\tdonC\tTrue\two_gt\nS3\tdonor5\tdonD\tFalse\tw_gt\n" > swap.tsv
+# setup: printf '{"demultiplex_paths": {"w_gt": {"demux": "runs/w_gt/", "info": "info/w_gt/"}, "wo_gt": {"demux": "runs/wo_gt"}}}' > template.json
+# expect: demux_final create_inp_splitBams
+# absent: demux_run_vireo vireoSNP STARsolo_sort normalize_external_labels
+# path: runs/w_gt/Sample_S1-cDNA_STARsolo_vS_out.h5ad info/w_gt/Sample_S1-cDNA_vireo_stats.tsv runs/wo_gt/Sample_S2-cDNA_STARsolo_vS_out.h5ad
+# says: final_status' is True, not split: S3
+workflow:
+  start: split_bams
+  until: split_bams
+modules:
+  demultiplex:
+    swap_correction:
+      file: swap.tsv
+      pool_column: Sample
+      version_column: Version_used
+      donor_from: Donor_name
+      donor_to: Solution
+      status_column: final_status
+      versions: template.json
+  split_bams:
+    split_by:
+      demux: vireo
+      input: final
+      external:
+        pools: bams.tsv

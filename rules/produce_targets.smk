@@ -1,5 +1,5 @@
 import os, sys
-from lib.config_models import DemuxConfig, vcf_types
+from lib.config_models import DemuxConfig, vcf_types, swap_correction, swap_pools
 from lib.aligner import bam_paths, get_aligner, out_prefix
 from lib.utils import run_settings
 from lib.io import is_external, external_pools_file, missing_pool_bams, read_pools_table
@@ -17,7 +17,9 @@ from lib.aligner import count_matrix as aligner_count_matrix
 # Donor labels from outside the pipeline ('split_by: input: external') need
 # no demux stage, and with 'workflow: start: split_bams' the bams are
 # already there (no align stage); the pools are then the ones in the labels
-# (checkpoint 'normalize_external_labels')
+# (checkpoint 'normalize_external_labels'). Split by the final h5ad ('input:
+# final'), such a run makes only the final h5ads of the pools of the swap
+# correction file, from the demultiplexing versions it names
 
 # Stages run for each value of 'until'
 UNTIL_STAGES = {
@@ -120,6 +122,46 @@ def _note_once(key: str, msg: str):
         print(msg, file=sys.stderr)
 
 
+def existing_bam_pools(pools: list, source: str, hint: str) -> list:
+    """Of 'pools' (those of 'source'), the ones whose bams are split in a
+    'workflow: start: split_bams' run: with a pools table, the ones it lists
+    (a warning for the others, e.g. bams not kept for disk space). Their
+    bams must be there already: nothing aligns them in this run."""
+    if POOLS_TABLE:
+        table = read_pools_table(POOLS_TABLE)
+        unlisted = [p for p in pools if p not in table]
+        pools = [p for p in pools if p in table]
+        if not pools:
+            raise ValueError(
+                f"None of the pools of {source} are in the pools table "
+                f"{POOLS_TABLE}: {', '.join(unlisted)}. Check the table's "
+                f"'pool' column{hint}"
+            )
+        if unlisted:
+            _note_once("unlisted", (
+                f"Warning: pool(s) of {source} not in the pools table "
+                f"{POOLS_TABLE}, not split: {', '.join(unlisted)}"))
+        extra = sorted(set(table) - set(pools))
+        if extra:
+            _note_once("extra", (
+                f"Pools table {POOLS_TABLE}: pool(s) not in {source}, not "
+                f"split: {', '.join(extra)}"))
+    missing = missing_pool_bams(config, pools)
+    if missing:
+        where = (
+            f"check the pools table ('split_by: external: pools')"
+            if POOLS_TABLE else
+            f"expected at {bam_paths(config, 'cDNA')['bam'].format(pool='<pool>')}: "
+            "check the aligner's bams_dir and fold_struct (or list the "
+            "bams in 'split_by: external: pools')"
+        )
+        raise ValueError(
+            f"No bam for pool(s) of {source}:\n  " + "\n  ".join(missing)
+            + f"\n'workflow: start: split_bams' splits existing bams: {where}{hint}"
+        )
+    return pools
+
+
 def split_pools() -> list:
     """Pools whose bams are split: those of the external labels
     (checkpoint 'normalize_external_labels'), else the run's pools."""
@@ -129,44 +171,36 @@ def split_pools() -> list:
     labels = checkpoints.normalize_external_labels.get().output[0]
     pools = sorted(pd.read_csv(labels, sep="\t", usecols=["pool"], dtype=str)["pool"].unique())
     if START == "split_bams":
-        if POOLS_TABLE:
-            # Fewer bams kept than labelled pools (e.g. for disk space): the
-            # pools of the labels missing from the table aren't split
-            table = read_pools_table(POOLS_TABLE)
-            unlisted = [p for p in pools if p not in table]
-            pools = [p for p in pools if p in table]
-            if not pools:
-                raise ValueError(
-                    f"None of the pools of the external labels ({labels}) are "
-                    f"in the pools table {POOLS_TABLE}: {', '.join(unlisted)}. "
-                    "Check the table's 'pool' column, or 'pool_transformations'"
-                )
-            if unlisted:
-                _note_once("unlisted", (
-                    f"Warning: pool(s) of the external labels not in the pools "
-                    f"table {POOLS_TABLE}, not split: {', '.join(unlisted)}"))
-            extra = sorted(set(table) - set(pools))
-            if extra:
-                _note_once("extra", (
-                    f"Pools table {POOLS_TABLE}: pool(s) without external "
-                    f"labels, not split: {', '.join(extra)}"))
-        # The bams must be there already: nothing aligns them in this run
-        missing = missing_pool_bams(config, pools)
-        if missing:
-            where = (
-                f"check the pools table ('split_by: external: pools')"
-                if POOLS_TABLE else
-                f"expected at {bam_paths(config, 'cDNA')['bam'].format(pool='<pool>')}: "
-                "check the aligner's bams_dir and fold_struct (or list the "
-                "bams in 'split_by: external: pools')"
-            )
-            raise ValueError(
-                f"No bam for pool(s) of the external labels ({labels}):\n  "
-                + "\n  ".join(missing)
-                + f"\n'workflow: start: split_bams' splits existing bams: {where}, "
-                "or 'pool_transformations'"
-            )
+        pools = existing_bam_pools(
+            pools, f"the external labels ({labels})", ", or 'pool_transformations'")
     return pools
+
+
+def swap_file_pools() -> list:
+    """Pools of a 'workflow: start: split_bams' run split by the final h5ad
+    ('split_by: input: final'): those of the swap correction file with a
+    donor kept ('status_column')."""
+    swap = swap_correction(config)
+    pools = swap_pools(config)
+    if swap.get('status_column'):
+        dropped = sorted(set(swap_pools(config, kept_only=False)) - set(pools))
+        if dropped:
+            _note_once("no_status", (
+                f"Warning: pool(s) of the swap correction file {swap['file']} "
+                f"with no donor whose '{swap['status_column']}' is True, not "
+                f"split: {', '.join(dropped)}"))
+    if not pools:
+        raise ValueError(
+            f"No pool of the swap correction file {swap['file']} has a donor to "
+            "split" + (f" ('{swap['status_column']}' True)" if swap.get('status_column') else "")
+        )
+    return existing_bam_pools(
+        pools, f"the swap correction file ({swap['file']})", "")
+
+# Final h5ads of existing bams ('workflow: start: split_bams', 'split_by:
+# input: final'): the pools are those of the swap correction file
+if START == "split_bams" and not EXTERNAL:
+    POOLS = swap_file_pools()
 
 
 # ---------------------------------------------------------------------------

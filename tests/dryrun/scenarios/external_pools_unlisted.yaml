@@ -6,7 +6,7 @@
 # setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\n" > projdir/bams.tsv
 # setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC\nsamp9\tD2\tAAAG\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
 # donors: D1 D2
-# says: Warning: pool(s) of the external labels not in the pools table projdir/bams.tsv, not split: samp9
+# says: Warning: pool(s) of the external labels (projdir/inp_split_filt_bams/final/external_labels.tsv) not in the pools table projdir/bams.tsv, not split: samp9
 # expect: check_external_barcodes bamfilt_by_CB split_bams
 # path: Sample_samp1-cDNA/D1.bam
 workflow:

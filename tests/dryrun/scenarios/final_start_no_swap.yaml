@@ -1,0 +1,10 @@
+# start: split_bams by the final h5ad needs the swap correction file
+# standalone:
+# fails: it needs 'modules: demultiplex: swap_correction: file', 'pool_column' and 'version_column'
+workflow:
+  start: split_bams
+  until: split_bams
+modules:
+  split_bams:
+    split_by:
+      input: final

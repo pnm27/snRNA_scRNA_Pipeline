@@ -1,0 +1,28 @@
+# existing bams split by the final h5ads of versions mapped to runs of this
+# pipeline ('versions' in the config); bams in the aligner's folders
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p projdir/STARsolo_bams/Sample_P1-cDNA projdir/final_count_matrix/vireoSNP/w_gt projdir/demultiplex/info/vireoSNP/w_gt
+# setup: touch projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam projdir/STARsolo_bams/Sample_P1-cDNA/P1-cDNA_Aligned.sortedByCoord.out.bam.bai
+# setup: touch projdir/final_count_matrix/vireoSNP/w_gt/Sample_P1-cDNA_STARsolo_vS_out.h5ad projdir/demultiplex/info/vireoSNP/w_gt/Sample_P1-cDNA_vireo_stats.tsv
+# setup: printf "Sample\tDonor_name\tSolution\tVersion_used\nP1\tdonor2\tdonA\tgt\n" > swap.tsv
+# expect: demux_final create_inp_splitBams
+# absent: demux_run_vireo vireoSNP STARsolo_sort
+# path: projdir/final_count_matrix/vireoSNP/w_gt/Sample_P1-cDNA_STARsolo_vS_out.h5ad
+workflow:
+  start: split_bams
+  until: split_bams
+modules:
+  demultiplex:
+    swap_correction:
+      file: swap.tsv
+      pool_column: Sample
+      version_column: Version_used
+      donor_from: Donor_name
+      donor_to: Solution
+      versions:
+        gt: "vireo:w_gt"
+  split_bams:
+    split_by:
+      demux: vireo
+      input: final

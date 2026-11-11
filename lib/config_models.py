@@ -110,7 +110,14 @@ class DemuxRun:
         return f"{self.tool}:{self.run_tag or ''}"
 
 
-def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
+def demux_run(config, tool: str, run_tag: Optional[str],
+              dirs: Optional[dict] = None) -> DemuxRun:
+    """Rule A outputs of 'tool' in the run tagged 'run_tag'.
+
+    dirs: {'demux': h5ad dir, 'info': stats dir (optional)} of a version
+    named in 'swap_correction: versions', in place of the run's dirs
+    (the file names still follow the tool's fold_struct).
+    """
     if tool == 'solo':
         section, fold = 'hashsolo', config['modules']['hashsolo']['fold_struct']
     elif tool == 'vireo':
@@ -125,19 +132,27 @@ def demux_run(config, tool: str, run_tag: Optional[str]) -> DemuxRun:
     if tool == 'none':
         h5ad = h5ad.replace("_vS", "")
 
+    if dirs is None:
+        h5ad_dir = run_dir(config, section, 'final_count_matrix_dir', run_tag)
+        info_dir = run_dir(config, section, 'demultiplex_info_dir', run_tag)
+    else:
+        h5ad_dir = _as_dir(dirs['demux'])
+        info_dir = _as_dir(dirs['info']) if dirs.get('info') else None
+
     stats = None
-    if tool in STATS_SUFFIX:
-        stats = (
-            f"{run_dir(config, section, 'demultiplex_info_dir', run_tag)}"
-            f"{fold}{STATS_SUFFIX[tool]}"
-        )
+    if tool in STATS_SUFFIX and info_dir:
+        stats = f"{info_dir}{fold}{STATS_SUFFIX[tool]}"
 
     return DemuxRun(
         tool=tool,
         run_tag=run_tag,
-        h5ad=f"{run_dir(config, section, 'final_count_matrix_dir', run_tag)}{fold}{h5ad}",
+        h5ad=f"{h5ad_dir}{fold}{h5ad}",
         stats=stats,
     )
+
+
+def _as_dir(path: str) -> str:
+    return path if path.endswith('/') else f"{path}/"
 
 
 def parse_label(label: str) -> List[tuple]:
@@ -170,17 +185,109 @@ def swap_correction(config) -> dict:
     return config['modules']['demultiplex'].get('swap_correction') or {}
 
 
-def swap_version(config, pool: str) -> Optional[str]:
-    """Demultiplex version of 'pool' in the swap correction file, if any."""
+# Values of 'swap_correction: status_column' that keep a donor
+TRUE_STATUS = {'true', 'yes', '1'}
+
+
+def is_kept(status) -> bool:
+    """Whether a 'status_column' value keeps the donor (True, yes or 1)."""
+    return str(status).strip().lower() in TRUE_STATUS or status is True
+
+
+def swap_pools(config, kept_only: bool = True) -> List[str]:
+    """Pools of the swap correction file, in its order. With a
+    'status_column' (and kept_only), only the pools with a donor kept
+    (see is_kept)."""
     swap = swap_correction(config)
+    df = _swap_df(swap)
+    if kept_only and swap.get('status_column'):
+        df = df.loc[df[swap['status_column']].map(is_kept)]
+    return list(dict.fromkeys(df[swap['pool_column']].astype(str)))
+
+
+def _swap_df(swap: dict):
     if not swap.get('file'):
-        return None
+        raise ValueError("Set 'modules: demultiplex: swap_correction: file'")
     if not os.path.isfile(swap['file']):
         raise ValueError(
             "'modules: demultiplex: swap_correction: file' doesn't exist: "
             f"{swap['file']}"
         )
     df = _read_swap_file(swap['file'])
+    cols = [swap.get(k) for k in ('pool_column', 'version_column', 'donor_from',
+                                  'donor_to', 'status_column') if swap.get(k)]
+    missing = [c for c in cols if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Swap correction file {swap['file']}: no column(s) "
+            f"{', '.join(missing)} (columns: {', '.join(map(str, df.columns))})"
+        )
+    return df
+
+
+@lru_cache(maxsize=None)
+def _read_versions_json(path: str) -> dict:
+    import json
+    with open(path) as f:
+        paths = json.load(f).get('demultiplex_paths')
+    if not isinstance(paths, dict) or not paths:
+        raise ValueError(
+            f"'swap_correction: versions' ({path}) has no 'demultiplex_paths': "
+            "one entry per version name, with its 'demux' dir (and 'info')"
+        )
+    return paths
+
+
+def swap_versions(config) -> Optional[dict]:
+    """'swap_correction: versions' as {name: '<tool>:<run_tag>' or
+    {'demux': dir, 'info': dir}}: a map in the config, or the
+    'demultiplex_paths' of a JSON file (e.g. the h5ad annotation template).
+    None: the version column holds '<tool>:<run_tag>' itself."""
+    versions = swap_correction(config).get('versions')
+    if not versions:
+        return None
+    if isinstance(versions, str):
+        if not os.path.isfile(versions):
+            raise ValueError(
+                f"'modules: demultiplex: swap_correction: versions' doesn't exist: {versions}")
+        return _read_versions_json(versions)
+    return versions
+
+
+def _split_by_tool(config) -> str:
+    """Tool of 'split_bams: split_by: demux' (solo or vireo)."""
+    demux = str(config['modules']['split_bams']['split_by'].get('demux') or 'vireo').lower()
+    return 'vireo' if demux in ('vireo', 'vs') else 'solo'
+
+
+def version_runs(config, version: str) -> List[DemuxRun]:
+    """Rule A outputs of a version of the swap correction file."""
+    versions = swap_versions(config)
+    if versions is None:
+        return [demux_run(config, t, r) for t, r in parse_label(version)]
+    if version not in versions:
+        raise ValueError(
+            f"Demultiplex version '{version}' of the swap correction file isn't "
+            f"in 'swap_correction: versions' (has: {', '.join(map(str, versions))})"
+        )
+    value = versions[version]
+    if isinstance(value, str):
+        return [demux_run(config, t, r) for t, r in parse_label(value)]
+    if not isinstance(value, dict) or not value.get('demux'):
+        raise ValueError(
+            f"'swap_correction: versions: {version}' needs '<tool>:<run_tag>' "
+            "or a 'demux' dir (and optionally 'info' and 'tool')"
+        )
+    tool = value.get('tool') or _split_by_tool(config)
+    return [demux_run(config, tool, version, dirs=value)]
+
+
+def swap_version(config, pool: str) -> Optional[str]:
+    """Demultiplex version of 'pool' in the swap correction file, if any."""
+    swap = swap_correction(config)
+    if not swap.get('file'):
+        return None
+    df = _swap_df(swap)
     versions = df.loc[
         df[swap['pool_column']].astype(str) == str(pool),
         swap['version_column']
@@ -197,7 +304,7 @@ def final_sources(config, pool: str) -> List[DemuxRun]:
     """Rule A outputs that make up the final h5ad of 'pool', oldest first."""
     version = swap_version(config, pool)
     if version is not None:
-        return [demux_run(config, t, r) for t, r in parse_label(version)]
+        return version_runs(config, str(version))
 
     demux_type = get_demux_type(config)
     ret = []

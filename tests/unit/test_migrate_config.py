@@ -152,6 +152,7 @@ def check_derived(old, new):
 
 # New keys written out for old configs (not moved from old keys)
 NEW_KEYS = ['modules.split_bams.split_by.external']
+SWAP_NEW_KEYS = ['status_column', 'versions']
 
 
 def check_round_trip(text):
@@ -165,6 +166,12 @@ def check_round_trip(text):
         assert (value is not KeyError) == ('inp_split_bams_dir' in sb)
         if value is not KeyError:
             assert value == EXTERNAL_DEFAULTS
+    # Keys added to a whole swap correction block, as null
+    swap = (old.get('demultiplex') or {}).get('swap_correction')
+    whole_swap = isinstance(swap, dict) and 'donor_to' in swap
+    for key in SWAP_NEW_KEYS:
+        value = pop_path(new, f'modules.demultiplex.swap_correction.{key}')
+        assert value is (None if whole_swap else KeyError)
     expected = {k: v for k, v in old.items() if k not in DERIVED | UNUSED}
     # A block holding only folder structures is empty once they are out
     moved = {k: v for k, v in back(new).items() if v != {} or k in expected}

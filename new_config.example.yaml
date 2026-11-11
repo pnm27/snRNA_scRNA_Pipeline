@@ -76,7 +76,7 @@ references:
 # What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:
   aligner: STARsolo
-  # align (from the fastqs) or split_bams (existing bams, split_by: input: external);
+  # align (from the fastqs) or split_bams (existing bams, split_by: input: external or final);
   # a split_bams config needs only what differs from schema/split_bams_defaults.yaml
   start: align
   until: align
@@ -296,13 +296,19 @@ modules:
     # Pools whose final demultiplexing (and donor names) were confirmed, e.g.
     # by identify_swaps. One row per pool and donor; 'version_column' has
     # <tool>:<run_tag> (tool: solo, vireo or both; e.g. vireo:w_gt_2, or runs
-    # of two tools: solo:hto,vireo:w_gt) and an empty 'donor_to' drops that donor
+    # of two tools: solo:hto,vireo:w_gt), or a name in 'versions'; an empty
+    # 'donor_to' drops that donor
     swap_correction:
       file: null
       pool_column: null
       version_column: null
       donor_from: null
       donor_to: null
+      status_column: null  # e.g. final_status: donors not True are dropped
+      # null, a JSON file whose 'demultiplex_paths' has each version's 'demux'
+      # (h5ad) and 'info' dirs (e.g. demul_samples_annotate_h5ad_template.json),
+      # or a map, e.g. {w_gt: "vireo:w_gt", wo_gt: {demux: dir/, info: dir/}}
+      versions: null
   split_bams:
     fold_struct_hash: "Sample-{pool}-cDNA"  # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
     fold_struct_bams: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
@@ -311,7 +317,8 @@ modules:
       demux: vireo
       # 'input' below Accepts 'raw', 'h5ad', 'final' or 'external'
       # raw: output of vireo or solo; h5ad: h5ad of that tool in this run;
-      # final: final h5ad of the pool (e.g. after the swap correction);
+      # final: final h5ad of the pool (e.g. after the swap correction; with
+      # start: split_bams, made from the versions of the swap correction file);
       # external: donor labels from outside the pipeline (see 'external')
       input: raw
       column: null # h5ad/final only; null: SubID_vs, SubID_cs or Donor_final

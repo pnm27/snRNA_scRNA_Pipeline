@@ -60,6 +60,9 @@ def get_argument_parser():
     parser.add_argument('--swap_columns', nargs=3, default=None,
         metavar=('pool', 'donor_from', 'donor_to'),
         help="Columns of the swap correction file.")
+    parser.add_argument('--swap_status', default=None,
+        help="Column of the swap correction file whose values other than "
+        "True (yes, 1) drop the donor, as an empty donor_to does.")
     return parser
 
 
@@ -80,12 +83,22 @@ def donor_column(adata: ad.AnnData, preferred: str | None) -> str | None:
     return None
 
 
-def swap_donor_map(fname: str, cols: list[str], pool: str) -> dict:
-    """{donor_from: donor_to} of 'pool' (donor_to is NaN to drop a donor)."""
+def is_kept(status) -> bool:
+    """Whether a status value keeps the donor (True, yes or 1)."""
+    return status is True or str(status).strip().lower() in {'true', 'yes', '1'}
+
+
+def swap_donor_map(fname: str, cols: list[str], pool: str,
+                   status_col: str | None = None) -> dict:
+    """{donor_from: donor_to} of 'pool' (donor_to is NaN to drop a donor,
+    as is a donor whose 'status_col' isn't True)."""
     pool_col, from_col, to_col = cols
     df = auto_read(fname)
     df = df.loc[df[pool_col].astype(str) == pool]
-    return dict(zip(df[from_col].astype(str), df[to_col]))
+    to = df[to_col]
+    if status_col:
+        to = to.where(df[status_col].map(is_kept))
+    return dict(zip(df[from_col].astype(str), to))
 
 
 STAT_COLS = ['Observations', 'Vals']
@@ -115,7 +128,7 @@ def main():
             if not args.swap_columns:
                 raise ValueError("--swap_columns is needed with --swap_correct")
             donor_map = swap_donor_map(args.swap_correct, args.swap_columns,
-                args.pool_name)
+                args.pool_name, args.swap_status)
             swapped = bool(donor_map)
             donors = donors.map(
                 lambda d: d if d not in donor_map

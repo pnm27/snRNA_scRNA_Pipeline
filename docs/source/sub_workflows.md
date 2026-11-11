@@ -157,10 +157,49 @@ Each demultiplexing run writes to its own sub-folder (`experiment: demultiplexin
 
 `demux_final` combines, for each pool:
 
-1. the runs in its row of the swap correction file (`modules: demultiplex: swap_correction`), given as `<tool>:<run_tag>` (tool: `solo`, `vireo` or `both`), whose `donor_from` → `donor_to` columns rename the donors (an empty `donor_to` marks the donor's cells `Removed`), else
+1. the runs in its row of the swap correction file (`modules: demultiplex: swap_correction`), given as `<tool>:<run_tag>` (tool: `solo`, `vireo` or `both`) or as a name in `versions`, whose `donor_from` → `donor_to` columns rename the donors (an empty `donor_to`, or a `status_column` value other than True, marks the donor's cells `Removed`), else
 2. the tools of this run and, with `add_to_previous`, the other tool from the run `modules: demultiplex: previous_run_tag`.
 
 To split the bams by the final h5ad (e.g. after the swap correction), set `modules: split_bams: split_by: input: final`.
+
+### Splitting existing bams by the versions of the swap correction file
+
+When the bams and the demultiplexing runs already exist, a run can start at the split (`workflow: start: split_bams`) and take everything from the swap correction file, e.g.
+
+```text
+Sample   Donor_name  Solution  perc_het_consistency  ...  final_status  Version_used
+Sample1  donor2      donA      0.953693              ...  True          w_gt
+Sample1  donor3      donB      0.955703              ...  True          w_gt
+Sample2  donor4      donC      0.960862              ...  True          w_gt
+```
+
+```yaml
+workflow:
+  start: split_bams
+  until: split_bams
+modules:
+  demultiplex:
+    swap_correction:
+      file: swap_corrections.tsv
+      pool_column: Sample
+      version_column: Version_used
+      donor_from: Donor_name
+      donor_to: Solution
+      status_column: final_status
+      versions: demul_samples_annotate_h5ad_template.json
+  split_bams:
+    split_by:
+      demux: vireo
+      input: final
+      external:
+        pools: bams.tsv   # optional: bams outside the aligner's folders
+```
+
+- The pools are those of the file with a donor whose `status_column` is True (`True`, `yes` or `1`); the others aren't split (a warning). Donors not True are dropped (`Removed`), as an empty `donor_to` is.
+- `versions` says what the names in `version_column` are: a JSON file whose `demultiplex_paths` gives each name's `demux` (h5ad) dir and, optionally, `info` (stats) dir, as in the h5ad annotation template (so the template and the run share them); or a map in the config, of each name to `<tool>:<run_tag>` (a run of this pipeline), or to `{demux, info, tool}`. Without it, the column holds `<tool>:<run_tag>`.
+- In a version's dirs the file names follow the tool's `fold_struct` and `final_count_matrix_h5ad` (vireo: `<demux>Sample_<pool>-cDNA_STARsolo_vS_out.h5ad` and `<info>Sample_<pool>-cDNA_vireo_stats.tsv` with the example's values); the tool is `split_by: demux` unless the map gives one.
+- Only `demux_final` (the final h5ads, in `modules: demultiplex: demux_count_matrix_dir`) and the split run. The bams are in the aligner's folders, or in the pools table (`split_by: external: pools`), as with external labels; pools of the swap correction file missing from the table aren't split (a warning).
+- Keys left out take the defaults of `schema/split_bams_defaults.yaml`, as below.
 
 Split bams go to a sub-folder of `inp_split_bams_dir`, `split_bams_dir`, `per_donor_split_log_dir` and `new_temp_dir`: `gt_check/` for genotype checks (`workflow: gt_check: yes`; the whole bam, or the one subset to `subset_chr`) and `final/` otherwise (the bam filtered by cell barcode).
 

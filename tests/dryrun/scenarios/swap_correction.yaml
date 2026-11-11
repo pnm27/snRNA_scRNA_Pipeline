@@ -27,3 +27,5 @@ modules:
       version_column: version
       donor_from: from
       donor_to: to
+      status_column: null
+      versions: null

@@ -15,6 +15,10 @@
 #           barcode_column: barcode
 #           pools: bams.tsv
 #
+# Or, by the final h5ads of the versions in a swap correction file:
+# 'split_by: input: final' and 'modules: demultiplex: swap_correction'
+# (docs/source/sub_workflows.md).
+#
 # Bams split by external labels need no demultiplexing, alignment metrics
 # or genotype check (set 'gt_check: yes' and 'gt_demux: vcf_info' for one)
 workflow:

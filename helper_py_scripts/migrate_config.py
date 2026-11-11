@@ -233,6 +233,13 @@ def derived(old) -> dict:
             and isinstance(sb.get('split_by'), dict)
             and 'external' not in sb['split_by']):
         new['modules.split_bams.split_by.external'] = external_labels_block()
+    # Keys added to a whole swap correction block since (see
+    # new_config.example.yaml)
+    swap = (old.get('demultiplex') or {}).get('swap_correction')
+    if isinstance(swap, dict) and 'donor_to' in swap:
+        for key in ('status_column', 'versions'):
+            if key not in swap:
+                new[f'modules.demultiplex.swap_correction.{key}'] = None
     return new
 
 

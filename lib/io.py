@@ -306,8 +306,9 @@ _POOLS_TABLES: dict = {}
 
 
 def external_pools_file(config) -> str | None:
-    """'split_by: external: pools' (None unless splitting by external labels)."""
-    if not is_external(config):
+    """'split_by: external: pools': the bams of a 'workflow: start:
+    split_bams' run (None otherwise, or unless splitting by external labels)."""
+    if not (is_external(config) or config['workflow'].get('start') == 'split_bams'):
         return None
     ext = config['modules']['split_bams']['split_by'].get('external') or {}
     return ext.get('pools') or None

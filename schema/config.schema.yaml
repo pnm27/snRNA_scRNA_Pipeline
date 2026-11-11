@@ -92,7 +92,7 @@ properties:
         enum:
         - align
         - split_bams
-        description: "First stage to run. align: from the fastqs; split_bams: split existing bams (in the aligner's bams_dir, or listed in 'split_by: external: pools') by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external'); keys left out of such a config take the values of new_config.example.yaml with schema/split_bams_defaults.yaml on top"
+        description: "First stage to run. align: from the fastqs; split_bams: split existing bams (in the aligner's bams_dir, or listed in 'split_by: external: pools') by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the versions in the swap correction file ('input: final', 'modules: demultiplex: swap_correction'); keys left out of such a config take the values of new_config.example.yaml with schema/split_bams_defaults.yaml on top"
       until:
         type: string
         enum:
@@ -648,7 +648,7 @@ properties:
                 - string
                 - 'null'
                 default: null
-                description: 'Demultiplex version of each pool: <tool>:<run_tag> (tool: solo, vireo or both), comma-separated for runs of two tools'
+                description: "Demultiplex version of each pool: <tool>:<run_tag> (tool: solo, vireo or both), comma-separated for runs of two tools; or a name in 'versions'"
               donor_from:
                 type:
                 - string
@@ -659,6 +659,29 @@ properties:
                 - string
                 - 'null'
                 default: null
+              status_column:
+                type:
+                - string
+                - 'null'
+                default: null
+                description: "Column whose values other than True (yes, 1) drop that donor, as an empty donor_to does; pools with no donor kept aren't split (start: split_bams). null: every row is kept"
+              versions:
+                type:
+                - string
+                - object
+                - 'null'
+                default: null
+                description: "What the names in version_column are: a JSON file whose 'demultiplex_paths' maps each name to its 'demux' (h5ad) dir and 'info' (stats) dir, e.g. demul_samples_annotate_h5ad_template.json; or a map of each name to <tool>:<run_tag>, or to {demux, info, tool}. The h5ad and stats file names in those dirs follow the tool's fold_struct; the tool is 'split_bams: split_by: demux' unless given. null: version_column holds <tool>:<run_tag>"
+                additionalProperties:
+                  anyOf:
+                  - type: string
+                  - type: object
+                    required: [demux]
+                    properties:
+                      demux: {type: string}
+                      info: {type: string}
+                      tool: {type: string, enum: [solo, vireo]}
+                    additionalProperties: false
             if:
               properties:
                 file:
@@ -739,7 +762,7 @@ properties:
                     - string
                     - 'null'
                     default: null
-                    description: "Table of the bam of each pool (workflow: start: split_bams), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. Pools of the labels missing from the table aren't split (a warning). The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
+                    description: "Table of the bam of each pool (workflow: start: split_bams; split_by: input external or final), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. Pools of the labels (or of the swap correction file) missing from the table aren't split (a warning). The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
           min_cells_per_donor:
             type: integer
           subset_chr:
@@ -974,10 +997,10 @@ allOf:
 - x-explain: "Splitting bams (and identifying swaps) isn't supported for multi-VCF runs yet"
   if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
   then: {properties: {workflow: {properties: {until: {not: {enum: [split_bams, identify_swaps]}}}}}}
-- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both), unless they are split by external labels ('modules: split_bams: split_by: input: external')"
+- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both), unless they are split by external labels ('modules: split_bams: split_by: input: external') or the run starts at split_bams (existing demultiplexing)"
   if:
     properties:
-      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}, required: [until]}
+      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}, start: {not: {const: split_bams}}}, required: [until]}
       modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {not: {pattern: '(?i)^external$'}}}}}}}}
   then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {enum: [solo, vireo, both]}}}}}}}
 - x-explain: "hashsolo (method solo or both) isn't supported for multiome runs yet (aligner cellranger_arc)"
@@ -1000,12 +1023,28 @@ allOf:
 - x-explain: "With HTO libraries, 'experiment: hto: multiplexing' picks the kite rules: single (one HTO per cell) or multiple"
   if: {properties: {experiment: {properties: {hto: {properties: {enabled: {const: true}}, required: [enabled]}}}}}
   then: {properties: {experiment: {properties: {hto: {properties: {multiplexing: {enum: [single, multiple]}}, required: [multiplexing]}}}}}
-- x-explain: "start: split_bams splits bams that are already there by donor labels from outside the pipeline: it needs 'modules: split_bams: split_by: input: external' and until split_bams or identify_swaps"
+- x-explain: "start: split_bams splits bams that are already there, by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the demultiplexing versions in the swap correction file ('input: final'), and needs until split_bams or identify_swaps"
   if: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
   then:
     properties:
       workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}}
-      modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}}}}}}}
+      modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^(external|final)$'}}}}}}}
+- x-explain: "start: split_bams with 'split_by: input: final' takes its pools and their demultiplexing versions from the swap correction file: it needs 'modules: demultiplex: swap_correction: file', 'pool_column' and 'version_column'"
+  if:
+    properties:
+      workflow: {properties: {start: {const: split_bams}}, required: [start]}
+      modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^final$'}}, required: [input]}}, required: [split_by]}}, required: [split_bams]}
+  then:
+    properties:
+      modules:
+        required: [demultiplex]
+        properties:
+          demultiplex:
+            required: [swap_correction]
+            properties:
+              swap_correction:
+                required: [file, pool_column, version_column]
+                properties: {file: {type: string}, pool_column: {type: string}, version_column: {type: string}}
 - x-explain: "Splitting bams by external labels (split_by: input: external) needs 'split_by: external: file' (pooled h5ad or table) and 'pool_column' (the pool of origin of each cell)"
   if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}}, required: [input]}}, required: [split_by]}}, required: [split_bams]}}}
   then:
@@ -1021,10 +1060,10 @@ allOf:
                     required: [file, pool_column]
                     properties: {file: {type: string}, pool_column: {type: string}}
 - x-explain: "A pools table ('split_by: external: pools') lists bams that are already there, so it needs 'workflow: start: split_bams' (with start: align the aligner writes the bams in its bams_dir)"
-  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}, external: {properties: {pools: {type: string}}, required: [pools]}}, required: [input, external]}}, required: [split_by]}}, required: [split_bams]}}}
+  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {external: {properties: {pools: {type: string}}, required: [pools]}}, required: [external]}}, required: [split_by]}}, required: [split_bams]}}}
   then: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
 - x-explain: "A pools table ('split_by: external: pools') has one bam per pool, so it isn't supported for multiome runs (aligner cellranger_arc) yet"
-  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^external$'}, external: {properties: {pools: {type: string}}, required: [pools]}}, required: [input, external]}}, required: [split_by]}}, required: [split_bams]}}}
+  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {external: {properties: {pools: {type: string}}, required: [pools]}}, required: [external]}}, required: [split_by]}}, required: [split_bams]}}}
   then: {properties: {workflow: {properties: {aligner: {not: {pattern: '(?i)^cellranger_arc$'}}}}}}
 x-warnings:
 - x-warn: "Picard runs on STARsolo runs only: 'workflow: picard_metrics' is ignored for this aligner"
