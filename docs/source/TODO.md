@@ -93,3 +93,4 @@ These can't be done from the code alone; each needs a decision or details from y
 - [ ] Dash app: pair-wise sample comparison (donor vs donor or pool vs pool) sub-plot pop up.
 - [ ] Agentic AI support for genotype-based demultiplexing using Ollama (with support for public vLLMs).
 - [ ] Shannon entropy for a better selection of SNPs (benchmark against the existing `max50k` / `25pct` sets first).
+- [ ] Conda envs of jobs added after a checkpoint (e.g. `pysam.yaml` for `split_bams`) are built by the main snakemake process; when it runs on a compute node without internet (`run_snakemake.sh` via `bsub`), that fails. Idea: a stand-alone `create_conda_envs.smk` with one placeholder rule per `envs/*.yaml`, run once on a login node with `--conda-create-envs-only` and the same `--conda-prefix` (env dirs are hashed from the prefix's real path and the yaml content only, so the pipeline reuses them); optionally, a start-up check that stops the run when an env is missing.
