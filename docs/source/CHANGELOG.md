@@ -142,6 +142,7 @@
   - `create_inp_splitBams` takes each pool's rows from it (`create_inp_splitBam_consolidated.py --external_pool`); `donor_name_converter` and `min_cells_per_donor` apply as before
   - Rule `check_external_barcodes` (`helper_py_scripts/check_external_barcodes.py`) samples the first 200,000 reads of each pool's bam and stops the run when under 5% of those with a CB tag are cells of the hash file (reads of empty droplets have CB tags too; a format mismatch, e.g. a `-1` on one side only, gives ~0%), with example barcodes from both sides. `bamfilt_by_CB` and `split_bams` wait for it
   - No demultiplexing stage is run for it, so no demultiplexing `method` is needed
+  - Labels whose barcodes need no transformation besides cellranger's `-1` suffix: `barcode_transformations: [{type: regex, pattern: "$", replacement: "-1"}]`. This is the most common case for multiome runs, where pooled h5ads are generally not produced. Use `barcode_transformations: []` when the labels' barcodes are already the bam's CB tags (`null` isn't accepted)
 - `create_inp_splitBam_consolidated.py`: accepts the `--conv_file*` option names that `lib/params.py` passes (it only knew `--converter_file*`, so `donor_name_converter` failed); `anndata` is imported only for h5ad inputs
 - Added wildcard constraint for `qtltools_mbv` to handle:
   - Multiome: `<path>/BD2-Set-4-a/cDNA_Pitt-DNA-PFC-694.bamstat.txt`
