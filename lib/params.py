@@ -343,6 +343,13 @@ def get_mito_file(wildcards, config):
     split = config['modules']['split_bams']
     if config['workflow']['gt_check'] or not split.get('mito_reads_file'):
         return False
-    pool_dir = split['fold_struct_bams'].replace('{pool}', wildcards.pool)
+    # A params function's path isn't formatted with the job's wildcards (as
+    # an input or output is), so fill each of them here; '{modality}' is the
+    # split one (see lib/utils.py: apply_split_modality)
+    pool_dir = split['fold_struct_bams']
+    for key in ('pool', 'donor'):
+        if hasattr(wildcards, key):
+            pool_dir = pool_dir.replace(f"{{{key}}}", str(getattr(wildcards, key)))
+    pool_dir = pool_dir.replace('{modality}', SPLIT_MODALITY)
     return f"{split['split_bams_dir']}{pool_dir}{wildcards.pool}{split['mito_reads_file']}"
     

@@ -32,3 +32,16 @@ def test_h5ad_split_column():
     # A column set in the config, and the final h5ad's, are kept
     assert _split_h5ad_column({**split_by, 'column': 'x'}, multiome=True) == 'x'
     assert _split_h5ad_column({'input': 'final'}, multiome=True) == 'Donor_final'
+
+
+def test_mito_file_has_no_placeholders():
+    # a params function's path isn't formatted with the wildcards, so the
+    # '{modality}' of fold_struct_bams must be filled there too
+    from types import SimpleNamespace
+    from lib.params import get_mito_file
+
+    config = {'workflow': {'gt_check': False}, 'modules': {'split_bams': {
+        'split_bams_dir': 'split/final/', 'fold_struct_bams': 'Sample_{pool}-{modality}/',
+        'mito_reads_file': '_mito_reads_stats.txt'}}}
+    path = get_mito_file(SimpleNamespace(pool='P1', donor='D1'), config)
+    assert path == 'split/final/Sample_P1-cDNA/P1_mito_reads_stats.txt'
