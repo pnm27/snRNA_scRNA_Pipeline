@@ -1,7 +1,7 @@
 import os, glob2, re
 from functools import partial
 from lib.io import get_fastqs, get_r1_fastqs, get_r2_fastqs
-from lib.aligner import bam_paths, out_prefix
+from lib.aligner import bam_paths, get_aligner, out_prefix
 
 
 rule inp_cellranger_arc_count:
@@ -106,47 +106,50 @@ def _fastq_sample(fastq: str) -> str:
     return m.group(1)
 
 
-rule cellranger_count:
-    """
-    Outputs of 'cellranger count' are moved from <pool>/outs/ to
-    'cellranger_count: bams_dir'<pool>/.
-    """
-    input:
-        R1=partial(get_r1_fastqs, config=config),
-        R2=partial(get_r2_fastqs, config=config)
-
-    params:
-        ref=config['modules']['cellranger']['ref']['genome'],
-        fastqs_dir=lambda wildcards, input: os.path.dirname(input.R1[0]),
-        sample=lambda wildcards, input: ",".join(
-            sorted({_fastq_sample(f) for f in input.R1})
-        ),
-        include_introns=str(config['modules']['cellranger']['include_introns']).lower(),
-        extra=config['modules']['cellranger']['extra_params'] or "",
-        max_localcores=lambda wildcards, resources: resources.cpus_per_task,
-        max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task//1000,
-        outputdir=out_prefix(config, 'cellranger')
-
-    output:
-        **bam_paths(config, 'cDNA', aligner='cellranger'),
-        matrix=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/matrix.mtx.gz",
-        features=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/features.tsv.gz",
-        barcodes=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/barcodes.tsv.gz",
-        metrics=f"{out_prefix(config, 'cellranger')}metrics_summary.csv"
-
-    log:
-        f"{out_prefix(config, 'cellranger')}cellranger-count.txt"
-
-    resources:
-        **get_resources("cellranger_count"),
-        attempt=lambda wildcards, attempt: attempt
-
-    envmodules:
-        f"{config['references']['tools']['cellranger']}"
-
-    shell:
-        r"""
-        mkdir -p {params.outputdir}
-        rm -rf {wildcards.pool}
-        cellranger count --id={wildcards.pool} --transcriptome={params.ref}             --fastqs={params.fastqs_dir} --sample={params.sample}             --create-bam=true --include-introns={params.include_introns}             --localcores={params.max_localcores} --localmem={params.max_localmem}             {params.extra} &> {log}_{resources.attempt} &&         mv {wildcards.pool}/outs/* {params.outputdir}/ &&         rm -rf {wildcards.pool}
+# Defined only for cellranger count runs, as other aligners' configs needn't
+# have 'modules: cellranger'
+if get_aligner(config) == 'cellranger':
+    rule cellranger_count:
         """
+        Outputs of 'cellranger count' are moved from <pool>/outs/ to
+        'cellranger_count: bams_dir'<pool>/.
+        """
+        input:
+            R1=partial(get_r1_fastqs, config=config),
+            R2=partial(get_r2_fastqs, config=config)
+
+        params:
+            ref=config['modules']['cellranger']['ref']['genome'],
+            fastqs_dir=lambda wildcards, input: os.path.dirname(input.R1[0]),
+            sample=lambda wildcards, input: ",".join(
+                sorted({_fastq_sample(f) for f in input.R1})
+            ),
+            include_introns=str(config['modules']['cellranger']['include_introns']).lower(),
+            extra=config['modules']['cellranger']['extra_params'] or "",
+            max_localcores=lambda wildcards, resources: resources.cpus_per_task,
+            max_localmem=lambda wildcards, resources: resources.mem_mb*resources.cpus_per_task//1000,
+            outputdir=out_prefix(config, 'cellranger')
+
+        output:
+            **bam_paths(config, 'cDNA', aligner='cellranger'),
+            matrix=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/matrix.mtx.gz",
+            features=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/features.tsv.gz",
+            barcodes=f"{out_prefix(config, 'cellranger')}filtered_feature_bc_matrix/barcodes.tsv.gz",
+            metrics=f"{out_prefix(config, 'cellranger')}metrics_summary.csv"
+
+        log:
+            f"{out_prefix(config, 'cellranger')}cellranger-count.txt"
+
+        resources:
+            **get_resources("cellranger_count"),
+            attempt=lambda wildcards, attempt: attempt
+
+        envmodules:
+            f"{config['references']['tools']['cellranger']}"
+
+        shell:
+            r"""
+            mkdir -p {params.outputdir}
+            rm -rf {wildcards.pool}
+            cellranger count --id={wildcards.pool} --transcriptome={params.ref}             --fastqs={params.fastqs_dir} --sample={params.sample}             --create-bam=true --include-introns={params.include_introns}             --localcores={params.max_localcores} --localmem={params.max_localmem}             {params.extra} &> {log}_{resources.attempt} &&         mv {wildcards.pool}/outs/* {params.outputdir}/ &&         rm -rf {wildcards.pool}
+            """

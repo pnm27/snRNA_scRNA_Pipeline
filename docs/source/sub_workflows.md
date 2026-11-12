@@ -162,7 +162,7 @@ Each demultiplexing run writes to its own sub-folder (`experiment: demultiplexin
 
 To split the bams by the final h5ad (e.g. after the swap correction), set `modules: split_bams: split_by: input: final`.
 
-### Splitting existing bams by the versions of the swap correction file
+## Splitting existing bams by the versions of the swap correction file
 
 When the bams and the demultiplexing runs already exist, a run can start at the split (`workflow: start: split_bams`) and take everything from the swap correction file, e.g.
 

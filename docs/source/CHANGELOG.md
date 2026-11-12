@@ -285,6 +285,7 @@
 - Added `cellranger count` for GEX-only runs (`last_step: cellranger_*`, config section `cellranger_count`: reference, `include_introns`, `extra_params`); its count matrix and bam are used for demultiplexing (vireo or none) and split bams. hashsolo with it raises an error for now (barcodes end with `-1`)
 - Supports ATAC-based (along with RNA-based) vireo demultiplexing via cellranger-arc count.
 - Supports cellranger-arc count for multiome preprocessing.
+- Fixed: `modules: cellranger` was needed in the config of every run (STARsolo and cellranger-arc too); the `cellranger_count` rule is now defined only with `aligner: cellranger`
 
 ### STARsolo
 
@@ -301,6 +302,7 @@
 
 - Added tutorials: scRNA-seq and pooled snRNA-seq (one wildcard)
 - ReadTheDocs search ranks the tutorials first and the API reference and development notes last (`search.ranking` in `.readthedocs.yaml`)
+- Fixed the ReadTheDocs build's warnings: a header level jump in `sub_workflows.md` and sphinx-hoverxref's `RemovedInSphinx90Warning` (ignored in `conf.py`, as its latest release still raises it)
 
 ---
 

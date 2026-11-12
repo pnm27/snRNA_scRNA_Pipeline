@@ -12,6 +12,16 @@
 #
 import os, subprocess
 import sys
+import warnings
+
+# sphinx-hoverxref (1.4.2, its latest, too) reads config values as tuples,
+# which Sphinx 8 deprecates (RemovedInSphinx90Warning, a DeprecationWarning),
+# and readthedocs fails on warnings
+warnings.filterwarnings(
+    "ignore",
+    message=r"The '_Opt' object tuple interface is deprecated",
+    category=DeprecationWarning,
+)
 
 sys.path.insert(0, os.path.abspath('../../helper_py_scripts/'))
 # HERE = Path(__file__).parent
