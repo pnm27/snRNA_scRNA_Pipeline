@@ -42,9 +42,12 @@ validate(config, "schema/config.schema.yaml")
 
 # Each demultiplexing run gets its own sub-folder ('run_tag'), and so do
 # bams split for genotype checks and the final per-donor bams
-from lib.utils import apply_run_tag, apply_split_purpose
+from lib.utils import apply_run_tag, apply_split_purpose, apply_split_modality
 apply_run_tag(config)
 apply_split_purpose(config)
+# '{modality}' of the split_bams folder structures is the cDNA (its
+# demultiplexing is the one the bams are split by)
+apply_split_modality(config)
 
 
 # Wildcards hold a single folder or file name part, so they can't

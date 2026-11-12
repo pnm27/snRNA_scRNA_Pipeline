@@ -39,6 +39,7 @@ The rules across keys are the `allOf` list of the schema, each with its explanat
 
 | Caveat | Why it isn't caught |
 |---|---|
+| `{modality}` in `split_bams`' `fold_struct_hash`, `fold_struct_bams` and `fold_struct_donor` is filled with `cDNA`: the bams are split by the cDNA demultiplexing (multiome: vireo's cDNA output, or the h5ad's `SubID_vs_cdna`). | One hash file and cell-filtered bam per pool; splitting by the ATAC assignment is in TODO. |
 | `until` always includes the alignment: the indexed bam, or Picard's metrics when `picard_metrics` is set. Some old `last_step` values (e.g. `STARsolo_demux` without Picard, `*_cellsnp`, `cellranger_demux`, `multiome_gt_demux`) didn't, so their runs now also index the bam (or run Picard). A run that only rebuilds final h5ads from earlier runs (swap correction) needs the alignment outputs to exist; on a project that was aligned they do, and nothing re-runs. | It's how `until` works (`rules/produce_targets.smk`: `UNTIL_STAGES`). |
 | `modules` and `references` accept any key, so a typo there (e.g. `modules: STARsolo: bams_dri`) isn't reported; a missing key the rules need fails when the rule is built. | Their keys vary by project (genomes, optional suffixes). |
 | `modules: STARsolo: fold_struct` (`Sample_{pool}-cDNA/{pool}-cDNA`) is also the fastq folder of the HTO (kite, with `-cDNA` → `-HTO`) and cDNA fastqs, and the folder of h5ads without demultiplexing: changing it moves those too. | To be split into one `fold_struct` per module (TODO). |

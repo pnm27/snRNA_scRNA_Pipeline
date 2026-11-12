@@ -118,6 +118,26 @@ def apply_split_purpose(config) -> None:
         sb[key] = f"{sb[key]}{config['_split_purpose']}/"
 
 
+# Bams are split by the donors of the cDNA demultiplexing (multiome runs
+# demultiplex each modality; see TODO: split by the ATAC assignment), so
+# '{modality}' in these folder structures is the cDNA
+SPLIT_MODALITY = 'cDNA'
+SPLIT_MODALITY_FOLDS = ['fold_struct_hash', 'fold_struct_bams', 'fold_struct_donor']
+
+
+def apply_split_modality(config) -> None:
+    """Fill '{modality}' of the split_bams folder structures with the cDNA.
+
+    The hash file and the per-donor bams are one per pool, as the cell
+    filtered bam that is split: a '{modality}' wildcard there couldn't be
+    told from the bam's path (bamfilt_by_CB).
+    """
+    sb = config['modules']['split_bams']
+    for key in SPLIT_MODALITY_FOLDS:
+        if isinstance(sb.get(key), str):
+            sb[key] = sb[key].replace('{modality}', SPLIT_MODALITY)
+
+
 def run_dir(config, section: str, key: str, run_tag: Union[None, str]) -> str:
     """config['modules'][section][key] of the run tagged 'run_tag' (None: untagged)."""
     base = config['_untagged_dirs'][section][key]

@@ -310,6 +310,8 @@ modules:
       # or a map, e.g. {w_gt: "vireo:w_gt", wo_gt: {demux: dir/, info: dir/}}
       versions: null
   split_bams:
+    # '{modality}' in these three is filled with cDNA: bams are split by the
+    # cDNA demultiplexing (for multiome too)
     fold_struct_hash: "Sample-{pool}-cDNA"  # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
     fold_struct_bams: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
     fold_struct_donor: "{donor}" # for donor bams and h5ads

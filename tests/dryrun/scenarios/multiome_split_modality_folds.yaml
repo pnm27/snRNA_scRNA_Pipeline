@@ -1,0 +1,27 @@
+# existing cellranger-arc bams split by external labels, with '{modality}'
+# in the split_bams folder structures: it's filled with cDNA (the bams are
+# split by the cDNA demultiplexing), so bamfilt_by_CB finds the hash file
+# standalone:
+# setup: mkdir -p projdir/cellranger_outputs/P1 && touch projdir/cellranger_outputs/P1/gex_possorted_bam.bam projdir/cellranger_outputs/P1/gex_possorted_bam.bam.bai
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p projdir/inp_split_filt_bams/final && touch -d '1 min ago' cellBC_vs_origin.txt
+# setup: printf "pool\tSubj_ID\tbarcodes\nP1\tD1\tAAAC-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# donors: D1
+# expect: check_external_barcodes bamfilt_by_CB split_bams
+# path: Sample-P1-cDNA_bc_hash.txt Sample_P1-cDNA/D1.bam cellranger_outputs/P1/gex_possorted_bam_filt.bam
+workflow:
+  aligner: cellranger_arc
+  start: split_bams
+  until: split_bams
+modules:
+  split_bams:
+    fold_struct_hash: "Sample-{pool}-{modality}"
+    fold_struct_bams: "Sample_{pool}-{modality}/"
+    split_by:
+      input: external
+      external:
+        file: cellBC_vs_origin.txt
+        barcode_column: barcode
+        pool_column: pool
+        barcode_transformations: [{type: regex, pattern: "$", replacement: "-1"}]
+        pools: null

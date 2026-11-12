@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from .utils import read_files_ext, get_demux_type
+from .utils import read_files_ext, get_demux_type, SPLIT_MODALITY
 from .config_models import final_sources, swap_correction
-from .modality import get_modality, has_umi
+from .modality import get_modality, has_umi, is_multiome
 from .aligner import barcodes_have_suffix, out_prefix
 import re, glob2, os
 
@@ -276,15 +276,20 @@ def get_params_demux_final(wildcards, input, config):
 H5AD_DONOR_COLUMN = {'final': 'Donor_final', 'vireo': 'SubID_vs', 'solo': 'SubID_cs'}
 
 
-def _split_h5ad_column(split_by):
-    """'column' of 'split_by', else the donor column of its h5ad input."""
+def _split_h5ad_column(split_by, multiome: bool = False):
+    """'column' of 'split_by', else the donor column of its h5ad input.
+
+    Multiome h5ads have a vireo column per modality: the cDNA's is used
+    (lib/utils.py: SPLIT_MODALITY).
+    """
     inp = str(split_by.get('input', '')).lower()
     if split_by.get('column') or inp == 'raw':
         return split_by.get('column')
     if inp == 'final':
         return H5AD_DONOR_COLUMN['final']
     demux = str(split_by.get('demux', '')).lower()
-    return H5AD_DONOR_COLUMN['vireo' if demux in ('vireo', 'vs') else 'solo']
+    col = H5AD_DONOR_COLUMN['vireo' if demux in ('vireo', 'vs') else 'solo']
+    return f"{col}_{SPLIT_MODALITY.lower()}" if multiome else col
 
 
 def get_params_create_inp_splitBams(wildcards, config):
@@ -302,7 +307,8 @@ def get_params_create_inp_splitBams(wildcards, config):
         params_dict["external_pool"] = [wildcards.pool, "--external_pool"]
     else:
         params_dict["demux_split_method"] = [ demuxSplit_params.get('demux', None), "--split_by"]
-        params_dict["splitBy_h5adCol"] = [ _split_h5ad_column(demuxSplit_params), "--h5ad_donor_column"]
+        params_dict["splitBy_h5adCol"] = [ _split_h5ad_column(demuxSplit_params, is_multiome(config)),
+            "--h5ad_donor_column"]
     
     for _, v in params_dict.items():
         if v[0]:
