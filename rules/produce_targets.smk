@@ -1,7 +1,7 @@
 import os, sys
 from lib.config_models import DemuxConfig, vcf_types, swap_correction, swap_pools
 from lib.aligner import bam_paths, get_aligner, out_prefix
-from lib.utils import run_settings
+from lib.utils import run_settings, SPLIT_MODALITY
 from lib.io import is_external, external_pools_file, missing_pool_bams, read_pools_table
 from lib.aligner import count_matrix as aligner_count_matrix
 
@@ -66,6 +66,9 @@ POOLS_TABLE = external_pools_file(config)
 STAGES = until_stages(UNTIL, START, EXTERNAL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
+# Per-donor targets (split bams, identify_swaps): only the cDNA bam is
+# split, by the cDNA demultiplexing (see TODO: split by the ATAC assignment)
+SPLIT_MODALITIES = [SPLIT_MODALITY]
 VCF_TYPES = vcf_types(config)
 
 if VCF_TYPES and any(s in STAGES for s in ["split_bams", "identify_swaps"]):
@@ -271,7 +274,7 @@ def produce_targets(wildcards) -> list:
         # so the other targets don't wait for them
         targets.append("resolved/external_pools.done")
     elif "split_bams" in STAGES:
-        targets += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=MODALITY)
+        targets += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=SPLIT_MODALITIES)
 
     return targets
 
@@ -282,7 +285,7 @@ def produce_targets(wildcards) -> list:
 
 def external_pool_targets(wildcards) -> list:
     """Per-pool targets of the pools of the external labels."""
-    return expand("resolved/{pool}/{modality}.done", pool=split_pools(), modality=MODALITY)
+    return expand("resolved/{pool}/{modality}.done", pool=split_pools(), modality=SPLIT_MODALITIES)
 
 
 def produce_targets_dynamic(wildcards) -> list:

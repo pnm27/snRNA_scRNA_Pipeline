@@ -1,6 +1,7 @@
 # existing cellranger-arc bams split by external labels, with '{modality}'
 # in the split_bams folder structures: it's filled with cDNA (the bams are
-# split by the cDNA demultiplexing), so bamfilt_by_CB finds the hash file
+# split by the cDNA demultiplexing), so bamfilt_by_CB finds the hash file;
+# the per-pool targets are cDNA only (no ATAC split or resolved/<pool>/ATAC.done)
 # standalone:
 # setup: mkdir -p projdir/cellranger_outputs/P1 && touch projdir/cellranger_outputs/P1/gex_possorted_bam.bam projdir/cellranger_outputs/P1/gex_possorted_bam.bam.bai
 # setup: rm projdir/fastq_files.txt
@@ -9,6 +10,7 @@
 # donors: D1
 # expect: check_external_barcodes bamfilt_by_CB split_bams
 # path: Sample-P1-cDNA_bc_hash.txt Sample_P1-cDNA/D1.bam cellranger_outputs/P1/gex_possorted_bam_filt.bam
+# nopath: ATAC atac_possorted
 workflow:
   aligner: cellranger_arc
   start: split_bams

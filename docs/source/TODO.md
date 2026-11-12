@@ -49,6 +49,7 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
   - `raw` input: `create_inp_splitBams` reads vireo's `donor_ids.tsv` of `raw_output(...).replace('{modality}', SPLIT_MODALITY)` (`rules/split_bams.smk`)
   - `h5ad` input: the column `SubID_vs_cdna` (`lib/params.py`: `_split_h5ad_column`); the multiome demux h5ad also has `SubID_vs_atac` (`demul_samples.py`, `--suffix atac cdna`)
   - `final` input: `Donor_final` comes from `SubID_vs_cdna` (`helper_py_scripts/demux_final.py`: `DONOR_COLUMNS`), so the final h5ad, the swap correction and its `Version_used` follow the cDNA; choosing ATAC here changes the demultiplexing outputs, not only the split
+  - Per-donor targets: `SPLIT_MODALITIES` (`rules/produce_targets.smk`), cDNA only
   - Proposed: `modules: split_bams: split_by: modality: cDNA | ATAC` (default cDNA; ATAC needs `aligner: cellranger_arc` and `demux: vireo`, not `external`), replacing `SPLIT_MODALITY` in the three places, with `{modality}` in the split folder structures filled with it so both assignments can be split side by side. Check first that the ATAC assignment's barcodes match the gex bam's CB tags (cellranger-arc should report both in the gex barcode space; sample them as `check_external_barcodes.py` does). The bam split stays the gex bam (splitting the ATAC bam is the item above)
 - [ ] Multi-VCF: cellSNP's regions and vireo's donor genotypes don't vary by `vcf_type` yet (only the paths do); hashsolo and split bams aren't supported.
 - [ ] Multiome with hashsolo (`solo` / `both` / `add_*`).

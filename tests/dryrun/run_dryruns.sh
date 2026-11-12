@@ -16,6 +16,7 @@
 #   # absent: <rules that must not be in the DAG>
 #   # resources: <rule> <key=value ...>   (resolved resources of that rule)
 #   # path: <text>                        (must be in an input/output path)
+#   # nopath: <text>                      (must not be in any input/output path)
 #   # fails: <text>                       (snakemake must fail with this text)
 #   # says: <text>                        (must be in the output, e.g. a warning)
 #   # setup: <shell command>              (run in the scenario's project first,
@@ -155,6 +156,9 @@ for sc in "${scenarios[@]}"; do
     done < <(sed -n 's/^# resources://p' "${sc}")
     for p in $(sed -n 's/^# path://p' "${sc}"); do
         grep -qE "^    (input|output|log): .*${p}" <<< "${out}" || errors+=("no path with '${p}'")
+    done
+    for p in $(sed -n 's/^# nopath://p' "${sc}"); do
+        grep -qE "^    (input|output|log): .*${p}" <<< "${out}" && errors+=("unexpected path with '${p}'")
     done
 
     if (( ${#errors[@]} == 0 )); then
