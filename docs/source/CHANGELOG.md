@@ -286,6 +286,7 @@
 - Supports ATAC-based (along with RNA-based) vireo demultiplexing via cellranger-arc count.
 - Supports cellranger-arc count for multiome preprocessing.
 - Fixed: `modules: cellranger` was needed in the config of every run (STARsolo and cellranger-arc too); the `cellranger_count` rule is now defined only with `aligner: cellranger`
+- Fixed: cellranger-arc count's log was in its output directory, which snakemake removes when the rule fails; it's now `{pool}_cellranger-arc-count.txt_<attempt>` in the pipeline's folder
 
 ### STARsolo
 

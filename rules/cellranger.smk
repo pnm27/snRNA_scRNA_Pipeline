@@ -33,7 +33,9 @@ rule cellranger_arc_count:
     This also ensures that, once write protection is removed, the whole directory 
     is wiped out before trying to re-run cellranger-arc count.
 
-    Pipestance contains useful information.
+    Pipestance contains useful information. The log of each attempt is
+    '{pool}_cellranger-arc-count.txt_<attempt>' in the pipeline's folder, so
+    it's kept when the rule fails.
     """
     input:
         "{pool}_metadata.csv",
@@ -62,8 +64,12 @@ rule cellranger_arc_count:
             f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}"
             )
 
+    # In the pipeline's folder (next to '{pool}_metadata.csv'), not in the
+    # output directory: snakemake removes that directory when the rule
+    # fails. Nor in '{pool}/' (cellranger-arc's --id), which cellranger-arc
+    # refuses to run in if it exists and isn't a pipestance
     log:
-        f"{config['modules']['cellranger_arc']['bams_dir']}{{pool}}/cellranger-arc-count.txt"
+        "{pool}_cellranger-arc-count.txt"
     
     # Restrict wildcards so that ATAC and cDNA filt or subset bams 
     # (from split_bams.smk) won't get triggerred
