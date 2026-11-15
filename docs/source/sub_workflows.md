@@ -286,6 +286,22 @@ That can be the whole config: with `start: split_bams`, keys left out take the v
 - The bams are only read: the cell-filtered and chromosome-subset bams (`filt_bam`, `short_bam`) go to `split_bams: temp_dir` (`<temp_dir><pool>/<pool>_filt.bam`) instead of next to the bam.
 - `workflow: aligner` still sets the barcode format (cellranger's `-1`); multiome (`cellranger_arc`) isn't supported with a table.
 
+## Per-donor bams named by the swap correction file (stand-alone)
+
+`helper_py_scripts/donor_bams.py` (not a pipeline rule yet, see TODO) takes split per-donor bams and names them by the swap correction file: each row's pool and donor (`--donor_column`, the name of the split bam, e.g. the vcf ID) get a name (`--name_column`, e.g. individualID). A name with one bam is linked to `<out_dir>/<name>.bam` (hard link; a symlink across filesystems, `--copy` to copy); a name with bams of several pools is merged (`samtools merge`) into one, each read with a read group of its pool (`RG:Z:<pool>`, as the same cell barcode in two pools is two cells). Donors with an empty name, or a `--status_column` value other than True / yes / 1, are dropped.
+
+```bash
+python3 helper_py_scripts/donor_bams.py --swap final_swap_correction.csv \
+    --pool_column pool --donor_column vcf_id --name_column individualID \
+    --status_column final_status \
+    --bams 'projdir/STARsolo_split_filt_bams/final/Sample_{pool}-cDNA/{donor}.bam' \
+    --out_dir projdir/donor_bams/ --threads 8 --dry_run
+```
+
+- `--keep_apart tissue`: merge only the bams that also share these columns (the same donor from different tissues or conditions), as `<name>_<tissue>.bam`
+- `--no_combine`: never merge; each bam is linked to `<out_dir>/<name>/<pool>.bam`
+- `--dry_run` prints the plan; otherwise it is written to `<out_dir>/manifest.tsv` (output, action: link / copy / merge / dropped, source bams, pools, donors). Missing bams are all listed before anything is written; bams with different references (`@SQ`) aren't merged; outputs that exist are kept unless `--force`
+
 ```{eval-rst}
 .. autosummary::
   :nosignatures:
