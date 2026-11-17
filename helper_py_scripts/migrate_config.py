@@ -230,7 +230,7 @@ def wasp_block() -> CommentedMap:
     wasp['work_dir'] = 'projdir/wasp_tmp/'
     wasp.yaml_set_comment_before_after_key(
         'samples',
-        before="pool, donor, sample (genotype ID(s), ';'-separated; "
+        before="pool, donor, sample (genotype ID(s), ';'- or ','-separated; "
                "find_intersecting_snps.py's\n--samples), and bam[, bai] with "
                "start: wasp; genotype_set with several sets", indent=4)
     wasp.yaml_add_eol_comment(

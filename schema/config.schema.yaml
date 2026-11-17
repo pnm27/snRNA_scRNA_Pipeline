@@ -877,7 +877,7 @@ properties:
             - string
             - 'null'
             default: null
-            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (the genotype sample ID(s) of the donor, ';'-separated: find_intersecting_snps.py's --samples), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
+            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (the genotype sample ID(s) of the donor, ';'- or ','-separated (',' in a tab-separated table only), no whitespace: find_intersecting_snps.py's --samples), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
           genotypes:
             type:
             - object

@@ -13,7 +13,11 @@ listed in the samples table ('workflow: start: wasp'). The samples table
 
   pool          pool (no '/')
   donor         donor (no '/'); names the output bam
-  sample        genotype sample ID(s) in the genotype set, ';'-separated
+  sample        genotype sample ID(s) in the genotype set, separated by
+                ';' (or ',' in a tab-separated table); no whitespace in
+                an ID. They're written one per line to the file given
+                as --samples (WASP takes a file or a comma-separated
+                string, and reads the first word of each line)
   bam           the per-donor bam (start: wasp only)
   bai           optional; default <bam>.bai
   genotype_set  which 'modules: wasp: genotypes' set (needed with more
@@ -24,9 +28,11 @@ Tab-separated, or comma-separated for .csv.
 
 import csv
 import os
+import re
 
 
-SAMPLE_SEP = ';'
+# Separators of the sample IDs in the 'sample' column
+SAMPLE_SEP = re.compile(r'[;,]')
 _TABLES: dict = {}
 
 
@@ -70,9 +76,16 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None) -> dict:
     for n, row in enumerate(rows, start=2):
         get = lambda c: (row.get(c) or '').strip()
         pool, donor = get('pool'), get('donor')
-        samples = [s.strip() for s in get('sample').split(SAMPLE_SEP) if s.strip()]
+        samples = [s.strip() for s in SAMPLE_SEP.split(get('sample')) if s.strip()]
         if not pool or not donor or not samples:
             errors.append(f"line {n}: empty pool, donor or sample")
+            continue
+        spaced = [s for s in samples if re.search(r'\s', s)]
+        if spaced:
+            errors.append(
+                f"line {n}: sample IDs can't contain whitespace ({', '.join(spaced)}): "
+                "find_intersecting_snps.py reads the first word of each line of "
+                "--samples; separate several IDs with ';' or ','")
             continue
         if '/' in pool or '/' in donor:
             errors.append(f"line {n}: pool and donor names can't contain '/' ({pool}, {donor})")

@@ -31,12 +31,22 @@ def table(tmp_path, text, name="samples.tsv"):
 def test_samples_table(tmp_path):
     path = table(tmp_path, "pool\tdonor\tsample\tbam\n"
                            "P1\tD1\tG1\tx/D1.bam\n"
-                           "P1\tD2\tG2; G3\tx/D2.bam\n")
+                           "P1\tD2\tG2; G3\tx/D2.bam\n"
+                           "P1\tD3\tG4,G5 ;G6\tx/D3.bam\n")
     t = wasp.read_samples_table(path, need_bam=True, sets=['main'])
     assert t[('P1', 'D1')] == {'samples': ['G1'], 'bam': 'x/D1.bam',
                                'bai': 'x/D1.bam.bai', 'genotype_set': 'main'}
     assert t[('P1', 'D2')]['samples'] == ['G2', 'G3']
-    assert wasp.set_samples(t, 'main') == ['G1', 'G2', 'G3']
+    # ',' too, as WASP's own --samples string
+    assert t[('P1', 'D3')]['samples'] == ['G4', 'G5', 'G6']
+    assert wasp.set_samples(t, 'main') == ['G1', 'G2', 'G3', 'G4', 'G5', 'G6']
+
+
+def test_samples_table_csv_quoted_ids(tmp_path):
+    path = table(tmp_path, 'pool,donor,sample\nP1,D1,"G1,G2"\nP1,D2,G3;G4\n', "samples.csv")
+    t = wasp.read_samples_table(path, sets=['main'])
+    assert t[('P1', 'D1')]['samples'] == ['G1', 'G2']
+    assert t[('P1', 'D2')]['samples'] == ['G3', 'G4']
 
 
 def test_samples_table_csv_without_bam(tmp_path):
@@ -50,6 +60,7 @@ def test_samples_table_csv_without_bam(tmp_path):
     ("pool\tdonor\tsample\nP1\tD1\tG1\n", {'need_bam': True}, "missing: bam"),
     ("pool\tdonor\tsample\nP1\tD1\t\n", {}, "empty pool, donor or sample"),
     ("pool\tdonor\tsample\nP/1\tD1\tG1\n", {}, "can't contain '/'"),
+    ("pool\tdonor\tsample\nP1\tD1\tG1 G2\n", {}, "can't contain whitespace \\(G1 G2\\)"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD1\tG2\n", {}, "listed twice: P1 D1"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\n", {'sets': ['wgs', 'array']}, "no genotype_set"),
     ("pool\tdonor\tsample\tgenotype_set\nP1\tD1\tG1\tchip\n", {'sets': ['wgs']},

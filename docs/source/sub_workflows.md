@@ -319,7 +319,7 @@ Two ways to run it:
 |---|---|
 | `pool` | pool (no `/`) |
 | `donor` | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its vcf ID) |
-| `sample` | the donor's genotype sample ID(s) in its genotype set, `;`-separated: written to the `--samples` file of `find_intersecting_snps.py` |
+| `sample` | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py` |
 | `bam`, `bai` | `start: wasp` only: the per-donor bam (`bai` defaults to `<bam>.bai`) |
 | `genotype_set` | which `modules: wasp: genotypes` set, with more than one |
 

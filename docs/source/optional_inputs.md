@@ -237,7 +237,7 @@ GENO_0002,R7654321
 |---|---|---|
 | `pool` | always | pool (no `/`) |
 | `donor` | always | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its VCF ID) |
-| `sample` | always | the donor's genotype sample ID(s) in its genotype set, `;`-separated: the `--samples` of `find_intersecting_snps.py` |
+| `sample` | always | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string) |
 | `bam` | `start: wasp` | the per-donor bam (coordinate-sorted) |
 | `bai` | no | default `<bam>.bai` |
 | `genotype_set` | with more than one set | the [genotype set](#wasp-genotype-sets) holding `sample` |
