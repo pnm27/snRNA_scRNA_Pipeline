@@ -154,6 +154,21 @@
 
 ---
 
+## WASP (`wasp.smk`)
+
+- WASP filtering of per-donor bams, for sc/snRNA-seq and the RNA (GEX) part of multiome (STARsolo, cellranger, cellranger-arc): `workflow: until: wasp` after `split_bams` (any of its inputs, `gt_check: no`), or `workflow: start: wasp` for per-donor bams listed in the samples table (no alignment or demultiplexing; defaults from `schema/wasp_defaults.yaml`). ATAC isn't covered yet (TODO)
+  - Samples table (`modules: wasp: samples`; `pool`, `donor`, `sample`, and `bam`[, `bai`] with `start: wasp`, `genotype_set` with several sets): the user gives the genotype sample ID(s) of each donor, written to `find_intersecting_snps.py`'s `--samples`. After `split_bams`, split donors not in the table aren't filtered (a warning)
+  - WASP comes from its env module (`references: tools: wasp`); its scripts are called from `$WASP_HOME`
+  - Genotype sets (`modules: wasp: genotypes`): WASP's h5 files (`h5_dir`), or VCF/BCF files converted once by rule `wasp_snp2h5` (`vcf`, `chrom_sizes`; the set's samples and the sites variable among them, per chromosome)
+  - Rule `wasp_check_inputs` checks the table's IDs against the sets' `haps.h5` before the long jobs; each `wasp_remap` job first checks that the bam and the genotypes share chromosome names
+  - Rule `wasp_remap` (per donor bam), as the lab's tested scripts: `find_intersecting_snps.py`, STAR remapping (two-pass; `modules: wasp: remap: genome` / `gtf`, default the aligner's reference), `filter_remapped_reads.py`, merge with the reads over no SNP, sort, index, flagstat before and after. Duplicates are kept. Paired-end GEX reads with `paired_end: true`. Temporary files in `work_dir`, removed per job; each job holds one `wasp_slots` (`workflow_profile/config.yaml`: 100 at a time)
+  - Stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`): one row per donor bam (discard reasons, kept and remapped reads, SNP allele matches, `filter_remapped_reads.py`'s counts, flagstat, and `summary_*` counts and percentages), and per run `wasp_stats.tsv`, `wasp_summary.tsv` and `wasp_plots.pdf` (rule `wasp_stats`); `wasp_stats.py summarize` joins runs (e.g. datasets, with `--labels`)
+  - `lib/wasp.py` (samples table and paths); schema: `workflow: start` / `until: wasp`, `references: tools: wasp`, `modules: wasp`, with rules (module, table and genotypes for `until: wasp`, `remap: genome` and `until: wasp` for `start: wasp`, `gt_check: no` after `split_bams`, no multi-VCF); `rules/resources.smk`: `wasp_snp2h5`, `wasp_check_inputs`, `wasp_remap`, `wasp_stats`
+  - `migrate_config.py` writes `references: tools: wasp: null` and the `modules: wasp` block in whole configs, and a `last_step` naming wasp becomes `until: wasp`
+  - Dry runs: `wasp_stage_start`, `wasp_stage_vcf_sets`, `wasp_stage_missing_bam`, `wasp_stage_no_module`, `wasp_stage_after_split`, `wasp_stage_multiome`, `wasp_stage_external`. Unit tests: `tests/unit/test_wasp.py`
+
+---
+
 ## Target Production (`produce_targets.smk`)
 
 - Eliminated `wc_d`; all `expand(..., zip, **wc_d)` calls replaced with:

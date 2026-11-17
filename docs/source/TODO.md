@@ -35,6 +35,16 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ---
 
+## WASP
+
+The WASP stage (`until: wasp` / `start: wasp`, see CHANGELOG) covers sc/snRNA-seq and the RNA (GEX) part of multiome.
+
+- [ ] WASP for the ATAC part of multiome: bwa-mem remapping (as cellranger-arc), paired-end, and duplicates removed within each cell barcode (or cellranger-arc's duplicate marks, `-F 0x400`), as in `psychad_multiome_wasp.R`; needs ATAC split bams first (see Compatibility).
+- [ ] Count matrices (h5ads) from the WASP-filtered bams, or the UMIs removed by WASP subtracted from the aligner's matrix.
+- [ ] Run a few donors of one dataset on Minerva and compare the stats with the lab's earlier runs (e.g. A13 with `genesis_wasp.R`): only dry runs and unit tests have run so far.
+
+---
+
 ## Compatibility
 
 - [ ] Split the design for sc/snRNA-seq, scATAC and multiome; the pipeline will be restructured.

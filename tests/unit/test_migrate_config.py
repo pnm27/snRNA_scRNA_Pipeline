@@ -26,6 +26,11 @@ EXTERNAL_DEFAULTS = {
         ['split_bams']['properties']['split_by']['properties']['external']['properties'].items()
 }
 EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
+# The WASP stage's keys, added to whole configs with the example's values
+WASP_NEW_KEYS = {
+    'references.tools.wasp': None,
+    'modules.wasp': yaml.safe_load(open(EXAMPLE))['modules']['wasp'],
+}
 OLD_EXAMPLE = os.path.join(OLD, "new_config.example.yaml")
 OLD_SCENARIOS = sorted(glob.glob(os.path.join(OLD, "scenarios", "*.yaml")))
 # Old keys whose meaning moved to new keys (checked by check_derived)
@@ -166,6 +171,13 @@ def check_round_trip(text):
         assert (value is not KeyError) == ('inp_split_bams_dir' in sb)
         if value is not KeyError:
             assert value == EXTERNAL_DEFAULTS
+    # Only in whole configs (with a whole split bams block)
+    whole = 'inp_split_bams_dir' in (old.get('split_bams_pipeline') or {})
+    for path, default in WASP_NEW_KEYS.items():
+        value = pop_path(new, path)
+        assert (value is not KeyError) == whole
+        if value is not KeyError:
+            assert value == default
     # Keys added to a whole swap correction block, as null
     swap = (old.get('demultiplex') or {}).get('swap_correction')
     whole_swap = isinstance(swap, dict) and 'donor_to' in swap
@@ -234,6 +246,13 @@ def test_scenario_merged(scenario):
 def test_last_step(step):
     text = f"last_step: {step}\n"
     check_derived(yaml.safe_load(text), migrated(text))
+
+
+def test_last_step_wasp():
+    """A last_step naming wasp is the WASP stage, after split_bams."""
+    from migrate_config import until
+    assert until('STARsolo_split_bams_wasp') == 'wasp'
+    assert until_stages('wasp')[-2:] == ['split_bams', 'wasp']
 
 
 def test_comments_and_anchors():

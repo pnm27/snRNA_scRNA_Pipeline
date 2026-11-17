@@ -1,0 +1,34 @@
+# existing bams split by external labels, then WASP (start: split_bams,
+# until: wasp)
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p root/dayA/samp1 geno projdir/inp_split_filt_bams/final && touch -d '1 min ago' cellBC_vs_origin.txt
+# setup: touch root/dayA/samp1/samp1.bam root/dayA/samp1/samp1.bam.bai geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tbam\nsamp1\troot/dayA/samp1/samp1.bam\n" > bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# setup: printf "pool\tdonor\tsample\nsamp1\tD1\tG1\nsamp1\tD2\tG2\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: split_bams wasp_remap wasp_stats
+# path: projdir/wasp_bams/samp1/D1.after_wasp.bam projdir/wasp_bams/samp1/D2.after_wasp.bam
+workflow:
+  start: split_bams
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  split_bams:
+    split_by:
+      input: external
+      external:
+        file: cellBC_vs_origin.txt
+        barcode_column: barcode
+        pool_column: pool
+        pools: bams.tsv
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    remap:
+      genome: star_idx/

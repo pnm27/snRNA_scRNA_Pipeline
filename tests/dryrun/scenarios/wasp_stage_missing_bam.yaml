@@ -1,0 +1,20 @@
+# start: wasp with a bam of the samples table that isn't there stops the run
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p bams geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5 bams/D1.bam bams/D1.bam.bai
+# setup: printf "pool\tdonor\tsample\tbam\nP1\tD1\tG1\tbams/D1.bam\nP1\tD2\tG2\tbams/D2.bam\n" > wasp_samples.tsv
+# fails: P1 D2: no bam bams/D2.bam
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    remap:
+      genome: star_idx/

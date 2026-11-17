@@ -21,3 +21,14 @@ set-resources:
 
   cellranger_arc_count:
     lsf_queue: premium
+
+  wasp_remap:
+    lsf_queue: premium
+
+  wasp_snp2h5:
+    lsf_queue: premium
+
+# At most this many WASP jobs at a time (each holds one wasp_slots): their
+# temporary bams are large
+resources:
+  - "wasp_slots=100"

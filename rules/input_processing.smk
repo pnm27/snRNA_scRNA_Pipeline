@@ -15,8 +15,9 @@ SS_MEM = {}
 # Limitting Step for the run of Snakemake, creating wildcards
 # If the input is a text file containing the folder structure to the fastqs
 # Runs of existing bams ('workflow: start: split_bams') read no fastqs: their
-# pools are those of the external labels
-if config['workflow']['start'] == 'split_bams':
+# pools are those of the external labels (or, 'start: wasp', of the WASP
+# samples table)
+if config['workflow']['start'] in ('split_bams', 'wasp'):
     pass
 elif os.path.isfile(config['experiment']['inputs']['select_fastqs']) and not config['experiment']['inputs']['select_fastqs'].endswith('.yaml') and not config['experiment']['inputs']['select_fastqs'].endswith('.yml'):
 

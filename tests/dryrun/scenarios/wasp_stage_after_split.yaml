@@ -1,0 +1,30 @@
+# WASP after split_bams: the split donors in the samples table (D2 isn't:
+# a warning), remapped to the aligner's genome
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tsample\nP1\tD1\tG1\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: split_bams wasp_check_inputs wasp_remap wasp_stats
+# path: projdir/wasp_bams/P1/D1.after_wasp.bam STARsolo_split_filt_bams/final/Sample_P1-cDNA/D1.bam
+# nopath: projdir/wasp_bams/P1/D2.after_wasp.bam
+# says: not in the WASP samples table wasp_samples.tsv, not WASP-filtered: P1 D2
+workflow:
+  aligner: STARsolo
+  start: align
+  until: wasp
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/

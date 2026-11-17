@@ -26,8 +26,9 @@ assert sys.version_info >= (3, 10), "This pipeline needs python version >= 3.10!
 
 
 configfile: "new_config.yaml"
-# A config of existing bams ('workflow: start: split_bams') needs only what
-# differs from the example (schema/split_bams_defaults.yaml)
+# A config of existing bams ('workflow: start: split_bams' or 'wasp') needs
+# only what differs from the example (schema/split_bams_defaults.yaml,
+# schema/wasp_defaults.yaml)
 from lib.config_defaults import fill_defaults
 fill_defaults(config)
 # Every problem in the config (old layout, unknown or duplicate keys, keys
@@ -63,6 +64,7 @@ wildcard_constraints:
     donor = r"[^/]+",
     modality = r"cDNA|ATAC|HTO",
     vcf_type = VCF_TYPE_PATTERN,
+    gset = r"[^/]+",
 
 
 # DEPRACATED - USE new_config.yaml 'demux_type'
@@ -87,6 +89,7 @@ include: "rules/genotype_demux.smk"
 include: "rules/demultiplex.smk"
 include: "rules/split_bams.smk"
 include: "rules/identify_swaps.smk"
+include: "rules/wasp.smk"
 include: "rules/deeptools.smk"
 include: "rules/cellranger.smk"
 

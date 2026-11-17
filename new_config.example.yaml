@@ -72,12 +72,14 @@ references:
     star_snv_aware: star/2.7.10a
     cellranger_arc: cellranger-arc/2.0.2
     cellranger: cellranger/8.0.1
+    wasp: null  # env module of WASP (sets WASP_HOME), for until: wasp
 
 # What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:
   aligner: STARsolo
-  # align (from the fastqs) or split_bams (existing bams, split_by: input: external or final);
-  # a split_bams config needs only what differs from schema/split_bams_defaults.yaml
+  # align (from the fastqs), split_bams (existing bams, split_by: input: external or final)
+  # or wasp (existing per-donor bams, listed in modules: wasp: samples); a split_bams or
+  # wasp config needs only what differs from schema/split_bams_defaults.yaml or wasp_defaults.yaml
   start: align
   until: align
   picard_metrics: all  # can be null, all, rnaseq or gc
@@ -376,6 +378,20 @@ modules:
     # Optional params
     mbv_suffix: .bamstat.txt
     mbv_extra_opt: "--filter-mapping-quality 150"  # null if no extra params needed for the run
+  # WASP filtering of per-donor bams (until: wasp, or start: wasp), for sc/snRNA-seq
+  # and the RNA (GEX) part of multiome; WASP comes from references: tools: wasp
+  wasp:
+    # pool, donor, sample (genotype ID(s), ';'-separated; find_intersecting_snps.py's
+    # --samples), and bam[, bai] with start: wasp; genotype_set with several sets
+    samples: null
+    genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}
+    remap:
+      genome: null  # STAR index; null: the aligner's reference (start: wasp: required)
+      gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's
+      extra_params: null
+    paired_end: false  # true for paired-end GEX reads; 10x 3': false
+    wasp_dir: projdir/wasp_bams/
+    work_dir: projdir/wasp_tmp/  # large temporary files, removed per job
   deeptools:
     fold_struct: "Sample-{pool}"
     multiBamSummary:

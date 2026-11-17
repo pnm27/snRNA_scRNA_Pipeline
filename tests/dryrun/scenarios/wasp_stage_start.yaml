@@ -1,0 +1,25 @@
+# WASP only, from a samples table of existing per-donor bams (start: wasp),
+# with only what differs from the defaults (schema/wasp_defaults.yaml); no
+# fastq list, alignment or demultiplexing
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p bams/P1 bams/P2 geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: for d in P1/D1 P1/D2 P2/D3; do touch bams/$d.bam bams/$d.bam.bai; done
+# setup: printf "pool\tdonor\tsample\tbam\nP1\tD1\tG1\tbams/P1/D1.bam\nP1\tD2\tG2;G2b\tbams/P1/D2.bam\nP2\tD3\tG3\tbams/P2/D3.bam\n" > wasp_samples.tsv
+# expect: wasp_check_inputs wasp_remap wasp_stats
+# absent: STARsolo_sort split_bams bamfilt_by_CB wasp_snp2h5 demux_final
+# path: projdir/wasp_bams/P1/D2.after_wasp.bam projdir/wasp_bams/P2/D3.after_wasp.bam bams/P2/D3.bam projdir/wasp_bams/wasp_plots.pdf geno/haps.h5
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    remap:
+      genome: star_idx/

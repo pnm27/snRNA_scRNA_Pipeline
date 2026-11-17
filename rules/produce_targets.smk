@@ -13,6 +13,9 @@ from lib.aligner import count_matrix as aligner_count_matrix
 #   demux           demultiplexing (see DemuxConfig)
 #   split_bams      per-donor bams      } known once the donors of each pool
 #   identify_swaps  QTLtools-mbv        } are (checkpoint 'create_inp_splitBams')
+#   wasp            WASP-filtered per-donor bams (rules/wasp.smk) and the
+#                   run's WASP stats; with 'workflow: start: wasp', of the
+#                   bams in the WASP samples table (no other stage)
 #
 # Donor labels from outside the pipeline ('split_by: input: external') need
 # no demux stage, and with 'workflow: start: split_bams' the bams are
@@ -28,6 +31,7 @@ UNTIL_STAGES = {
     "demux":          ["align", "demux"],
     "split_bams":     ["align", "demux", "split_bams"],
     "identify_swaps": ["align", "demux", "split_bams", "identify_swaps"],
+    "wasp":           ["align", "demux", "split_bams", "wasp"],
 }
 
 
@@ -35,6 +39,7 @@ UNTIL_STAGES = {
 START_SKIPS = {
     "align":      [],
     "split_bams": ["align", "cellsnp", "demux"],
+    "wasp":       ["align", "cellsnp", "demux", "split_bams"],
 }
 
 
@@ -51,7 +56,7 @@ def until_stages(until: str, start: str = "align", external: bool = False) -> li
             f"{', '.join(START_SKIPS)})"
         )
     skip = set(START_SKIPS[start])
-    if external and until in ("split_bams", "identify_swaps"):
+    if external and until in ("split_bams", "identify_swaps", "wasp"):
         skip.add("demux")  # donors come from the external labels
     return [s for s in UNTIL_STAGES[until] if s not in skip]
 
@@ -71,9 +76,9 @@ MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
 SPLIT_MODALITIES = [SPLIT_MODALITY]
 VCF_TYPES = vcf_types(config)
 
-if VCF_TYPES and any(s in STAGES for s in ["split_bams", "identify_swaps"]):
+if VCF_TYPES and any(s in STAGES for s in ["split_bams", "identify_swaps", "wasp"]):
     raise ValueError(
-        "Splitting bams (and identifying swaps) isn't supported for "
+        "Splitting bams (and identifying swaps or WASP) isn't supported for "
         "multi-VCF runs yet"
     )
 
@@ -205,6 +210,12 @@ def swap_file_pools() -> list:
 if START == "split_bams" and not EXTERNAL:
     POOLS = swap_file_pools()
 
+# WASP of existing bams ('workflow: start: wasp'): the pools of the WASP
+# samples table
+if START == "wasp":
+    from lib.wasp import samples_table
+    POOLS = sorted({pool for pool, _ in samples_table(config)})
+
 
 # ---------------------------------------------------------------------------
 # Per-stage target builders (path templates)
@@ -251,6 +262,12 @@ def targets_identify_swaps() -> list:
     return [os.path.join(out_dir, f"{fs}{suff}")]
 
 
+def targets_wasp() -> list:
+    """The run's WASP stats (they need every donor's WASP bam)."""
+    from lib.wasp import run_outputs
+    return list(run_outputs(config).values())
+
+
 STATIC_TARGETS = {
     "align":   targets_align,
     "cellsnp": targets_cellSNP,
@@ -275,6 +292,9 @@ def produce_targets(wildcards) -> list:
         targets.append("resolved/external_pools.done")
     elif "split_bams" in STAGES:
         targets += expand("resolved/{pool}/{modality}.done", pool=POOLS, modality=SPLIT_MODALITIES)
+
+    if "wasp" in STAGES:
+        targets += targets_wasp()
 
     return targets
 

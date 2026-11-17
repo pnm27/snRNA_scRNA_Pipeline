@@ -50,6 +50,12 @@ properties:
           cellranger:
             type: string
             default: cellranger/8.0.1
+          wasp:
+            type:
+            - string
+            - 'null'
+            default: null
+            description: "Env module of WASP (github.com/bmvdgeijn/WASP) for 'workflow: until: wasp': it sets WASP_HOME, where its scripts are (mapping/find_intersecting_snps.py, mapping/filter_remapped_reads.py, snp2h5/snp2h5), with a python that has PyTables"
         required:
         - star
         - featuremap_script
@@ -92,7 +98,8 @@ properties:
         enum:
         - align
         - split_bams
-        description: "First stage to run. align: from the fastqs; split_bams: split existing bams (in the aligner's bams_dir, or listed in 'split_by: external: pools') by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the versions in the swap correction file ('input: final', 'modules: demultiplex: swap_correction'); keys left out of such a config take the values of new_config.example.yaml with schema/split_bams_defaults.yaml on top"
+        - wasp
+        description: "First stage to run. wasp: WASP-filter the per-donor bams listed in the WASP samples table ('modules: wasp: samples', with a bam column), with defaults from new_config.example.yaml and schema/wasp_defaults.yaml; align: from the fastqs; split_bams: split existing bams (in the aligner's bams_dir, or listed in 'split_by: external: pools') by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the versions in the swap correction file ('input: final', 'modules: demultiplex: swap_correction'); keys left out of such a config take the values of new_config.example.yaml with schema/split_bams_defaults.yaml on top"
       until:
         type: string
         enum:
@@ -101,7 +108,8 @@ properties:
         - demux
         - split_bams
         - identify_swaps
-        description: "Last stage to run; the alignment (or Picard's metrics) is always a target, unless start is split_bams. cellsnp: cellSNP's pileup only; split_bams and identify_swaps include the demultiplexing, unless the bams are split by external labels"
+        - wasp
+        description: "Last stage to run; the alignment (or Picard's metrics) is always a target, unless start is split_bams or wasp. cellsnp: cellSNP's pileup only; split_bams, identify_swaps and wasp include the demultiplexing, unless the bams are split by external labels; wasp: WASP filtering of the per-donor bams (sc/snRNA-seq, or the RNA part of multiome)"
     required:
     - picard_metrics
     - gt_check
@@ -859,6 +867,82 @@ properties:
         - fold_struct_hash
         - fold_struct_bams
         - fold_struct_donor
+      wasp:
+        type: object
+        description: "WASP filtering of per-donor bams ('workflow: until: wasp' or 'start: wasp'), for sc/snRNA-seq and the RNA (GEX) part of multiome; see lib/wasp.py"
+        additionalProperties: false
+        properties:
+          samples:
+            type:
+            - string
+            - 'null'
+            default: null
+            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (the genotype sample ID(s) of the donor, ';'-separated: find_intersecting_snps.py's --samples), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
+          genotypes:
+            type:
+            - object
+            - 'null'
+            default: null
+            description: "Named genotype sets (e.g. one for WGS, one for SNP arrays), each WASP's h5 files (h5_dir, made by snp2h5) or VCF/BCF files converted once (vcf and chrom_sizes)"
+            additionalProperties:
+              type: object
+              additionalProperties: false
+              x-explain: "A genotype set is either 'h5_dir' (a folder with WASP's snp_index.h5, snp_tab.h5 and haps.h5) or 'vcf' (an indexed VCF/BCF, or a list of them, e.g. one per chromosome) with 'chrom_sizes' (chromosome and length, snp2h5's --chrom)"
+              properties:
+                h5_dir:
+                  type:
+                  - string
+                  - 'null'
+                vcf:
+                  type:
+                  - string
+                  - array
+                  - 'null'
+                  items:
+                    type: string
+                chrom_sizes:
+                  type:
+                  - string
+                  - 'null'
+              anyOf:
+              - required: [h5_dir]
+                properties: {h5_dir: {type: string}}
+              - required: [vcf, chrom_sizes]
+                properties: {vcf: {type: [string, array], minItems: 1}, chrom_sizes: {type: string}}
+          remap:
+            type: object
+            additionalProperties: false
+            description: "STAR remapping of the reads over SNPs"
+            properties:
+              genome:
+                type:
+                - string
+                - 'null'
+                default: null
+                description: "STAR index of the genome the bams were aligned to. null: the run's aligner reference (STARsolo's genome_pick, or the 'star' folder of the cellranger / cellranger-arc reference, which may need a newer STAR index: see docs/source/config_caveats.md)"
+              gtf:
+                type:
+                - string
+                - 'null'
+                default: null
+                description: "GTF for STAR's --sjdbGTFfile; null: STARsolo's genome_pick gtf when the genome is the aligner's, else none (the index's annotations)"
+              extra_params:
+                type:
+                - string
+                - 'null'
+                default: null
+          paired_end:
+            type: boolean
+            default: false
+            description: "Paired-end GEX reads (e.g. 5' kits with both reads aligned); false for 10x 3' (only R2 has the cDNA)"
+          wasp_dir:
+            type: string
+            default: projdir/wasp_bams/
+            description: "WASP-filtered bams (<pool>/<donor>.after_wasp.bam), their stats and logs, and the run's stats (wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf)"
+          work_dir:
+            type: string
+            default: projdir/wasp_tmp/
+            description: "Large temporary files of each job (<pool>/<donor>/), removed when it ends: a place with space"
       identify_swaps:
         type: object
         properties:
@@ -994,13 +1078,13 @@ allOf:
               vcf_info_columns:
                 required: [vcf]
                 properties: {vcf: {anyOf: [type: string, {type: array, minItems: 1}]}}
-- x-explain: "Splitting bams (and identifying swaps) isn't supported for multi-VCF runs yet"
+- x-explain: "Splitting bams (and identifying swaps or WASP) isn't supported for multi-VCF runs yet"
   if: {properties: {experiment: {properties: {demultiplexing: {properties: {genotype: {properties: {multi_vcf: {const: true}}, required: [multi_vcf]}}}}}}}
-  then: {properties: {workflow: {properties: {until: {not: {enum: [split_bams, identify_swaps]}}}}}}
-- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams or identify_swaps needs a demultiplexing method (solo, vireo or both), unless they are split by external labels ('modules: split_bams: split_by: input: external') or the run starts at split_bams (existing demultiplexing)"
+  then: {properties: {workflow: {properties: {until: {not: {enum: [split_bams, identify_swaps, wasp]}}}}}}
+- x-explain: "Bams are split by the donors that demultiplexing finds, so until split_bams, identify_swaps or wasp needs a demultiplexing method (solo, vireo or both), unless they are split by external labels ('modules: split_bams: split_by: input: external') or the run starts at split_bams (existing demultiplexing) or wasp (existing per-donor bams)"
   if:
     properties:
-      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}, start: {not: {const: split_bams}}}, required: [until]}
+      workflow: {properties: {until: {enum: [split_bams, identify_swaps, wasp]}, start: {not: {enum: [split_bams, wasp]}}}, required: [until]}
       modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {not: {pattern: '(?i)^external$'}}}}}}}}
   then: {properties: {experiment: {properties: {demultiplexing: {properties: {method: {enum: [solo, vireo, both]}}}}}}}
 - x-explain: "hashsolo (method solo or both) isn't supported for multiome runs yet (aligner cellranger_arc)"
@@ -1023,11 +1107,11 @@ allOf:
 - x-explain: "With HTO libraries, 'experiment: hto: multiplexing' picks the kite rules: single (one HTO per cell) or multiple"
   if: {properties: {experiment: {properties: {hto: {properties: {enabled: {const: true}}, required: [enabled]}}}}}
   then: {properties: {experiment: {properties: {hto: {properties: {multiplexing: {enum: [single, multiple]}}, required: [multiplexing]}}}}}
-- x-explain: "start: split_bams splits bams that are already there, by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the demultiplexing versions in the swap correction file ('input: final'), and needs until split_bams or identify_swaps"
+- x-explain: "start: split_bams splits bams that are already there, by donor labels from outside the pipeline ('modules: split_bams: split_by: input: external') or by the final h5ads of the demultiplexing versions in the swap correction file ('input: final'), and needs until split_bams, identify_swaps or wasp"
   if: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
   then:
     properties:
-      workflow: {properties: {until: {enum: [split_bams, identify_swaps]}}}
+      workflow: {properties: {until: {enum: [split_bams, identify_swaps, wasp]}}}
       modules: {properties: {split_bams: {properties: {split_by: {properties: {input: {pattern: '(?i)^(external|final)$'}}}}}}}
 - x-explain: "start: split_bams with 'split_by: input: final' takes its pools and their demultiplexing versions from the swap correction file: it needs 'modules: demultiplex: swap_correction: file', 'pool_column' and 'version_column'"
   if:
@@ -1065,6 +1149,26 @@ allOf:
 - x-explain: "A pools table ('split_by: external: pools') has one bam per pool, so it isn't supported for multiome runs (aligner cellranger_arc) yet"
   if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {external: {properties: {pools: {type: string}}, required: [pools]}}, required: [external]}}, required: [split_by]}}, required: [split_bams]}}}
   then: {properties: {workflow: {properties: {aligner: {not: {pattern: '(?i)^cellranger_arc$'}}}}}}
+- x-explain: "start: wasp WASP-filters the per-donor bams of the samples table, so it needs until: wasp"
+  if: {properties: {workflow: {properties: {start: {const: wasp}}, required: [start]}}}
+  then: {properties: {workflow: {properties: {until: {const: wasp}}}}}
+- x-explain: "WASP (until: wasp) needs the WASP env module ('references: tools: wasp', which sets WASP_HOME), a samples table ('modules: wasp: samples': pool, donor, sample, and bam with start: wasp) and at least one genotype set ('modules: wasp: genotypes')"
+  if: {properties: {workflow: {properties: {until: {const: wasp}}, required: [until]}}}
+  then:
+    properties:
+      references: {properties: {tools: {required: [wasp], properties: {wasp: {type: string}}}}}
+      modules:
+        required: [wasp]
+        properties:
+          wasp:
+            required: [samples, genotypes]
+            properties: {samples: {type: string}, genotypes: {type: object, minProperties: 1}}
+- x-explain: "start: wasp remaps the reads of bams aligned elsewhere: set 'modules: wasp: remap: genome' to the STAR index of the genome they were aligned to (and 'gtf' for its splice junctions, unless the index has them)"
+  if: {properties: {workflow: {properties: {start: {const: wasp}}, required: [start]}}}
+  then: {properties: {modules: {required: [wasp], properties: {wasp: {required: [remap], properties: {remap: {required: [genome], properties: {genome: {type: string}}}}}}}}}
+- x-explain: "WASP after split_bams filters the final per-donor bams (all chromosomes, cells filtered), so it needs 'workflow: gt_check: no' (gt_check bams are for the genotype check)"
+  if: {properties: {workflow: {properties: {until: {const: wasp}, start: {not: {const: wasp}}}, required: [until]}}}
+  then: {properties: {workflow: {properties: {gt_check: {const: false}}}}}
 x-warnings:
 - x-warn: "Picard runs on STARsolo runs only: 'workflow: picard_metrics' is ignored for this aligner"
   if: {properties: {workflow: {properties: {aligner: {enum: [cellranger, cellranger_arc]}}, required: [aligner]}}}

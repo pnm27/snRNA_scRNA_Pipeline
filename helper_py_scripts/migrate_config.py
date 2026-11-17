@@ -13,8 +13,11 @@ New layout::
 
 New keys are written out with their values for the old configs:
 'workflow: start: align' (wherever 'last_step' is converted) and, in a
-whole split bams block, 'split_by: external' (donor labels from outside
-the pipeline, unused unless 'split_by: input: external').
+whole config (one with a whole split bams block), 'split_by: external'
+(donor labels from outside the pipeline, unused unless 'split_by: input:
+external'), the WASP block 'modules: wasp' and its env module
+'references: tools: wasp' (unused unless 'until: wasp'). A last_step
+naming wasp (e.g. STARsolo_split_bams_wasp) becomes 'until: wasp'.
 
 Comments inside the moved blocks and the anchors (e.g. ``*3v3``) are kept.
 Configs that only override some keys (e.g. the dry-run scenarios) are
@@ -118,7 +121,7 @@ ORDER = {
 }
 
 # The stages 'until' can name, in order
-STAGES = ['align', 'cellsnp', 'demux', 'split_bams', 'identify_swaps']
+STAGES = ['align', 'cellsnp', 'demux', 'split_bams', 'identify_swaps', 'wasp']
 
 # last_step values whose stage doesn't follow from their name
 SPECIAL_STEPS = {
@@ -152,7 +155,7 @@ def until(step: str) -> str:
     aligner(step)
     if step in SPECIAL_STEPS:
         return SPECIAL_STEPS[step]
-    for stage in ['identify_swaps', 'split_bams']:
+    for stage in ['wasp', 'identify_swaps', 'split_bams']:
         if stage in step:
             return stage
     return 'demux' if 'gt_demux' in step else 'align'
@@ -203,6 +206,45 @@ def external_labels_block() -> CommentedMap:
     return ext
 
 
+def wasp_block() -> CommentedMap:
+    """'modules: wasp' with its defaults (see new_config.example.yaml)."""
+    remap = CommentedMap()
+    remap['genome'] = None
+    remap['gtf'] = None
+    remap['extra_params'] = None
+    remap.yaml_add_eol_comment(
+        "STAR index; null: the aligner's reference (start: wasp: required)", 'genome')
+    remap.yaml_add_eol_comment(
+        "null: STARsolo's genome_pick gtf when the genome is the aligner's", 'gtf')
+    wasp = CommentedMap()
+    wasp['samples'] = None
+    wasp['genotypes'] = None
+    wasp['remap'] = remap
+    wasp['paired_end'] = False
+    wasp['wasp_dir'] = 'projdir/wasp_bams/'
+    wasp['work_dir'] = 'projdir/wasp_tmp/'
+    wasp.yaml_set_comment_before_after_key(
+        'samples',
+        before="pool, donor, sample (genotype ID(s), ';'-separated; "
+               "find_intersecting_snps.py's\n--samples), and bam[, bai] with "
+               "start: wasp; genotype_set with several sets", indent=4)
+    wasp.yaml_add_eol_comment(
+        "sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}",
+        'genotypes')
+    wasp.yaml_add_eol_comment(
+        "true for paired-end GEX reads; 10x 3': false", 'paired_end')
+    wasp.yaml_add_eol_comment(
+        'large temporary files, removed per job', 'work_dir')
+    return wasp
+
+
+def whole_config(old) -> bool:
+    """A whole config (not one overriding some keys): it has a whole split
+    bams block."""
+    sb = old.get('split_bams_pipeline')
+    return isinstance(sb, dict) and 'inp_split_bams_dir' in sb
+
+
 def derived(old) -> dict:
     """New path -> value, for the old keys whose meaning changed, and the
     new keys written out for old configs."""
@@ -229,10 +271,13 @@ def derived(old) -> dict:
             str(hto).lower() if hto is not None else None)
     # A whole split bams block (not a config overriding some of its keys)
     sb = old.get('split_bams_pipeline')
-    if (isinstance(sb, dict) and 'inp_split_bams_dir' in sb
-            and isinstance(sb.get('split_by'), dict)
+    if (whole_config(old) and isinstance(sb.get('split_by'), dict)
             and 'external' not in sb['split_by']):
         new['modules.split_bams.split_by.external'] = external_labels_block()
+    # The WASP stage, added since (unused unless 'until: wasp')
+    if whole_config(old):
+        new['references.tools.wasp'] = None
+        new['modules.wasp'] = wasp_block()
     # Keys added to a whole swap correction block since (see
     # new_config.example.yaml)
     swap = (old.get('demultiplex') or {}).get('swap_correction')

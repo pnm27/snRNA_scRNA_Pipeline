@@ -302,6 +302,122 @@ python3 helper_py_scripts/donor_bams.py --swap final_swap_correction.csv \
 - `--no_combine`: never merge; each bam is linked to `<out_dir>/<name>/<pool>.bam`
 - `--dry_run` prints the plan; otherwise it is written to `<out_dir>/manifest.tsv` (output, action: link / copy / merge / dropped, source bams, pools, donors). Missing bams are all listed before anything is written; bams with different references (`@SQ`) aren't merged; outputs that exist are kept unless `--force`
 
+## WASP filtering of per-donor bams
+
+For sc/snRNA-seq and the RNA (GEX) part of multiome (STARsolo, cellranger or cellranger-arc bams; ATAC isn't covered yet, see TODO). Each per-donor bam is filtered with [WASP](https://github.com/bmvdgeijn/WASP)'s mapping pipeline: reads over the donor's heterozygous SNPs are remapped with the alleles swapped and kept only if they map back to the same place (no allele-specific mapping bias), along with the reads over no SNP. Duplicates are kept (sc/snRNA-seq). This is different from STARsolo's own WASP mode (`modules: STARsolo: wasp`, the `vW` tag at alignment).
+
+Two ways to run it:
+
+- `workflow: until: wasp`: after `split_bams`, on this run's split bams (`gt_check: no`: the final, cell-filtered bams). It follows any `split_bams` input, including external labels and `start: split_bams`.
+- `workflow: start: wasp` (with `until: wasp`): on per-donor bams that are already there, listed in the samples table. No alignment or demultiplexing; keys left out take the defaults of `new_config.example.yaml` with `schema/wasp_defaults.yaml` on top.
+
+### The samples table
+
+`modules: wasp: samples`, tab-separated (or comma-separated for `.csv`), one row per donor bam:
+
+| column | |
+|---|---|
+| `pool` | pool (no `/`) |
+| `donor` | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its vcf ID) |
+| `sample` | the donor's genotype sample ID(s) in its genotype set, `;`-separated: written to the `--samples` file of `find_intersecting_snps.py` |
+| `bam`, `bai` | `start: wasp` only: the per-donor bam (`bai` defaults to `<bam>.bai`) |
+| `genotype_set` | which `modules: wasp: genotypes` set, with more than one |
+
+```text
+pool    donor   sample      bam
+P1      D1      GENO_0001   /data/split/Sample_P1-cDNA/D1.bam
+P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam
+```
+
+After `split_bams`, split donors not in the table aren't filtered (a warning); none at all stops the run. With `start: wasp`, a missing bam or bai stops the run, all listed.
+
+### Genotypes
+
+Named sets (e.g. one for WGS, one for SNP arrays), each:
+
+- `h5_dir`: a folder with WASP's `snp_index.h5`, `snp_tab.h5` and `haps.h5` (made once with WASP's `snp2h5`), or
+- `vcf` (an indexed VCF/BCF, or a list of them, e.g. one per chromosome) and `chrom_sizes` (chromosome and length, `snp2h5 --chrom`): rule `wasp_snp2h5` makes the h5 files once (`<wasp_dir>genotypes/<set>/`), from the set's samples in the table and the sites variable among them (`bcftools view -S ... -q 0.000001:minor`), one chromosome at a time.
+
+### Configuration
+
+```yaml
+references:
+  tools:
+    wasp: wasp/<version>     # env module that sets WASP_HOME (its scripts are under it)
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: /path/to/snp2h5_output/
+      # chip: {vcf: /path/to/genotypes.bcf, chrom_sizes: /path/to/chromInfo.hg38.txt}
+    remap:
+      genome: null           # STAR index; null: the aligner's reference (start: wasp: required)
+      gtf: null              # null: STARsolo's genome_pick gtf when the genome is the aligner's
+      extra_params: null     # more STAR options
+    paired_end: false        # true for paired-end GEX reads; 10x 3': false
+    wasp_dir: projdir/wasp_bams/
+    work_dir: projdir/wasp_tmp/   # large temporary files, removed per job: a place with space
+```
+
+The remap genome must be the one the bams were aligned to: by default STARsolo's `genome_pick` (with its gtf), or the `star` folder of the cellranger / cellranger-arc reference (see `config_caveats.md`).
+
+### Jobs
+
+1. `wasp_snp2h5` (sets given as VCF/BCF only).
+2. `wasp_check_inputs`, once: every `sample` of the table is in its set's `haps.h5`, so a wrong ID stops the run before the long jobs.
+3. `wasp_remap`, per donor bam (as the lab's tested scripts, e.g. `genesis_wasp.R`): a check that the bam and the genotypes name chromosomes the same way (`chr1` vs `1`); `find_intersecting_snps.py`; STAR remapping (two-pass, `NH HI AS nM NM MD`); `filter_remapped_reads.py`; `samtools merge`, `sort`, `index`; `samtools flagstat` of the bam before and after; the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time (`--resources wasp_slots=N` on the command line to change it). 6 cores, 18 GB, a day by default (`execution: resources: wasp_remap`).
+4. `wasp_stats`: the run's table, summary and plots.
+
+Outputs, under `wasp_dir`:
+
+```text
+<pool>/<donor>.after_wasp.bam(.bai)
+<pool>/stats/<donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
+<pool>/logs/<donor>.find_intersecting_snps.log, .star_remap.log, .filter_remapped_reads.log
+wasp_stats.tsv     one row per donor bam
+wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
+wasp_plots.pdf     histograms of the summary_* columns
+```
+
+The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs. Counts are reads (pairs with `paired_end: true`).
+
+### Usage
+
+WASP only, from a samples table with bams:
+
+```yaml
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/<version>
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: /path/to/snp2h5_output/
+    remap:
+      genome: /path/to/STAR_index/
+      gtf: /path/to/genes.gtf
+    work_dir: /path/with/space/wasp_tmp/
+```
+
+```bash
+snakemake --configfile wasp_config.yaml --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
+```
+
+After a run that split bams, the same config with `until: wasp` and a samples table without the bam column (`--rerun-triggers mtime` keeps the split bams from being remade when only the config changed).
+
+Several datasets in one table, summary and plots:
+
+```bash
+python3 helper_py_scripts/wasp_stats.py summarize A4/wasp_bams/wasp_stats.tsv A13/wasp_bams/wasp_stats.tsv \
+    --labels A4 A13 -o wasp_all/
+```
+
 ```{eval-rst}
 .. autosummary::
   :nosignatures:

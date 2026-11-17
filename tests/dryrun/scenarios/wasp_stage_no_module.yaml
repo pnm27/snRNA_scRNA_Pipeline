@@ -1,0 +1,10 @@
+# until: wasp needs the WASP env module, a samples table and genotypes
+# standalone:
+# fails: WASP (until: wasp) needs the WASP env module
+workflow:
+  start: wasp
+  until: wasp
+modules:
+  wasp:
+    remap:
+      genome: star_idx/

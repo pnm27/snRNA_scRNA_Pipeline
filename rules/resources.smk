@@ -220,6 +220,29 @@ RESOURCES = {
         "time_min": {"base": 60, "step": 20},
     },
 
+    # wasp.smk
+    "wasp_snp2h5": {
+        "cpus_per_task": 2,
+        "mem_mb": {"base": 16000, "step": 16000},
+        "time_min": {"base": 360, "step": 360},
+    },
+    "wasp_check_inputs": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 4000, "step": 4000},
+        "time_min": 30,
+    },
+    # As in the lab's tested WASP runs: 6 cores, 18 GB, a day
+    "wasp_remap": {
+        "cpus_per_task": 6,
+        "mem_mb": {"base": 18000, "step": 6000, "max": 48000},
+        "time_min": {"base": 1440, "step": 720},
+    },
+    "wasp_stats": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 4000, "step": 4000},
+        "time_min": 30,
+    },
+
     # deeptools.smk
     "multiBamSummary": {
         "cpus_per_task": 5,

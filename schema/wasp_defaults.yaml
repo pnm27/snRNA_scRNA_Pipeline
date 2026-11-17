@@ -1,0 +1,31 @@
+# Defaults of a 'workflow: start: wasp' run (lib/config_defaults.py): WASP
+# filtering of per-donor bams that are already there, e.g. split by an
+# earlier run or outside the pipeline. They go over new_config.example.yaml,
+# and the run's config goes over both, so it needs only what differs, e.g.
+#
+#   workflow:
+#     start: wasp
+#     until: wasp
+#   references:
+#     tools:
+#       wasp: wasp/<version>          # env module that sets $WASP_HOME
+#   modules:
+#     wasp:
+#       samples: wasp_samples.tsv     # pool, donor, sample, bam[, bai, genotype_set]
+#       genotypes:
+#         main:
+#           h5_dir: /path/to/snp2h5_output/
+#       remap:
+#         genome: /path/to/STAR_index/
+#         gtf: /path/to/genes.gtf
+#
+# (docs/source/sub_workflows.md, WASP). No alignment, demultiplexing or
+# alignment metrics are run.
+workflow:
+  start: wasp
+  until: wasp
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: null
