@@ -19,6 +19,9 @@ external'), the WASP block 'modules: wasp' and its env module
 'references: tools: wasp' (unused unless 'until: wasp'). A last_step
 naming wasp (e.g. STARsolo_split_bams_wasp) becomes 'until: wasp'.
 
+A config already in the new layout gets only the keys added since that
+it lacks (e.g. 'modules: wasp'); it's left as is when it has them all.
+
 Comments inside the moved blocks and the anchors (e.g. ``*3v3``) are kept.
 Configs that only override some keys (e.g. the dry-run scenarios) are
 converted too: only the keys they have are moved.
@@ -33,6 +36,8 @@ import argparse, io, sys
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
 from ruamel.yaml.constructor import DuplicateKeyError
+from ruamel.yaml.error import CommentMark
+from ruamel.yaml.tokens import CommentToken
 
 
 # Old key (top level) -> new path. Keys handled by 'derived' are not here.
@@ -245,6 +250,102 @@ def whole_config(old) -> bool:
     return isinstance(sb, dict) and 'inp_split_bams_dir' in sb
 
 
+def new_layout(cfg) -> bool:
+    """In the new layout: it has a new section and no old key."""
+    sections = [k for k in cfg if k in SECTIONS]
+    if not sections:
+        return False
+    old = [k for k in cfg if k not in SECTIONS]
+    if old:
+        raise ValueError(
+            "Mixes the old and new layouts: new sections "
+            f"({', '.join(sections)}) and old keys ({', '.join(old)})")
+    return True
+
+
+def added_since(cfg) -> dict:
+    """New path -> value, for the keys added since the new layout that a
+    config in the new layout lacks (as 'derived' writes them out for old
+    configs)."""
+    def get(path):
+        node = cfg
+        for p in path.split('.'):
+            if not isinstance(node, dict) or p not in node:
+                return None, False
+            node = node[p]
+        return node, True
+
+    new = {}
+    sb, _ = get('modules.split_bams')
+    whole = isinstance(sb, dict) and 'inp_split_bams_dir' in sb
+    if whole:
+        split_by = sb.get('split_by')
+        if isinstance(split_by, dict) and 'external' not in split_by:
+            new['modules.split_bams.split_by.external'] = external_labels_block()
+        if not get('references.tools.wasp')[1]:
+            new['references.tools.wasp'] = None
+        if not get('modules.wasp')[1]:
+            new['modules.wasp'] = wasp_block()
+    swap, _ = get('modules.demultiplex.swap_correction')
+    if isinstance(swap, dict) and 'donor_to' in swap:
+        for key in ('status_column', 'versions'):
+            if key not in swap:
+                new[f'modules.demultiplex.swap_correction.{key}'] = None
+    return new
+
+
+def last_leaf(node):
+    """(map, key) of a block's deepest last key, which holds the comment
+    lines after the block."""
+    while isinstance(node, CommentedMap) and len(node):
+        key = list(node)[-1]
+        if not (isinstance(node[key], CommentedMap) and len(node[key])):
+            return node, key
+        node = node[key]
+    return None, None
+
+
+def take_tail(node) -> str:
+    """Remove the comment lines after a block (e.g. the next section's
+    header), keeping its last key's end-of-line comment; return them."""
+    m, k = last_leaf(node)
+    items = m.ca.items.get(k) if m is not None else None
+    if not items or items[2] is None:
+        return ''
+    first, _, rest = items[2].value.partition('\n')
+    if first.strip().startswith('#'):
+        items[2].value = first + '\n'
+    else:
+        items[2] = None
+    return rest
+
+
+def put_tail(node, tail: str):
+    """Put comment lines after a block (see 'take_tail')."""
+    m, k = last_leaf(node)
+    if not tail or m is None:
+        return
+    items = m.ca.items.setdefault(k, [None] * 4)
+    if items[2] is not None:
+        items[2].value = items[2].value.rstrip('\n') + '\n' + tail
+    else:
+        items[2] = CommentToken('\n' + tail, CommentMark(0), None)
+
+
+def update(cfg) -> dict:
+    """Add the keys of 'added_since' to 'cfg' (in the new layout), in
+    place; return them."""
+    new = added_since(cfg)
+    for path, value in new.items():
+        parent = cfg
+        for p in path.split('.')[:-1]:
+            parent = parent[p]
+        tail = take_tail(parent)
+        set_path(cfg, path, value)
+        put_tail(parent, tail)
+    return new
+
+
 def derived(old) -> dict:
     """New path -> value, for the old keys whose meaning changed, and the
     new keys written out for old configs."""
@@ -377,8 +478,8 @@ def migrate(old):
     """The new layout of 'old' (a CommentedMap of the old layout)."""
     if not isinstance(old, CommentedMap):
         raise ValueError("The config isn't a mapping")
-    if any(s in old for s in ['workflow', 'experiment', 'modules', 'references']):
-        raise ValueError("Already in the new layout")
+    if new_layout(old):
+        raise ValueError("Already in the new layout (see 'update')")
     unknown = set(old) - set(MOVES) - UNUSED - {
         'last_step', 'demux_type', 'demux_run_type', 'hto_demux_type'}
     if unknown:
@@ -451,6 +552,18 @@ def migrate_text(text: str, quiet: bool = True) -> str:
         raise ValueError(
             "Duplicate key: snakemake uses its last value; remove the "
             f"other one first.\n{e.problem}\n{e.problem_mark}")
+    if isinstance(old, CommentedMap) and new_layout(old):
+        # Already converted: only add the keys added since
+        keep_anchors(old)
+        added = update(old)
+        if not quiet:
+            print('\n'.join(f"{p}: added" for p in added)
+                  or "In the new layout, nothing to add", file=sys.stderr)
+        if not added:
+            return text
+        out = io.StringIO()
+        y.dump(old, out)
+        return out.getvalue()
     if not quiet:
         print('\n'.join(changes(old)), file=sys.stderr)
     # The comment lines the file starts with (e.g. a dry-run scenario's checks)
@@ -466,8 +579,9 @@ def migrate_text(text: str, quiet: bool = True) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert configs from the old layout to the new one.")
-    parser.add_argument('configs', nargs='+', help="Configs in the old layout.")
+        description="Convert configs from the old layout to the new one, "
+                    "or add the keys added since to configs in the new layout.")
+    parser.add_argument('configs', nargs='+', help="Configs (old or new layout).")
     out = parser.add_mutually_exclusive_group(required=True)
     out.add_argument('-o', '--output', help="Output (one config only).")
     out.add_argument('--in-place', action='store_true',

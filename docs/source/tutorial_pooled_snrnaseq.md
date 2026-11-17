@@ -47,6 +47,8 @@ Copy `new_config.example.yaml` to `new_config.yaml` and set the project's paths 
 python3 helper_py_scripts/migrate_config.py new_config.yaml -o new_config.migrated.yaml
 ```
 
+Run on a config already in the new layout, it adds the keys added to the pipeline since (e.g. `modules: wasp`) and leaves the rest as it is.
+
 Check what a run will do with a dry run before running it:
 
 ```bash

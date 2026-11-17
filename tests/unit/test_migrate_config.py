@@ -6,14 +6,14 @@ layout; migrated, they must match the files the pipeline uses now. The
 new keys are checked against the old keys' meaning (OLD_* below, as the
 pipeline read them before the restructure)."""
 
-import ast, copy, glob, os, sys
+import ast, copy, glob, io, os, sys
 import pytest
 import yaml
 
 REPO = os.path.join(os.path.dirname(__file__), "..", "..")
 sys.path.insert(0, os.path.join(REPO, "helper_py_scripts"))
 sys.path.insert(0, REPO)
-from migrate_config import MOVES, UNUSED, migrate_text
+from migrate_config import MOVES, UNUSED, migrate_text, yaml_rt
 from lib.aligner import get_aligner
 from lib.config_models import demux_tools, is_multi_vcf
 from lib.utils import is_genotyped
@@ -264,7 +264,7 @@ def test_comments_and_anchors():
 
 
 @pytest.mark.parametrize("text, error", [
-    ("workflow:\n  aligner: STARsolo\n", "Already in the new layout"),
+    ("workflow:\n  aligner: STARsolo\nlast_step: STARsolo\n", "Mixes the old and new layouts"),
     ("last_step: STARsolo_demux\nnot_a_key: 1\n", "Unrecognised keys: not_a_key"),
     ("last_step: kallisto\n", "Unrecognised last_step"),
     ("demux_type: hashsolo\n", "Unrecognised demux_type"),
@@ -273,3 +273,40 @@ def test_comments_and_anchors():
 def test_errors(text, error):
     with pytest.raises(ValueError, match=error):
         migrate_text(text)
+
+
+# Configs already in the new layout ----------------------------------------
+def test_new_layout_up_to_date():
+    """The example has every key: left as is."""
+    text = open(EXAMPLE).read()
+    assert migrate_text(text) == text
+    assert migrate_text("workflow:\n  aligner: STARsolo\n") == "workflow:\n  aligner: STARsolo\n"
+
+
+def test_new_layout_update():
+    """A config converted before the WASP stage gets its keys, with the
+    comments, anchors and other values as they were."""
+    full = yaml.safe_load(open(EXAMPLE))
+    text = open(EXAMPLE).read()
+    y = yaml_rt()
+    cfg = y.load(text)
+    del cfg['references']['tools']['wasp']
+    del cfg['modules']['wasp']
+    del cfg['modules']['split_bams']['split_by']['external']
+    out = io.StringIO()
+    y.dump(cfg, out)
+    before = out.getvalue()
+    after = migrate_text(before)
+    new = yaml.safe_load(after)
+    for path, value in WASP_NEW_KEYS.items():
+        node = new
+        for p in path.split('.'):
+            node = node[p]
+        assert node == value, path
+    assert new['modules']['split_bams']['split_by']['external'] == EXTERNAL_DEFAULTS
+    assert new == full
+    # The comment lines after the tools (the next section's header) stay
+    # after the added key
+    tools = after.split('\n  tools:\n', 1)[1]
+    assert tools.index('    wasp: null') < tools.index('\n# ')
+    assert migrate_text(after) == after
