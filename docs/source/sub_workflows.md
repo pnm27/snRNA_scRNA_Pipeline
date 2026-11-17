@@ -319,7 +319,7 @@ Two ways to run it:
 |---|---|
 | `pool` | pool (no `/`) |
 | `donor` | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its vcf ID) |
-| `sample` | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py` |
+| `sample` | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py`. Optional: empty, or no column, takes the ID from `modules: wasp: sample_names`, else the donor name |
 | `bam`, `bai` | `start: wasp` only: the per-donor bam (`bai` defaults to `<bam>.bai`) |
 | `genotype_set` | which `modules: wasp: genotypes` set, with more than one |
 
@@ -330,6 +330,8 @@ P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam
 ```
 
 After `split_bams`, split donors not in the table aren't filtered (a warning); none at all stops the run. With `start: wasp`, a missing bam or bai stops the run, all listed.
+
+When pools or donors aren't named as in the genotypes (e.g. one donor per pool, named after the pool), `modules: wasp: sample_names` maps them to genotype IDs instead of filling `sample` row by row: columns `pool`, `sample` and optionally `donor` (empty: every donor of the pool). See [Optional input files](optional_inputs.md#wasp-sample-names).
 
 ### Genotypes
 

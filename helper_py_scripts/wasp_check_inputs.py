@@ -18,10 +18,14 @@ chromosome in haps.h5 and a node per chromosome in snp_tab.h5.
 Usage::
 
     python wasp_check_inputs.py samples --table samples.tsv \\
-        --set main=/geno/haps.h5,/geno/snp_tab.h5 -o checked.txt
+        --set main=/geno/haps.h5,/geno/snp_tab.h5 [--names names.tsv] -o checked.txt
     python wasp_check_inputs.py contigs --contigs contigs.txt \\
         --snp_tab /geno/snp_tab.h5 --bam donor.bam
-    python wasp_check_inputs.py set-samples --table samples.tsv --set main --sets main
+    python wasp_check_inputs.py set-samples --table samples.tsv --set main --sets main \\
+        [--names names.tsv]
+
+--names is the sample names table ('modules: wasp: sample_names'), for the
+rows of the samples table with no sample.
 """
 
 import argparse
@@ -79,8 +83,8 @@ def common_contigs(bam_contigs, h5_chroms) -> set:
     return set(bam_contigs) & set(h5_chroms)
 
 
-def check_samples(table_path, sets: dict, need_bam: bool, out=None):
-    table = read_samples_table(table_path, need_bam=need_bam, sets=list(sets))
+def check_samples(table_path, sets: dict, need_bam: bool, out=None, names=None):
+    table = read_samples_table(table_path, need_bam=need_bam, sets=list(sets), names=names)
     errors, lines = [], []
     for gset, (haps, snp_tab) in sets.items():
         known = h5_samples(haps)
@@ -100,8 +104,9 @@ def check_samples(table_path, sets: dict, need_bam: bool, out=None):
         lines.append(f"{gset}\t{n} samples\t{len(chroms)} chromosomes: {','.join(chroms)}")
     if errors:
         raise SystemExit(
-            f"WASP samples table {table_path}: the 'sample' column must hold "
-            "the genotype IDs of each set (find_intersecting_snps.py's "
+            f"WASP samples table {table_path}: the 'sample' column (or the "
+            "sample names table, or else the donor name) must give the "
+            "genotype IDs of each set (find_intersecting_snps.py's "
             "--samples)\n  " + "\n  ".join(errors))
     if out:
         with open(out, 'w') as f:
@@ -130,6 +135,7 @@ def main(argv=None):
     s.add_argument('--set', action='append', required=True,
                    help="<name>=<haps.h5>,<snp_tab.h5>, once per genotype set")
     s.add_argument('--need_bam', action='store_true')
+    s.add_argument('--names', help="the sample names table")
     s.add_argument('-o', '--output')
 
     c = sub.add_parser('contigs')
@@ -142,6 +148,7 @@ def main(argv=None):
     g.add_argument('--set', required=True)
     g.add_argument('--sets', nargs='+', required=True, help="all genotype set names")
     g.add_argument('--need_bam', action='store_true')
+    g.add_argument('--names', help="the sample names table")
     args = p.parse_args(argv)
 
     if args.cmd == 'samples':
@@ -150,11 +157,12 @@ def main(argv=None):
             name, files = item.split('=', 1)
             haps, snp_tab = files.split(',', 1)
             sets[name] = (haps, snp_tab)
-        check_samples(args.table, sets, args.need_bam, args.output)
+        check_samples(args.table, sets, args.need_bam, args.output, args.names)
     elif args.cmd == 'contigs':
         check_contigs(args.contigs, args.snp_tab, args.bam)
     else:
-        table = read_samples_table(args.table, need_bam=args.need_bam, sets=args.sets)
+        table = read_samples_table(args.table, need_bam=args.need_bam, sets=args.sets,
+                                   names=args.names)
         print("\n".join(set_samples(table, args.set)))
     return 0
 

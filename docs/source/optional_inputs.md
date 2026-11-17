@@ -19,6 +19,7 @@ Besides the fastqs and the references, some stages read tables or files that you
 | [Split-bam donor-name converter](#split-bam-donor-name-converter) | `modules: split_bams: donor_name_converter` | `split_bams` | per-donor bams should carry other names |
 | [Reference genotypes for MBV](#reference-genotypes-for-mbv) | `modules: identify_swaps: ref_vcf` | `identify_swaps` (QTLtools mbv) | `workflow: until: identify_swaps` |
 | [WASP samples table (wasp_samples.tsv)](#wasp-samples-table-wasp_samplestsv) | `modules: wasp: samples` | `wasp` | `workflow: until: wasp` or `start: wasp` |
+| [WASP sample names](#wasp-sample-names) | `modules: wasp: sample_names` | `wasp` | pools or donors aren't named as in the genotypes, and the samples table leaves `sample` empty |
 | [WASP genotype sets](#wasp-genotype-sets) | `modules: wasp: genotypes` | `wasp` | `workflow: until: wasp` or `start: wasp` |
 | [WASP remap genome](#wasp-remap-genome) | `modules: wasp: remap` | `wasp` | `start: wasp`; or a genome other than the aligner's |
 
@@ -237,7 +238,7 @@ GENO_0002,R7654321
 |---|---|---|
 | `pool` | always | pool (no `/`) |
 | `donor` | always | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its VCF ID) |
-| `sample` | always | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string) |
+| `sample` | no | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string). Empty, or no column: from the [sample names](#wasp-sample-names), else the donor name |
 | `bam` | `start: wasp` | the per-donor bam (coordinate-sorted) |
 | `bai` | no | default `<bam>.bai` |
 | `genotype_set` | with more than one set | the [genotype set](#wasp-genotype-sets) holding `sample` |
@@ -250,11 +251,31 @@ P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam    array
 
 **Checks:**
 
-- Missing columns, empty cells, `/` in names and duplicated (pool, donor) rows stop the run.
+- Missing columns, an empty pool or donor, `/` in names and duplicated (pool, donor) rows stop the run.
 - So does a `genotype_set` that isn't in `modules: wasp: genotypes`.
 - Every `sample` must be in its set's genotypes. A rule checks this once, before any WASP job.
 - After `split_bams`, split donors not in the table aren't filtered, with a warning. If none is in the table, the run stops.
 - With `start: wasp`, a missing bam or bai stops the run, with all of them listed.
+
+## WASP sample names
+
+`modules: wasp: sample_names`. Optional. The genotype sample ID(s) of pools or donors whose names aren't the ones in the genotypes, e.g. one donor per pool, named after the pool, while the VCF names the donor otherwise. It fills `find_intersecting_snps.py`'s `--samples` for the rows of the [samples table](#wasp-samples-table-wasp_samplestsv) with no `sample`. Tab-separated, or comma-separated for `.csv`:
+
+| column | required | |
+|---|---|---|
+| `pool` | always | pool |
+| `donor` | no | the donor; empty, or no column: every donor of the pool |
+| `sample` | always | genotype sample ID(s), as in the samples table (`;`- or `,`-separated, no whitespace) |
+
+```text
+pool       donor   sample
+Pool_A             SUBJ_0101
+Pool_B             SUBJ_0102
+Pool_C     D1      SUBJ_0201
+Pool_C     D2      SUBJ_0202;SUBJ_0202_rep
+```
+
+A row's `sample`, in order: the samples table's `sample`; else the (pool, donor) row here; else the pool's row (empty donor); else the donor name. Empty cells and duplicated (pool, donor) rows stop the run, and the IDs are checked against the genotypes like the table's.
 
 ## WASP genotype sets
 

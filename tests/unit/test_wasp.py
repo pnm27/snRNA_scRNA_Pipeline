@@ -56,9 +56,9 @@ def test_samples_table_csv_without_bam(tmp_path):
 
 
 @pytest.mark.parametrize("text, kw, error", [
-    ("pool\tdonor\nP1\tD1\n", {}, "missing: sample"),
+    ("pool\tsample\nP1\tG1\n", {}, "missing: donor"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\n", {'need_bam': True}, "missing: bam"),
-    ("pool\tdonor\tsample\nP1\tD1\t\n", {}, "empty pool, donor or sample"),
+    ("pool\tdonor\tsample\nP1\t\tG1\n", {}, "empty pool or donor"),
     ("pool\tdonor\tsample\nP/1\tD1\tG1\n", {}, "can't contain '/'"),
     ("pool\tdonor\tsample\nP1\tD1\tG1 G2\n", {}, "can't contain whitespace \\(G1 G2\\)"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD1\tG2\n", {}, "listed twice: P1 D1"),
@@ -70,6 +70,53 @@ def test_samples_table_errors(tmp_path, text, kw, error):
     path = table(tmp_path, text)
     with pytest.raises(ValueError, match=error):
         wasp.read_samples_table(path, **kw)
+
+
+def test_sample_names(tmp_path):
+    names = table(tmp_path, "pool\tdonor\tsample\n"
+                            "P1\t\tGENO_P1\n"        # every donor of P1
+                            "P2\tD1\tGENO_A;GENO_B\n"
+                            "P2\t\tGENO_P2\n", "names.tsv")
+    path = table(tmp_path, "pool\tdonor\tsample\n"
+                           "P1\tD1\t\n"
+                           "P1\tD2\tG2\n"            # the sample column wins
+                           "P2\tD1\t\n"              # (pool, donor) before pool
+                           "P2\tD2\t\n"
+                           "P3\tD9\t\n")             # else the donor
+    t = wasp.read_samples_table(path, sets=['main'], names=names)
+    assert {k: r['samples'] for k, r in t.items()} == {
+        ('P1', 'D1'): ['GENO_P1'], ('P1', 'D2'): ['G2'],
+        ('P2', 'D1'): ['GENO_A', 'GENO_B'], ('P2', 'D2'): ['GENO_P2'],
+        ('P3', 'D9'): ['D9']}
+
+
+def test_samples_table_without_sample_column(tmp_path):
+    names = table(tmp_path, "pool,sample\nP1,GENO_P1\n", "names.csv")
+    path = table(tmp_path, "pool\tdonor\nP1\tD1\nP2\tD2\n")
+    t = wasp.read_samples_table(path, sets=['main'], names=names)
+    assert t[('P1', 'D1')]['samples'] == ['GENO_P1']
+    assert t[('P2', 'D2')]['samples'] == ['D2']
+
+
+@pytest.mark.parametrize("text, error", [
+    ("pool\tdonor\nP1\tD1\n", "missing: sample"),
+    ("pool\tsample\nP1\t\n", "empty pool or sample"),
+    ("pool\tsample\nP1\tG 1\n", "can't contain whitespace"),
+    ("pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD1\tG2\nP2\t\tG3\nP2\t\tG4\n",
+     "listed twice: P1 D1, P2"),
+])
+def test_sample_names_errors(tmp_path, text, error):
+    names = table(tmp_path, text, "names.tsv")
+    with pytest.raises(ValueError, match=error):
+        wasp.read_sample_names(names)
+
+
+def test_set_samples_cli_with_names(tmp_path, capsys):
+    names = table(tmp_path, "pool\tsample\nP1\tGENO_P1\n", "names.tsv")
+    path = table(tmp_path, "pool\tdonor\nP1\tD1\nP2\tD2\n")
+    wasp_check_inputs.main(['set-samples', '--table', path, '--set', 'main',
+                            '--sets', 'main', '--names', names])
+    assert capsys.readouterr().out.split() == ['D2', 'GENO_P1']
 
 
 def test_genotype_set_column(tmp_path):

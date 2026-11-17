@@ -211,6 +211,10 @@ def external_labels_block() -> CommentedMap:
     return ext
 
 
+SAMPLE_NAMES_COMMENT = ("pool[, donor], sample: genotype ID(s) of pools (or donors) "
+                        "not named as in the genotypes")
+
+
 def wasp_block() -> CommentedMap:
     """'modules: wasp' with its defaults (see new_config.example.yaml)."""
     remap = CommentedMap()
@@ -223,6 +227,7 @@ def wasp_block() -> CommentedMap:
         "null: STARsolo's genome_pick gtf when the genome is the aligner's", 'gtf')
     wasp = CommentedMap()
     wasp['samples'] = None
+    wasp['sample_names'] = None
     wasp['genotypes'] = None
     wasp['remap'] = remap
     wasp['paired_end'] = False
@@ -232,7 +237,9 @@ def wasp_block() -> CommentedMap:
         'samples',
         before="pool, donor, sample (genotype ID(s), ';'- or ','-separated; "
                "find_intersecting_snps.py's\n--samples), and bam[, bai] with "
-               "start: wasp; genotype_set with several sets", indent=4)
+               "start: wasp; genotype_set with several sets.\nEmpty or no sample: "
+               "from sample_names, else the donor name", indent=4)
+    wasp.yaml_add_eol_comment(SAMPLE_NAMES_COMMENT, 'sample_names')
     wasp.yaml_add_eol_comment(
         "sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}",
         'genotypes')
@@ -286,6 +293,9 @@ def added_since(cfg) -> dict:
             new['references.tools.wasp'] = None
         if not get('modules.wasp')[1]:
             new['modules.wasp'] = wasp_block()
+    wasp, _ = get('modules.wasp')
+    if isinstance(wasp, dict) and 'samples' in wasp and 'sample_names' not in wasp:
+        new['modules.wasp.sample_names'] = None
     swap, _ = get('modules.demultiplex.swap_correction')
     if isinstance(swap, dict) and 'donor_to' in swap:
         for key in ('status_column', 'versions'):
@@ -340,6 +350,13 @@ def update(cfg) -> dict:
         parent = cfg
         for p in path.split('.')[:-1]:
             parent = parent[p]
+        if path == 'modules.wasp.sample_names':
+            # Next to the samples table
+            parent.insert(list(parent).index('samples') + 1, 'sample_names', value)
+            # (two spaces before the '#', as in the example config)
+            parent.ca.items['sample_names'] = [None, None, CommentToken(
+                f" # {SAMPLE_NAMES_COMMENT}\n", CommentMark(0), None), None]
+            continue
         tail = take_tail(parent)
         set_path(cfg, path, value)
         put_tail(parent, tail)

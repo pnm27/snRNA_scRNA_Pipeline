@@ -382,8 +382,10 @@ modules:
   # and the RNA (GEX) part of multiome; WASP comes from references: tools: wasp
   wasp:
     # pool, donor, sample (genotype ID(s), ';'- or ','-separated; find_intersecting_snps.py's
-    # --samples), and bam[, bai] with start: wasp; genotype_set with several sets
+    # --samples), and bam[, bai] with start: wasp; genotype_set with several sets.
+    # Empty or no sample: from sample_names, else the donor name
     samples: null
+    sample_names: null  # pool[, donor], sample: genotype ID(s) of pools (or donors) not named as in the genotypes
     genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}
     remap:
       genome: null  # STAR index; null: the aligner's reference (start: wasp: required)

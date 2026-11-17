@@ -17,12 +17,14 @@ from lib.wasp import (
     samples_table, starts_at_wasp, select_donors, missing_bams,
     donor_paths, donor_logs, work_dir, run_outputs, checked_inputs,
     genotype_files, genotype_sets, vcf_sets, vcf_files, converted_dir,
-    remap_reference, wasp_config, H5_FILES,
+    remap_reference, wasp_config, sample_names, H5_FILES,
 )
 
 WASP_TOOLS = config['references']['tools']
 WASP_MODULES = [m for m in [WASP_TOOLS.get('wasp')] if m]
 WASP_PAIRED = bool(wasp_config(config).get('paired_end'))
+WASP_NAMES = sample_names(config)
+WASP_NAMES_ARG = f"--names {WASP_NAMES}" if WASP_NAMES else ""
 
 
 def wasp_row(wildcards) -> dict:
@@ -92,6 +94,7 @@ rule wasp_snp2h5:
     input:
         vcf = lambda wc: vcf_files(config, wc.gset),
         table = wasp_config(config).get('samples') or [],
+        names = WASP_NAMES or [],
         chrom_sizes = lambda wc: wasp_config(config)['genotypes'][wc.gset]['chrom_sizes'],
 
     output:
@@ -103,6 +106,7 @@ rule wasp_snp2h5:
 
     params:
         sets = genotype_sets(config),
+        names = WASP_NAMES_ARG,
         need_bam = "--need_bam" if starts_at_wasp(config) else "",
         out_dir = lambda wc: converted_dir(config, wc.gset),
 
@@ -123,7 +127,8 @@ rule wasp_snp2h5:
         out={params.out_dir}
         mkdir -p "$out/vcf"
         python helper_py_scripts/wasp_check_inputs.py set-samples --table {input.table} \
-            --set {wildcards.gset} --sets {params.sets} {params.need_bam} > "$out/samples.txt"
+            --set {wildcards.gset} --sets {params.sets} {params.names} {params.need_bam} \
+            > "$out/samples.txt"
         # One file per chromosome (of chrom_sizes), with the set's samples
         # and the sites variable among them (the vcfs must be indexed)
         i=0
@@ -150,6 +155,7 @@ rule wasp_snp2h5:
 rule wasp_check_inputs:
     input:
         table = wasp_config(config).get('samples') or [],
+        names = WASP_NAMES or [],
         h5 = [f for s in genotype_sets(config) for f in genotype_files(config, s).values()],
 
     output:
@@ -159,6 +165,7 @@ rule wasp_check_inputs:
         sets = " ".join(
             f"--set {s}={genotype_files(config, s)['haps']},{genotype_files(config, s)['snp_tab']}"
             for s in genotype_sets(config)),
+        names = WASP_NAMES_ARG,
         need_bam = "--need_bam" if starts_at_wasp(config) else "",
 
     resources:
@@ -170,7 +177,7 @@ rule wasp_check_inputs:
     shell:
         r"""
         python helper_py_scripts/wasp_check_inputs.py samples --table {input.table} \
-            {params.sets} {params.need_bam} -o {output}
+            {params.sets} {params.names} {params.need_bam} -o {output}
         """
 
 

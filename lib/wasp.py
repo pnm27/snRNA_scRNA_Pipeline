@@ -13,15 +13,28 @@ listed in the samples table ('workflow: start: wasp'). The samples table
 
   pool          pool (no '/')
   donor         donor (no '/'); names the output bam
-  sample        genotype sample ID(s) in the genotype set, separated by
-                ';' (or ',' in a tab-separated table); no whitespace in
-                an ID. They're written one per line to the file given
-                as --samples (WASP takes a file or a comma-separated
-                string, and reads the first word of each line)
+  sample        optional: genotype sample ID(s) in the genotype set,
+                separated by ';' (or ',' in a tab-separated table); no
+                whitespace in an ID. They're written one per line to the
+                file given as --samples (WASP takes a file or a
+                comma-separated string, and reads the first word of each
+                line). Empty or no column: from the sample names table,
+                else the donor name
   bam           the per-donor bam (start: wasp only)
   bai           optional; default <bam>.bai
   genotype_set  which 'modules: wasp: genotypes' set (needed with more
                 than one set)
+
+The sample names table ('modules: wasp: sample_names', optional) gives
+the genotype IDs of pools or donors whose names aren't the ones in the
+genotypes, e.g. one donor per pool, named after the pool. Columns:
+
+  pool          pool
+  donor         optional: the donor; empty (or no column): every donor
+                of the pool
+  sample        genotype sample ID(s), as in the samples table
+
+A (pool, donor) row wins over a pool's row.
 
 Tab-separated, or comma-separated for .csv.
 """
@@ -34,6 +47,58 @@ import re
 # Separators of the sample IDs in the 'sample' column
 SAMPLE_SEP = re.compile(r'[;,]')
 _TABLES: dict = {}
+
+
+def split_samples(text: str) -> list:
+    """Sample IDs of a 'sample' cell."""
+    return [s.strip() for s in SAMPLE_SEP.split(text or '') if s.strip()]
+
+
+def _bad_ids(samples: list):
+    """Error text of IDs with whitespace, else None."""
+    spaced = [s for s in samples if re.search(r'\s', s)]
+    if spaced:
+        return (f"sample IDs can't contain whitespace ({', '.join(spaced)}): "
+                "find_intersecting_snps.py reads the first word of each line of "
+                "--samples; separate several IDs with ';' or ','")
+    return None
+
+
+def _read_rows(path: str) -> list:
+    with open(path, newline='') as f:
+        return list(csv.DictReader(f, delimiter=',' if path.endswith('.csv') else '\t'))
+
+
+def read_sample_names(path: str) -> dict:
+    """{(pool, donor or ''): [sample IDs]} of a sample names table
+    (columns pool, sample and optionally donor; '' = every donor of the pool)."""
+    rows = _read_rows(path)
+    header = list(rows[0].keys()) if rows else []
+    missing = [c for c in ('pool', 'sample') if c not in header]
+    if not rows or missing:
+        raise ValueError(
+            f"WASP sample names table {path}: needs a header with the columns "
+            "pool, sample (optionally donor), and one row per pool or donor"
+            + (f"; missing: {', '.join(missing)}" if rows else ""))
+    names, dups, errors = {}, set(), []
+    for n, row in enumerate(rows, start=2):
+        get = lambda c: (row.get(c) or '').strip()
+        pool, donor, samples = get('pool'), get('donor'), split_samples(get('sample'))
+        if not pool or not samples:
+            errors.append(f"line {n}: empty pool or sample")
+            continue
+        bad = _bad_ids(samples)
+        if bad:
+            errors.append(f"line {n}: {bad}")
+            continue
+        if (pool, donor) in names:
+            dups.add(f"{pool} {donor}".strip())
+        names[(pool, donor)] = samples
+    if dups:
+        errors.append(f"listed twice: {', '.join(sorted(dups))}")
+    if errors:
+        raise ValueError(f"WASP sample names table {path}:\n  " + "\n  ".join(errors))
+    return names
 
 
 def wasp_config(config) -> dict:
@@ -49,43 +114,44 @@ def genotype_sets(config) -> list:
     return list((wasp_config(config).get('genotypes') or {}).keys())
 
 
-def read_samples_table(path: str, need_bam: bool = False, sets=None) -> dict:
+def read_samples_table(path: str, need_bam: bool = False, sets=None,
+                       names=None) -> dict:
     """{(pool, donor): {'samples': [...], 'bam', 'bai', 'genotype_set'}}.
 
     need_bam: the bam column is required (start: wasp).
     sets: the genotype set names; a row without genotype_set takes the only
     one, and a set not in 'sets' is an error.
+    names: the sample names table (read_sample_names), for the rows with
+    no sample: its (pool, donor) row, else its pool's row, else the donor.
     """
     sets = list(sets or [])
-    key = (path, need_bam, tuple(sets))
+    key = (path, need_bam, tuple(sets), names)
     if key in _TABLES:
         return _TABLES[key]
-    with open(path, newline='') as f:
-        rows = list(csv.DictReader(f, delimiter=',' if path.endswith('.csv') else '\t'))
+    name_map = read_sample_names(names) if names else {}
+    rows = _read_rows(path)
     header = list(rows[0].keys()) if rows else []
-    required = ['pool', 'donor', 'sample'] + (['bam'] if need_bam else [])
+    required = ['pool', 'donor'] + (['bam'] if need_bam else [])
     missing = [c for c in required if c not in header]
     if not rows or missing:
         raise ValueError(
             f"WASP samples table {path}: needs a header with the columns "
             f"{', '.join(required)} (optionally "
-            f"{', '.join(c for c in ('bam', 'bai', 'genotype_set') if c not in required)}),"
+            f"{', '.join(c for c in ('sample', 'bam', 'bai', 'genotype_set') if c not in required)}),"
             " and one row per donor bam"
             + (f"; missing: {', '.join(missing)}" if rows else ""))
     table, dups, errors = {}, set(), []
     for n, row in enumerate(rows, start=2):
         get = lambda c: (row.get(c) or '').strip()
         pool, donor = get('pool'), get('donor')
-        samples = [s.strip() for s in SAMPLE_SEP.split(get('sample')) if s.strip()]
-        if not pool or not donor or not samples:
-            errors.append(f"line {n}: empty pool, donor or sample")
+        samples = (split_samples(get('sample')) or name_map.get((pool, donor))
+                   or name_map.get((pool, '')) or [donor])
+        if not pool or not donor:
+            errors.append(f"line {n}: empty pool or donor")
             continue
-        spaced = [s for s in samples if re.search(r'\s', s)]
-        if spaced:
-            errors.append(
-                f"line {n}: sample IDs can't contain whitespace ({', '.join(spaced)}): "
-                "find_intersecting_snps.py reads the first word of each line of "
-                "--samples; separate several IDs with ';' or ','")
+        bad = _bad_ids(samples)
+        if bad:
+            errors.append(f"line {n}: {bad}")
             continue
         if '/' in pool or '/' in donor:
             errors.append(f"line {n}: pool and donor names can't contain '/' ({pool}, {donor})")
@@ -130,7 +196,12 @@ def samples_table(config) -> dict:
     if not path:
         raise ValueError("The wasp stage needs a samples table: set 'modules: wasp: samples'")
     return read_samples_table(path, need_bam=starts_at_wasp(config),
-                              sets=genotype_sets(config))
+                              sets=genotype_sets(config), names=sample_names(config))
+
+
+def sample_names(config):
+    """The sample names table ('modules: wasp: sample_names'), or None."""
+    return wasp_config(config).get('sample_names') or None
 
 
 def missing_bams(table: dict) -> list:

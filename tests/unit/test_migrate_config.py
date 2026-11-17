@@ -310,3 +310,15 @@ def test_new_layout_update():
     tools = after.split('\n  tools:\n', 1)[1]
     assert tools.index('    wasp: null') < tools.index('\n# ')
     assert migrate_text(after) == after
+
+
+def test_new_layout_update_sample_names():
+    """A WASP block from before 'sample_names' gets it after 'samples',
+    and the text is otherwise as it was."""
+    text = open(EXAMPLE).read()
+    line = next(l for l in text.splitlines(keepends=True)
+                if l.lstrip().startswith('sample_names:'))
+    before = text.replace(line, '')
+    after = migrate_text(before)
+    assert after == text
+    assert migrate_text(after) == after
