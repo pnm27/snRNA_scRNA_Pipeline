@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Checks of the WASP stage's inputs (rules/wasp.smk), before the long jobs.
 
-samples      each genotype sample ID of the samples table is in its set's
-             haps.h5 (else find_intersecting_snps.py fails hours in)
-contigs      a bam and a set's snp_tab.h5 name chromosomes the same way
-             (chr1 vs 1): with no chromosome in common, WASP would find
-             no SNP and keep every read
-set-samples  the genotype sample IDs of a set (for bcftools view -S)
+samples
+    each genotype sample ID of the samples table is in its set's
+    haps.h5 (else find_intersecting_snps.py fails hours in)
+contigs
+    a bam and a set's snp_tab.h5 name chromosomes the same way
+    (chr1 vs 1): with no chromosome in common, WASP would find
+    no SNP and keep every read
+set-samples
+    the genotype sample IDs of a set (for bcftools view -S)
 
 The h5 files are read with PyTables (or h5py), as in the WASP module's
 python. snp2h5 writes a table 'samples_<chrom>' (column 'name') per
