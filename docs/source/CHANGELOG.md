@@ -335,3 +335,4 @@
 - Removed `mode='w+'` when creating outputs in `create_Feat_Barc.py`
 - Fixed issues with some packages in `basic_sctools.yaml`
 - Upgraded `pyyaml` requirement to `6.0.2` in `sphinxdoc_requirements.txt`
+- New docs page `optional_inputs.md` ("Optional input files"): the format of each user-provided table or file (fastq list, wet-lab sheet, `vcf_info`, the donor-name converters, swap correction file and versions, external labels, pools table, MBV reference, WASP samples table, genotype sets and remap genome) and which stages read it

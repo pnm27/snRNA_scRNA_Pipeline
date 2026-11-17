@@ -27,6 +27,7 @@ basic_run
 :maxdepth: 2
 
 sub_workflows
+optional_inputs
 config_caveats
 ```
 
