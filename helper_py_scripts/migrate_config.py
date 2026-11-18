@@ -214,8 +214,11 @@ def external_labels_block() -> CommentedMap:
     return ext
 
 
-SAMPLE_NAMES_COMMENT = ("pool[, donor], sample: genotype ID(s) of pools (or donors) "
-                        "not named as in the genotypes")
+# Env module of WASP written to 'references: tools: wasp' (as new_config.example.yaml)
+WASP_MODULE = 'wasp/2021-04'
+
+SAMPLE_NAMES_COMMENT = ("pool[, donor], final_donor, vcfID: final donors and genotype ID(s) "
+                        "of pools (or donors)")
 
 
 RNA_COMMENT = "cDNA bams: STAR remapping, duplicates kept"
@@ -284,11 +287,13 @@ def wasp_block() -> CommentedMap:
     wasp['work_dir'] = 'projdir/wasp_tmp/'
     wasp.yaml_set_comment_before_after_key(
         'samples',
-        before="pool, donor, sample (genotype ID(s), ';'- or ','-separated; "
-               "find_intersecting_snps.py's\n--samples), modality (cDNA or ATAC; "
-               "empty: cDNA with start: wasp, else every split\nmodality), and "
-               "bam[, bai] with start: wasp; genotype_set with several sets.\n"
-               "Empty or no sample: from sample_names, else the donor name", indent=4)
+        before="pool, donor (as split), final_donor (after swap correction; names the "
+               "outputs), vcfID\n(genotype ID(s), ';'- or ','-separated; "
+               "find_intersecting_snps.py's --samples), modality\n(cDNA or ATAC; empty: "
+               "cDNA with start: wasp, else every split modality), and bam[, bai]\nwith "
+               "start: wasp; genotype_set with several sets. Empty or no final_donor / "
+               "vcfID: from\nsample_names, else the donor (no final_donor column in "
+               "either table: a warning)", indent=4)
     wasp.yaml_add_eol_comment(SAMPLE_NAMES_COMMENT, 'sample_names')
     wasp.yaml_add_eol_comment(
         "sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}",
@@ -340,7 +345,7 @@ def added_since(cfg) -> dict:
         if isinstance(split_by, dict) and 'external' not in split_by:
             new['modules.split_bams.split_by.external'] = external_labels_block()
         if not get('references.tools.wasp')[1]:
-            new['references.tools.wasp'] = None
+            new['references.tools.wasp'] = WASP_MODULE
         if not get('modules.wasp')[1]:
             new['modules.wasp'] = wasp_block()
     if whole and 'modalities' not in sb:
@@ -491,7 +496,7 @@ def derived(old) -> dict:
         new['modules.split_bams.split_by.external'] = external_labels_block()
     # The WASP stage, added since (unused unless 'until: wasp')
     if whole_config(old):
-        new['references.tools.wasp'] = None
+        new['references.tools.wasp'] = WASP_MODULE
         new['modules.wasp'] = wasp_block()
         new['modules.split_bams.modalities'] = modalities_seq()
     # Keys added to a whole swap correction block since (see

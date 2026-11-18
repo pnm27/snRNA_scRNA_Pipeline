@@ -8,11 +8,11 @@
 #     until: wasp
 #   references:
 #     tools:
-#       wasp: wasp/<version>          # env module that sets $WASP_HOME
+#       wasp: wasp/2021-04            # env module that sets $WASP_HOME
 #   modules:
 #     wasp:
-#       samples: wasp_samples.tsv     # pool, donor, sample, bam[, bai, modality, genotype_set]
-#       sample_names: names.tsv       # optional: pool[, donor], sample
+#       samples: wasp_samples.tsv     # pool, donor, bam[, final_donor, vcfID, bai, modality, genotype_set]
+#       sample_names: names.tsv       # optional: pool, donor, final_donor, vcfID
 #       genotypes:
 #         main:
 #           h5_dir: /path/to/snp2h5_output/

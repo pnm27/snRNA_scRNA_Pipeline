@@ -55,7 +55,7 @@ properties:
             - string
             - 'null'
             default: null
-            description: "Env module of WASP (github.com/bmvdgeijn/WASP) for 'workflow: until: wasp': it sets WASP_HOME, where its scripts are (mapping/find_intersecting_snps.py, mapping/filter_remapped_reads.py, snp2h5/snp2h5), with a python that has PyTables"
+            description: "Env module of WASP (github.com/bmvdgeijn/WASP) for 'workflow: until: wasp', e.g. wasp/2021-04 (as new_config.example.yaml and migrate_config.py): it sets WASP_HOME, where its scripts are (mapping/find_intersecting_snps.py, mapping/filter_remapped_reads.py, snp2h5/snp2h5), with a python that has PyTables"
         required:
         - star
         - featuremap_script
@@ -883,13 +883,13 @@ properties:
             - string
             - 'null'
             default: null
-            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (optional: the genotype sample ID(s) of the donor, ';'- or ','-separated (',' in a tab-separated table only), no whitespace: find_intersecting_snps.py's --samples; empty or no column: from 'sample_names', else the donor name), modality (optional: cDNA or ATAC; empty or no column: cDNA with start: wasp, else every split modality of the donor), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
+            description: "Table of the donor bams to WASP-filter: columns pool, donor (as the final demultiplexing named it: the split bams' name), final_donor (optional: the donor after swap correction, which names the outputs, once per pool and modality; empty or no column: from 'sample_names', else the donor, with a warning when neither table has the column), vcfID (optional; 'sample' is read too: the genotype sample ID(s) of the final donor, ';'- or ','-separated (',' in a tab-separated table only), no whitespace: find_intersecting_snps.py's --samples; empty or no column: from 'sample_names', else the final donor's name), modality (optional: cDNA or ATAC; empty or no column: cDNA with start: wasp, else every split modality of the donor), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
           sample_names:
             type:
             - string
             - 'null'
             default: null
-            description: "Optional table of the genotype sample ID(s) of pools or donors whose names aren't those in the genotypes (e.g. one donor per pool, named after the pool), for the samples table's rows with no sample: columns pool, sample (as in the samples table) and optionally donor (empty or no column: every donor of the pool; a (pool, donor) row wins over a pool's row); tab-separated, or .csv"
+            description: "Optional table of the final donors (after swap correction, which so far is applied only to the h5ad files) and genotype sample ID(s) of pools or donors, for the samples table's rows with no final_donor or vcfID: columns pool, donor (optional; as the final demultiplexing named it; empty or no column: every donor of the pool; a (pool, donor) row wins over a pool's row), final_donor (optional; empty: the donor; no column: a warning, and no swap corrections assumed) and vcfID ('sample' is read too; as in the samples table); tab-separated, or .csv"
           genotypes:
             type:
             - object

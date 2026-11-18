@@ -1,0 +1,23 @@
+# start: wasp: two donors of a pool given the same final donor stop the run
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p bams && touch chip.bcf chip.bcf.csi chrom.txt
+# setup: for d in D1 D2; do touch bams/$d.bam bams/$d.bam.bai; done
+# setup: printf "pool\tdonor\tfinal_donor\tvcfID\tbam\nP1\tD1\tD2\tS1\tbams/D1.bam\nP1\tD2\t\tS2\tbams/D2.bam\n" > wasp_samples.tsv
+# fails: P1: final_donor D2 (cDNA) given to several donors (D1, D2)
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      chip:
+        vcf: chip.bcf
+        chrom_sizes: chrom.txt
+    rna:
+      remap:
+        genome: star_idx/

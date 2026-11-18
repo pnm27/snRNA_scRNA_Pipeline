@@ -63,6 +63,6 @@ rule wasp_remap_rna:
             --threads {params.threads} --filter_log {log.filter} \
             --intersect_log {log.intersect} --flagstat_before {output.flagstat_before} \
             --flagstat_after {output.flagstat_after} {params.paired} \
-            --pool {wildcards.pool} --donor {wildcards.donor} \
+            --pool {wildcards.pool} --donor {params.donor} --final_donor {wildcards.final_donor} \
             --sample {params.sample_ids:q} --modality cDNA --stats {output.stats}
         """

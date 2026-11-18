@@ -19,7 +19,7 @@ Besides the fastqs and the references, some stages read tables or files that you
 | [Split-bam donor-name converter](#split-bam-donor-name-converter) | `modules: split_bams: donor_name_converter` | `split_bams` | per-donor bams should carry other names |
 | [Reference genotypes for MBV](#reference-genotypes-for-mbv) | `modules: identify_swaps: ref_vcf` | `identify_swaps` (QTLtools mbv) | `workflow: until: identify_swaps` |
 | [WASP samples table (wasp_samples.tsv)](#wasp-samples-table-wasp_samplestsv) | `modules: wasp: samples` | `wasp` | `workflow: until: wasp` or `start: wasp` |
-| [WASP sample names](#wasp-sample-names) | `modules: wasp: sample_names` | `wasp` | pools or donors aren't named as in the genotypes, and the samples table leaves `sample` empty |
+| [WASP sample names](#wasp-sample-names) | `modules: wasp: sample_names` | `wasp` | donors were swap-corrected (`final_donor`), or pools or donors aren't named as in the genotypes, and the samples table leaves `final_donor` / `vcfID` empty |
 | [WASP genotype sets](#wasp-genotype-sets) | `modules: wasp: genotypes` | `wasp` | `workflow: until: wasp` or `start: wasp` |
 | [WASP remap references](#wasp-remap-references) | `modules: wasp: rna: remap`, `atac: remap` | `wasp` | `start: wasp`; or a genome other than the aligner's |
 
@@ -239,30 +239,33 @@ GENO_0002,R7654321
 | column | required | |
 |---|---|---|
 | `pool` | always | pool (no `/`) |
-| `donor` | always | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its VCF ID) |
+| `donor` | always | donor (no `/`) as the final demultiplexing named it: after `split_bams`, the split bam's donor (e.g. its VCF ID) |
+| `final_donor` | no | the donor after swap correction (no `/`); names the output bam in its pool's folder (`<wasp_dir><modality>/<pool>/<final_donor>.after_wasp.bam`), once per pool and modality. Swap corrections are only applied to the h5ad files so far, so the split bams keep the demultiplexed name. Empty, or no column: from the [sample names](#wasp-sample-names), else the donor. With no `final_donor` column in either table, a warning says no swap corrections are assumed |
 | `modality` | no | `cDNA` or `ATAC` (any case). Empty, or no column: with `start: wasp`, `cDNA`; after `split_bams`, every split modality of the donor (`split_bams: modalities`), unless the donor has a row of its own for that modality |
-| `sample` | no | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string). Empty, or no column: from the [sample names](#wasp-sample-names), else the donor name |
+| `vcfID` | no | the final donor's genotype sample ID(s) in its genotype set (as in the VCF; a `sample` column is read too), separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string). Empty, or no column: from the [sample names](#wasp-sample-names), else the final donor's name |
 | `bam` | `start: wasp` | the per-donor bam (coordinate-sorted) |
 | `bai` | no | default `<bam>.bai` |
-| `genotype_set` | with more than one set | the [genotype set](#wasp-genotype-sets) holding `sample` |
+| `genotype_set` | with more than one set | the [genotype set](#wasp-genotype-sets) holding `vcfID` |
 
 ```text
-pool    donor   sample      bam                                  genotype_set
-P1      D1      GENO_0001   /data/split/Sample_P1-cDNA/D1.bam    wgs
-P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam    array
+pool    donor   final_donor  vcfID       bam                                  genotype_set
+P1      D1      D1           GENO_0001   /data/split/Sample_P1-cDNA/D1.bam    wgs
+P1      D2      D3           GENO_0003   /data/split/Sample_P1-cDNA/D2.bam    array
 ```
 
 Multiome samples (`start: wasp`): one row per bam, e.g. the gex and ATAC bams of a cellranger-arc run:
 
 ```text
-pool    donor   sample      modality  bam
-S001    S001    NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
-S001    S001    NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
+pool    donor   final_donor  vcfID       modality  bam
+S001    S001    S001         NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
+S001    S001    S001         NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
 ```
 
 **Checks:**
 
 - Missing columns, an empty pool or donor, `/` in names, a modality other than `cDNA` or `ATAC`, and duplicated (pool, donor, modality) rows stop the run.
+- So do two donors of a pool and modality with the same `final_donor` (an empty one counts as the donor).
+- Both a `vcfID` and a `sample` column stop the run (keep `vcfID`).
 - So does a `genotype_set` that isn't in `modules: wasp: genotypes`.
 - Every `sample` must be in its set's genotypes. A rule checks this once, before any WASP job.
 - After `split_bams`, split donors not in the table aren't filtered, with a warning. If none is in the table, the run stops.
@@ -270,23 +273,34 @@ S001    S001    NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
 
 ## WASP sample names
 
-`modules: wasp: sample_names`. Optional. The genotype sample ID(s) of pools or donors whose names aren't the ones in the genotypes, e.g. one donor per pool, named after the pool, while the VCF names the donor otherwise. It fills `find_intersecting_snps.py`'s `--samples` for the rows of the [samples table](#wasp-samples-table-wasp_samplestsv) with no `sample`. Tab-separated, or comma-separated for `.csv`:
+`modules: wasp: sample_names`. Optional. The final donor and genotype sample ID(s) of each demultiplexed donor (or of every donor of a pool). The bams are split by the final demultiplexing, but swap corrections are only applied to the h5ad files so far. So a donor whose labels were swapped needs its corrected name, which names its WASP outputs, and the VCF ID of that corrected donor. It also covers pools or donors not named as in the genotypes, e.g. one donor per pool, named after the pool. It fills the [samples table](#wasp-samples-table-wasp_samplestsv)'s rows with no `final_donor` or `vcfID`. Tab-separated, or comma-separated for `.csv`:
 
 | column | required | |
 |---|---|---|
 | `pool` | always | pool |
-| `donor` | no | the donor; empty, or no column: every donor of the pool |
-| `sample` | always | genotype sample ID(s), as in the samples table (`;`- or `,`-separated, no whitespace) |
+| `donor` | no | the donor, as the final demultiplexing named it; empty, or no column: every donor of the pool |
+| `final_donor` | no | the donor after swap correction (no `/`); empty: the donor |
+| `vcfID` | always | genotype sample ID(s) of the final donor, as in the VCF (`;`- or `,`-separated, no whitespace). A `sample` column, as in tables from before `vcfID`, is read too |
 
 ```text
-pool       donor   sample
-Pool_A             SUBJ_0101
-Pool_B             SUBJ_0102
-Pool_C     D1      SUBJ_0201
-Pool_C     D2      SUBJ_0202;SUBJ_0202_rep
+pool       donor   final_donor  vcfID
+Pool_A     D1      D1           SUBJ_0101
+Pool_A     D2      D3           SUBJ_0103
+Pool_A     D3      D2           SUBJ_0102
+Pool_B             Pool_B       SUBJ_0201
 ```
 
-A row's `sample`, in order: the samples table's `sample`; else the (pool, donor) row here; else the pool's row (empty donor); else the donor name. Empty cells and duplicated (pool, donor) rows stop the run, and the IDs are checked against the genotypes like the table's.
+Here `Pool_A`'s `D2` and `D3` were swapped: `D2`'s split bam is WASP-filtered with `SUBJ_0103`'s genotypes and written as `<wasp_dir>cDNA/Pool_A/D3.after_wasp.bam`. As with the split bams, each pool has its own folder, so a final donor in several pools (e.g. a donor run in two pools) gets one bam per pool, none overwriting another; within a pool and modality a final donor can only be given once.
+
+**No swap corrections:** without a `final_donor` column, here or in the samples table, a warning says that no swap corrections are assumed, and `final_donor` is copied from `donor`. Outputs are then named as before, so a run looks the same whether or not swaps were corrected:
+
+```text
+Warning: WASP samples table wasp_samples.tsv and sample names table names.tsv have no final_donor column: no swap corrections assumed (final_donor = donor)
+```
+
+Rows whose `final_donor` is empty while the column exists are listed in a warning too.
+
+A row's `final_donor` and `vcfID`, in order: the samples table's; else the (pool, donor) row here; else the pool's row (empty donor); else the donor (for `vcfID`: the final donor's name). An empty `pool` or `vcfID`, `/` in `final_donor` and duplicated (pool, donor) rows stop the run. The IDs are checked against the genotypes like the table's.
 
 ## WASP genotype sets
 

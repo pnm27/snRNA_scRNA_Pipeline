@@ -1,5 +1,6 @@
 # start: wasp with no sample column: the genotype IDs come from the sample
-# names table (one per pool), an input of the checks and of snp2h5
+# names table (one per pool), an input of the checks and of snp2h5; no
+# final_donor column in either table: a warning, no swap corrections assumed
 # standalone:
 # setup: rm projdir/fastq_files.txt
 # setup: mkdir -p bams && touch chip.bcf chip.bcf.csi chrom.txt
@@ -8,6 +9,7 @@
 # setup: printf "pool\tsample\nP1\tSUBJ_01\nP2\tSUBJ_02\n" > wasp_names.tsv
 # expect: wasp_snp2h5 wasp_check_inputs wasp_remap_rna wasp_stats
 # path: wasp_names.tsv
+# says: have no final_donor column: no swap corrections assumed (final_donor = donor)
 workflow:
   start: wasp
   until: wasp

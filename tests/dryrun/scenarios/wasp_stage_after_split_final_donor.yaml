@@ -1,0 +1,30 @@
+# WASP after split_bams with swap corrections: the split bam of D1 is
+# filtered with the genotypes of its final donor D5 and written as D5
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tfinal_donor\tvcfID\nP1\tD1\tD5\tG5\nP1\tD2\t\tG2\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: split_bams wasp_check_inputs wasp_remap_rna wasp_stats
+# path: projdir/wasp_bams/cDNA/P1/D5.after_wasp.bam projdir/wasp_bams/cDNA/P1/D2.after_wasp.bam STARsolo_split_filt_bams/final/Sample_P1-cDNA/D1.bam
+# nopath: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam
+# says: no final_donor for P1 D2: final_donor = donor
+workflow:
+  aligner: STARsolo
+  start: align
+  until: wasp
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/

@@ -21,7 +21,7 @@
 # are large, e.g. --resources wasp_slots=100.
 
 from lib.wasp import (
-    samples_table, starts_at_wasp, select_donors, missing_bams, table_row,
+    samples_table, starts_at_wasp, select_donors, missing_bams, table_row, donor_of,
     donor_paths, donor_logs, work_dir, run_outputs, checked_inputs,
     genotype_files, genotype_sets, vcf_sets, vcf_files, converted_dir,
     wasp_config, sample_names, H5_FILES,
@@ -35,13 +35,19 @@ WASP_NAMES = sample_names(config)
 WASP_NAMES_ARG = f"--names {WASP_NAMES}" if WASP_NAMES else ""
 
 
-def wasp_row(wildcards, modality: str) -> dict:
-    row = table_row(samples_table(config), wildcards.pool, wildcards.donor, modality)
-    if row is None:
+def wasp_donor(wildcards, modality: str) -> str:
+    """The donor (as split; the samples table's donor) of a job's final donor."""
+    donor = donor_of(samples_table(config), wildcards.pool, wildcards.final_donor, modality)
+    if donor is None:
         raise ValueError(
-            f"No row for pool {wildcards.pool}, donor {wildcards.donor} "
+            f"No row for pool {wildcards.pool}, final donor {wildcards.final_donor} "
             f"({modality}) in the WASP samples table {wasp_config(config)['samples']}")
-    return row
+    return donor
+
+
+def wasp_row(wildcards, modality: str) -> dict:
+    return table_row(samples_table(config), wildcards.pool,
+                     wasp_donor(wildcards, modality), modality)
 
 
 def wasp_input_bam(wildcards, modality: str) -> dict:
@@ -51,8 +57,9 @@ def wasp_input_bam(wildcards, modality: str) -> dict:
         row = wasp_row(wildcards, modality)
         return {'bam': row['bam'], 'bai': row['bai']}
     sb = config['modules']['split_bams']
-    bam = f"{sb['split_bams_dir']}{split_bams_fold(config, modality)}{wildcards.donor}.bam".format(
-        pool=wildcards.pool, donor=wildcards.donor)
+    donor = wasp_donor(wildcards, modality)
+    bam = f"{sb['split_bams_dir']}{split_bams_fold(config, modality)}{donor}.bam".format(
+        pool=wildcards.pool, donor=donor)
     return {'bam': bam, 'bai': f"{bam}.bai"}
 
 
@@ -61,11 +68,13 @@ def wasp_genotype_files(wildcards, modality: str) -> dict:
 
 
 def wasp_samples_param(modality: str):
-    """params of a donor job: the genotype IDs, space- and ';'-separated."""
+    """params of a donor job: the donor (as split), the genotype IDs,
+    space- and ';'-separated, the work dir and paired-end."""
     return {
+        'donor': lambda wc: wasp_donor(wc, modality),
         'samples': lambda wc: " ".join(wasp_row(wc, modality)['samples']),
         'sample_ids': lambda wc: ";".join(wasp_row(wc, modality)['samples']),
-        'work': lambda wc: work_dir(config, modality).format(pool=wc.pool, donor=wc.donor),
+        'work': lambda wc: work_dir(config, modality).format(pool=wc.pool, final_donor=wc.final_donor),
         'paired': "--paired" if paired_end(config, modality) else "",
     }
 
@@ -74,8 +83,9 @@ _WASP_NOTED = set()
 
 
 def wasp_donors(modality: str) -> list:
-    """(pool, donor) of every WASP job of 'modality': the rows of the
-    samples table (start: wasp), else the split donors that are in the table."""
+    """(pool, donor, final donor) of every WASP job of 'modality': the rows
+    of the samples table (start: wasp), else the split donors that are in
+    the table."""
     table = samples_table(config)
     if starts_at_wasp(config):
         missing = missing_bams(table)
@@ -83,14 +93,14 @@ def wasp_donors(modality: str) -> list:
             raise ValueError(
                 "'workflow: start: wasp' filters existing bams; not there:\n  "
                 + "\n  ".join(missing))
-        return sorted((p, d) for p, d, m in table if m == modality)
+        return sorted((p, d, r['final_donor']) for (p, d, m), r in table.items() if m == modality)
     pools = split_pools() if EXTERNAL else POOLS
     out, skipped = [], []
     for pool in pools:
         # Every split modality has the donors of the same labels
         donors = get_real_donors({'pool': pool, 'modality': SPLIT_MODALITY})['donor']
         kept, missing = select_donors(table, pool, donors, modality)
-        out += [(pool, d) for d in kept]
+        out += [(pool, d, table_row(table, pool, d, modality)['final_donor']) for d in kept]
         skipped += [f"{pool} {d}" for d in missing]
     if skipped and modality not in _WASP_NOTED:
         _WASP_NOTED.add(modality)
@@ -106,7 +116,7 @@ def wasp_donors(modality: str) -> list:
 
 def wasp_donor_stats(wildcards) -> list:
     stats = donor_paths(config, wildcards.modality)['stats']
-    return [stats.format(pool=p, donor=d) for p, d in wasp_donors(wildcards.modality)]
+    return [stats.format(pool=p, final_donor=f) for p, d, f in wasp_donors(wildcards.modality)]
 
 
 # Genotype sets given as VCF/BCF: WASP's h5 files, once per set ----------

@@ -356,29 +356,30 @@ sc/snRNA-seq: `common.smk` + `rna.smk`; scATAC: `common.smk` + `atac.smk`; multi
 | column | |
 |---|---|
 | `pool` | pool (no `/`) |
-| `donor` | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its vcf ID) |
+| `donor` | donor (no `/`) as the final demultiplexing named it: after `split_bams`, the split bam's donor (e.g. its vcf ID) |
+| `final_donor` | optional: the donor after swap correction (no `/`), which names the output bam (once per pool and modality). Empty, or no column: from `modules: wasp: sample_names`, else the donor; with the column in neither table, a warning says no swap corrections are assumed |
 | `modality` | optional: `cDNA` or `ATAC`. Empty, or no column: with `start: wasp`, `cDNA`; after `split_bams`, every split modality of the donor (a row of the donor's own modality wins) |
-| `sample` | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py`. Optional: empty, or no column, takes the ID from `modules: wasp: sample_names`, else the donor name |
+| `vcfID` | the final donor's genotype sample ID(s) in its genotype set (`sample` is read too), separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py`. Optional: empty, or no column, takes the ID from `modules: wasp: sample_names`, else the final donor's name |
 | `bam`, `bai` | `start: wasp` only: the per-donor bam (`bai` defaults to `<bam>.bai`) |
 | `genotype_set` | which `modules: wasp: genotypes` set, with more than one |
 
 ```text
-pool    donor   sample      bam
-P1      D1      GENO_0001   /data/split/Sample_P1-cDNA/D1.bam
-P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam
+pool    donor   final_donor  vcfID       bam
+P1      D1      D1           GENO_0001   /data/split/Sample_P1-cDNA/D1.bam
+P1      D2      D3           GENO_0003   /data/split/Sample_P1-cDNA/D2.bam
 ```
 
 Multiome samples of one donor each (`start: wasp`), both bams of cellranger-arc:
 
 ```text
-pool    donor   sample      modality  bam
-S001    S001    NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
-S001    S001    NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
+pool    donor   final_donor  vcfID       modality  bam
+S001    S001    S001         NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
+S001    S001    S001         NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
 ```
 
 After `split_bams`, split donors not in the table aren't filtered (a warning); none at all for a modality stops the run. With `start: wasp`, a missing bam or bai stops the run, all listed.
 
-When pools or donors aren't named as in the genotypes (e.g. one donor per pool, named after the pool), `modules: wasp: sample_names` maps them to genotype IDs instead of filling `sample` row by row: columns `pool`, `sample` and optionally `donor` (empty: every donor of the pool). See [Optional input files](optional_inputs.md#wasp-sample-names).
+The bams are split by the final demultiplexing, while swap corrections are only applied to the h5ad files so far. `modules: wasp: sample_names` gives each demultiplexed donor its final (swap-corrected) donor and that donor's VCF ID, instead of filling `final_donor` and `vcfID` row by row: columns `pool`, `donor` (empty: every donor of the pool, e.g. one donor per pool, named after the pool), `final_donor` and `vcfID`. See [Optional input files](optional_inputs.md#wasp-sample-names).
 
 ### Genotypes
 
@@ -392,7 +393,7 @@ Named sets (e.g. one for WGS, one for SNP arrays), each:
 ```yaml
 references:
   tools:
-    wasp: wasp/<version>     # env module that sets WASP_HOME (its scripts are under it)
+    wasp: wasp/2021-04     # env module that sets WASP_HOME (its scripts are under it)
 modules:
   wasp:
     samples: wasp_samples.tsv
@@ -424,14 +425,14 @@ The remap references must be those the bams were aligned to: by default STARsolo
 3. Per donor bam, `wasp_remap_rna` (cDNA, as `genesis_wasp.R`) or `wasp_remap_atac` (ATAC, as `psychad_multiome_wasp.R`). `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes name chromosomes the same way (`chr1` vs `1`) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC). Then the remapping: STAR (two-pass, `NH HI AS nM NM MD`), or `bwa mem` of the pairs. `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities (`--resources wasp_slots=N` on the command line to change it). By default 6 cores, 18 GB and a day for `wasp_remap_rna`; 8 cores, 24 GB and a day for `wasp_remap_atac` (`execution: resources`).
 4. `wasp_stats`, per modality: the run's table, summary and plots.
 
-Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`):
+Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the split bams, so the same final donor in several pools isn't overwritten (`<final_donor>` is the swap-corrected donor, see the samples table):
 
 ```text
-<modality>/<pool>/<donor>.after_wasp.bam(.bai)
-<modality>/<pool>/stats/<donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
+<modality>/<pool>/<final_donor>.after_wasp.bam(.bai)
+<modality>/<pool>/stats/<final_donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
                         (ATAC also .wasp_with_duplicates.flagstat: after WASP, before removing duplicates)
-<modality>/<pool>/logs/<donor>.find_intersecting_snps.log, .star_remap.log (ATAC: .bwa_remap.log), .filter_remapped_reads.log
-<modality>/wasp_stats.tsv     one row per donor bam
+<modality>/<pool>/logs/<final_donor>.find_intersecting_snps.log, .star_remap.log (ATAC: .bwa_remap.log), .filter_remapped_reads.log
+<modality>/wasp_stats.tsv     one row per donor bam (pool, donor, final_donor, modality, sample: the vcfIDs, ...)
 <modality>/wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
 <modality>/wasp_plots.pdf     histograms of the summary_* columns
 ```
@@ -448,7 +449,7 @@ workflow:
   until: wasp
 references:
   tools:
-    wasp: wasp/<version>
+    wasp: wasp/2021-04
 modules:
   wasp:
     samples: wasp_samples.tsv

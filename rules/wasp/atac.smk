@@ -57,6 +57,6 @@ rule wasp_remap_atac:
             --intersect_log {log.intersect} --flagstat_before {output.flagstat_before} \
             --flagstat_after {output.flagstat_after} \
             --flagstat_wasp {output.flagstat_wasp} {params.drop_duplicates} {params.paired} \
-            --pool {wildcards.pool} --donor {wildcards.donor} \
+            --pool {wildcards.pool} --donor {params.donor} --final_donor {wildcards.final_donor} \
             --sample {params.sample_ids:q} --modality ATAC --stats {output.stats}
         """

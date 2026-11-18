@@ -35,7 +35,7 @@ def test_samples_table(tmp_path):
                            "P1\tD3\tG4,G5 ;G6\tx/D3.bam\n")
     t = wasp.read_samples_table(path, need_bam=True, sets=['main'])
     # (start: wasp: no modality is cDNA)
-    assert t[('P1', 'D1', 'cDNA')] == {'samples': ['G1'], 'bam': 'x/D1.bam',
+    assert t[('P1', 'D1', 'cDNA')] == {'final_donor': 'D1', 'samples': ['G1'], 'bam': 'x/D1.bam',
                                        'bai': 'x/D1.bam.bai', 'genotype_set': 'main'}
     assert t[('P1', 'D2', 'cDNA')]['samples'] == ['G2', 'G3']
     # ',' too, as WASP's own --samples string
@@ -102,8 +102,10 @@ def test_samples_table_without_sample_column(tmp_path):
 
 
 @pytest.mark.parametrize("text, error", [
-    ("pool\tdonor\nP1\tD1\n", "missing: sample"),
+    ("pool\tdonor\nP1\tD1\n", "missing: vcfID"),
     ("pool\tsample\nP1\t\n", "empty pool or sample"),
+    ("pool\tvcfID\tsample\nP1\tG1\tG1\n", "both vcfID and sample"),
+    ("pool\tdonor\tfinal_donor\tvcfID\nP1\tD1\tD/2\tG1\n", "final_donor can't contain '/'"),
     ("pool\tsample\nP1\tG 1\n", "can't contain whitespace"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD1\tG2\nP2\t\tG3\nP2\t\tG4\n",
      "listed twice: P1 D1, P2"),
@@ -112,6 +114,92 @@ def test_sample_names_errors(tmp_path, text, error):
     names = table(tmp_path, text, "names.tsv")
     with pytest.raises(ValueError, match=error):
         wasp.read_sample_names(names)
+
+
+# Final donors (swap corrections) -------------------------------------------
+
+def test_final_donor_from_names(tmp_path, capsys):
+    """pool, donor, final_donor, vcfID: the outputs are named by the final
+    donor, whose genotype IDs are used."""
+    wasp._WARNED.clear()
+    names = table(tmp_path, "pool\tdonor\tfinal_donor\tvcfID\n"
+                            "P1\tD1\tD1\tSUB_001\n"
+                            "P1\tD2\tD3\tSUB_003\n"     # D2's cells are D3's
+                            "P1\tD3\tD2\tSUB_002\n"
+                            "P2\t\tP2\tSUB_010\n", "names.tsv")
+    path = table(tmp_path, "pool\tdonor\nP1\tD1\nP1\tD2\nP1\tD3\nP2\tX\n")
+    t = wasp.read_samples_table(path, sets=['main'], names=names)
+    assert {k[:2]: (r['final_donor'], r['samples']) for k, r in t.items()} == {
+        ('P1', 'D1'): ('D1', ['SUB_001']), ('P1', 'D2'): ('D3', ['SUB_003']),
+        ('P1', 'D3'): ('D2', ['SUB_002']), ('P2', 'X'): ('P2', ['SUB_010'])}
+    assert wasp.donor_of(t, 'P1', 'D3', 'cDNA') == 'D2'
+    assert wasp.donor_of(t, 'P1', 'D3', 'ATAC') == 'D2'
+    assert wasp.donor_of(t, 'P1', 'D9', 'cDNA') is None
+    assert 'Warning' not in capsys.readouterr().err
+
+
+def test_final_donor_column_wins(tmp_path):
+    names = table(tmp_path, "pool\tdonor\tfinal_donor\tvcfID\nP1\tD1\tD5\tG5\n", "names.tsv")
+    path = table(tmp_path, "pool\tdonor\tfinal_donor\tvcfID\tmodality\n"
+                           "P1\tD1\tD7\t\tATAC\n"
+                           "P1\tD1\t\tG1\tcDNA\n")
+    t = wasp.read_samples_table(path, sets=['main'], names=names)
+    assert t[('P1', 'D1', 'ATAC')]['final_donor'] == 'D7'
+    assert t[('P1', 'D1', 'ATAC')]['samples'] == ['G5']
+    assert t[('P1', 'D1', 'cDNA')]['final_donor'] == 'D5'
+    assert t[('P1', 'D1', 'cDNA')]['samples'] == ['G1']
+
+
+def test_no_final_donor_warns(tmp_path, capsys):
+    """No final_donor column: no swap corrections assumed, final = donor
+    (its genotype ID is then the donor's)."""
+    wasp._WARNED.clear()
+    names = table(tmp_path, "pool\tdonor\tsample\nP1\tD1\tG1\n", "names.tsv")
+    path = table(tmp_path, "pool\tdonor\nP1\tD1\nP1\tD2\n")
+    t = wasp.read_samples_table(path, sets=['main'], names=names)
+    assert [r['final_donor'] for r in t.values()] == ['D1', 'D2']
+    assert t[('P1', 'D2', '')]['samples'] == ['D2']
+    err = capsys.readouterr().err
+    assert "no final_donor column: no swap corrections assumed" in err
+    assert err.count("Warning") == 1
+
+
+def test_empty_final_donor_warns(tmp_path, capsys):
+    wasp._WARNED.clear()
+    path = table(tmp_path, "pool\tdonor\tfinal_donor\nP1\tD1\tD2\nP1\tD3\t\n")
+    t = wasp.read_samples_table(path, sets=['main'])
+    assert t[('P1', 'D3', '')]['final_donor'] == 'D3'
+    assert "no final_donor for P1 D3: final_donor = donor" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("text", [
+    "pool\tdonor\tfinal_donor\nP1\tD1\tD3\nP1\tD2\tD3\n",
+    "pool\tdonor\tfinal_donor\nP1\tD1\tD2\nP1\tD2\t\n",                  # D2 by default
+    "pool\tdonor\tfinal_donor\tmodality\nP1\tD1\tD3\t\nP1\tD2\tD3\tATAC\n",
+])
+def test_final_donor_twice(tmp_path, text):
+    path = table(tmp_path, text)
+    with pytest.raises(ValueError, match="given to several donors"):
+        wasp.read_samples_table(path, sets=['main'])
+
+
+def test_final_donor_in_two_pools(tmp_path):
+    """Pools have folders of their own: a final donor may be in several."""
+    path = table(tmp_path, "pool\tdonor\tfinal_donor\nP1\tD1\tD3\nP2\tD1\tD3\n")
+    t = wasp.read_samples_table(path, sets=['main'])
+    assert wasp.donor_of(t, 'P2', 'D3', 'cDNA') == 'D1'
+    c = config()
+    assert {wasp.donor_paths(c, 'cDNA')['bam'].format(pool=p, final_donor='D3')
+            for p in ('P1', 'P2')} == {"out/cDNA/P1/D3.after_wasp.bam",
+                                       "out/cDNA/P2/D3.after_wasp.bam"}
+
+
+def test_final_donor_once_per_modality(tmp_path):
+    """Different modalities of a pool may share a final donor name."""
+    path = table(tmp_path, "pool\tdonor\tfinal_donor\tmodality\n"
+                           "P1\tD1\tD3\tcDNA\nP1\tD2\tD3\tATAC\n")
+    t = wasp.read_samples_table(path, sets=['main'])
+    assert wasp.donor_of(t, 'P1', 'D3', 'ATAC') == 'D2'
 
 
 def test_set_samples_cli_with_names(tmp_path, capsys):
@@ -193,12 +281,12 @@ def config(**wasp_keys):
 
 def test_paths():
     c = config()
-    assert wasp.donor_paths(c, 'cDNA')['bam'] == "out/cDNA/{pool}/{donor}.after_wasp.bam"
+    assert wasp.donor_paths(c, 'cDNA')['bam'] == "out/cDNA/{pool}/{final_donor}.after_wasp.bam"
     assert 'flagstat_wasp' not in wasp.donor_paths(c, 'cDNA')
     assert wasp.donor_paths(c, 'ATAC')['flagstat_wasp'] == \
-        "out/ATAC/{pool}/stats/{donor}.wasp_with_duplicates.flagstat"
-    assert wasp.donor_logs(c, 'ATAC')['remap'] == "out/ATAC/{pool}/logs/{donor}.bwa_remap.log"
-    assert wasp.work_dir(c, 'ATAC') == "tmp/ATAC/{pool}/{donor}/"
+        "out/ATAC/{pool}/stats/{final_donor}.wasp_with_duplicates.flagstat"
+    assert wasp.donor_logs(c, 'ATAC')['remap'] == "out/ATAC/{pool}/logs/{final_donor}.bwa_remap.log"
+    assert wasp.work_dir(c, 'ATAC') == "tmp/ATAC/{pool}/{final_donor}/"
     assert wasp.run_outputs(c, '{modality}')['stats'] == "out/{modality}/wasp_stats.tsv"
     assert wasp.genotype_files(c, 'wgs')['haps'] == "h5/haps.h5"
     assert wasp.genotype_files(c, 'chip')['snp_tab'] == "out/genotypes/chip/snp_tab.h5"
@@ -324,7 +412,9 @@ def test_parse_cli_and_summarize(tmp_path):
     with open(out / "stats.tsv") as f:
         got = list(csv.DictReader(f, delimiter='\t'))
     assert got[0]['sample'] == 'G1;G2' and got[0]['summary_final'] == '972'
-    assert list(got[0])[:6] == ['dataset', 'pool', 'donor', 'modality', 'sample', 'paired_end']
+    assert list(got[0])[:7] == ['dataset', 'pool', 'donor', 'final_donor', 'modality',
+                                'sample', 'paired_end']
+    assert got[0]['final_donor'] == got[0]['donor']
     assert got[0]['modality'] == 'cDNA'
 
     with open(out / "summary.tsv") as f:

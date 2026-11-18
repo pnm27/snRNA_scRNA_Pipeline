@@ -28,7 +28,7 @@ EXTERNAL_DEFAULTS = {
 EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
 # The WASP stage's keys, added to whole configs with the example's values
 WASP_NEW_KEYS = {
-    'references.tools.wasp': None,
+    'references.tools.wasp': 'wasp/2021-04',
     'modules.wasp': yaml.safe_load(open(EXAMPLE))['modules']['wasp'],
     # (with ATAC WASP: split bams of each modality)
     'modules.split_bams.modalities': ['cDNA'],
@@ -310,7 +310,7 @@ def test_new_layout_update():
     # The comment lines after the tools (the next section's header) stay
     # after the added key
     tools = after.split('\n  tools:\n', 1)[1]
-    assert tools.index('    wasp: null') < tools.index('\n# ')
+    assert tools.index('    wasp: wasp/2021-04') < tools.index('\n# ')
     assert migrate_text(after) == after
 
 

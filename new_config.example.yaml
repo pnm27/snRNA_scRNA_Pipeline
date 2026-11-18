@@ -72,7 +72,7 @@ references:
     star_snv_aware: star/2.7.10a
     cellranger_arc: cellranger-arc/2.0.2
     cellranger: cellranger/8.0.1
-    wasp: null  # env module of WASP (sets WASP_HOME), for until: wasp
+    wasp: wasp/2021-04  # env module of WASP (sets WASP_HOME), for until: wasp
 
 # What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:
@@ -383,12 +383,13 @@ modules:
   # WASP filtering of per-donor bams (until: wasp, or start: wasp), for sc/snRNA-seq
   # and the RNA (GEX) part of multiome; WASP comes from references: tools: wasp
   wasp:
-    # pool, donor, sample (genotype ID(s), ';'- or ','-separated; find_intersecting_snps.py's
-    # --samples), modality (cDNA or ATAC; empty: cDNA with start: wasp, else every split
-    # modality), and bam[, bai] with start: wasp; genotype_set with several sets.
-    # Empty or no sample: from sample_names, else the donor name
+    # pool, donor (as split), final_donor (after swap correction; names the outputs), vcfID
+    # (genotype ID(s), ';'- or ','-separated; find_intersecting_snps.py's --samples), modality
+    # (cDNA or ATAC; empty: cDNA with start: wasp, else every split modality), and bam[, bai]
+    # with start: wasp; genotype_set with several sets. Empty or no final_donor / vcfID: from
+    # sample_names, else the donor (no final_donor column in either table: a warning)
     samples: null
-    sample_names: null  # pool[, donor], sample: genotype ID(s) of pools (or donors) not named as in the genotypes
+    sample_names: null  # pool[, donor], final_donor, vcfID: final donors and genotype ID(s) of pools (or donors)
     genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}
     rna:  # cDNA bams: STAR remapping, duplicates kept
       remap:

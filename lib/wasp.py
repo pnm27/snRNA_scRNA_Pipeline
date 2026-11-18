@@ -20,30 +20,43 @@ samples') gives the genotype sample ID(s) of each donor
 (find_intersecting_snps.py's --samples). Columns:
 
   pool          pool (no '/')
-  donor         donor (no '/'); names the output bam
+  donor         donor (no '/') as the final demultiplexing named it (the
+                split bams' name)
+  final_donor   optional: the donor after swap correction (no '/'); names
+                the output bam. Empty (or no column): from the sample
+                names table, else the donor (no swap corrections; a
+                warning says so). Once per pool and modality
   modality      optional: cDNA or ATAC. Empty (or no column): with start:
                 wasp, cDNA; after split_bams, every split modality of the
                 donor (a row of the donor's modality wins)
-  sample        optional: genotype sample ID(s) in the genotype set,
+  vcfID         optional: genotype sample ID(s) in the genotype set (of
+                the final donor; 'sample' is read too),
                 separated by ';' (or ',' in a tab-separated table); no
                 whitespace in an ID. They're written one per line to the
                 file given as --samples (WASP takes a file or a
                 comma-separated string, and reads the first word of each
                 line). Empty or no column: from the sample names table,
-                else the donor name
+                else the final donor's name
   bam           the per-donor bam (start: wasp only)
   bai           optional; default <bam>.bai
   genotype_set  which 'modules: wasp: genotypes' set (needed with more
                 than one set)
 
 The sample names table ('modules: wasp: sample_names', optional) gives
-the genotype IDs of pools or donors whose names aren't the ones in the
-genotypes, e.g. one donor per pool, named after the pool. Columns:
+the final donor and genotype IDs of pools or donors whose names aren't
+the ones in the genotypes, e.g. one donor per pool, named after the pool,
+or donors whose labels were swapped. Columns:
 
   pool          pool
-  donor         optional: the donor; empty (or no column): every donor
-                of the pool
-  sample        genotype sample ID(s), as in the samples table
+  donor         optional: the donor, as the final demultiplexing named
+                it; empty (or no column): every donor of the pool
+  final_donor   optional: the donor after swap correction (the swap
+                corrections are only applied to the h5ad files so far);
+                empty: the donor. No final_donor column here nor in the
+                samples table: a warning, and final_donor = donor (no swap
+                corrections assumed)
+  vcfID         genotype sample ID(s) of the final donor, as in the
+                samples table ('sample' is read too)
 
 A (pool, donor) row wins over a pool's row.
 
@@ -53,13 +66,32 @@ Tab-separated, or comma-separated for .csv.
 import csv
 import os
 import re
+import sys
 
 from .modality import normalize_modality, split_modalities
 
 
 # Separators of the sample IDs in the 'sample' column
 SAMPLE_SEP = re.compile(r'[;,]')
+# Names of the genotype ID column ('sample': tables from before vcfID)
+SAMPLE_COLUMNS = ('vcfID', 'sample')
 _TABLES: dict = {}
+_WARNED: set = set()
+
+
+def _warn(message: str):
+    """Prints a warning once per process."""
+    if message not in _WARNED:
+        _WARNED.add(message)
+        print(f"Warning: {message}", file=sys.stderr)
+
+
+def _sample_column(header: list, what: str):
+    """The genotype ID column of a table's header, or None."""
+    found = [c for c in SAMPLE_COLUMNS if c in header]
+    if len(found) > 1:
+        raise ValueError(f"{what}: both vcfID and sample columns; keep one (vcfID)")
+    return found[0] if found else None
 
 
 def split_samples(text: str) -> list:
@@ -82,36 +114,45 @@ def _read_rows(path: str) -> list:
         return list(csv.DictReader(f, delimiter=',' if path.endswith('.csv') else '\t'))
 
 
-def read_sample_names(path: str) -> dict:
-    """{(pool, donor or ''): [sample IDs]} of a sample names table
-    (columns pool, sample and optionally donor; '' = every donor of the pool)."""
+def read_sample_names(path: str) -> tuple:
+    """({(pool, donor or ''): {'samples': [...], 'final_donor': str}},
+    whether the table has a final_donor column) of a sample names table
+    (columns pool, vcfID (or sample), optionally donor and final_donor;
+    donor '' = every donor of the pool, final_donor '' = the donor)."""
     rows = _read_rows(path)
     header = list(rows[0].keys()) if rows else []
-    missing = [c for c in ('pool', 'sample') if c not in header]
+    what = f"WASP sample names table {path}"
+    sample_col = _sample_column(header, what)
+    missing = [c for c, ok in (('pool', 'pool' in header), ('vcfID', sample_col)) if not ok]
     if not rows or missing:
         raise ValueError(
-            f"WASP sample names table {path}: needs a header with the columns "
-            "pool, sample (optionally donor), and one row per pool or donor"
+            f"{what}: needs a header with the columns pool, vcfID (optionally "
+            "donor, final_donor), and one row per pool or donor"
             + (f"; missing: {', '.join(missing)}" if rows else ""))
+    has_final = 'final_donor' in header
     names, dups, errors = {}, set(), []
     for n, row in enumerate(rows, start=2):
         get = lambda c: (row.get(c) or '').strip()
-        pool, donor, samples = get('pool'), get('donor'), split_samples(get('sample'))
+        pool, donor, samples = get('pool'), get('donor'), split_samples(get(sample_col))
+        final = get('final_donor')
         if not pool or not samples:
-            errors.append(f"line {n}: empty pool or sample")
+            errors.append(f"line {n}: empty pool or {sample_col}")
             continue
         bad = _bad_ids(samples)
         if bad:
             errors.append(f"line {n}: {bad}")
             continue
+        if '/' in final:
+            errors.append(f"line {n}: final_donor can't contain '/' ({final})")
+            continue
         if (pool, donor) in names:
             dups.add(f"{pool} {donor}".strip())
-        names[(pool, donor)] = samples
+        names[(pool, donor)] = {'samples': samples, 'final_donor': final}
     if dups:
         errors.append(f"listed twice: {', '.join(sorted(dups))}")
     if errors:
-        raise ValueError(f"WASP sample names table {path}:\n  " + "\n  ".join(errors))
-    return names
+        raise ValueError(f"{what}:\n  " + "\n  ".join(errors))
+    return names, has_final
 
 
 def wasp_config(config) -> dict:
@@ -137,33 +178,52 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
     sets: the genotype set names; a row without genotype_set takes the only
     one, and a set not in 'sets' is an error.
     names: the sample names table (read_sample_names), for the rows with
-    no sample: its (pool, donor) row, else its pool's row, else the donor.
+    no vcfID or final_donor: its (pool, donor) row, else its pool's row,
+    else the donor.
+    Each row also has 'final_donor' (the swap-corrected donor, which names
+    the outputs); a pool's final donors of a modality are unique.
     """
     sets = list(sets or [])
     key = (path, need_bam, tuple(sets), names)
     if key in _TABLES:
         return _TABLES[key]
-    name_map = read_sample_names(names) if names else {}
+    name_map, names_final = read_sample_names(names) if names else ({}, False)
     rows = _read_rows(path)
     header = list(rows[0].keys()) if rows else []
+    what = f"WASP samples table {path}"
+    sample_col = _sample_column(header, what) or 'vcfID'
     required = ['pool', 'donor'] + (['bam'] if need_bam else [])
     missing = [c for c in required if c not in header]
     if not rows or missing:
         raise ValueError(
             f"WASP samples table {path}: needs a header with the columns "
             f"{', '.join(required)} (optionally "
-            f"{', '.join(c for c in ('modality', 'sample', 'bam', 'bai', 'genotype_set') if c not in required)}),"
+            f"{', '.join(c for c in ('final_donor', 'modality', 'vcfID', 'bam', 'bai', 'genotype_set') if c not in required)}),"
             " and one row per donor bam"
             + (f"; missing: {', '.join(missing)}" if rows else ""))
-    table, dups, errors = {}, set(), []
+    has_final = 'final_donor' in header
+    if not has_final and not names_final:
+        _warn(f"{what}" + (f" and sample names table {names} have" if names else " has")
+              + " no final_donor column: no swap corrections assumed (final_donor = donor)")
+    table, dups, errors, unset = {}, set(), [], []
     for n, row in enumerate(rows, start=2):
         get = lambda c: (row.get(c) or '').strip()
         pool, donor = get('pool'), get('donor')
-        samples = (split_samples(get('sample')) or name_map.get((pool, donor))
-                   or name_map.get((pool, '')) or [donor])
+        named = name_map.get((pool, donor)) or name_map.get((pool, '')) or {}
+        samples = split_samples(get(sample_col)) or named.get('samples')
+        final = (get('final_donor') or (name_map.get((pool, donor)) or {}).get('final_donor')
+                 or (name_map.get((pool, '')) or {}).get('final_donor') or '')
         if not pool or not donor:
             errors.append(f"line {n}: empty pool or donor")
             continue
+        if not final:
+            final = donor
+            if has_final or names_final:
+                unset.append(f"{pool} {donor}")
+        if '/' in final:
+            errors.append(f"line {n}: final_donor can't contain '/' ({final})")
+            continue
+        samples = samples or [final]
         bad = _bad_ids(samples)
         if bad:
             errors.append(f"line {n}: {bad}")
@@ -202,6 +262,7 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
         if (pool, donor, modality) in table:
             dups.add(name)
         table[(pool, donor, modality)] = {
+            'final_donor': final,
             'samples': samples,
             'bam': bam,
             'bai': (get('bai') or (f"{bam}.bai" if bam else None)),
@@ -209,8 +270,15 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
         }
     if dups:
         errors.append(f"pool and donor (and modality) listed twice: {', '.join(sorted(dups))}")
+    if not errors:
+        errors += [f"{pool}: final_donor {final} ({modality}) given to several "
+                   f"donors ({', '.join(donors)})"
+                   for (pool, final, modality), donors in sorted(_final_donors(table).items())
+                   if len(donors) > 1]
     if errors:
-        raise ValueError(f"WASP samples table {path}:\n  " + "\n  ".join(errors))
+        raise ValueError(f"{what}:\n  " + "\n  ".join(errors))
+    if unset:
+        _warn(f"{what}: no final_donor for {', '.join(unset)}: final_donor = donor")
     _TABLES[key] = table
     return table
 
@@ -235,6 +303,33 @@ def table_row(table: dict, pool: str, donor: str, modality: str):
     return table.get((pool, donor, modality)) or table.get((pool, donor, ''))
 
 
+MODALITIES = ('cDNA', 'ATAC')
+
+
+_FINALS: dict = {}
+
+
+def _final_donors(table: dict) -> dict:
+    """{(pool, final_donor, modality): [donors]} of each modality's rows."""
+    cached = _FINALS.get(id(table))
+    if cached is not None and cached[0] is table:
+        return cached[1]
+    out = {}
+    for pool, donor in sorted({k[:2] for k in table}):
+        for m in MODALITIES:
+            row = table_row(table, pool, donor, m)
+            if row is not None:
+                out.setdefault((pool, row['final_donor'], m), []).append(donor)
+    _FINALS[id(table)] = (table, out)
+    return out
+
+
+def donor_of(table: dict, pool: str, final_donor: str, modality: str):
+    """The donor (split bam name) whose final donor is 'final_donor', or None."""
+    donors = _final_donors(table).get((pool, final_donor, modality))
+    return donors[0] if donors else None
+
+
 def row_name(key: tuple) -> str:
     """'<pool> <donor>[ <modality>]' of a samples table key."""
     return " ".join(k for k in key if k)
@@ -242,7 +337,7 @@ def row_name(key: tuple) -> str:
 
 def table_modalities(table: dict) -> list:
     """Modalities of the rows of a start: wasp samples table."""
-    return [m for m in ('cDNA', 'ATAC') if any(k[2] == m for k in table)]
+    return [m for m in MODALITIES if any(k[2] == m for k in table)]
 
 
 def missing_bams(table: dict) -> list:
@@ -287,18 +382,18 @@ def _dir(config) -> str:
 
 def donor_paths(config, modality: str) -> dict:
     """Outputs of a donor's WASP job of 'modality' (templates with {pool}
-    and {donor}). ATAC also has the flagstat after WASP, before the
+    and {final_donor}, the swap-corrected donor). ATAC also has the flagstat after WASP, before the
     duplicates are removed."""
     d = f"{_dir(config)}{modality}/{{pool}}/"
     out = {
-        'bam': f"{d}{{donor}}.after_wasp.bam",
-        'bai': f"{d}{{donor}}.after_wasp.bam.bai",
-        'stats': f"{d}stats/{{donor}}.wasp_stats.tsv",
-        'flagstat_before': f"{d}stats/{{donor}}.before_wasp.flagstat",
-        'flagstat_after': f"{d}stats/{{donor}}.after_wasp.flagstat",
+        'bam': f"{d}{{final_donor}}.after_wasp.bam",
+        'bai': f"{d}{{final_donor}}.after_wasp.bam.bai",
+        'stats': f"{d}stats/{{final_donor}}.wasp_stats.tsv",
+        'flagstat_before': f"{d}stats/{{final_donor}}.before_wasp.flagstat",
+        'flagstat_after': f"{d}stats/{{final_donor}}.after_wasp.flagstat",
     }
     if modality == 'ATAC':
-        out['flagstat_wasp'] = f"{d}stats/{{donor}}.wasp_with_duplicates.flagstat"
+        out['flagstat_wasp'] = f"{d}stats/{{final_donor}}.wasp_with_duplicates.flagstat"
     return out
 
 
@@ -309,16 +404,16 @@ REMAPPER = {'cDNA': 'star', 'ATAC': 'bwa'}
 def donor_logs(config, modality: str) -> dict:
     d = f"{_dir(config)}{modality}/{{pool}}/logs/"
     return {
-        'intersect': f"{d}{{donor}}.find_intersecting_snps.log",
-        'remap': f"{d}{{donor}}.{REMAPPER[modality]}_remap.log",
-        'filter': f"{d}{{donor}}.filter_remapped_reads.log",
+        'intersect': f"{d}{{final_donor}}.find_intersecting_snps.log",
+        'remap': f"{d}{{final_donor}}.{REMAPPER[modality]}_remap.log",
+        'filter': f"{d}{{final_donor}}.filter_remapped_reads.log",
     }
 
 
 def work_dir(config, modality: str) -> str:
     """Per-donor scratch dir (template), removed when the job ends."""
     d = wasp_config(config).get('work_dir') or 'wasp_tmp/'
-    return f"{d if d.endswith('/') else d + '/'}{modality}/{{pool}}/{{donor}}/"
+    return f"{d if d.endswith('/') else d + '/'}{modality}/{{pool}}/{{final_donor}}/"
 
 
 def run_outputs(config, modality: str) -> dict:

@@ -20,7 +20,8 @@
 #   wasp_donor.sh finish --work DIR --bam BAM --remapped BAM --out BAM \
 #       --threads N --filter_log LOG --intersect_log LOG \
 #       --flagstat_before F --flagstat_after F [--flagstat_wasp F] \
-#       [--drop_duplicates] [--paired] --pool P --donor D --sample "G1;G2" \
+#       [--drop_duplicates] [--paired] --pool P --donor D --final_donor F \
+#       --sample "G1;G2" \
 #       --modality cDNA --stats TSV
 
 set -euo pipefail
@@ -55,6 +56,7 @@ while [[ $# -gt 0 ]]; do
         --flagstat_wasp) flagstat_wasp=$2; shift 2 ;;
         --pool) pool=$2; shift 2 ;;
         --donor) donor=$2; shift 2 ;;
+        --final_donor) final_donor=$2; shift 2 ;;
         --sample) sample=$2; shift 2 ;;
         --modality) modality=$2; shift 2 ;;
         --stats) stats=$2; shift 2 ;;
@@ -112,7 +114,7 @@ finish)
         wasp_arg=(--flagstat_wasp "${flagstat_wasp}")
     fi
     python "${REPO}/helper_py_scripts/wasp_stats.py" parse --pool "${pool}" \
-        --donor "${donor}" --modality "${modality}" --sample "${sample}" \
+        --donor "${donor}" --final_donor "${final_donor:-${donor}}" --modality "${modality}" --sample "${sample}" \
         ${paired:+--paired_end} --intersect_log "${intersect_log}" \
         --filter_log "${filter_log}" --flagstat_before "${flagstat_before}" \
         --flagstat_after "${flagstat_after}" ${wasp_arg[@]+"${wasp_arg[@]}"} -o "${stats}"
