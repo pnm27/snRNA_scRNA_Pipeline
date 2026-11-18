@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks of the WASP stage's inputs (rules/wasp.smk), before the long jobs.
+"""Checks of the WASP stage's inputs (rules/wasp/common.smk), before the long jobs.
 
 samples
     each genotype sample ID of the samples table is in its set's
@@ -33,7 +33,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-from lib.wasp import read_samples_table, set_samples  # noqa: E402
+from lib.wasp import read_samples_table, set_samples, row_name  # noqa: E402
 
 
 def _decode(x):
@@ -72,9 +72,9 @@ def h5_chromosomes(snp_tab) -> set:
 
 
 def missing_samples(table: dict, gset: str, known: set) -> list:
-    """'<pool> <donor>: <sample>' of the set's samples not in 'known'."""
-    return [f"{pool} {donor}: {s}"
-            for (pool, donor), row in sorted(table.items())
+    """'<pool> <donor>[ <modality>]: <sample>' of the set's samples not in 'known'."""
+    return [f"{row_name(key)}: {s}"
+            for key, row in sorted(table.items())
             if row['genotype_set'] == gset
             for s in row['samples'] if s not in known]
 

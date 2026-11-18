@@ -49,6 +49,12 @@ python3 helper_py_scripts/migrate_config.py new_config.yaml -o new_config.migrat
 
 Run on a config already in the new layout, it adds the keys added to the pipeline since (e.g. `modules: wasp`) and leaves the rest as it is.
 
+Keep a copy of the config before migrating it in place. `backups/` and `new_config.before*.yaml` are in `.gitignore`, like `new_config.yaml`, so such copies stay local:
+
+```bash
+cp new_config.yaml backups/new_config.before_migration.yaml
+```
+
 Check what a run will do with a dry run before running it:
 
 ```bash

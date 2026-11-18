@@ -109,7 +109,7 @@ properties:
         - split_bams
         - identify_swaps
         - wasp
-        description: "Last stage to run; the alignment (or Picard's metrics) is always a target, unless start is split_bams or wasp. cellsnp: cellSNP's pileup only; split_bams, identify_swaps and wasp include the demultiplexing, unless the bams are split by external labels; wasp: WASP filtering of the per-donor bams (sc/snRNA-seq, or the RNA part of multiome)"
+        description: "Last stage to run; the alignment (or Picard's metrics) is always a target, unless start is split_bams or wasp. cellsnp: cellSNP's pileup only; split_bams, identify_swaps and wasp include the demultiplexing, unless the bams are split by external labels; wasp: WASP filtering of the per-donor bams (cDNA: sc/snRNA-seq and multiome GEX; ATAC: multiome, with split_bams: modalities ATAC)"
     required:
     - picard_metrics
     - gt_check
@@ -770,7 +770,13 @@ properties:
                     - string
                     - 'null'
                     default: null
-                    description: "Table of the bam of each pool (workflow: start: split_bams; split_by: input external or final), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. Pools of the labels (or of the swap correction file) missing from the table aren't split (a warning). The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
+                    description: "Table of the bam of each pool (workflow: start: split_bams; split_by: input external or final), for bams that aren't in the aligner's bams_dir and fold_struct: columns pool, bam and optionally bai (default: <bam>.bai), and for multiome the ATAC bam, atac_bam and atac_bai (default: <atac_bam>.bai; needed with 'split_bams: modalities' ATAC; bam is then the gex bam); tab-separated, or .csv. Its pools are the {pool} names after pool_transformations. Pools of the labels (or of the swap correction file) missing from the table aren't split (a warning). The derived bams (filt_bam, short_bam) then go to 'split_bams: temp_dir'. null: the aligner's bams_dir and fold_struct"
+          modalities:
+            type: array
+            items: {type: string, pattern: '(?i)^(cdna|atac)$'}
+            minItems: 1
+            default: [cDNA]
+            description: "Bams split per donor: cDNA, and ATAC for multiome (aligner cellranger_arc). Every modality is split by the same donor labels: the cDNA demultiplexing, or the external labels (split_by: input external). The ATAC bams go to fold_struct_bams with '{modality}' filled with ATAC, or under an ATAC/ folder when it has none"
           min_cells_per_donor:
             type: integer
           subset_chr:
@@ -869,7 +875,7 @@ properties:
         - fold_struct_donor
       wasp:
         type: object
-        description: "WASP filtering of per-donor bams ('workflow: until: wasp' or 'start: wasp'), for sc/snRNA-seq and the RNA (GEX) part of multiome; see lib/wasp.py"
+        description: "WASP filtering of per-donor bams ('workflow: until: wasp' or 'start: wasp'): cDNA (sc/snRNA-seq, the RNA part of multiome; 'rna') and ATAC (multiome; 'atac'); see lib/wasp.py"
         additionalProperties: false
         properties:
           samples:
@@ -877,7 +883,7 @@ properties:
             - string
             - 'null'
             default: null
-            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (optional: the genotype sample ID(s) of the donor, ';'- or ','-separated (',' in a tab-separated table only), no whitespace: find_intersecting_snps.py's --samples; empty or no column: from 'sample_names', else the donor name), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
+            description: "Table of the donor bams to WASP-filter: columns pool, donor, sample (optional: the genotype sample ID(s) of the donor, ';'- or ','-separated (',' in a tab-separated table only), no whitespace: find_intersecting_snps.py's --samples; empty or no column: from 'sample_names', else the donor name), modality (optional: cDNA or ATAC; empty or no column: cDNA with start: wasp, else every split modality of the donor), bam and bai (start: wasp; bai defaults to <bam>.bai) and genotype_set (with several 'genotypes' sets); tab-separated, or .csv. After split_bams, split donors not in the table aren't filtered (a warning)"
           sample_names:
             type:
             - string
@@ -915,40 +921,73 @@ properties:
                 properties: {h5_dir: {type: string}}
               - required: [vcf, chrom_sizes]
                 properties: {vcf: {type: [string, array], minItems: 1}, chrom_sizes: {type: string}}
-          remap:
+          rna:
             type: object
             additionalProperties: false
-            description: "STAR remapping of the reads over SNPs"
+            description: "WASP of the cDNA bams (sc/snRNA-seq, the RNA part of multiome; rules/wasp/rna.smk): STAR remapping, duplicates kept"
+            x-explain: "'modules: wasp: rna' has 'remap' (genome, gtf, extra_params) and 'paired_end' (they were directly under 'modules: wasp' before ATAC WASP: helper_py_scripts/migrate_config.py moves them)"
             properties:
-              genome:
-                type:
-                - string
-                - 'null'
-                default: null
-                description: "STAR index of the genome the bams were aligned to. null: the run's aligner reference (STARsolo's genome_pick, or the 'star' folder of the cellranger / cellranger-arc reference, which may need a newer STAR index: see docs/source/config_caveats.md)"
-              gtf:
-                type:
-                - string
-                - 'null'
-                default: null
-                description: "GTF for STAR's --sjdbGTFfile; null: STARsolo's genome_pick gtf when the genome is the aligner's, else none (the index's annotations)"
-              extra_params:
-                type:
-                - string
-                - 'null'
-                default: null
-          paired_end:
-            type: boolean
-            default: false
-            description: "Paired-end GEX reads (e.g. 5' kits with both reads aligned); false for 10x 3' (only R2 has the cDNA)"
+              remap:
+                type: object
+                additionalProperties: false
+                description: "STAR remapping of the reads over SNPs"
+                properties:
+                  genome:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "STAR index of the genome the bams were aligned to. null: the run's aligner reference (STARsolo's genome_pick, or the 'star' folder of the cellranger / cellranger-arc reference, which may need a newer STAR index: see docs/source/config_caveats.md); start: wasp of cDNA bams: required"
+                  gtf:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "GTF for STAR's --sjdbGTFfile; null: STARsolo's genome_pick gtf when the genome is the aligner's, else none (the index's annotations)"
+                  extra_params:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+              paired_end:
+                type: boolean
+                default: false
+                description: "Paired-end GEX reads (e.g. 5' kits with both reads aligned); false for 10x 3' (only R2 has the cDNA)"
+          atac:
+            type: object
+            additionalProperties: false
+            description: "WASP of the ATAC bams (multiome, or scATAC; rules/wasp/atac.smk): paired-end, bwa-mem remapping as cellranger-arc"
+            properties:
+              remap:
+                type: object
+                additionalProperties: false
+                description: "bwa-mem remapping of the pairs over SNPs"
+                properties:
+                  bwa_index:
+                    type:
+                    - string
+                    - 'null'
+                    default: null
+                    description: "bwa-indexed fasta of the genome the bams were aligned to. null: the cellranger-arc reference's fasta/genome.fa (indexed by cellranger-arc mkref); start: wasp of ATAC bams: required"
+                  extra_params:
+                    type:
+                    - string
+                    - 'null'
+                    default: "-M -Y"
+                    description: "bwa mem options (as the lab's multiome runs)"
+              drop_duplicates:
+                type: string
+                enum: [marked, none]
+                default: marked
+                description: "marked: remove the reads the aligner marked as duplicates (flag 0x400; cellranger-arc marks them per cell barcode) after WASP; none: keep them"
           wasp_dir:
             type: string
             default: projdir/wasp_bams/
-            description: "WASP-filtered bams (<pool>/<donor>.after_wasp.bam), their stats and logs, and the run's stats (wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf)"
+            description: "WASP-filtered bams (<modality>/<pool>/<donor>.after_wasp.bam, modality cDNA or ATAC), their stats and logs, and the run's stats of each modality (<modality>/wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf)"
           work_dir:
             type: string
             default: projdir/wasp_tmp/
-            description: "Large temporary files of each job (<pool>/<donor>/), removed when it ends: a place with space"
+            description: "Large temporary files of each job (<modality>/<pool>/<donor>/), removed when it ends: a place with space"
       identify_swaps:
         type: object
         properties:
@@ -1152,9 +1191,9 @@ allOf:
 - x-explain: "A pools table ('split_by: external: pools') lists bams that are already there, so it needs 'workflow: start: split_bams' (with start: align the aligner writes the bams in its bams_dir)"
   if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {external: {properties: {pools: {type: string}}, required: [pools]}}, required: [external]}}, required: [split_by]}}, required: [split_bams]}}}
   then: {properties: {workflow: {properties: {start: {const: split_bams}}, required: [start]}}}
-- x-explain: "A pools table ('split_by: external: pools') has one bam per pool, so it isn't supported for multiome runs (aligner cellranger_arc) yet"
-  if: {properties: {modules: {properties: {split_bams: {properties: {split_by: {properties: {external: {properties: {pools: {type: string}}, required: [pools]}}, required: [external]}}, required: [split_by]}}, required: [split_bams]}}}
-  then: {properties: {workflow: {properties: {aligner: {not: {pattern: '(?i)^cellranger_arc$'}}}}}}
+- x-explain: "Only multiome runs ('workflow: aligner: cellranger_arc') have an ATAC bam to split ('modules: split_bams: modalities')"
+  if: {properties: {modules: {properties: {split_bams: {properties: {modalities: {contains: {pattern: '(?i)^atac$'}}}, required: [modalities]}}, required: [split_bams]}}}
+  then: {properties: {workflow: {properties: {aligner: {pattern: '(?i)^cellranger_arc$'}}, required: [aligner]}}}
 - x-explain: "start: wasp WASP-filters the per-donor bams of the samples table, so it needs until: wasp"
   if: {properties: {workflow: {properties: {start: {const: wasp}}, required: [start]}}}
   then: {properties: {workflow: {properties: {until: {const: wasp}}}}}
@@ -1169,9 +1208,6 @@ allOf:
           wasp:
             required: [samples, genotypes]
             properties: {samples: {type: string}, genotypes: {type: object, minProperties: 1}}
-- x-explain: "start: wasp remaps the reads of bams aligned elsewhere: set 'modules: wasp: remap: genome' to the STAR index of the genome they were aligned to (and 'gtf' for its splice junctions, unless the index has them)"
-  if: {properties: {workflow: {properties: {start: {const: wasp}}, required: [start]}}}
-  then: {properties: {modules: {required: [wasp], properties: {wasp: {required: [remap], properties: {remap: {required: [genome], properties: {genome: {type: string}}}}}}}}}
 - x-explain: "WASP after split_bams filters the final per-donor bams (all chromosomes, cells filtered), so it needs 'workflow: gt_check: no' (gt_check bams are for the genotype check)"
   if: {properties: {workflow: {properties: {until: {const: wasp}, start: {not: {const: wasp}}}, required: [until]}}}
   then: {properties: {workflow: {properties: {gt_check: {const: false}}}}}

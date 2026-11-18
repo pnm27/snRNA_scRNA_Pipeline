@@ -11,14 +11,18 @@
 #       wasp: wasp/<version>          # env module that sets $WASP_HOME
 #   modules:
 #     wasp:
-#       samples: wasp_samples.tsv     # pool, donor, sample, bam[, bai, genotype_set]
+#       samples: wasp_samples.tsv     # pool, donor, sample, bam[, bai, modality, genotype_set]
 #       sample_names: names.tsv       # optional: pool[, donor], sample
 #       genotypes:
 #         main:
 #           h5_dir: /path/to/snp2h5_output/
-#       remap:
-#         genome: /path/to/STAR_index/
-#         gtf: /path/to/genes.gtf
+#       rna:                          # cDNA rows
+#         remap:
+#           genome: /path/to/STAR_index/
+#           gtf: /path/to/genes.gtf
+#       atac:                         # ATAC rows (multiome)
+#         remap:
+#           bwa_index: /path/to/cellranger-arc-ref/fasta/genome.fa
 #
 # (docs/source/sub_workflows.md, WASP). No alignment, demultiplexing or
 # alignment metrics are run.

@@ -1,7 +1,8 @@
 import os, sys
 from lib.config_models import DemuxConfig, vcf_types, swap_correction, swap_pools
 from lib.aligner import bam_paths, get_aligner, out_prefix
-from lib.utils import run_settings, SPLIT_MODALITY
+from lib.utils import run_settings, SPLIT_MODALITY, split_bams_fold
+from lib.modality import split_modalities
 from lib.io import is_external, external_pools_file, missing_pool_bams, read_pools_table
 from lib.aligner import count_matrix as aligner_count_matrix
 
@@ -13,7 +14,7 @@ from lib.aligner import count_matrix as aligner_count_matrix
 #   demux           demultiplexing (see DemuxConfig)
 #   split_bams      per-donor bams      } known once the donors of each pool
 #   identify_swaps  QTLtools-mbv        } are (checkpoint 'create_inp_splitBams')
-#   wasp            WASP-filtered per-donor bams (rules/wasp.smk) and the
+#   wasp            WASP-filtered per-donor bams (rules/wasp/) and the
 #                   run's WASP stats; with 'workflow: start: wasp', of the
 #                   bams in the WASP samples table (no other stage)
 #
@@ -71,9 +72,11 @@ POOLS_TABLE = external_pools_file(config)
 STAGES = until_stages(UNTIL, START, EXTERNAL)
 CFG = DemuxConfig.from_snakemake(config)
 MODALITY = ["cDNA", "ATAC"] if CFG.multiome else ["cDNA"]
-# Per-donor targets (split bams, identify_swaps): only the cDNA bam is
-# split, by the cDNA demultiplexing (see TODO: split by the ATAC assignment)
-SPLIT_MODALITIES = [SPLIT_MODALITY]
+# Per-donor targets (split bams, identify_swaps): the bams of
+# 'split_bams: modalities' (cDNA; and ATAC for multiome), all split by the
+# cDNA demultiplexing or the external labels (see TODO: split by the ATAC
+# assignment)
+SPLIT_MODALITIES = split_modalities(config)
 VCF_TYPES = vcf_types(config)
 
 if VCF_TYPES and any(s in STAGES for s in ["split_bams", "identify_swaps", "wasp"]):
@@ -154,7 +157,7 @@ def existing_bam_pools(pools: list, source: str, hint: str) -> list:
             _note_once("extra", (
                 f"Pools table {POOLS_TABLE}: pool(s) not in {source}, not "
                 f"split: {', '.join(extra)}"))
-    missing = missing_pool_bams(config, pools)
+    missing = missing_pool_bams(config, pools, SPLIT_MODALITIES)
     if missing:
         where = (
             f"check the pools table ('split_by: external: pools')"
@@ -214,7 +217,7 @@ if START == "split_bams" and not EXTERNAL:
 # samples table
 if START == "wasp":
     from lib.wasp import samples_table
-    POOLS = sorted({pool for pool, _ in samples_table(config)})
+    POOLS = sorted({pool for pool, _, _ in samples_table(config)})
 
 
 # ---------------------------------------------------------------------------
@@ -246,10 +249,11 @@ def targets_demux() -> list:
     return list(CFG.targets) + list(CFG.summary_targets)
 
 
-def targets_SplitBams() -> list:
-    """Per-donor bams (split_bams_dir has the gt_check/ or final/ sub-folder)."""
+def targets_SplitBams(modality: str = SPLIT_MODALITY) -> list:
+    """Per-donor bams of 'modality' (split_bams_dir has the gt_check/ or
+    final/ sub-folder)."""
     out_dir  = f"{config['modules']['split_bams']['split_bams_dir']}"
-    op = config["modules"]["split_bams"]["fold_struct_bams"]
+    op = split_bams_fold(config, modality)
     return [
         os.path.join(out_dir, op, "{donor}.bam")
     ]
@@ -263,9 +267,17 @@ def targets_identify_swaps() -> list:
 
 
 def targets_wasp() -> list:
-    """The run's WASP stats (they need every donor's WASP bam)."""
-    from lib.wasp import run_outputs
-    return list(run_outputs(config).values())
+    """The run's WASP stats of each modality (they need every donor's WASP
+    bam of that modality)."""
+    from lib.wasp import run_outputs, wasp_modalities
+    from lib.wasp_modality import remap_reference, bwa_index
+    modalities = wasp_modalities(config)
+    # The remapping reference of each modality (errors now, not per job)
+    if "cDNA" in modalities:
+        remap_reference(config)
+    if "ATAC" in modalities:
+        bwa_index(config)
+    return [f for m in modalities for f in run_outputs(config, m).values()]
 
 
 STATIC_TARGETS = {
@@ -309,10 +321,11 @@ def external_pool_targets(wildcards) -> list:
 
 
 def produce_targets_dynamic(wildcards) -> list:
-    if "identify_swaps" in STAGES:
+    # QTLtools-mbv reads the cDNA bams
+    if "identify_swaps" in STAGES and wildcards.modality == SPLIT_MODALITY:
         return _expand_pools_donors(targets_identify_swaps()[0], wildcards)
     if "split_bams" in STAGES:
-        return _expand_pools_donors(targets_SplitBams()[0], wildcards)
+        return _expand_pools_donors(targets_SplitBams(wildcards.modality)[0], wildcards)
     raise ValueError(
         f"produce_targets_dynamic: until '{UNTIL}' has no per-donor targets"
     )

@@ -1,0 +1,26 @@
+# multiome: the ATAC bam is split per donor too, by the cDNA (vireo) labels;
+# its CB tags are checked against the labels' barcodes first
+# donors: D1 D2
+# expect: bamfilt_by_CB bamfilt_by_CB_atac check_barcodes_atac split_bams split_bams_atac
+# absent: check_external_barcodes
+# path: cellranger_outputs/P1/atac_possorted_bam_filt.bam Sample-P1-cDNA_bc_check_ATAC.txt
+# path: STARsolo_split_filt_bams/final/ATAC/Sample_P1-cDNA/D1.bam STARsolo_split_filt_bams/final/Sample_P1-cDNA/D2.bam
+# resources: bamfilt_by_CB_atac time_min=600
+workflow:
+  aligner: cellranger_arc
+  start: align
+  until: split_bams
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+modules:
+  gt_demux:
+    fold_struct: "Sample_{pool}/{modality}/"
+    fold_struct_filt_bc: "filt_bc_vireo_Sample_{pool}_{modality}"
+  split_bams:
+    modalities: [cDNA, ATAC]

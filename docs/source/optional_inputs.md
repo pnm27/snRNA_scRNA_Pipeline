@@ -21,7 +21,7 @@ Besides the fastqs and the references, some stages read tables or files that you
 | [WASP samples table (wasp_samples.tsv)](#wasp-samples-table-wasp_samplestsv) | `modules: wasp: samples` | `wasp` | `workflow: until: wasp` or `start: wasp` |
 | [WASP sample names](#wasp-sample-names) | `modules: wasp: sample_names` | `wasp` | pools or donors aren't named as in the genotypes, and the samples table leaves `sample` empty |
 | [WASP genotype sets](#wasp-genotype-sets) | `modules: wasp: genotypes` | `wasp` | `workflow: until: wasp` or `start: wasp` |
-| [WASP remap genome](#wasp-remap-genome) | `modules: wasp: remap` | `wasp` | `start: wasp`; or a genome other than the aligner's |
+| [WASP remap references](#wasp-remap-references) | `modules: wasp: rna: remap`, `atac: remap` | `wasp` | `start: wasp`; or a genome other than the aligner's |
 
 General rules for the tables:
 
@@ -200,6 +200,8 @@ Tab-separated, or comma-separated for `.csv`:
 | `pool` | the `{pool}` name: the labels' pools after `pool_transformations`, or the swap correction file's pools. No `/` |
 | `bam` | the pool's coordinate-sorted bam |
 | `bai` | optional; default `<bam>.bai` |
+| `atac_bam` | multiome (`cellranger_arc`) with `split_bams: modalities: [cDNA, ATAC]`: the pool's ATAC bam (`bam` is then the gex bam) |
+| `atac_bai` | optional; default `<atac_bam>.bai` |
 
 ```text
 pool    bam
@@ -210,7 +212,7 @@ samp3   /abs/root/dayB/samp3/samp3_Aligned.sortedByCoord.out.bam
 - **Pools of the labels that aren't in the table** aren't split, with a warning. If none of them is in the table, the run stops.
 - **A missing bam or bai** stops the run, with every missing file listed.
 - **The bams are only read.** Derived bams go to `split_bams: temp_dir`.
-- **Multiome** (`cellranger_arc`) isn't supported with a table.
+- **Multiome** (`cellranger_arc`): `bam` is the gex bam; with ATAC in `split_bams: modalities`, every pool needs an `atac_bam` too (a missing one stops the run).
 
 See [Bams outside the aligner's folders](sub_workflows.md#bams-outside-the-aligners-folders-pools-table) for a one-liner that builds the table.
 
@@ -238,6 +240,7 @@ GENO_0002,R7654321
 |---|---|---|
 | `pool` | always | pool (no `/`) |
 | `donor` | always | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its VCF ID) |
+| `modality` | no | `cDNA` or `ATAC` (any case). Empty, or no column: with `start: wasp`, `cDNA`; after `split_bams`, every split modality of the donor (`split_bams: modalities`), unless the donor has a row of its own for that modality |
 | `sample` | no | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), with no whitespace in an ID. They're written one per line to the file given as `--samples` to `find_intersecting_snps.py` (WASP takes a file, whose lines it reads up to the first whitespace, or a comma-separated string). Empty, or no column: from the [sample names](#wasp-sample-names), else the donor name |
 | `bam` | `start: wasp` | the per-donor bam (coordinate-sorted) |
 | `bai` | no | default `<bam>.bai` |
@@ -249,9 +252,17 @@ P1      D1      GENO_0001   /data/split/Sample_P1-cDNA/D1.bam    wgs
 P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam    array
 ```
 
+Multiome samples (`start: wasp`): one row per bam, e.g. the gex and ATAC bams of a cellranger-arc run:
+
+```text
+pool    donor   sample      modality  bam
+S001    S001    NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
+S001    S001    NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
+```
+
 **Checks:**
 
-- Missing columns, an empty pool or donor, `/` in names and duplicated (pool, donor) rows stop the run.
+- Missing columns, an empty pool or donor, `/` in names, a modality other than `cDNA` or `ATAC`, and duplicated (pool, donor, modality) rows stop the run.
 - So does a `genotype_set` that isn't in `modules: wasp: genotypes`.
 - Every `sample` must be in its set's genotypes. A rule checks this once, before any WASP job.
 - After `split_bams`, split donors not in the table aren't filtered, with a warning. If none is in the table, the run stops.
@@ -294,11 +305,12 @@ modules:
 
 **Chromosome names:** the genotypes and the bams must name chromosomes the same way (`chr1` or `1`). Each job checks this before it starts.
 
-## WASP remap genome
+## WASP remap references
 
-`modules: wasp: remap`. The STAR index (`genome`) and, optionally, the GTF (`gtf`) used to remap reads over SNPs. It must be the genome the bams were aligned to.
+The references the reads over SNPs are remapped to. They must be those the bams were aligned to.
 
-- **After `split_bams`:** `null` takes the aligner's reference. That is STARsolo's `genome_pick`, or the `star` folder of the cellranger / cellranger-arc reference; the latter may need a STAR index rebuilt for a newer STAR (see [config caveats](config_caveats.md)).
-- **With `start: wasp`:** `genome` is required.
+- **cDNA:** `modules: wasp: rna: remap`: the STAR index (`genome`) and, optionally, the GTF (`gtf`). After `split_bams`, `null` takes the aligner's reference: STARsolo's `genome_pick`, or the `star` folder of the cellranger / cellranger-arc reference; the latter may need a STAR index rebuilt for a newer STAR (see [config caveats](config_caveats.md)).
+- **ATAC:** `modules: wasp: atac: remap: bwa_index`: the bwa-indexed fasta. After `split_bams`, `null` takes the cellranger-arc reference's `fasta/genome.fa` (`cellranger-arc mkref` indexes it for bwa).
+- **With `start: wasp`:** each modality of the samples table needs its own (`genome` for cDNA rows, `bwa_index` for ATAC rows).
 
 See [WASP filtering of per-donor bams](sub_workflows.md#wasp-filtering-of-per-donor-bams) for the jobs, outputs and usage.

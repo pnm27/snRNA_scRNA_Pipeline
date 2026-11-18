@@ -8,8 +8,8 @@
 # setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
 # setup: printf "pool\tdonor\tsample\nsamp1\tD1\tG1\nsamp1\tD2\tG2\n" > wasp_samples.tsv
 # donors: D1 D2
-# expect: split_bams wasp_remap wasp_stats
-# path: projdir/wasp_bams/samp1/D1.after_wasp.bam projdir/wasp_bams/samp1/D2.after_wasp.bam
+# expect: split_bams wasp_remap_rna wasp_stats
+# path: projdir/wasp_bams/cDNA/samp1/D1.after_wasp.bam projdir/wasp_bams/cDNA/samp1/D2.after_wasp.bam
 workflow:
   start: split_bams
   until: wasp
@@ -30,5 +30,6 @@ modules:
     genotypes:
       main:
         h5_dir: geno/
-    remap:
-      genome: star_idx/
+    rna:
+      remap:
+        genome: star_idx/

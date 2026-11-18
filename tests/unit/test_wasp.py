@@ -10,7 +10,7 @@ import yaml
 REPO = os.path.join(os.path.dirname(__file__), "..", "..")
 sys.path.insert(0, REPO)
 sys.path.insert(0, os.path.join(REPO, "helper_py_scripts"))
-from lib import wasp
+from lib import wasp, wasp_modality
 from lib.config_check import config_problems
 from lib.config_defaults import fill_defaults, merge
 import wasp_stats
@@ -34,25 +34,26 @@ def test_samples_table(tmp_path):
                            "P1\tD2\tG2; G3\tx/D2.bam\n"
                            "P1\tD3\tG4,G5 ;G6\tx/D3.bam\n")
     t = wasp.read_samples_table(path, need_bam=True, sets=['main'])
-    assert t[('P1', 'D1')] == {'samples': ['G1'], 'bam': 'x/D1.bam',
-                               'bai': 'x/D1.bam.bai', 'genotype_set': 'main'}
-    assert t[('P1', 'D2')]['samples'] == ['G2', 'G3']
+    # (start: wasp: no modality is cDNA)
+    assert t[('P1', 'D1', 'cDNA')] == {'samples': ['G1'], 'bam': 'x/D1.bam',
+                                       'bai': 'x/D1.bam.bai', 'genotype_set': 'main'}
+    assert t[('P1', 'D2', 'cDNA')]['samples'] == ['G2', 'G3']
     # ',' too, as WASP's own --samples string
-    assert t[('P1', 'D3')]['samples'] == ['G4', 'G5', 'G6']
+    assert t[('P1', 'D3', 'cDNA')]['samples'] == ['G4', 'G5', 'G6']
     assert wasp.set_samples(t, 'main') == ['G1', 'G2', 'G3', 'G4', 'G5', 'G6']
 
 
 def test_samples_table_csv_quoted_ids(tmp_path):
     path = table(tmp_path, 'pool,donor,sample\nP1,D1,"G1,G2"\nP1,D2,G3;G4\n', "samples.csv")
     t = wasp.read_samples_table(path, sets=['main'])
-    assert t[('P1', 'D1')]['samples'] == ['G1', 'G2']
-    assert t[('P1', 'D2')]['samples'] == ['G3', 'G4']
+    assert t[('P1', 'D1', '')]['samples'] == ['G1', 'G2']
+    assert t[('P1', 'D2', '')]['samples'] == ['G3', 'G4']
 
 
 def test_samples_table_csv_without_bam(tmp_path):
     path = table(tmp_path, "pool,donor,sample\nP1,D1,G1\n", "samples.csv")
     t = wasp.read_samples_table(path, sets=['main'])
-    assert t[('P1', 'D1')]['bam'] is None
+    assert t[('P1', 'D1', '')]['bam'] is None
 
 
 @pytest.mark.parametrize("text, kw, error", [
@@ -62,6 +63,8 @@ def test_samples_table_csv_without_bam(tmp_path):
     ("pool\tdonor\tsample\nP/1\tD1\tG1\n", {}, "can't contain '/'"),
     ("pool\tdonor\tsample\nP1\tD1\tG1 G2\n", {}, "can't contain whitespace \\(G1 G2\\)"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD1\tG2\n", {}, "listed twice: P1 D1"),
+    ("pool\tdonor\tmodality\nP1\tD1\tATAC\nP1\tD1\tatac\n", {}, "listed twice: P1 D1 ATAC"),
+    ("pool\tdonor\tmodality\nP1\tD1\tHTO\n", {}, "Unknown modality 'HTO'"),
     ("pool\tdonor\tsample\nP1\tD1\tG1\n", {'sets': ['wgs', 'array']}, "no genotype_set"),
     ("pool\tdonor\tsample\tgenotype_set\nP1\tD1\tG1\tchip\n", {'sets': ['wgs']},
      "'chip' isn't one of"),
@@ -84,7 +87,7 @@ def test_sample_names(tmp_path):
                            "P2\tD2\t\n"
                            "P3\tD9\t\n")             # else the donor
     t = wasp.read_samples_table(path, sets=['main'], names=names)
-    assert {k: r['samples'] for k, r in t.items()} == {
+    assert {k[:2]: r['samples'] for k, r in t.items()} == {
         ('P1', 'D1'): ['GENO_P1'], ('P1', 'D2'): ['G2'],
         ('P2', 'D1'): ['GENO_A', 'GENO_B'], ('P2', 'D2'): ['GENO_P2'],
         ('P3', 'D9'): ['D9']}
@@ -94,8 +97,8 @@ def test_samples_table_without_sample_column(tmp_path):
     names = table(tmp_path, "pool,sample\nP1,GENO_P1\n", "names.csv")
     path = table(tmp_path, "pool\tdonor\nP1\tD1\nP2\tD2\n")
     t = wasp.read_samples_table(path, sets=['main'], names=names)
-    assert t[('P1', 'D1')]['samples'] == ['GENO_P1']
-    assert t[('P2', 'D2')]['samples'] == ['D2']
+    assert t[('P1', 'D1', '')]['samples'] == ['GENO_P1']
+    assert t[('P2', 'D2', '')]['samples'] == ['D2']
 
 
 @pytest.mark.parametrize("text, error", [
@@ -133,8 +136,46 @@ def test_select_donors_and_missing_bams(tmp_path):
                            f"P1\tD2\tG2\t{tmp_path}/D2.bam\n")
     t = wasp.read_samples_table(path, need_bam=True, sets=['main'])
     assert wasp.select_donors(t, 'P1', ['D1', 'D3']) == (['D1'], ['D3'])
-    assert wasp.missing_bams(t) == [f"P1 D2: no bam {tmp_path}/D2.bam",
-                                    f"P1 D2: no bai {tmp_path}/D2.bam.bai"]
+    assert wasp.missing_bams(t) == [f"P1 D2 cDNA: no bam {tmp_path}/D2.bam",
+                                    f"P1 D2 cDNA: no bai {tmp_path}/D2.bam.bai"]
+
+
+def test_modality_column(tmp_path):
+    path = table(tmp_path, "pool\tdonor\tsample\tmodality\n"
+                           "P1\tD1\tG1\t\n"           # every modality
+                           "P1\tD1\tG1x\tatac\n"      # its ATAC row wins
+                           "P1\tD2\tG2\tcDNA\n")
+    t = wasp.read_samples_table(path, sets=['main'])
+    assert wasp.table_row(t, 'P1', 'D1', 'cDNA')['samples'] == ['G1']
+    assert wasp.table_row(t, 'P1', 'D1', 'ATAC')['samples'] == ['G1x']
+    assert wasp.table_row(t, 'P1', 'D2', 'ATAC') is None
+    assert wasp.select_donors(t, 'P1', ['D1', 'D2'], 'ATAC') == (['D1'], ['D2'])
+    assert wasp.select_donors(t, 'P1', ['D1', 'D2'], 'cDNA') == (['D1', 'D2'], [])
+
+
+def test_start_wasp_modalities(tmp_path):
+    path = table(tmp_path, "pool\tdonor\tmodality\tbam\n"
+                           "S1\tS1\tcDNA\tx/gex.bam\nS1\tS1\tATAC\tx/atac.bam\n"
+                           "S2\tS2\t\tx/gex2.bam\n")
+    t = wasp.read_samples_table(path, need_bam=True, sets=['main'])
+    assert sorted(t) == [('S1', 'S1', 'ATAC'), ('S1', 'S1', 'cDNA'), ('S2', 'S2', 'cDNA')]
+    assert wasp.table_modalities(t) == ['cDNA', 'ATAC']
+    c = {'workflow': {'start': 'wasp'},
+         'modules': {'wasp': {'samples': path, 'genotypes': {'main': {'h5_dir': 'h5'}}}}}
+    assert wasp.wasp_modalities(c) == ['cDNA', 'ATAC']
+
+
+def test_wasp_modalities_after_split(tmp_path):
+    def run(text, modalities):
+        path = table(tmp_path, text)
+        return wasp.wasp_modalities({
+            'workflow': {'start': 'align', 'aligner': 'cellranger_arc'},
+            'modules': {'split_bams': {'modalities': modalities},
+                        'wasp': {'samples': path, 'genotypes': {'main': {'h5_dir': 'h5'}}}}})
+    # rows without a modality: every split modality
+    assert run("pool\tdonor\nP1\tD1\n", ['cDNA', 'ATAC']) == ['cDNA', 'ATAC']
+    assert run("pool\tdonor\tmodality\nP1\tD1\tATAC\n", ['cDNA', 'ATAC']) == ['ATAC']
+    assert run("pool\tdonor\nP1\tD1\n", ['cDNA']) == ['cDNA']
 
 
 # Paths -------------------------------------------------------------------------
@@ -152,8 +193,13 @@ def config(**wasp_keys):
 
 def test_paths():
     c = config()
-    assert wasp.donor_paths(c)['bam'] == "out/{pool}/{donor}.after_wasp.bam"
-    assert wasp.work_dir(c) == "tmp/{pool}/{donor}/"
+    assert wasp.donor_paths(c, 'cDNA')['bam'] == "out/cDNA/{pool}/{donor}.after_wasp.bam"
+    assert 'flagstat_wasp' not in wasp.donor_paths(c, 'cDNA')
+    assert wasp.donor_paths(c, 'ATAC')['flagstat_wasp'] == \
+        "out/ATAC/{pool}/stats/{donor}.wasp_with_duplicates.flagstat"
+    assert wasp.donor_logs(c, 'ATAC')['remap'] == "out/ATAC/{pool}/logs/{donor}.bwa_remap.log"
+    assert wasp.work_dir(c, 'ATAC') == "tmp/ATAC/{pool}/{donor}/"
+    assert wasp.run_outputs(c, '{modality}')['stats'] == "out/{modality}/wasp_stats.tsv"
     assert wasp.genotype_files(c, 'wgs')['haps'] == "h5/haps.h5"
     assert wasp.genotype_files(c, 'chip')['snp_tab'] == "out/genotypes/chip/snp_tab.h5"
     assert wasp.vcf_sets(c) == ['chip']
@@ -162,15 +208,36 @@ def test_paths():
 
 def test_remap_reference():
     c = config()
-    assert wasp.remap_reference(c) == ('star_idx', 'g.gtf')
+    assert wasp_modality.remap_reference(c) == ('star_idx', 'g.gtf')
     c['workflow']['aligner'] = 'cellranger_arc'
-    assert wasp.remap_reference(c) == ('refs/arc/star', None)
-    c = config(remap={'genome': 'mine', 'gtf': None})
-    assert wasp.remap_reference(c) == ('mine', None)
+    assert wasp_modality.remap_reference(c) == ('refs/arc/star', None)
+    c = config(rna={'remap': {'genome': 'mine', 'gtf': None}})
+    assert wasp_modality.remap_reference(c) == ('mine', None)
     c = config()
     c['workflow']['start'] = 'wasp'
-    with pytest.raises(ValueError, match="needs 'modules: wasp: remap: genome'"):
-        wasp.remap_reference(c)
+    with pytest.raises(ValueError, match="needs 'modules: wasp: rna: remap: genome'"):
+        wasp_modality.remap_reference(c)
+
+
+def test_atac_settings():
+    c = config()
+    assert wasp_modality.paired_end(c, 'ATAC') and not wasp_modality.paired_end(c, 'cDNA')
+    assert wasp_modality.paired_end(config(rna={'paired_end': True}), 'cDNA')
+    with pytest.raises(ValueError, match="aligner: cellranger_arc"):
+        wasp_modality.bwa_index(c)
+    c['workflow']['aligner'] = 'cellranger_arc'
+    assert wasp_modality.bwa_index(c) == 'refs/arc/fasta/genome.fa'
+    assert wasp_modality.bwa_extra(c) == '-M -Y'
+    assert wasp_modality.drop_duplicates(c)
+    c = config(atac={'remap': {'bwa_index': 'bwa/genome.fa', 'extra_params': ''},
+                     'drop_duplicates': 'none'})
+    assert wasp_modality.bwa_index(c) == 'bwa/genome.fa'
+    assert wasp_modality.bwa_extra(c) == ''
+    assert not wasp_modality.drop_duplicates(c)
+    c = config()
+    c['workflow']['start'] = 'wasp'
+    with pytest.raises(ValueError, match="atac: remap: bwa_index"):
+        wasp_modality.bwa_index(c)
 
 
 # Stats -------------------------------------------------------------------------
@@ -257,12 +324,22 @@ def test_parse_cli_and_summarize(tmp_path):
     with open(out / "stats.tsv") as f:
         got = list(csv.DictReader(f, delimiter='\t'))
     assert got[0]['sample'] == 'G1;G2' and got[0]['summary_final'] == '972'
-    assert list(got[0])[:5] == ['dataset', 'pool', 'donor', 'sample', 'paired_end']
+    assert list(got[0])[:6] == ['dataset', 'pool', 'donor', 'modality', 'sample', 'paired_end']
+    assert got[0]['modality'] == 'cDNA'
+
     with open(out / "summary.tsv") as f:
         summary = [r for r in csv.DictReader(f, delimiter='\t')
                    if r['metric'] == 'summary_final']
     assert {r['dataset'] for r in summary} == {'A4', 'A13'}
     assert summary[0]['median'] == '972' and summary[0]['sd'] == 'NA'
+
+def test_parse_duplicates(tmp_path):
+    files = logs(tmp_path)
+    (tmp_path / "wasp").write_text(flagstat(990))
+    row = wasp_stats.parse(**files, flagstat_wasp=str(tmp_path / "wasp"))
+    assert row['summary_wasp_kept'] == 990
+    assert row['summary_duplicates_removed'] == 18
+    assert row['summary_duplicates_removed_pct'] == pytest.approx(1.8)
 
 
 def test_plots(tmp_path):
@@ -298,7 +375,7 @@ MINIMAL = {
     'references': {'tools': {'wasp': 'wasp/0.3.4'}},
     'modules': {'wasp': {'samples': 'samples.tsv',
                          'genotypes': {'main': {'h5_dir': 'h5/'}},
-                         'remap': {'genome': 'star_idx/'}}},
+                         'rna': {'remap': {'genome': 'star_idx/'}}}},
 }
 
 
@@ -311,7 +388,10 @@ def test_minimal_wasp_config_is_valid():
 
 @pytest.mark.parametrize("over, error", [
     ({'references': {'tools': {'wasp': None}}}, "WASP env module"),
-    ({'modules': {'wasp': {'remap': {'genome': None}}}}, "remap: genome"),
+    # (before ATAC WASP, 'remap' was directly under 'modules: wasp')
+    ({'modules': {'wasp': {'remap': {'genome': 'x'}}}}, "migrate_config.py"),
+    ({'modules': {'wasp': {'atac': {'drop_duplicates': 'all'}}}}, "marked"),
+    ({'modules': {'split_bams': {'modalities': ['ATAC']}}}, "Only multiome runs"),
     ({'workflow': {'until': 'split_bams'}}, "start: wasp WASP-filters"),
     ({'modules': {'wasp': {'genotypes': {'chip': {'vcf': 'x.bcf'}}}}}, "chrom_sizes"),
 ])

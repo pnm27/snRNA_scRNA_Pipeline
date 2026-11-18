@@ -1,0 +1,32 @@
+# multiome: the gex and ATAC bams split per donor by the cDNA (vireo)
+# labels, then WASP of both (STAR for the cDNA, bwa-mem for the ATAC)
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD2\tG2\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: bamfilt_by_CB bamfilt_by_CB_atac check_barcodes_atac split_bams split_bams_atac wasp_remap_rna wasp_remap_atac wasp_stats
+# path: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam projdir/wasp_bams/ATAC/P1/D2.after_wasp.bam projdir/wasp_bams/ATAC/wasp_plots.pdf
+# path: atac_possorted_bam_filt.bam _bc_check_ATAC.txt ATAC/Sample_P1-cDNA/D1.bam
+# path: projdir/wasp_bams/ATAC/P1/stats/D1.wasp_with_duplicates.flagstat
+workflow:
+  aligner: cellranger_arc
+  start: align
+  until: wasp
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  split_bams:
+    modalities: [cDNA, ATAC]
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/

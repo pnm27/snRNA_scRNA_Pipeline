@@ -1,0 +1,18 @@
+# start: wasp of ATAC bams names the bwa index (no aligner reference)
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p arc geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5 arc/atac.bam arc/atac.bam.bai
+# setup: printf "pool\tdonor\tmodality\tbam\nS1\tS1\tATAC\tarc/atac.bam\n" > wasp_samples.tsv
+# fails: needs 'modules: wasp: atac: remap: bwa_index'
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/

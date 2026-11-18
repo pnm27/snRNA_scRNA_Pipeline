@@ -2,6 +2,8 @@
 import pandas as pd
 from lib.io import (
     split_tool,
+    barcode_check_path,
+    needs_barcode_check,
     get_bam,
     derived_bam_paths,
     bam_to_split,
@@ -18,9 +20,9 @@ from lib.params import (
     get_mito_file,
 )
 from functools import partial
-from lib.modality import bam_modalities, is_multiome
+from lib.modality import bam_modalities, is_multiome, split_modalities
 from lib.aligner import bam_paths
-from lib.utils import run_settings, SPLIT_MODALITY
+from lib.utils import run_settings, SPLIT_MODALITY, split_bams_fold
 
 
 # Donor labels from outside the pipeline ('split_by: input: external'): a
@@ -94,77 +96,96 @@ checkpoint create_inp_splitBams:
         sleep 30
         """
 
-# External donor labels: the hash file's barcodes must be the bam's CB
-# tags (see helper_py_scripts/check_external_barcodes.py)
-rule check_external_barcodes:
-    input:
-        unpack(partial(get_bam, config=config)),
-        hash_file=(
-            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
-        )
+# The hash file's barcodes must be the bam's CB tags (see
+# helper_py_scripts/check_external_barcodes.py): with external donor
+# labels, and always for the ATAC bam of multiome (split by the cDNA or
+# external labels). One rule per modality ('check_external_barcodes' for
+# the cDNA, 'check_barcodes_atac')
+for _modality in split_modalities(config):
+    if not needs_barcode_check(config, _modality):
+        continue
 
-    output:
-        (
-            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_check.txt"
-        )
+    rule:
+        name: "check_external_barcodes" if _modality == SPLIT_MODALITY else f"check_barcodes_{_modality.lower()}"
 
-    params:
-        n_reads=200000,
-        script="helper_py_scripts/check_external_barcodes.py"
+        input:
+            unpack(partial(get_bam, config=config, modality=_modality)),
+            hash_file=(
+                f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+                f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
+            )
 
-    resources:
-        **get_resources("check_external_barcodes")
+        output:
+            barcode_check_path(config, _modality)
 
-    envmodules:
-        "samtools"
+        params:
+            n_reads=200000,
+            script="helper_py_scripts/check_external_barcodes.py"
 
-    shell:
-        """
-        (samtools view {input.bam} || true) | head -n {params.n_reads} | \
-            python3 {params.script} --hash_file {input.hash_file} --out {output}
-        """
+        resources:
+            **get_resources("check_external_barcodes")
 
+        envmodules:
+            "samtools"
 
-# Generalize Output
-rule bamfilt_by_CB:
-    input:
-        unpack(partial(get_bam, config=config)),
-        hash_file=(
-            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
-            ),
-        barcode_check=partial(external_barcode_check, config=config),
-
-    # cDNA only for now (see TODO: split bams for multiome)
-    # Next to the bam, or under 'split_bams: temp_dir' with a pools table
-    output:
-        **derived_bam_paths(config, 'cDNA', config['modules']['split_bams']['filt_bam'])
-
-    params:
-        temp_bc=lambda wc: f"{config['modules']['split_bams']['sort_temp_dir']}{wc.pool}_bc.txt",
-        threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
+        shell:
+            """
+            (samtools view {input.bam} || true) | head -n {params.n_reads} | \
+                python3 {params.script} --hash_file {input.hash_file} --out {output}
+            """
 
 
-    resources:
-        **get_resources("bamfilt_by_CB")
+# Reads of the hash file's cells, one rule per split modality
+# ('bamfilt_by_CB' for the cDNA, 'bamfilt_by_CB_atac'): uniquely mapped
+# cDNA reads only (MAPQ 255 of STAR / cellranger); every ATAC read, so
+# both mates of a pair stay (a MAPQ filter per read leaves mates without
+# their pair, which paired-end WASP discards; the fragments' MAPQ >= 30 is
+# for later steps). Next to the bam, or under 'split_bams: temp_dir' with a
+# pools table
+SPLIT_MIN_MAPQ = {'cDNA': 255, 'ATAC': 0}
 
-    conda: "../envs/pysam.yaml"
+for _modality in split_modalities(config):
+    _name = "bamfilt_by_CB" if _modality == SPLIT_MODALITY else f"bamfilt_by_CB_{_modality.lower()}"
 
-    envmodules:
-        "samtools"
+    rule:
+        name: _name
 
-    shell:
-        r"""
-        mkdir -p {config[modules][split_bams][sort_temp_dir]}
-        cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
-        samtools view -@ {params.threads} -q 255 -D CB:{params.temp_bc} \
-            {input.bam} -bho {output.bam}
-        samtools index -@ {params.threads} {output.bam}
-        rm {params.temp_bc}
-        sleep 10
-        """
+        input:
+            unpack(partial(get_bam, config=config, modality=_modality)),
+            hash_file=(
+                f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+                f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
+                ),
+            barcode_check=partial(external_barcode_check, config=config, modality=_modality),
+
+        output:
+            **derived_bam_paths(config, _modality, config['modules']['split_bams']['filt_bam'])
+
+        params:
+            temp_bc=(lambda m: lambda wc: (
+                f"{config['modules']['split_bams']['sort_temp_dir']}{wc.pool}"
+                f"{'' if m == SPLIT_MODALITY else '_' + m}_bc.txt"))(_modality),
+            min_mapq=SPLIT_MIN_MAPQ[_modality],
+            threads=lambda _, resources: max(resources.cpus_per_task*6, 10)
+
+        resources:
+            **get_resources(_name)
+
+        conda: "../envs/pysam.yaml"
+
+        envmodules:
+            "samtools"
+
+        shell:
+            r"""
+            mkdir -p {config[modules][split_bams][sort_temp_dir]}
+            cut -f2 <(tail -n +2 {input.hash_file}) > {params.temp_bc}
+            samtools view -@ {params.threads} -q {params.min_mapq} -D CB:{params.temp_bc} \
+                {input.bam} -bho {output.bam}
+            samtools index -@ {params.threads} {output.bam}
+            rm {params.temp_bc}
+            sleep 10
+            """
 
 
 # One rule per modality with a bam ('filt_chr_bams' for STARsolo runs)
@@ -250,81 +271,85 @@ def get_real_donors(wildcards):
     return {'pool': list(repeat(wildcards['pool'], len(donors))) , 'donor': donors}
 
 # ---------------------------------------------------------------------------
-# Rule: one job per donor, both gt_check modes
+# Rule: one job per donor, both gt_check modes; one rule per split modality
+# ('split_bams' for the cDNA, 'split_bams_atac'), by the same donor labels
 # ---------------------------------------------------------------------------
 
-rule split_bams:
-    input:
-        unpack(branch(
-            partial(bam_to_split, config=config),
-            cases={
-                'whole': partial(get_bam, config=config),
-                'chr_subset': partial(get_bam, config=config,
-                    suffix=config['modules']['split_bams']['short_bam']),
-                'cell_filtered': partial(get_bam, config=config,
-                    suffix=config['modules']['split_bams']['filt_bam']),
-            },
-        )),
-        barcodes_vs_donor = (
-            f"{config['modules']['split_bams']['inp_split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
-        ),
-        barcode_check = partial(external_barcode_check, config=config),
-    output:
-        bam = (
-            f"{config['modules']['split_bams']['split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_bams']}"
-            "{donor}.bam"
-        ),
-        bai = (
-            f"{config['modules']['split_bams']['split_bams_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_bams']}"
-            "{donor}.bam.bai"
-        )
-    params:
-        temp_dir      = (
-            f"{config['modules']['split_bams']['new_temp_dir']}"
-            f"{config['modules']['split_bams']['fold_struct_bams']}"
-        ),
-        gt_check      = config["workflow"]["gt_check"],
-        chr_mito      = partial(get_mito, config=config),
-        mito_info     = partial(get_mito_file, config=config),
-        filter_bed    = lambda _: (
-            None if config["workflow"]["gt_check"]
-            else config["references"].get("reg_chr_bed")
-        ),
-        script        = "helper_sh_scripts/create_per_donor_bams.bash"
-    resources:
-        **get_resources("split_bams")
-    log:
-        (
-            f"{config["modules"]["split_bams"]["per_donor_split_log_dir"]}"
-            f"{config['modules']['split_bams']['fold_struct_bams']}"
-            "{donor}.log",
-        )
-    shell:
-        """
-        # Build the optional-argument string based on mode.
-        # gt_check mode: no BED or mito refinement needed.
-        # full-split mode: pass BED and/or mito file if configured.
+def split_bam_path(modality: str, ext: str = "bam") -> str:
+    """Per-donor bam (or bai: ext 'bam.bai') of 'modality' ({pool}, {donor})."""
+    sb = config['modules']['split_bams']
+    return f"{sb['split_bams_dir']}{split_bams_fold(config, modality)}{{donor}}.{ext}"
 
-        EXTRA_ARGS=""
 
-        if [[ "{params.gt_check}" != "True" ]]; then
-            if [[ "{params.filter_bed}" != "None" && "{params.filter_bed}" != "False" ]]; then
-                EXTRA_ARGS+=" --bed {params.filter_bed}"
+for _modality in split_modalities(config):
+    _name = "split_bams" if _modality == SPLIT_MODALITY else f"split_bams_{_modality.lower()}"
+
+    rule:
+        name: _name
+
+        input:
+            unpack(branch(
+                partial(bam_to_split, config=config),
+                cases={
+                    'whole': partial(get_bam, config=config, modality=_modality),
+                    'chr_subset': partial(get_bam, config=config, modality=_modality,
+                        suffix=config['modules']['split_bams']['short_bam']),
+                    'cell_filtered': partial(get_bam, config=config, modality=_modality,
+                        suffix=config['modules']['split_bams']['filt_bam']),
+                },
+            )),
+            barcodes_vs_donor = (
+                f"{config['modules']['split_bams']['inp_split_bams_dir']}"
+                f"{config['modules']['split_bams']['fold_struct_hash']}_bc_hash.txt"
+            ),
+            barcode_check = partial(external_barcode_check, config=config, modality=_modality),
+        output:
+            bam = split_bam_path(_modality),
+            bai = split_bam_path(_modality, "bam.bai"),
+        params:
+            temp_dir      = (
+                f"{config['modules']['split_bams']['new_temp_dir']}"
+                f"{split_bams_fold(config, _modality)}"
+            ),
+            gt_check      = config["workflow"]["gt_check"],
+            chr_mito      = partial(get_mito, config=config),
+            mito_info     = partial(get_mito_file, config=config, modality=_modality),
+            filter_bed    = lambda _: (
+                None if config["workflow"]["gt_check"]
+                else config["references"].get("reg_chr_bed")
+            ),
+            script        = "helper_sh_scripts/create_per_donor_bams.bash"
+        resources:
+            **get_resources(_name)
+        log:
+            (
+                f"{config['modules']['split_bams']['per_donor_split_log_dir']}"
+                f"{split_bams_fold(config, _modality)}"
+                "{donor}.log",
+            )
+        shell:
+            """
+            # Build the optional-argument string based on mode.
+            # gt_check mode: no BED or mito refinement needed.
+            # full-split mode: pass BED and/or mito file if configured.
+
+            EXTRA_ARGS=""
+
+            if [[ "{params.gt_check}" != "True" ]]; then
+                if [[ "{params.filter_bed}" != "None" && "{params.filter_bed}" != "False" ]]; then
+                    EXTRA_ARGS+=" --bed {params.filter_bed}"
+                fi
+                if [[ "{params.mito_info}" != "None" && "{params.mito_info}" != "False" ]]; then
+                    EXTRA_ARGS+=" --mito_file {params.mito_info} --mito_pref {params.chr_mito}"
+                fi
             fi
-            if [[ "{params.mito_info}" != "None" && "{params.mito_info}" != "False" ]]; then
-                EXTRA_ARGS+=" --mito_file {params.mito_info} --mito_pref {params.chr_mito}"
-            fi
-        fi
 
-        bash {params.script} \
-            --donor        {wildcards.donor}         \
-            --hash_file    {input.barcodes_vs_donor} \
-            --temp_dir     {params.temp_dir}         \
-            --out_dir      $(dirname {output.bam})   \
-            --bam          {input.bam}          \
-            ${{EXTRA_ARGS}}                          \
-            > {log} 2>&1
-        """
+            bash {params.script} \
+                --donor        {wildcards.donor}         \
+                --hash_file    {input.barcodes_vs_donor} \
+                --temp_dir     {params.temp_dir}         \
+                --out_dir      $(dirname {output.bam})   \
+                --bam          {input.bam}          \
+                ${{EXTRA_ARGS}}                          \
+                > {log} 2>&1
+            """

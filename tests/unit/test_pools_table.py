@@ -83,3 +83,19 @@ def test_missing_pool_bams(tmp_path):
                        f"samp9: not in the pools table {path}"]
     with pytest.raises(ValueError, match="isn't in the pools table"):
         io.pool_bam(config(path), 'samp9')
+
+
+def test_atac_columns(tmp_path):
+    path = write(tmp_path, "pool\tbam\tatac_bam\nS1\tg/S1.bam\ta/S1.bam\nS2\tg/S2.bam\t\n")
+    c = config(path)
+    c['workflow']['aligner'] = 'cellranger_arc'
+    assert io.get_bam(SimpleNamespace(pool='S1'), c, modality='ATAC') == {
+        'bam': 'a/S1.bam', 'bai': 'a/S1.bam.bai'}
+    assert io.get_bam(SimpleNamespace(pool='S1'), c, modality='cDNA')['bam'] == 'g/S1.bam'
+    # Derived bams of the two modalities don't share a name
+    assert io.derived_bam_paths(c, 'ATAC', '_filt.bam')['bam'] == 'tmp/{pool}/{pool}_ATAC_filt.bam'
+    with pytest.raises(ValueError, match="no atac_bam"):
+        io.get_bam(SimpleNamespace(pool='S2'), c, modality='ATAC')
+    missing = io.missing_pool_bams(c, ['S1', 'S2'], ['cDNA', 'ATAC'])
+    assert "S2: no atac_bam column value (for its ATAC bam)" in missing
+    assert "S1: no atac_bam a/S1.bam" in missing

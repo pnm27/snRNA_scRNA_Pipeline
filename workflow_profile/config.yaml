@@ -19,10 +19,16 @@ set-resources:
   split_bams: 
     lsf_queue: premium
 
+  split_bams_atac:
+    lsf_queue: premium
+
   cellranger_arc_count:
     lsf_queue: premium
 
-  wasp_remap:
+  wasp_remap_rna:
+    lsf_queue: premium
+
+  wasp_remap_atac:
     lsf_queue: premium
 
   wasp_snp2h5:

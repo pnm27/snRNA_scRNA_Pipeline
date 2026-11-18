@@ -154,7 +154,7 @@
 
 ---
 
-## WASP (`wasp.smk`)
+## WASP (`rules/wasp/`)
 
 - WASP filtering of per-donor bams, for sc/snRNA-seq and the RNA (GEX) part of multiome (STARsolo, cellranger, cellranger-arc): `workflow: until: wasp` after `split_bams` (any of its inputs, `gt_check: no`), or `workflow: start: wasp` for per-donor bams listed in the samples table (no alignment or demultiplexing; defaults from `schema/wasp_defaults.yaml`). ATAC isn't covered yet (TODO)
   - Samples table (`modules: wasp: samples`; `pool`, `donor`, `sample`, and `bam`[, `bai`] with `start: wasp`, `genotype_set` with several sets): the user gives the genotype sample ID(s) of each donor, written to `find_intersecting_snps.py`'s `--samples`. After `split_bams`, split donors not in the table aren't filtered (a warning)
@@ -169,6 +169,13 @@
   - `migrate_config.py` writes `references: tools: wasp: null` and the `modules: wasp` block in whole configs, and a `last_step` naming wasp becomes `until: wasp`
   - `migrate_config.py` also updates configs already in the new layout, instead of stopping with "Already in the new layout": it adds the keys added since that they lack (`references: tools: wasp`, `modules: wasp`, `split_by: external`, the swap correction's `status_column` / `versions`), keeping comments and anchors, and leaves up-to-date configs as they are. It still stops on a config mixing old keys with new sections
   - Dry runs: `wasp_stage_start`, `wasp_stage_vcf_sets`, `wasp_stage_missing_bam`, `wasp_stage_no_module`, `wasp_stage_after_split`, `wasp_stage_multiome`, `wasp_stage_external`. Unit tests: `tests/unit/test_wasp.py`
+- WASP for the ATAC part of multiome, with the rules split per modality, so a pipeline of one modality (sc/snRNA-seq, scATAC, multiome) takes only its part (`docs/source/sub_workflows.md`, Layout):
+  - `rules/wasp.smk` became `rules/wasp/common.smk` (genotypes, input checks, stats, input functions), `rules/wasp/rna.smk` (`wasp_remap_rna`, was `wasp_remap`: STAR) and `rules/wasp/atac.smk` (`wasp_remap_atac`: bwa-mem); what differs per modality is in `lib/wasp_modality.py`, and the per-donor steps shared by both in `helper_sh_scripts/wasp_donor.sh` (`prepare`: chromosome names, `find_intersecting_snps.py`; `finish`: `filter_remapped_reads.py`, merge, sort, duplicates, index, flagstat, stats)
+  - ATAC, as `psychad_multiome_wasp.R`: paired-end, `bwa mem -M -Y` to the cellranger-arc reference's `fasta/genome.fa` (`modules: wasp: atac: remap: bwa_index`, `extra_params`), and the reads cellranger-arc marked as duplicates (per cell barcode) removed after WASP (`drop_duplicates: marked`, or `none`). Its stats add `summary_wasp_kept` and `summary_duplicates_removed` (flagstat after WASP, before the duplicates are removed)
+  - Config: `modules: wasp: remap` and `paired_end` moved under `modules: wasp: rna` (`migrate_config.py` moves them, with their comments, and adds `atac`); the samples table has an optional `modality` column (`cDNA` / `ATAC`; empty: `cDNA` with `start: wasp`, else every split modality); outputs are per modality, `<wasp_dir><modality>/<pool>/<donor>.after_wasp.bam` and `<wasp_dir><modality>/wasp_stats.tsv` (`cDNA` ones were directly under `wasp_dir`); `rules/resources.smk` and `workflow_profile/config.yaml`: `wasp_remap_rna`, `wasp_remap_atac` (8 cores, 24 GB, a day). With `start: wasp`, the remap reference of each modality in the table is checked at planning (the schema rule on `remap: genome` is gone)
+  - Dry runs: `wasp_stage_multiome_atac`, `wasp_stage_multiome_atac_only`, `wasp_stage_external_multiome`, `wasp_stage_start_atac`, `wasp_stage_start_atac_no_bwa`
+- The ATAC bams of multiome are split per donor too (`modules: split_bams: modalities: [cDNA, ATAC]`, default `[cDNA]`), by the same donor labels as the gex bam (the cDNA demultiplexing, or the external labels): rules `check_barcodes_atac` (the ATAC bam's CB tags against the labels' barcodes), `bamfilt_by_CB_atac` (no MAPQ filter, so pairs stay whole) and `split_bams_atac`; the bams go to `fold_struct_bams` with `{modality}` as `ATAC`, or under `ATAC/` (`lib/utils.py`: `split_bams_fold`). The pools table takes `atac_bam` / `atac_bai`, so multiome is supported with it now. `migrate_config.py` adds `split_bams: modalities`. Dry runs: `multiome_split_bams_atac`, `split_bams_atac_not_multiome`
+- `.gitignore`: `new_config.before*.yaml`, so local copies of a config from before a migration are never tracked (as `backups/`); the tutorial and `config_caveats.md` say to keep one there
 
 ---
 

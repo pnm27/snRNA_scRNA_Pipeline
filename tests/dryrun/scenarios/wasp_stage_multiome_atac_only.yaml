@@ -1,0 +1,32 @@
+# multiome: both bams split, WASP of the ATAC ones only (rows with
+# modality ATAC)
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tsample\tmodality\nP1\tD1\tG1\tATAC\nP1\tD2\tG2\tATAC\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: split_bams split_bams_atac wasp_remap_atac wasp_stats
+# absent: wasp_remap_rna
+# path: projdir/wasp_bams/ATAC/P1/D1.after_wasp.bam
+# nopath: projdir/wasp_bams/cDNA/
+workflow:
+  aligner: cellranger_arc
+  start: align
+  until: wasp
+  picard_metrics: null
+  gt_check: no
+experiment:
+  demultiplexing:
+    method: vireo
+    add_to_previous: null
+    genotype:
+      multi_vcf: false
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  split_bams:
+    modalities: [cDNA, ATAC]
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/

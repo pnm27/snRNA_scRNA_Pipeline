@@ -20,7 +20,9 @@ external'), the WASP block 'modules: wasp' and its env module
 naming wasp (e.g. STARsolo_split_bams_wasp) becomes 'until: wasp'.
 
 A config already in the new layout gets only the keys added since that
-it lacks (e.g. 'modules: wasp'); it's left as is when it has them all.
+it lacks (e.g. 'modules: wasp', 'split_bams: modalities'), and the WASP
+block's 'remap' and 'paired_end' move under 'rna' (with ATAC WASP); it's
+left as is when it has them all.
 
 Comments inside the moved blocks and the anchors (e.g. ``*3v3``) are kept.
 Configs that only override some keys (e.g. the dry-run scenarios) are
@@ -35,6 +37,7 @@ Usage::
 import argparse, io, sys
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap, CommentedSeq
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString
 from ruamel.yaml.constructor import DuplicateKeyError
 from ruamel.yaml.error import CommentMark
 from ruamel.yaml.tokens import CommentToken
@@ -215,8 +218,24 @@ SAMPLE_NAMES_COMMENT = ("pool[, donor], sample: genotype ID(s) of pools (or dono
                         "not named as in the genotypes")
 
 
-def wasp_block() -> CommentedMap:
-    """'modules: wasp' with its defaults (see new_config.example.yaml)."""
+RNA_COMMENT = "cDNA bams: STAR remapping, duplicates kept"
+ATAC_COMMENT = "ATAC bams (multiome): paired-end, bwa-mem remapping"
+MODALITIES_COMMENT = ("bams split per donor; multiome: [cDNA, ATAC] (both by the "
+                      "cDNA or external labels)")
+
+
+def eol(text: str) -> CommentToken:
+    """An end-of-line comment token, two spaces after the value (as in the
+    example config)."""
+    return CommentToken(f" # {text}\n", CommentMark(0), None)
+
+
+def set_eol(node, key, text):
+    node.ca.items[key] = [None, None, eol(text), None]
+
+
+def rna_block() -> CommentedMap:
+    """'modules: wasp: rna' with its defaults."""
     remap = CommentedMap()
     remap['genome'] = None
     remap['gtf'] = None
@@ -225,26 +244,57 @@ def wasp_block() -> CommentedMap:
         "STAR index; null: the aligner's reference (start: wasp: required)", 'genome')
     remap.yaml_add_eol_comment(
         "null: STARsolo's genome_pick gtf when the genome is the aligner's", 'gtf')
+    rna = CommentedMap()
+    rna['remap'] = remap
+    rna['paired_end'] = False
+    rna.yaml_add_eol_comment("true for paired-end GEX reads; 10x 3': false", 'paired_end')
+    return rna
+
+
+def atac_block() -> CommentedMap:
+    """'modules: wasp: atac' with its defaults."""
+    remap = CommentedMap()
+    remap['bwa_index'] = None
+    remap['extra_params'] = DoubleQuotedScalarString("-M -Y")
+    set_eol(remap, 'bwa_index', "bwa-indexed fasta; null: cellranger-arc's "
+            "fasta/genome.fa (start: wasp: required)")
+    atac = CommentedMap()
+    atac['remap'] = remap
+    atac['drop_duplicates'] = 'marked'
+    set_eol(atac, 'drop_duplicates', "marked: remove the aligner's duplicates "
+            "(0x400) after WASP; or none")
+    return atac
+
+
+def modalities_seq() -> CommentedSeq:
+    seq = CommentedSeq(['cDNA'])
+    seq.fa.set_flow_style()
+    return seq
+
+
+def wasp_block() -> CommentedMap:
+    """'modules: wasp' with its defaults (see new_config.example.yaml)."""
     wasp = CommentedMap()
     wasp['samples'] = None
     wasp['sample_names'] = None
     wasp['genotypes'] = None
-    wasp['remap'] = remap
-    wasp['paired_end'] = False
+    wasp['rna'] = rna_block()
+    wasp['atac'] = atac_block()
     wasp['wasp_dir'] = 'projdir/wasp_bams/'
     wasp['work_dir'] = 'projdir/wasp_tmp/'
     wasp.yaml_set_comment_before_after_key(
         'samples',
         before="pool, donor, sample (genotype ID(s), ';'- or ','-separated; "
-               "find_intersecting_snps.py's\n--samples), and bam[, bai] with "
-               "start: wasp; genotype_set with several sets.\nEmpty or no sample: "
-               "from sample_names, else the donor name", indent=4)
+               "find_intersecting_snps.py's\n--samples), modality (cDNA or ATAC; "
+               "empty: cDNA with start: wasp, else every split\nmodality), and "
+               "bam[, bai] with start: wasp; genotype_set with several sets.\n"
+               "Empty or no sample: from sample_names, else the donor name", indent=4)
     wasp.yaml_add_eol_comment(SAMPLE_NAMES_COMMENT, 'sample_names')
     wasp.yaml_add_eol_comment(
         "sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}",
         'genotypes')
-    wasp.yaml_add_eol_comment(
-        "true for paired-end GEX reads; 10x 3': false", 'paired_end')
+    set_eol(wasp, 'rna', RNA_COMMENT)
+    set_eol(wasp, 'atac', ATAC_COMMENT)
     wasp.yaml_add_eol_comment(
         'large temporary files, removed per job', 'work_dir')
     return wasp
@@ -293,9 +343,17 @@ def added_since(cfg) -> dict:
             new['references.tools.wasp'] = None
         if not get('modules.wasp')[1]:
             new['modules.wasp'] = wasp_block()
+    if whole and 'modalities' not in sb:
+        new['modules.split_bams.modalities'] = modalities_seq()
     wasp, _ = get('modules.wasp')
     if isinstance(wasp, dict) and 'samples' in wasp and 'sample_names' not in wasp:
         new['modules.wasp.sample_names'] = None
+    # 'remap' and 'paired_end' (cDNA only, before ATAC WASP) go to 'rna'
+    if isinstance(wasp, dict) and 'rna' not in wasp and (
+            'remap' in wasp or 'paired_end' in wasp):
+        new['modules.wasp.rna'] = MOVE_TO_RNA
+    if isinstance(wasp, dict) and 'wasp_dir' in wasp and 'atac' not in wasp:
+        new['modules.wasp.atac'] = atac_block()
     swap, _ = get('modules.demultiplex.swap_correction')
     if isinstance(swap, dict) and 'donor_to' in swap:
         for key in ('status_column', 'versions'):
@@ -342,6 +400,30 @@ def put_tail(node, tail: str):
         items[2] = CommentToken('\n' + tail, CommentMark(0), None)
 
 
+# Keys of 'modules: wasp' moved under 'rna' (see added_since)
+MOVE_TO_RNA = ('remap', 'paired_end')
+
+
+def move_to_rna(wasp):
+    """Move 'remap' and 'paired_end' of a WASP block under 'rna', where
+    they were; their comments too."""
+    keys = [k for k in MOVE_TO_RNA if k in wasp]
+    pos = list(wasp).index(keys[0])
+    rna = CommentedMap()
+    for k in keys:
+        comment = wasp.ca.items.pop(k, None)
+        rna[k] = wasp.pop(k)
+        if comment:
+            rna.ca.items[k] = comment
+    indent_comments(rna, 2)
+    for tok in comment_tokens(rna):
+        # end-of-line comments: two columns further, as their keys
+        if not tok.value.startswith('\n'):
+            tok.start_mark.column += 2
+    wasp.insert(pos, 'rna', rna)
+    set_eol(wasp, 'rna', RNA_COMMENT)
+
+
 def update(cfg) -> dict:
     """Add the keys of 'added_since' to 'cfg' (in the new layout), in
     place; return them."""
@@ -350,6 +432,21 @@ def update(cfg) -> dict:
         parent = cfg
         for p in path.split('.')[:-1]:
             parent = parent[p]
+        if path == 'modules.wasp.rna':
+            move_to_rna(parent)
+            continue
+        if path == 'modules.wasp.atac':
+            # After 'rna' (or at the end)
+            pos = list(parent).index('rna') + 1 if 'rna' in parent else len(parent)
+            parent.insert(pos, 'atac', value)
+            set_eol(parent, 'atac', ATAC_COMMENT)
+            continue
+        if path == 'modules.split_bams.modalities':
+            pos = (list(parent).index('min_cells_per_donor')
+                   if 'min_cells_per_donor' in parent else len(parent))
+            parent.insert(pos, 'modalities', value)
+            set_eol(parent, 'modalities', MODALITIES_COMMENT)
+            continue
         if path == 'modules.wasp.sample_names':
             # Next to the samples table
             parent.insert(list(parent).index('samples') + 1, 'sample_names', value)
@@ -396,6 +493,7 @@ def derived(old) -> dict:
     if whole_config(old):
         new['references.tools.wasp'] = None
         new['modules.wasp'] = wasp_block()
+        new['modules.split_bams.modalities'] = modalities_seq()
     # Keys added to a whole swap correction block since (see
     # new_config.example.yaml)
     swap = (old.get('demultiplex') or {}).get('swap_correction')
@@ -471,6 +569,12 @@ def reorder(node, order):
                 node.ca.items[key] = comment
 
 
+def get_node(root, path: str):
+    for p in path.split('.'):
+        root = root[p]
+    return root
+
+
 def set_path(root, path: str, value, comment=None, first=False):
     *parents, key = path.split('.')
     node = root
@@ -517,6 +621,8 @@ def migrate(old):
                  first=key.startswith('fold_struct'))
     for path, value in derived(old).items():
         set_path(new, path, value)
+        if path == 'modules.split_bams.modalities':
+            set_eol(get_node(new, path.rsplit('.', 1)[0]), 'modalities', MODALITIES_COMMENT)
 
     for path, order in ORDER.items():
         node = new

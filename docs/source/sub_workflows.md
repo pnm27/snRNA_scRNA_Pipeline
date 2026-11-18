@@ -284,7 +284,25 @@ That can be the whole config: with `start: split_bams`, keys left out take the v
 
 - The `pool` names are the labels' pools after `pool_transformations`; they can't contain `/`. Pools of the labels missing from the table aren't split, with a warning (e.g. when only some bams were kept, for disk space); the run stops when none of them is in the table. Pools in the table whose bam or bai is missing stop the run (listed); pools only in the table aren't split (noted once).
 - The bams are only read: the cell-filtered and chromosome-subset bams (`filt_bam`, `short_bam`) go to `split_bams: temp_dir` (`<temp_dir><pool>/<pool>_filt.bam`) instead of next to the bam.
-- `workflow: aligner` still sets the barcode format (cellranger's `-1`); multiome (`cellranger_arc`) isn't supported with a table.
+- `workflow: aligner` still sets the barcode format (cellranger's `-1`). For multiome (`cellranger_arc`), `bam` is the gex bam, and the ATAC bams (with `split_bams: modalities: [cDNA, ATAC]`) go in the columns `atac_bam` and, optionally, `atac_bai`; their derived bams are `<temp_dir><pool>/<pool>_ATAC_filt.bam`.
+
+## ATAC bams of multiome, split per donor
+
+`modules: split_bams: modalities: [cDNA, ATAC]` (default `[cDNA]`) also splits the ATAC bam of each multiome pool (`workflow: aligner: cellranger_arc`), by the same donor labels as the gex bam: the cDNA demultiplexing (vireo's cDNA output, or its h5ad / final h5ad), or the external labels (`split_by: input: external`). Splitting by the ATAC demultiplexing is a TODO item.
+
+- cellranger-arc writes the ATAC reads' `CB` tags in the gex barcode space, so the labels' barcodes select the same cells. Rule `check_barcodes_atac` checks this on the first reads of each ATAC bam before the split (as `check_external_barcodes` does for external labels), and stops the run when too few match.
+- `bamfilt_by_CB_atac` keeps every read of the cells, with no MAPQ filter: per-read filtering would leave mates without their pair, which paired-end WASP discards. `split_bams_atac` then splits per donor, as for the gex bam (BED and mito filtering included).
+- The per-donor ATAC bams go to `fold_struct_bams` with its `{modality}` filled with `ATAC`, or under an `ATAC/` folder in front when it has none, e.g. `<split_bams_dir>ATAC/Sample_P1-cDNA/D1.bam`.
+
+```yaml
+workflow:
+  aligner: cellranger_arc
+  until: split_bams        # or wasp
+  gt_check: no
+modules:
+  split_bams:
+    modalities: [cDNA, ATAC]
+```
 
 ## Per-donor bams named by the swap correction file (stand-alone)
 
@@ -304,12 +322,32 @@ python3 helper_py_scripts/donor_bams.py --swap final_swap_correction.csv \
 
 ## WASP filtering of per-donor bams
 
-For sc/snRNA-seq and the RNA (GEX) part of multiome (STARsolo, cellranger or cellranger-arc bams; ATAC isn't covered yet, see TODO). Each per-donor bam is filtered with [WASP](https://github.com/bmvdgeijn/WASP)'s mapping pipeline: reads over the donor's heterozygous SNPs are remapped with the alleles swapped and kept only if they map back to the same place (no allele-specific mapping bias), along with the reads over no SNP. Duplicates are kept (sc/snRNA-seq). This is different from STARsolo's own WASP mode (`modules: STARsolo: wasp`, the `vW` tag at alignment).
+Each per-donor bam is filtered with [WASP](https://github.com/bmvdgeijn/WASP)'s mapping pipeline: reads over the donor's heterozygous SNPs are remapped with the alleles swapped and kept only if they map back to the same place (no allele-specific mapping bias), along with the reads over no SNP. This is different from STARsolo's own WASP mode (`modules: STARsolo: wasp`, the `vW` tag at alignment). Two modalities:
+
+| modality | bams | remapping | duplicates | settings |
+|---|---|---|---|---|
+| `cDNA` | sc/snRNA-seq and the RNA (GEX) part of multiome (STARsolo, cellranger, cellranger-arc) | STAR (two-pass) | kept | `modules: wasp: rna` |
+| `ATAC` | the ATAC part of multiome (cellranger-arc) | bwa-mem `-M -Y`, as `psychad_multiome_wasp.R`; always paired-end | the reads cellranger-arc marked (`0x400`, per cell barcode) are removed after WASP (`drop_duplicates: marked`) | `modules: wasp: atac` |
 
 Two ways to run it:
 
-- `workflow: until: wasp`: after `split_bams`, on this run's split bams (`gt_check: no`: the final, cell-filtered bams). It follows any `split_bams` input, including external labels and `start: split_bams`.
-- `workflow: start: wasp` (with `until: wasp`): on per-donor bams that are already there, listed in the samples table. No alignment or demultiplexing; keys left out take the defaults of `new_config.example.yaml` with `schema/wasp_defaults.yaml` on top.
+- `workflow: until: wasp`: after `split_bams`, on this run's split bams (`gt_check: no`: the final, cell-filtered bams) of each modality of `split_bams: modalities` (ATAC: see [ATAC bams of multiome](#atac-bams-of-multiome-split-per-donor)). It follows any `split_bams` input, including external labels and `start: split_bams`.
+- `workflow: start: wasp` (with `until: wasp`): on per-donor bams that are already there, listed in the samples table, e.g. the gex and ATAC bams of cellranger-arc runs of one donor each. No alignment or demultiplexing; keys left out take the defaults of `new_config.example.yaml` with `schema/wasp_defaults.yaml` on top.
+
+### Layout (one modality per pipeline later)
+
+The rules are split so that a pipeline of one modality takes only its part:
+
+```text
+lib/wasp.py               samples table, genotype sets, paths (every modality)
+lib/wasp_modality.py      what differs per modality: remap reference, paired-end, duplicates
+rules/wasp/common.smk     wasp_snp2h5, wasp_check_inputs, wasp_stats, input functions
+rules/wasp/rna.smk        wasp_remap_rna  (STAR)
+rules/wasp/atac.smk       wasp_remap_atac (bwa-mem)
+helper_sh_scripts/wasp_donor.sh   per-donor steps shared by both (prepare / finish)
+```
+
+sc/snRNA-seq: `common.smk` + `rna.smk`; scATAC: `common.smk` + `atac.smk`; multiome: all three.
 
 ### The samples table
 
@@ -319,6 +357,7 @@ Two ways to run it:
 |---|---|
 | `pool` | pool (no `/`) |
 | `donor` | donor (no `/`); names the output bam. After `split_bams`, the split bam's donor (e.g. its vcf ID) |
+| `modality` | optional: `cDNA` or `ATAC`. Empty, or no column: with `start: wasp`, `cDNA`; after `split_bams`, every split modality of the donor (a row of the donor's own modality wins) |
 | `sample` | the donor's genotype sample ID(s) in its genotype set, separated by `;` (or `,` in a tab-separated table), no whitespace in an ID: written one per line to the `--samples` file of `find_intersecting_snps.py`. Optional: empty, or no column, takes the ID from `modules: wasp: sample_names`, else the donor name |
 | `bam`, `bai` | `start: wasp` only: the per-donor bam (`bai` defaults to `<bam>.bai`) |
 | `genotype_set` | which `modules: wasp: genotypes` set, with more than one |
@@ -329,7 +368,15 @@ P1      D1      GENO_0001   /data/split/Sample_P1-cDNA/D1.bam
 P1      D2      GENO_0002   /data/split/Sample_P1-cDNA/D2.bam
 ```
 
-After `split_bams`, split donors not in the table aren't filtered (a warning); none at all stops the run. With `start: wasp`, a missing bam or bai stops the run, all listed.
+Multiome samples of one donor each (`start: wasp`), both bams of cellranger-arc:
+
+```text
+pool    donor   sample      modality  bam
+S001    S001    NDA_0001    cDNA      /data/arc/S001/outs/gex_possorted_bam.bam
+S001    S001    NDA_0001    ATAC      /data/arc/S001/outs/atac_possorted_bam.bam
+```
+
+After `split_bams`, split donors not in the table aren't filtered (a warning); none at all for a modality stops the run. With `start: wasp`, a missing bam or bai stops the run, all listed.
 
 When pools or donors aren't named as in the genotypes (e.g. one donor per pool, named after the pool), `modules: wasp: sample_names` maps them to genotype IDs instead of filling `sample` row by row: columns `pool`, `sample` and optionally `donor` (empty: every donor of the pool). See [Optional input files](optional_inputs.md#wasp-sample-names).
 
@@ -353,36 +400,43 @@ modules:
       main:
         h5_dir: /path/to/snp2h5_output/
       # chip: {vcf: /path/to/genotypes.bcf, chrom_sizes: /path/to/chromInfo.hg38.txt}
-    remap:
-      genome: null           # STAR index; null: the aligner's reference (start: wasp: required)
-      gtf: null              # null: STARsolo's genome_pick gtf when the genome is the aligner's
-      extra_params: null     # more STAR options
-    paired_end: false        # true for paired-end GEX reads; 10x 3': false
+    rna:                     # cDNA bams
+      remap:
+        genome: null         # STAR index; null: the aligner's reference (start: wasp: required)
+        gtf: null            # null: STARsolo's genome_pick gtf when the genome is the aligner's
+        extra_params: null   # more STAR options
+      paired_end: false      # true for paired-end GEX reads; 10x 3': false
+    atac:                    # ATAC bams (multiome)
+      remap:
+        bwa_index: null      # bwa-indexed fasta; null: <cellranger-arc reference>/fasta/genome.fa (start: wasp: required)
+        extra_params: "-M -Y"
+      drop_duplicates: marked   # or none
     wasp_dir: projdir/wasp_bams/
     work_dir: projdir/wasp_tmp/   # large temporary files, removed per job: a place with space
 ```
 
-The remap genome must be the one the bams were aligned to: by default STARsolo's `genome_pick` (with its gtf), or the `star` folder of the cellranger / cellranger-arc reference (see `config_caveats.md`).
+The remap references must be those the bams were aligned to: by default STARsolo's `genome_pick` (with its gtf), or the `star` folder of the cellranger / cellranger-arc reference (see `config_caveats.md`), and for ATAC the cellranger-arc reference's `fasta/genome.fa` (`cellranger-arc mkref` indexes it for bwa). With `start: wasp`, each modality in the table needs its own (`rna: remap: genome`, `atac: remap: bwa_index`). Configs from before ATAC WASP had `remap` and `paired_end` directly under `modules: wasp`: `helper_py_scripts/migrate_config.py` moves them under `rna`.
 
 ### Jobs
 
 1. `wasp_snp2h5` (sets given as VCF/BCF only).
 2. `wasp_check_inputs`, once: every `sample` of the table is in its set's `haps.h5`, so a wrong ID stops the run before the long jobs.
-3. `wasp_remap`, per donor bam (as the lab's tested scripts, e.g. `genesis_wasp.R`): a check that the bam and the genotypes name chromosomes the same way (`chr1` vs `1`); `find_intersecting_snps.py`; STAR remapping (two-pass, `NH HI AS nM NM MD`); `filter_remapped_reads.py`; `samtools merge`, `sort`, `index`; `samtools flagstat` of the bam before and after; the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time (`--resources wasp_slots=N` on the command line to change it). 6 cores, 18 GB, a day by default (`execution: resources: wasp_remap`).
-4. `wasp_stats`: the run's table, summary and plots.
+3. Per donor bam, `wasp_remap_rna` (cDNA, as `genesis_wasp.R`) or `wasp_remap_atac` (ATAC, as `psychad_multiome_wasp.R`). `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes name chromosomes the same way (`chr1` vs `1`) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC). Then the remapping: STAR (two-pass, `NH HI AS nM NM MD`), or `bwa mem` of the pairs. `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities (`--resources wasp_slots=N` on the command line to change it). By default 6 cores, 18 GB and a day for `wasp_remap_rna`; 8 cores, 24 GB and a day for `wasp_remap_atac` (`execution: resources`).
+4. `wasp_stats`, per modality: the run's table, summary and plots.
 
-Outputs, under `wasp_dir`:
+Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`):
 
 ```text
-<pool>/<donor>.after_wasp.bam(.bai)
-<pool>/stats/<donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
-<pool>/logs/<donor>.find_intersecting_snps.log, .star_remap.log, .filter_remapped_reads.log
-wasp_stats.tsv     one row per donor bam
-wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
-wasp_plots.pdf     histograms of the summary_* columns
+<modality>/<pool>/<donor>.after_wasp.bam(.bai)
+<modality>/<pool>/stats/<donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
+                        (ATAC also .wasp_with_duplicates.flagstat: after WASP, before removing duplicates)
+<modality>/<pool>/logs/<donor>.find_intersecting_snps.log, .star_remap.log (ATAC: .bwa_remap.log), .filter_remapped_reads.log
+<modality>/wasp_stats.tsv     one row per donor bam
+<modality>/wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
+<modality>/wasp_plots.pdf     histograms of the summary_* columns
 ```
 
-The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs. Counts are reads (pairs with `paired_end: true`).
+The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs; for ATAC also `wasp_kept` (after WASP, before removing duplicates) and `duplicates_removed`, so `removed` splits into WASP's part and the duplicates'. Counts are reads, or pairs for paired-end bams (ATAC, or cDNA with `paired_end: true`).
 
 ### Usage
 
@@ -401,9 +455,13 @@ modules:
     genotypes:
       main:
         h5_dir: /path/to/snp2h5_output/
-    remap:
-      genome: /path/to/STAR_index/
-      gtf: /path/to/genes.gtf
+    rna:
+      remap:
+        genome: /path/to/STAR_index/
+        gtf: /path/to/genes.gtf
+    atac:                      # with ATAC rows in the table
+      remap:
+        bwa_index: /path/to/refdata-cellranger-arc-GRCh38-2020-A-2.0.0/fasta/genome.fa
     work_dir: /path/with/space/wasp_tmp/
 ```
 
@@ -416,7 +474,7 @@ After a run that split bams, the same config with `until: wasp` and a samples ta
 Several datasets in one table, summary and plots:
 
 ```bash
-python3 helper_py_scripts/wasp_stats.py summarize A4/wasp_bams/wasp_stats.tsv A13/wasp_bams/wasp_stats.tsv \
+python3 helper_py_scripts/wasp_stats.py summarize A4/wasp_bams/cDNA/wasp_stats.tsv A13/wasp_bams/cDNA/wasp_stats.tsv \
     --labels A4 A13 -o wasp_all/
 ```
 

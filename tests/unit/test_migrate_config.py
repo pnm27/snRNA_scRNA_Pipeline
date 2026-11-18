@@ -30,6 +30,8 @@ EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
 WASP_NEW_KEYS = {
     'references.tools.wasp': None,
     'modules.wasp': yaml.safe_load(open(EXAMPLE))['modules']['wasp'],
+    # (with ATAC WASP: split bams of each modality)
+    'modules.split_bams.modalities': ['cDNA'],
 }
 OLD_EXAMPLE = os.path.join(OLD, "new_config.example.yaml")
 OLD_SCENARIOS = sorted(glob.glob(os.path.join(OLD, "scenarios", "*.yaml")))
@@ -319,6 +321,28 @@ def test_new_layout_update_sample_names():
     line = next(l for l in text.splitlines(keepends=True)
                 if l.lstrip().startswith('sample_names:'))
     before = text.replace(line, '')
+    after = migrate_text(before)
+    assert after == text
+    assert migrate_text(after) == after
+
+
+def test_new_layout_update_atac():
+    """A config from before ATAC WASP: 'remap' and 'paired_end' move under
+    'modules: wasp: rna' with their comments, 'atac' and 'split_bams:
+    modalities' are added, and the rest of the text is as it was."""
+    text = open(EXAMPLE).read()
+    start = text.index("    rna:  #")
+    end = text.index("    wasp_dir:", start)
+    old_block = (
+        "    remap:\n"
+        "      genome: null  # STAR index; null: the aligner's reference (start: wasp: required)\n"
+        "      gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's\n"
+        "      extra_params: null\n"
+        "    paired_end: false  # true for paired-end GEX reads; 10x 3': false\n")
+    before = text[:start] + old_block + text[end:]
+    line = next(l for l in before.splitlines(keepends=True)
+                if l.lstrip().startswith('modalities:'))
+    before = before.replace(line, '')
     after = migrate_text(before)
     assert after == text
     assert migrate_text(after) == after

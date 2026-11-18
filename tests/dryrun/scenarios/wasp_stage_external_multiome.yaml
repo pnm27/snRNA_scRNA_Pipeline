@@ -1,0 +1,40 @@
+# existing multiome bams (gex and ATAC, a pools table) split by external
+# labels, then WASP of both (start: split_bams, until: wasp)
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p root/samp1 geno projdir/inp_split_filt_bams/final && touch -d '1 min ago' cellBC_vs_origin.txt
+# setup: touch root/samp1/gex.bam root/samp1/gex.bam.bai root/samp1/atac.bam root/samp1/atac.bam.bai geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tbam\tatac_bam\nsamp1\troot/samp1/gex.bam\troot/samp1/atac.bam\n" > bams.tsv
+# setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
+# setup: printf "pool\tdonor\tsample\nsamp1\tD1\tG1\nsamp1\tD2\tG2\n" > wasp_samples.tsv
+# donors: D1 D2
+# expect: check_external_barcodes check_barcodes_atac split_bams split_bams_atac wasp_remap_rna wasp_remap_atac
+# path: split_bams_temp/samp1/samp1_ATAC_filt.bam root/samp1/atac.bam projdir/wasp_bams/ATAC/samp1/D2.after_wasp.bam
+workflow:
+  aligner: cellranger_arc
+  start: split_bams
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  split_bams:
+    modalities: [cDNA, ATAC]
+    split_by:
+      input: external
+      external:
+        file: cellBC_vs_origin.txt
+        barcode_column: barcode
+        pool_column: pool
+        pools: bams.tsv
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    rna:
+      remap:
+        genome: star_idx/
+    atac:
+      remap:
+        bwa_index: arc_ref/fasta/genome.fa

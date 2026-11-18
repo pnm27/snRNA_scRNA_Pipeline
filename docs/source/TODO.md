@@ -37,9 +37,10 @@ The layout is described in `docs/source/sub_workflows.md` (Demultiplexing output
 
 ## WASP
 
-The WASP stage (`until: wasp` / `start: wasp`, see CHANGELOG) covers sc/snRNA-seq and the RNA (GEX) part of multiome.
+The WASP stage (`until: wasp` / `start: wasp`, see CHANGELOG) covers sc/snRNA-seq, multiome GEX (`rna`) and multiome ATAC (`atac`).
 
-- [ ] WASP for the ATAC part of multiome: bwa-mem remapping (as cellranger-arc), paired-end, and duplicates removed within each cell barcode (or cellranger-arc's duplicate marks, `-F 0x400`), as in `psychad_multiome_wasp.R`; needs ATAC split bams first (see Compatibility).
+- [ ] ATAC after WASP: rebuild the fragments file (e.g. sinto, MAPQ >= 30 and the cell barcodes) and recount peaks from the WASP-filtered ATAC bams.
+- [ ] ATAC duplicates removed within each cell barcode by WASP's own script (`rmdup_pe_scbarcoded.py` in the lab's WASP copy, `psychad_multiome_wasp.R`) as a `drop_duplicates` choice, for bams without the aligner's duplicate marks.
 - [ ] Count matrices (h5ads) from the WASP-filtered bams, or the UMIs removed by WASP subtracted from the aligner's matrix.
 - [ ] Run a few donors of one dataset on Minerva and compare the stats with the lab's earlier runs (e.g. A13 with `genesis_wasp.R`): only dry runs and unit tests have run so far.
 
@@ -55,14 +56,14 @@ The WASP stage (`until: wasp` / `start: wasp`, see CHANGELOG) covers sc/snRNA-se
 - [ ] `workflow: start: split_bams` with `split_by: input` `raw` or `h5ad` (outputs of an earlier demultiplexing run). `final` is done (pools and versions from the swap correction file, see CHANGELOG).
 - [ ] Per-donor bams named by the swap correction file as a pipeline stage: `helper_py_scripts/donor_bams.py` is stand-alone for now (see `sub_workflows.md`). Proposed: `workflow: until: donor_bams` after `split_bams`, reading `modules: demultiplex: swap_correction` (`pool_column`, `donor_from` as the split bam's donor, `status_column`) with new `modules: split_bams` keys `name_column` (e.g. individualID), `combine` (yes / no: `--no_combine`) and `keep_apart` (columns); one job per output bam, known from the swap file without a checkpoint. With `split_by: input: final` the split bams are already named `donor_to`, so the name column is the only rename left
 - [ ] `workflow: start: identify_swaps`: run QTLtools-mbv on per-donor bams that are already there.
-- [ ] Generalize `split_bams.smk` (the entire split bam pipeline) for multiome: only the cDNA bam is split for now (`bamfilt_by_CB` and `split_bams` have no `{modality}`).
+- [ ] Multiome with `gt_check: yes`: the ATAC bams are split too (`split_bams: modalities`), but only the cDNA ones are used (QTLtools-mbv); check whether ATAC gt_check bams are of use, or skip them.
 - [ ] Multiome: split bams by the ATAC demultiplexing instead of the cDNA one, per dataset (for some, vireo's ATAC assignment is the better one; cDNA stays the default). Now `{modality}` in `split_bams`' `fold_struct_hash` / `fold_struct_bams` / `fold_struct_donor` is always filled with `cDNA` (`lib/utils.py`: `SPLIT_MODALITY`, `apply_split_modality`). Where cDNA is chosen today:
   - `raw` input: `create_inp_splitBams` reads vireo's `donor_ids.tsv` of `raw_output(...).replace('{modality}', SPLIT_MODALITY)` (`rules/split_bams.smk`)
   - `h5ad` input: the column `SubID_vs_cdna` (`lib/params.py`: `_split_h5ad_column`); the multiome demux h5ad also has `SubID_vs_atac` (`demul_samples.py`, `--suffix atac cdna`)
   - `final` input: `Donor_final` comes from `SubID_vs_cdna` (`helper_py_scripts/demux_final.py`: `DONOR_COLUMNS`), so the final h5ad, the swap correction and its `Version_used` follow the cDNA; choosing ATAC here changes the demultiplexing outputs, not only the split
-  - Per-donor targets: `SPLIT_MODALITIES` (`rules/produce_targets.smk`), cDNA only
+  - Per-donor targets: `SPLIT_MODALITIES` (`rules/produce_targets.smk`) are the bams split (`split_bams: modalities`), not the assignment they are split by
   - `split_bams`' `params.mito_info`: `get_mito_file` (`lib/params.py`) builds its path from `fold_struct_bams` by hand (a params function's path isn't formatted with the wildcards), so it fills `{modality}` with `SPLIT_MODALITY` itself; it needs the chosen modality too
-  - Proposed: `modules: split_bams: split_by: modality: cDNA | ATAC` (default cDNA; ATAC needs `aligner: cellranger_arc` and `demux: vireo`, not `external`), replacing `SPLIT_MODALITY` in the three places, with `{modality}` in the split folder structures filled with it so both assignments can be split side by side. Check first that the ATAC assignment's barcodes match the gex bam's CB tags (cellranger-arc should report both in the gex barcode space; sample them as `check_external_barcodes.py` does). The bam split stays the gex bam (splitting the ATAC bam is the item above)
+  - Proposed: `modules: split_bams: split_by: modality: cDNA | ATAC` (default cDNA; ATAC needs `aligner: cellranger_arc` and `demux: vireo`, not `external`), replacing `SPLIT_MODALITY` in the three places, with `{modality}` in the split folder structures filled with it so both assignments can be split side by side. Check first that the ATAC assignment's barcodes match the gex bam's CB tags (cellranger-arc should report both in the gex barcode space; sample them as `check_external_barcodes.py` does). Both bams (`split_bams: modalities`) would then be split by the ATAC assignment
 - [ ] Multi-VCF: cellSNP's regions and vireo's donor genotypes don't vary by `vcf_type` yet (only the paths do); hashsolo and split bams aren't supported.
 - [ ] Multiome with hashsolo (`solo` / `both` / `add_*`).
 - [ ] Add `CollectInsertSizeMetrics` for the ATAC modality in multiome (`picard_metrics`).

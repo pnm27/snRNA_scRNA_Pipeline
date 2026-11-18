@@ -1,4 +1,6 @@
 new_config.yaml
+# Local config backups (e.g. before migrate_config.py): never tracked
+new_config.before*.yaml
 **/__pycache__/
 backups/
 python_notebooks/

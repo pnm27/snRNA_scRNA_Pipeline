@@ -313,7 +313,8 @@ modules:
       versions: null
   split_bams:
     # '{modality}' in these three is filled with cDNA: bams are split by the
-    # cDNA demultiplexing (for multiome too)
+    # cDNA demultiplexing (for multiome too). The ATAC bams ('modalities')
+    # go to fold_struct_bams with '{modality}' as ATAC, or under ATAC/ without it
     fold_struct_hash: "Sample-{pool}-cDNA"  # Used for bc_donor hash file, reads_barcodes file, and the split_bams script
     fold_struct_bams: "Sample_{pool}-cDNA/" # Used for per-barcode and per-donor bam files
     fold_struct_donor: "{donor}" # for donor bams and h5ads
@@ -341,6 +342,7 @@ modules:
         # null: the aligner's bams_dir and fold_struct; or a table (pool, bam[, bai])
         # of bams elsewhere (start: split_bams); derived bams go to temp_dir
         pools: null
+    modalities: [cDNA]  # bams split per donor; multiome: [cDNA, ATAC] (both by the cDNA or external labels)
     min_cells_per_donor: 200
     subset_chr: 1 # Subset BAM files
     # These four dirs get a sub-folder: gt_check/ (gt_check: yes) or final/
@@ -382,16 +384,23 @@ modules:
   # and the RNA (GEX) part of multiome; WASP comes from references: tools: wasp
   wasp:
     # pool, donor, sample (genotype ID(s), ';'- or ','-separated; find_intersecting_snps.py's
-    # --samples), and bam[, bai] with start: wasp; genotype_set with several sets.
+    # --samples), modality (cDNA or ATAC; empty: cDNA with start: wasp, else every split
+    # modality), and bam[, bai] with start: wasp; genotype_set with several sets.
     # Empty or no sample: from sample_names, else the donor name
     samples: null
     sample_names: null  # pool[, donor], sample: genotype ID(s) of pools (or donors) not named as in the genotypes
     genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}
-    remap:
-      genome: null  # STAR index; null: the aligner's reference (start: wasp: required)
-      gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's
-      extra_params: null
-    paired_end: false  # true for paired-end GEX reads; 10x 3': false
+    rna:  # cDNA bams: STAR remapping, duplicates kept
+      remap:
+        genome: null  # STAR index; null: the aligner's reference (start: wasp: required)
+        gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's
+        extra_params: null
+      paired_end: false  # true for paired-end GEX reads; 10x 3': false
+    atac:  # ATAC bams (multiome): paired-end, bwa-mem remapping
+      remap:
+        bwa_index: null  # bwa-indexed fasta; null: cellranger-arc's fasta/genome.fa (start: wasp: required)
+        extra_params: "-M -Y"
+      drop_duplicates: marked  # marked: remove the aligner's duplicates (0x400) after WASP; or none
     wasp_dir: projdir/wasp_bams/
     work_dir: projdir/wasp_tmp/  # large temporary files, removed per job
   deeptools:

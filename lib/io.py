@@ -242,16 +242,30 @@ def external_labels(config) -> str:
     return f"{config['modules']['split_bams']['inp_split_bams_dir']}external_labels.tsv"
 
 
-def external_barcode_check(wildcards=None, config=None) -> list:
-    """Report of check_external_barcodes.py for the pool ([] unless external).
+def barcode_check_path(config, modality: str = 'cDNA') -> str:
+    """Report of check_external_barcodes.py for a pool's bam of 'modality'."""
+    sb = config['modules']['split_bams']
+    suffix = '' if modality == 'cDNA' else f"_{modality}"
+    return f"{sb['inp_split_bams_dir']}{sb['fold_struct_hash']}_bc_check{suffix}.txt"
+
+
+def needs_barcode_check(config, modality: str = 'cDNA') -> bool:
+    """Whether the hash file's barcodes are checked against the bam's CB
+    tags: with external labels, and always for the ATAC bam (split by the
+    cDNA or external labels: its CB tags must be in the same barcode space)."""
+    return is_external(config) or modality != 'cDNA'
+
+
+def external_barcode_check(wildcards=None, config=None, modality: str = 'cDNA') -> list:
+    """Report of check_external_barcodes.py for the pool ([] if not needed,
+    see needs_barcode_check).
 
     An input of the rules that read the bam by the hash file's barcodes,
     so a barcode format mismatch stops the run before them.
     """
-    if not is_external(config):
+    if not needs_barcode_check(config, modality):
         return []
-    sb = config['modules']['split_bams']
-    path = f"{sb['inp_split_bams_dir']}{sb['fold_struct_hash']}_bc_check.txt"
+    path = barcode_check_path(config, modality)
     return [path.format(**dict(wildcards.items())) if wildcards else path]
 
 
@@ -282,7 +296,7 @@ def get_bam(wildcards, config, suffix=None, modality=None):
     modality = modality or get_modality(wildcards)
     if external_pools_file(config):
         if suffix is None:
-            return pool_bam(config, wildcards.pool)
+            return pool_bam(config, wildcards.pool, modality)
         return derived_bam_paths(config, modality, suffix)
     return bam_paths(config, modality, suffix)
 
@@ -294,14 +308,15 @@ def derived_bam_paths(config, modality: str, suffix: str) -> dict:
     (its bams may be read-only).
     """
     if external_pools_file(config):
-        bam = f"{config['modules']['split_bams']['temp_dir']}{{pool}}/{{pool}}{suffix}"
+        tag = '' if modality == 'cDNA' else f"_{modality}"
+        bam = f"{config['modules']['split_bams']['temp_dir']}{{pool}}/{{pool}}{tag}{suffix}"
         return {'bam': bam, 'bai': f"{bam}.bai"}
     return bam_paths(config, modality, suffix)
 
 
 # Pools table ('split_by: external: pools'): the bam of each pool ---------
 
-POOLS_COLUMNS = ('pool', 'bam', 'bai')
+POOLS_COLUMNS = ('pool', 'bam', 'bai', 'atac_bam', 'atac_bai')
 _POOLS_TABLES: dict = {}
 
 
@@ -315,10 +330,13 @@ def external_pools_file(config) -> str | None:
 
 
 def read_pools_table(path: str) -> dict:
-    """{pool: {'bam': ..., 'bai': ...}} of a pools table.
+    """{pool: {'bam': ..., 'bai': ...[, 'atac_bam', 'atac_bai']}} of a
+    pools table.
 
-    Columns: pool, bam and, optionally, bai (default: <bam>.bai);
-    tab-separated, or comma-separated for .csv. Read once per path.
+    Columns: pool, bam and, optionally, bai (default: <bam>.bai), and the
+    ATAC bam of multiome pools, atac_bam and atac_bai (default:
+    <atac_bam>.bai; 'split_bams: modalities' with ATAC); tab-separated, or
+    comma-separated for .csv. Read once per path.
     """
     if path in _POOLS_TABLES:
         return _POOLS_TABLES[path]
@@ -344,23 +362,38 @@ def read_pools_table(path: str) -> dict:
             dups.add(pool)
         bai = (row.get('bai') or '').strip() or f"{bam}.bai"
         table[pool] = {'bam': bam, 'bai': bai}
+        atac = (row.get('atac_bam') or '').strip()
+        if atac:
+            table[pool]['atac_bam'] = atac
+            table[pool]['atac_bai'] = (row.get('atac_bai') or '').strip() or f"{atac}.bai"
     if dups:
         raise ValueError(f"Pools table {path}: pool(s) listed twice: {', '.join(sorted(dups))}")
     _POOLS_TABLES[path] = table
     return table
 
 
-def pool_bam(config, pool: str) -> dict:
-    """bam and bai of 'pool' in the pools table."""
+def _pool_keys(modality: str) -> tuple:
+    """Pools table columns of the bam and bai of 'modality'."""
+    return ('bam', 'bai') if modality == 'cDNA' else ('atac_bam', 'atac_bai')
+
+
+def pool_bam(config, pool: str, modality: str = 'cDNA') -> dict:
+    """bam and bai of 'pool' (its 'modality') in the pools table."""
     path = external_pools_file(config)
     table = read_pools_table(path)
     if pool not in table:
         raise ValueError(f"Pool {pool} isn't in the pools table {path}")
-    return dict(table[pool])
+    bam, bai = _pool_keys(modality)
+    if bam not in table[pool]:
+        raise ValueError(
+            f"Pool {pool} has no {bam} in the pools table {path} (needed to "
+            f"split its {modality} bam: 'split_bams: modalities')")
+    return {'bam': table[pool][bam], 'bai': table[pool][bai]}
 
 
-def missing_pool_bams(config, pools: list) -> list:
-    """'<pool>: <why>' for each of 'pools' without a bam (and bai) to split."""
+def missing_pool_bams(config, pools: list, modalities=('cDNA',)) -> list:
+    """'<pool>: <why>' for each of 'pools' without a bam (and bai) to split,
+    of each of 'modalities'."""
     path = external_pools_file(config)
     out = []
     if path:
@@ -369,13 +402,19 @@ def missing_pool_bams(config, pools: list) -> list:
             if p not in table:
                 out.append(f"{p}: not in the pools table {path}")
                 continue
-            for k in ('bam', 'bai'):
-                if not os.path.isfile(table[p][k]):
-                    out.append(f"{p}: no {k} {table[p][k]}")
+            for m in modalities:
+                for k in _pool_keys(m):
+                    if k not in table[p]:
+                        out.append(f"{p}: no {k} column value (for its {m} bam)")
+                    elif not os.path.isfile(table[p][k]):
+                        out.append(f"{p}: no {k} {table[p][k]}")
         return out
-    bam = bam_paths(config, 'cDNA')['bam']
-    return [f"{p}: no bam {bam.format(pool=p)}" for p in pools
-            if not os.path.isfile(bam.format(pool=p))]
+    for m in modalities:
+        bam = bam_paths(config, m)['bam']
+        what = 'bam' if m == 'cDNA' else f"{m} bam"
+        out += [f"{p}: no {what} {bam.format(pool=p)}" for p in pools
+                if not os.path.isfile(bam.format(pool=p))]
+    return out
 
 
 def bam_to_split(wildcards, config) -> str:

@@ -6,5 +6,6 @@ workflow:
   until: wasp
 modules:
   wasp:
-    remap:
-      genome: star_idx/
+    rna:
+      remap:
+        genome: star_idx/

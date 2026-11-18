@@ -120,7 +120,9 @@ def apply_split_purpose(config) -> None:
 
 # Bams are split by the donors of the cDNA demultiplexing (multiome runs
 # demultiplex each modality; see TODO: split by the ATAC assignment), so
-# '{modality}' in these folder structures is the cDNA
+# '{modality}' in these folder structures is the cDNA. The ATAC bam of a
+# multiome run ('split_bams: modalities') is split by the same donor labels
+# (see split_bams_fold)
 SPLIT_MODALITY = 'cDNA'
 SPLIT_MODALITY_FOLDS = ['fold_struct_hash', 'fold_struct_bams', 'fold_struct_donor']
 
@@ -130,12 +132,32 @@ def apply_split_modality(config) -> None:
 
     The hash file and the per-donor bams are one per pool, as the cell
     filtered bam that is split: a '{modality}' wildcard there couldn't be
-    told from the bam's path (bamfilt_by_CB).
+    told from the bam's path (bamfilt_by_CB). The folder structures as
+    given are kept in config['_split_folds_raw'] (see split_bams_fold).
     """
     sb = config['modules']['split_bams']
+    raw = config.setdefault('_split_folds_raw', {})
     for key in SPLIT_MODALITY_FOLDS:
         if isinstance(sb.get(key), str):
+            raw.setdefault(key, sb[key])
             sb[key] = sb[key].replace('{modality}', SPLIT_MODALITY)
+
+
+def split_bams_fold(config, modality: str = SPLIT_MODALITY) -> str:
+    """Folder structure ({pool}) of a modality's per-donor bams, under
+    'split_bams: split_bams_dir' (also of their temp dir and logs).
+
+    cDNA: 'fold_struct_bams'. Another modality (ATAC): its '{modality}'
+    filled with that modality or, without one, an '<modality>/' folder in
+    front, so the two modalities' bams never share a folder.
+    """
+    sb = config['modules']['split_bams']
+    if modality == SPLIT_MODALITY:
+        return sb['fold_struct_bams']
+    raw = (config.get('_split_folds_raw') or {}).get('fold_struct_bams', sb['fold_struct_bams'])
+    if '{modality}' in raw:
+        return raw.replace('{modality}', modality)
+    return f"{modality}/{raw}"
 
 
 def run_dir(config, section: str, key: str, run_tag: Union[None, str]) -> str:

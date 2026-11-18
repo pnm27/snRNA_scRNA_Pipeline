@@ -192,6 +192,12 @@ RESOURCES = {
         "mem_mb": 500,
         "time_min": 300,
     },
+    # ATAC bams of multiome are larger (paired-end, no UMI collapsing)
+    "bamfilt_by_CB_atac": {
+        "cpus_per_task": 4,
+        "mem_mb": 500,
+        "time_min": 600,
+    },
     "filt_chr_bams": {
         "cpus_per_task": 1,
         "mem_mb": {"base": 1000, "step": 200},
@@ -211,6 +217,11 @@ RESOURCES = {
         "cpus_per_task": 3,
         "mem_mb": {"base": 200, "step": 100},
         "time_min": 600,
+    },
+    "split_bams_atac": {
+        "cpus_per_task": 3,
+        "mem_mb": {"base": 200, "step": 100},
+        "time_min": 900,
     },
 
     # identify_swaps.smk
@@ -232,9 +243,15 @@ RESOURCES = {
         "time_min": 30,
     },
     # As in the lab's tested WASP runs: 6 cores, 18 GB, a day
-    "wasp_remap": {
+    "wasp_remap_rna": {
         "cpus_per_task": 6,
         "mem_mb": {"base": 18000, "step": 6000, "max": 48000},
+        "time_min": {"base": 1440, "step": 720},
+    },
+    # As the lab's multiome ATAC runs (psychad_multiome_wasp.R): 8 cores, a day
+    "wasp_remap_atac": {
+        "cpus_per_task": 8,
+        "mem_mb": {"base": 24000, "step": 8000, "max": 64000},
         "time_min": {"base": 1440, "step": 720},
     },
     "wasp_stats": {

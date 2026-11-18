@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from .utils import read_files_ext, get_demux_type, SPLIT_MODALITY
+from .utils import read_files_ext, get_demux_type, SPLIT_MODALITY, split_bams_fold
 from .config_models import final_sources, swap_correction
 from .modality import get_modality, has_umi, is_multiome
 from .aligner import barcodes_have_suffix, out_prefix
@@ -334,7 +334,7 @@ def subset_to_chr(wildcards, config):
         return config['references']['chr_prefix'] + str(config['modules']['split_bams']['subset_chr'])
 
 
-def get_mito_file(wildcards, config):
+def get_mito_file(wildcards, config, modality=SPLIT_MODALITY):
     """Mito read counts of a pool's donors, next to its per-donor bams.
 
     Not in the aligner's folders: bams split with a pools table come from
@@ -346,10 +346,10 @@ def get_mito_file(wildcards, config):
     # A params function's path isn't formatted with the job's wildcards (as
     # an input or output is), so fill each of them here; '{modality}' is the
     # split one (see lib/utils.py: apply_split_modality)
-    pool_dir = split['fold_struct_bams']
+    pool_dir = split_bams_fold(config, modality)
     for key in ('pool', 'donor'):
         if hasattr(wildcards, key):
             pool_dir = pool_dir.replace(f"{{{key}}}", str(getattr(wildcards, key)))
-    pool_dir = pool_dir.replace('{modality}', SPLIT_MODALITY)
+    pool_dir = pool_dir.replace('{modality}', modality)
     return f"{split['split_bams_dir']}{pool_dir}{wildcards.pool}{split['mito_reads_file']}"
     

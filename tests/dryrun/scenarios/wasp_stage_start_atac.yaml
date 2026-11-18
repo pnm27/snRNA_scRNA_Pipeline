@@ -1,0 +1,28 @@
+# WASP of existing multiome bams (start: wasp): a gex and an ATAC bam per
+# sample, as cellranger-arc writes them (one donor per sample)
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p arc/S1/outs geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: for f in gex_possorted_bam atac_possorted_bam; do touch arc/S1/outs/$f.bam arc/S1/outs/$f.bam.bai; done
+# setup: printf "pool\tdonor\tsample\tmodality\tbam\nS1\tS1\tNDA1\tcDNA\tarc/S1/outs/gex_possorted_bam.bam\nS1\tS1\tNDA1\tATAC\tarc/S1/outs/atac_possorted_bam.bam\n" > wasp_samples.tsv
+# expect: wasp_check_inputs wasp_remap_rna wasp_remap_atac wasp_stats
+# absent: split_bams split_bams_atac bamfilt_by_CB_atac
+# path: projdir/wasp_bams/ATAC/S1/S1.after_wasp.bam arc/S1/outs/atac_possorted_bam.bam projdir/wasp_bams/cDNA/wasp_stats.tsv projdir/wasp_bams/ATAC/wasp_stats.tsv
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    rna:
+      remap:
+        genome: star_idx/
+    atac:
+      remap:
+        bwa_index: arc_ref/fasta/genome.fa

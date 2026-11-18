@@ -1,0 +1,5 @@
+# ATAC bams are split only in multiome runs
+# fails: Only multiome runs ('workflow: aligner: cellranger_arc') have an ATAC bam
+modules:
+  split_bams:
+    modalities: [cDNA, ATAC]

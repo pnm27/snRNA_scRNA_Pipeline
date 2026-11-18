@@ -7,7 +7,7 @@ pool. Other runs have only cDNA. Their bams are in lib/aligner.py.
 """
 
 from types import SimpleNamespace
-from .utils import run_settings
+from .utils import run_settings, SPLIT_MODALITY
 
 
 # Per modality of a cellranger-arc run: keys of its bam and bai in
@@ -38,3 +38,32 @@ def get_modality(wildcards) -> str:
 
 def has_umi(config, modality: str) -> bool:
     return CELLRANGER_ARC[modality].umi if is_multiome(config) else True
+
+
+def normalize_modality(name) -> str:
+    """'cDNA' or 'ATAC' (any case); else a ValueError."""
+    for m in CELLRANGER_ARC:
+        if m.lower() == str(name).strip().lower():
+            return m
+    raise ValueError(f"Unknown modality '{name}' (expected one of: {', '.join(CELLRANGER_ARC)})")
+
+
+def split_modalities(config) -> list[str]:
+    """Modalities whose bams are split per donor ('modules: split_bams:
+    modalities', default cDNA). Every modality is split by the same donor
+    labels: the cDNA demultiplexing, or the external labels ('split_by:
+    input: external'). ATAC needs a multiome run (aligner cellranger_arc)."""
+    sb = (config.get('modules') or {}).get('split_bams') or {}
+    given = sb.get('modalities') or [SPLIT_MODALITY]
+    if isinstance(given, str):
+        given = [given]
+    out = []
+    for m in given:
+        m = normalize_modality(m)
+        if m not in out:
+            out.append(m)
+    if 'ATAC' in out and not is_multiome(config):
+        raise ValueError(
+            "'modules: split_bams: modalities' has ATAC: only multiome runs "
+            "('workflow: aligner: cellranger_arc') have an ATAC bam")
+    return out

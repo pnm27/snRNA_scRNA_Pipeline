@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
-"""WASP filtering of per-donor bams (stage 'wasp', rules/wasp.smk).
+"""WASP filtering of per-donor bams (stage 'wasp', rules/wasp/).
 
-For sc/snRNA-seq and the RNA (GEX) part of multiome. Each per-donor bam's
-reads over the donor's heterozygous SNPs are remapped with the alleles
-swapped (STAR), and kept only if they map back to the same place
-(github.com/bmvdgeijn/WASP). Duplicates are kept.
+Each per-donor bam's reads over the donor's heterozygous SNPs are remapped
+with the alleles swapped, and kept only if they map back to the same place
+(github.com/bmvdgeijn/WASP). What depends on the modality (the remapper,
+paired-end reads, duplicates) is in lib/wasp_modality.py:
 
-The bams are this run's split bams ('workflow: until: wasp') or the ones
-listed in the samples table ('workflow: start: wasp'). The samples table
-('modules: wasp: samples') gives the genotype sample ID(s) of each donor
+  cDNA   sc/snRNA-seq and the RNA (GEX) part of multiome: STAR, duplicates
+         kept (rules/wasp/rna.smk)
+  ATAC   the ATAC part of multiome (or scATAC): bwa-mem, paired-end,
+         duplicates marked by cellranger-arc removed (rules/wasp/atac.smk)
+
+This module and rules/wasp/common.smk are shared by both.
+
+The bams are this run's split bams ('workflow: until: wasp'; of the
+modalities of 'split_bams: modalities') or the ones listed in the samples
+table ('workflow: start: wasp'). The samples table ('modules: wasp:
+samples') gives the genotype sample ID(s) of each donor
 (find_intersecting_snps.py's --samples). Columns:
 
   pool          pool (no '/')
   donor         donor (no '/'); names the output bam
+  modality      optional: cDNA or ATAC. Empty (or no column): with start:
+                wasp, cDNA; after split_bams, every split modality of the
+                donor (a row of the donor's modality wins)
   sample        optional: genotype sample ID(s) in the genotype set,
                 separated by ';' (or ',' in a tab-separated table); no
                 whitespace in an ID. They're written one per line to the
@@ -42,6 +53,8 @@ Tab-separated, or comma-separated for .csv.
 import csv
 import os
 import re
+
+from .modality import normalize_modality, split_modalities
 
 
 # Separators of the sample IDs in the 'sample' column
@@ -116,9 +129,11 @@ def genotype_sets(config) -> list:
 
 def read_samples_table(path: str, need_bam: bool = False, sets=None,
                        names=None) -> dict:
-    """{(pool, donor): {'samples': [...], 'bam', 'bai', 'genotype_set'}}.
+    """{(pool, donor, modality): {'samples': [...], 'bam', 'bai', 'genotype_set'}}.
 
-    need_bam: the bam column is required (start: wasp).
+    modality: 'cDNA', 'ATAC', or '' for every modality (see table_row).
+    need_bam: the bam column is required (start: wasp); an empty modality
+    is then cDNA.
     sets: the genotype set names; a row without genotype_set takes the only
     one, and a set not in 'sets' is an error.
     names: the sample names table (read_sample_names), for the rows with
@@ -137,7 +152,7 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
         raise ValueError(
             f"WASP samples table {path}: needs a header with the columns "
             f"{', '.join(required)} (optionally "
-            f"{', '.join(c for c in ('sample', 'bam', 'bai', 'genotype_set') if c not in required)}),"
+            f"{', '.join(c for c in ('modality', 'sample', 'bam', 'bai', 'genotype_set') if c not in required)}),"
             " and one row per donor bam"
             + (f"; missing: {', '.join(missing)}" if rows else ""))
     table, dups, errors = {}, set(), []
@@ -156,16 +171,26 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
         if '/' in pool or '/' in donor:
             errors.append(f"line {n}: pool and donor names can't contain '/' ({pool}, {donor})")
             continue
+        modality = get('modality')
+        if modality:
+            try:
+                modality = normalize_modality(modality)
+            except ValueError as e:
+                errors.append(f"line {n}: {e}")
+                continue
+        elif need_bam:
+            modality = 'cDNA'
+        name = f"{pool} {donor}" + (f" {modality}" if modality else "")
         bam = get('bam') or None
         if need_bam and not bam:
-            errors.append(f"line {n}: no bam for {pool} {donor}")
+            errors.append(f"line {n}: no bam for {name}")
             continue
         gset = get('genotype_set') or None
         if sets:
             if gset is None:
                 if len(sets) > 1:
                     errors.append(
-                        f"line {n}: no genotype_set for {pool} {donor}, with "
+                        f"line {n}: no genotype_set for {name}, with "
                         f"several genotype sets ({', '.join(sets)})")
                     continue
                 gset = sets[0]
@@ -174,16 +199,16 @@ def read_samples_table(path: str, need_bam: bool = False, sets=None,
                     f"line {n}: genotype_set '{gset}' isn't one of "
                     f"'modules: wasp: genotypes' ({', '.join(sets)})")
                 continue
-        if (pool, donor) in table:
-            dups.add(f"{pool} {donor}")
-        table[(pool, donor)] = {
+        if (pool, donor, modality) in table:
+            dups.add(name)
+        table[(pool, donor, modality)] = {
             'samples': samples,
             'bam': bam,
             'bai': (get('bai') or (f"{bam}.bai" if bam else None)),
             'genotype_set': gset,
         }
     if dups:
-        errors.append(f"pool and donor listed twice: {', '.join(sorted(dups))}")
+        errors.append(f"pool and donor (and modality) listed twice: {', '.join(sorted(dups))}")
     if errors:
         raise ValueError(f"WASP samples table {path}:\n  " + "\n  ".join(errors))
     _TABLES[key] = table
@@ -204,20 +229,47 @@ def sample_names(config):
     return wasp_config(config).get('sample_names') or None
 
 
+def table_row(table: dict, pool: str, donor: str, modality: str):
+    """The row of a donor's bam of 'modality': its own, else the donor's
+    row without a modality; None if neither."""
+    return table.get((pool, donor, modality)) or table.get((pool, donor, ''))
+
+
+def row_name(key: tuple) -> str:
+    """'<pool> <donor>[ <modality>]' of a samples table key."""
+    return " ".join(k for k in key if k)
+
+
+def table_modalities(table: dict) -> list:
+    """Modalities of the rows of a start: wasp samples table."""
+    return [m for m in ('cDNA', 'ATAC') if any(k[2] == m for k in table)]
+
+
 def missing_bams(table: dict) -> list:
-    """'<pool> <donor>: no bam|bai <path>' of the rows whose files aren't there."""
+    """'<pool> <donor> <modality>: no bam|bai <path>' of the rows whose files aren't there."""
     out = []
-    for (pool, donor), row in sorted(table.items()):
+    for key, row in sorted(table.items()):
         for k in ('bam', 'bai'):
             if row[k] and not os.path.isfile(row[k]):
-                out.append(f"{pool} {donor}: no {k} {row[k]}")
+                out.append(f"{row_name(key)}: no {k} {row[k]}")
     return out
 
 
-def select_donors(table: dict, pool: str, donors: list) -> tuple:
-    """(donors of 'pool' in the table, donors of 'pool' not in it)."""
-    kept = [d for d in donors if (pool, d) in table]
-    return kept, [d for d in donors if (pool, d) not in table]
+def select_donors(table: dict, pool: str, donors: list, modality: str = 'cDNA') -> tuple:
+    """(donors of 'pool' with a row for 'modality', donors of 'pool' without)."""
+    kept = [d for d in donors if table_row(table, pool, d, modality) is not None]
+    return kept, [d for d in donors if d not in kept]
+
+
+def wasp_modalities(config) -> list:
+    """Modalities WASP-filtered in this run: those of the samples table
+    (start: wasp), else the split modalities ('split_bams: modalities')
+    that a row of the samples table applies to."""
+    table = samples_table(config)
+    if starts_at_wasp(config):
+        return table_modalities(table)
+    return [m for m in split_modalities(config)
+            if any(k[2] in (m, '') for k in table)]
 
 
 def set_samples(table: dict, gset: str) -> list:
@@ -233,35 +285,45 @@ def _dir(config) -> str:
     return d if d.endswith('/') else f"{d}/"
 
 
-def donor_paths(config) -> dict:
-    """Outputs of a donor's WASP job (templates with {pool} and {donor})."""
-    d = f"{_dir(config)}{{pool}}/"
-    return {
+def donor_paths(config, modality: str) -> dict:
+    """Outputs of a donor's WASP job of 'modality' (templates with {pool}
+    and {donor}). ATAC also has the flagstat after WASP, before the
+    duplicates are removed."""
+    d = f"{_dir(config)}{modality}/{{pool}}/"
+    out = {
         'bam': f"{d}{{donor}}.after_wasp.bam",
         'bai': f"{d}{{donor}}.after_wasp.bam.bai",
         'stats': f"{d}stats/{{donor}}.wasp_stats.tsv",
         'flagstat_before': f"{d}stats/{{donor}}.before_wasp.flagstat",
         'flagstat_after': f"{d}stats/{{donor}}.after_wasp.flagstat",
     }
+    if modality == 'ATAC':
+        out['flagstat_wasp'] = f"{d}stats/{{donor}}.wasp_with_duplicates.flagstat"
+    return out
 
 
-def donor_logs(config) -> dict:
-    d = f"{_dir(config)}{{pool}}/logs/"
+# Remapper of each modality (names its log)
+REMAPPER = {'cDNA': 'star', 'ATAC': 'bwa'}
+
+
+def donor_logs(config, modality: str) -> dict:
+    d = f"{_dir(config)}{modality}/{{pool}}/logs/"
     return {
         'intersect': f"{d}{{donor}}.find_intersecting_snps.log",
-        'star': f"{d}{{donor}}.star_remap.log",
+        'remap': f"{d}{{donor}}.{REMAPPER[modality]}_remap.log",
         'filter': f"{d}{{donor}}.filter_remapped_reads.log",
     }
 
 
-def work_dir(config) -> str:
+def work_dir(config, modality: str) -> str:
     """Per-donor scratch dir (template), removed when the job ends."""
     d = wasp_config(config).get('work_dir') or 'wasp_tmp/'
-    return f"{d if d.endswith('/') else d + '/'}{{pool}}/{{donor}}/"
+    return f"{d if d.endswith('/') else d + '/'}{modality}/{{pool}}/{{donor}}/"
 
 
-def run_outputs(config) -> dict:
-    d = _dir(config)
+def run_outputs(config, modality: str) -> dict:
+    """The run's stats of 'modality' (or '{modality}', a wildcard)."""
+    d = f"{_dir(config)}{modality}/"
     return {
         'stats': f"{d}wasp_stats.tsv",
         'summary': f"{d}wasp_summary.tsv",
@@ -300,30 +362,3 @@ def vcf_sets(config) -> list:
 def vcf_files(config, gset: str) -> list:
     vcf = wasp_config(config)['genotypes'][gset].get('vcf')
     return [vcf] if isinstance(vcf, str) else list(vcf or [])
-
-
-def remap_reference(config) -> tuple:
-    """(STAR genome dir, gtf or None) to remap with.
-
-    'modules: wasp: remap: genome' (and gtf), else the run's aligner
-    reference: STARsolo's genome_pick (genome and gtf), or the 'star' index
-    of a cellranger / cellranger-arc reference (its annotations are in the
-    index). A run that starts at wasp names the genome.
-    """
-    r = wasp_config(config).get('remap') or {}
-    if r.get('genome'):
-        return r['genome'], r.get('gtf')
-    if starts_at_wasp(config):
-        raise ValueError(
-            "'workflow: start: wasp' needs 'modules: wasp: remap: genome' "
-            "(the STAR index of the genome the bams were aligned to)")
-    aligner = str((config.get('workflow') or {}).get('aligner')).lower()
-    mods = config['modules']
-    if aligner == 'starsolo':
-        pick = mods['STARsolo']['genome_pick']
-        return pick['genome'], r.get('gtf') or pick.get('gtf')
-    section = {'cellranger': 'cellranger', 'cellranger_arc': 'cellranger_arc'}.get(aligner)
-    if section is None:
-        raise ValueError(f"Unrecognised aligner: {aligner}")
-    genome = mods[section]['ref']['genome']
-    return f"{genome.rstrip('/')}/star", r.get('gtf')

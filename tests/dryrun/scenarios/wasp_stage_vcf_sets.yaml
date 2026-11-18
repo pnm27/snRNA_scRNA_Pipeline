@@ -5,7 +5,7 @@
 # setup: mkdir -p bams geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5 chip.bcf chip.bcf.csi chrom.txt
 # setup: for d in D1 D2; do touch bams/$d.bam bams/$d.bam.bai; done
 # setup: printf "pool\tdonor\tsample\tbam\tgenotype_set\nP1\tD1\tG1\tbams/D1.bam\twgs\nP1\tD2\tA2\tbams/D2.bam\tchip\n" > wasp_samples.tsv
-# expect: wasp_snp2h5 wasp_check_inputs wasp_remap wasp_stats
+# expect: wasp_snp2h5 wasp_check_inputs wasp_remap_rna wasp_stats
 # path: projdir/wasp_bams/genotypes/chip/haps.h5 chip.bcf chrom.txt
 # nopath: genotypes/wgs/
 workflow:
@@ -23,5 +23,6 @@ modules:
       chip:
         vcf: chip.bcf
         chrom_sizes: chrom.txt
-    remap:
-      genome: star_idx/
+    rna:
+      remap:
+        genome: star_idx/

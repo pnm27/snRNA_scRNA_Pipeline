@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Statistics of WASP filtering (stage 'wasp', rules/wasp.smk).
+"""Statistics of WASP filtering (stage 'wasp', rules/wasp/).
 
 parse      one row for a donor bam, from the logs of
            find_intersecting_snps.py and filter_remapped_reads.py and
@@ -11,11 +11,13 @@ summarize  joins rows (per-donor files, or the stats tables of whole
            per dataset) and plots (histograms of the summary_* columns)
 
 Counts are reads for single-end bams (sc/snRNA-seq: only R2 has the
-cDNA) and pairs for paired-end ones.
+cDNA) and pairs for paired-end ones (ATAC). With --flagstat_wasp (the bam
+after WASP, before the duplicates were removed: ATAC), summary_wasp_kept
+and summary_duplicates_removed tell WASP's part from the duplicates'.
 
 Usage::
 
-    python3 wasp_stats.py parse --pool P1 --donor D1 --sample GENO1 \\
+    python3 wasp_stats.py parse --pool P1 --donor D1 --modality cDNA --sample GENO1 \\
         --intersect_log D1.find_intersecting_snps.log \\
         --filter_log D1.filter_remapped_reads.log \\
         --flagstat_before D1.before_wasp.flagstat \\
@@ -64,7 +66,7 @@ FILTER_LINES = {
     'cigar_missing_or_multiple': 'CIGAR missing or multiple',
 }
 
-ID_COLUMNS = ['dataset', 'pool', 'donor', 'sample', 'paired_end']
+ID_COLUMNS = ['dataset', 'pool', 'donor', 'modality', 'sample', 'paired_end']
 
 
 def single_line(lines, label):
@@ -119,7 +121,7 @@ def _sum(*xs):
 
 
 def parse(intersect_log, filter_log, flagstat_before, flagstat_after,
-          paired_end=False) -> dict:
+          paired_end=False, flagstat_wasp=None) -> dict:
     """The metrics of one bam (see the module's docstring)."""
     il, fl = _read(intersect_log), _read(filter_log)
     before, after = flagstat(_read(flagstat_before)), flagstat(_read(flagstat_after))
@@ -149,7 +151,16 @@ def parse(intersect_log, filter_log, flagstat_before, flagstat_after,
         'final': n_out,
         'removed': None if n_in is None or n_out is None else n_in - n_out,
     }
-    for k in ['no_snp_kept', 'sent_for_remapping', 'failed_remap', 'final', 'removed']:
+    keys = ['no_snp_kept', 'sent_for_remapping', 'failed_remap', 'final', 'removed']
+    if flagstat_wasp:
+        wasp = flagstat(_read(flagstat_wasp))
+        row['flagstat_wasp_mapped'] = wasp['mapped']
+        n_wasp = _div(wasp['mapped'], unit)
+        summary['wasp_kept'] = n_wasp
+        summary['duplicates_removed'] = (
+            None if n_wasp is None or n_out is None else n_wasp - n_out)
+        keys += ['wasp_kept', 'duplicates_removed']
+    for k in keys:
         frac = _div(summary[k], n_in)
         summary[f'{k}_pct'] = None if frac is None else 100 * frac
     summary['ref_allele_fraction'] = _div(ref, _sum(ref, alt))
@@ -273,10 +284,12 @@ def main(argv=None):
     a = sub.add_parser('parse', help="one row for a donor bam")
     a.add_argument('--pool', required=True)
     a.add_argument('--donor', required=True)
+    a.add_argument('--modality', default='cDNA')
     a.add_argument('--sample', required=True, help="genotype sample ID(s), ';'-separated")
     a.add_argument('--paired_end', action='store_true')
     for k in ['intersect_log', 'filter_log', 'flagstat_before', 'flagstat_after']:
         a.add_argument(f'--{k}', required=True)
+    a.add_argument('--flagstat_wasp', help="flagstat after WASP, before removing duplicates")
     a.add_argument('-o', '--output', required=True)
 
     s = sub.add_parser('summarize', help="join stats files; summary and plots")
@@ -289,10 +302,10 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     if args.cmd == 'parse':
-        row = {'pool': args.pool, 'donor': args.donor, 'sample': args.sample,
-               'paired_end': args.paired_end}
+        row = {'pool': args.pool, 'donor': args.donor, 'modality': args.modality,
+               'sample': args.sample, 'paired_end': args.paired_end}
         row.update(parse(args.intersect_log, args.filter_log, args.flagstat_before,
-                         args.flagstat_after, args.paired_end))
+                         args.flagstat_after, args.paired_end, args.flagstat_wasp))
         write_rows([row], list(row), args.output)
         return 0
 
