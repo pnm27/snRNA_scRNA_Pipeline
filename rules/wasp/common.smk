@@ -29,8 +29,8 @@ from lib.wasp import (
 from lib.wasp_modality import paired_end
 from lib.utils import split_bams_fold
 
-WASP_TOOLS = config['references']['tools']
-WASP_MODULES = [m for m in [WASP_TOOLS.get('wasp')] if m]
+ALL_TOOLS = config['references']['tools']
+WASP_MODULES = [m for m in [ALL_TOOLS.get('wasp')] if m]
 WASP_NAMES = sample_names(config)
 WASP_NAMES_ARG = f"--names {WASP_NAMES}" if WASP_NAMES else ""
 
