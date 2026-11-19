@@ -50,6 +50,7 @@ complex_tutorials
 :caption: Reference
 :maxdepth: 3
 
+helper_scripts
 modules
 glossary
 ```

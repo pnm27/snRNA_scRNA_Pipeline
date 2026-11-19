@@ -351,7 +351,7 @@ sc/snRNA-seq: `common.smk` + `rna.smk`; scATAC: `common.smk` + `atac.smk`; multi
 
 ### The samples table
 
-`modules: wasp: samples`, tab-separated (or comma-separated for `.csv`), one row per donor bam:
+`modules: wasp: samples`, tab-separated (or comma-separated for `.csv`), one row per donor bam; `helper_py_scripts/make_wasp_samples.py` writes it from per-donor bams (see [Helper scripts](helper_scripts.md)):
 
 | column | |
 |---|---|

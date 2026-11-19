@@ -178,6 +178,7 @@
 - `.gitignore`: `new_config.before*.yaml`, so local copies of a config from before a migration are never tracked (as `backups/`); the tutorial and `config_caveats.md` say to keep one there
 - WASP final donors: the sample names table (and the samples table) take `final_donor`, the donor after swap correction (which so far is applied only to the h5ad files, so the bams keep the demultiplexed name), and `vcfID`, the final donor's genotype ID(s) (`sample`, the old name, is read too; both columns stop the run). The outputs are named by the final donor in their pool's folder, as the split bams (`<wasp_dir><modality>/<pool>/<final_donor>.after_wasp.bam`, its stats and logs; rule wildcard `{final_donor}`), so a final donor in several pools isn't overwritten, the input is the donor's split bam, and `wasp_stats.tsv` has a `final_donor` column. Without a `final_donor` column in either table, a warning says no swap corrections are assumed and `final_donor` is the donor, so the outputs are as before; empty `final_donor` cells are listed in a warning too, and a final donor given to two donors of a pool and modality stops the run. An empty `vcfID` now defaults to the final donor's name. `new_config.example.yaml`, `migrate_config.py` and the schema have the new comments
 - `migrate_config.py` writes `references: tools: wasp: wasp/2021-04` (the WASP env module, as `new_config.example.yaml`) instead of `null`; the schema description, `schema/wasp_defaults.yaml` and the docs name it
+- `helper_py_scripts/make_wasp_samples.py`: the WASP samples table (`pool`, `donor`, `modality`, `bam`) from per-donor bams, one path pattern with `{pool}` and `{donor}` per modality (`--cDNA`, `--ATAC`); bams without an index are skipped and donors with one modality's bam only are reported. Unit tests: `tests/unit/test_make_wasp_samples.py`
 
 ---
 
@@ -332,6 +333,7 @@
 - Added tutorials: scRNA-seq and pooled snRNA-seq (one wildcard)
 - ReadTheDocs search ranks the tutorials first and the API reference and development notes last (`search.ranking` in `.readthedocs.yaml`)
 - Fixed the ReadTheDocs build's warnings: a header level jump in `sub_workflows.md` and sphinx-hoverxref's `RemovedInSphinx90Warning` (ignored in `conf.py`, as its latest release still raises it)
+- New docs page `helper_scripts.md` ("Helper scripts", under Reference): each script of `helper_py_scripts/` and `helper_sh_scripts/`, what it does and an example (two for scripts with two modes), grouped as preparing inputs, after a run, run by the pipeline (the rules' own calls) and Python modules
 
 ---
 

@@ -234,7 +234,7 @@ GENO_0002,R7654321
 
 ## WASP samples table (wasp_samples.tsv)
 
-`modules: wasp: samples`. Required for `workflow: until: wasp` and `start: wasp`. It lists the per-donor bams to WASP-filter, and each donor's genotype ID. Tab-separated, or comma-separated for `.csv`, with one row per donor bam:
+`modules: wasp: samples`. Required for `workflow: until: wasp` and `start: wasp`. It lists the per-donor bams to WASP-filter, and each donor's genotype ID. Tab-separated, or comma-separated for `.csv`, with one row per donor bam (`helper_py_scripts/make_wasp_samples.py` writes it from per-donor bams, e.g. split bams: see [Helper scripts](helper_scripts.md)):
 
 | column | required | |
 |---|---|---|
