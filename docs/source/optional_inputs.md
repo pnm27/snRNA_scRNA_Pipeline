@@ -181,6 +181,7 @@ A pooled `.h5ad`, or a table (`.csv`, or tab-separated `.tsv` / `.txt`; optional
 | `barcode_column` | column with the barcodes; `null`: the obs names (h5ad only) |
 | `barcode_transformations` | steps from the file's barcodes to the bam's CB tags |
 | `pool_transformations` | steps from the file's pool names to the `{pool}` names |
+| `min_barcode_fraction` | least fraction of a bam's sampled reads with a CB tag that are from the labelled cells (default `0.02`); below it the run stops (`check_external_barcodes`) |
 
 ```text
 barcode                     individualID   pool_of_origin

@@ -71,11 +71,12 @@ def get_argument_parser():
         "(SAM lines on stdin).")
     parser.add_argument('--hash_file', required=True)
     parser.add_argument('--out', required=True, help="Report, written on success")
-    parser.add_argument('--min_fraction', type=float, default=0.05,
+    parser.add_argument('--min_fraction', type=float, default=0.02,
                         help="Least fraction of sampled reads (with a CB tag) "
                         "from the hash file's cells (default: 0.05). Reads of "
                         "empty droplets also carry CB tags, so it's low; a "
-                        "barcode format mismatch gives ~0")
+                        "barcode format mismatch gives ~0 (pipeline: "
+                        "'split_by: external: min_barcode_fraction')")
     return parser
 
 
@@ -88,7 +89,11 @@ def main(stdin: TextIO = sys.stdin):
         sys.exit(
             f"The barcodes of {args.hash_file} don't look like the bam's CB "
             "tags. Check 'modules: split_bams: split_by: external: "
-            "barcode_transformations' (e.g. a '-1' suffix on one side only).")
+            "barcode_transformations' (e.g. a '-1' suffix on one side only). "
+            "If the bam's and the hash file's barcodes look alike, the pool may "
+            "have few labelled cells: check a larger sample (--min_fraction 0) "
+            "and lower 'modules: split_bams: split_by: external: "
+            "min_barcode_fraction'.")
     with open(args.out, 'w') as f:
         f.write(report + '\n')
 

@@ -248,7 +248,7 @@ The jobs:
 
 1. `normalize_external_labels` (checkpoint) reads the labels once, applies the steps and drops doublets, negatives and unassigned cells: `inp_split_bams_dir/external_labels.tsv` (pool, Subj_ID, barcodes). Its log lists the cells and donors of each pool and example barcodes. Pools without a bam stop the run (`start: split_bams`).
 2. `create_inp_splitBams` writes each pool's donor hash file (`donor_name_converter` and `min_cells_per_donor` apply).
-3. `check_external_barcodes` stops the run if the hash file's barcodes don't look like the bam's CB tags, before any bam is filtered or split.
+3. `check_external_barcodes` stops the run if the hash file's barcodes don't look like the bam's CB tags, before any bam is filtered or split: when fewer than `split_by: external: min_barcode_fraction` (default 2%) of the first 200,000 reads with a CB tag are from the labelled cells. A format mismatch gives ~0%; a pool with few labelled cells can be near 5%, so if a pool fails while its barcodes look like the bam's, check its fraction on more reads (`--min_fraction 0`, see Helper scripts) and lower the key.
 4. `bamfilt_by_CB` / `filt_chr_bams` and `split_bams` as for the other inputs.
 
 ### Bams outside the aligner's folders (pools table)

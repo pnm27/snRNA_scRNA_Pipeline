@@ -249,6 +249,19 @@ def barcode_check_path(config, modality: str = 'cDNA') -> str:
     return f"{sb['inp_split_bams_dir']}{sb['fold_struct_hash']}_bc_check{suffix}.txt"
 
 
+# Default of 'split_by: external: min_barcode_fraction'
+MIN_BARCODE_FRACTION = 0.02
+
+
+def min_barcode_fraction(config) -> float:
+    """Least fraction of a bam's sampled CB reads from the hash file's
+    cells ('split_by: external: min_barcode_fraction'; also for the ATAC
+    check of multiome runs without external labels)."""
+    ext = config['modules']['split_bams'].get('split_by', {}).get('external') or {}
+    value = ext.get('min_barcode_fraction')
+    return MIN_BARCODE_FRACTION if value is None else float(value)
+
+
 def needs_barcode_check(config, modality: str = 'cDNA') -> bool:
     """Whether the hash file's barcodes are checked against the bam's CB
     tags: with external labels, and always for the ATAC bam (split by the

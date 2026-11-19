@@ -3,6 +3,7 @@ import pandas as pd
 from lib.io import (
     split_tool,
     barcode_check_path,
+    min_barcode_fraction,
     needs_barcode_check,
     get_bam,
     derived_bam_paths,
@@ -120,6 +121,7 @@ for _modality in split_modalities(config):
 
         params:
             n_reads=200000,
+            min_fraction=min_barcode_fraction(config),
             script="helper_py_scripts/check_external_barcodes.py"
 
         resources:
@@ -131,7 +133,8 @@ for _modality in split_modalities(config):
         shell:
             """
             (samtools view {input.bam} || true) | head -n {params.n_reads} | \
-                python3 {params.script} --hash_file {input.hash_file} --out {output}
+                python3 {params.script} --hash_file {input.hash_file} --out {output} \
+                    --min_fraction {params.min_fraction}
             """
 
 

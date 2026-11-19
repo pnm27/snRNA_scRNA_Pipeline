@@ -278,7 +278,16 @@ python helper_py_scripts/create_inp_splitBam_consolidated.py projdir/vireo/Sampl
 
 Rules `check_external_barcodes` and `check_barcodes_atac`: fails when too few
 of the bam's CB tags (from its first reads) are the hash file's barcodes, which
-is what a barcode format mismatch looks like.
+is what a barcode format mismatch looks like. `--min_fraction` (default 0.02;
+the pipeline passes `modules: split_bams: split_by: external:
+min_barcode_fraction`) is low because reads of empty droplets and unlabelled
+cells carry CB tags too: a mismatch gives ~0, a pool with few labelled cells
+can be at ~5%. To see a pool's fraction on more reads, without failing:
+
+```bash
+samtools view pool.bam | head -n 2000000 | \
+    python helper_py_scripts/check_external_barcodes.py --hash_file P1_bc_hash.txt --out /dev/null --min_fraction 0
+```
 
 ```bash
 samtools view pool.bam | head -n 200000 | \

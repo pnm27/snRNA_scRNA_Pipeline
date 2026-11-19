@@ -139,3 +139,14 @@ def test_check_barcodes_cli(tmp_path):
     r = run("check_external_barcodes.py", '--hash_file', h, '--out', out,
             input=''.join(sam('AAAC')))
     assert r.returncode == 0 and out.exists()
+
+
+def test_min_barcode_fraction_key():
+    from lib.io import min_barcode_fraction
+    cfg = lambda ext: {'modules': {'split_bams': {'split_by': {'external': ext}}}}
+    assert min_barcode_fraction(cfg({})) == 0.02
+    assert min_barcode_fraction(cfg(None)) == 0.02
+    assert min_barcode_fraction(cfg({'min_barcode_fraction': 0.04})) == 0.04
+    # a pool with few labelled cells (4.7%) passes the default
+    ok, _ = check({'AAAC'}, sam(*['AAAC'] * 47 + ['GGGG'] * 953), 0.02)
+    assert ok

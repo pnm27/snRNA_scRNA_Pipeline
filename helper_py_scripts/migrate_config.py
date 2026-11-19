@@ -202,11 +202,14 @@ def external_labels_block() -> CommentedMap:
     pools.fa.set_flow_style()
     ext['pool_transformations'] = pools
     ext['pools'] = None
+    ext['min_barcode_fraction'] = 0.02
     ext.yaml_add_eol_comment('pooled h5ad, or csv/tsv/txt(.gz) table, one row per cell', 'file')
     ext.yaml_add_eol_comment('obs (h5ad) or table column with the pool of origin', 'pool_column')
     ext.yaml_add_eol_comment('null: obs names (h5ad only)', 'barcode_column')
     ext.yaml_add_eol_comment(
         "null: the aligner's bams_dir; or a table (pool, bam[, bai])", 'pools')
+    ext.yaml_add_eol_comment(
+        "least fraction of sampled CB reads from the labelled cells", 'min_barcode_fraction')
     ext.yaml_set_comment_before_after_key(
         'barcode_transformations',
         before="Steps from the file's unique barcodes to the bam's CB tags: the "
@@ -348,6 +351,9 @@ def added_since(cfg) -> dict:
             new['references.tools.wasp'] = WASP_MODULE
         if not get('modules.wasp')[1]:
             new['modules.wasp'] = wasp_block()
+    ext, _ = get('modules.split_bams.split_by.external')
+    if isinstance(ext, dict) and 'min_barcode_fraction' not in ext:
+        new['modules.split_bams.split_by.external.min_barcode_fraction'] = 0.02
     if whole and 'modalities' not in sb:
         new['modules.split_bams.modalities'] = modalities_seq()
     wasp, _ = get('modules.wasp')

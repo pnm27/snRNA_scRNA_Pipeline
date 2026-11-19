@@ -346,3 +346,16 @@ def test_new_layout_update_atac():
     after = migrate_text(before)
     assert after == text
     assert migrate_text(after) == after
+
+
+def test_new_layout_update_min_barcode_fraction():
+    """An external labels block from before 'min_barcode_fraction' gets it."""
+    y = yaml_rt()
+    cfg = y.load(open(EXAMPLE).read())
+    del cfg['modules']['split_bams']['split_by']['external']['min_barcode_fraction']
+    out = io.StringIO()
+    y.dump(cfg, out)
+    after = migrate_text(out.getvalue())
+    new = yaml.safe_load(after)
+    assert new['modules']['split_bams']['split_by']['external']['min_barcode_fraction'] == 0.02
+    assert migrate_text(after) == after

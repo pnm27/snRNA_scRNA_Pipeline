@@ -342,6 +342,10 @@ modules:
         # null: the aligner's bams_dir and fold_struct; or a table (pool, bam[, bai])
         # of bams elsewhere (start: split_bams); derived bams go to temp_dir
         pools: null
+        # Least fraction of a bam's sampled CB reads from the labelled cells
+        # (check_external_barcodes, and check_barcodes_atac for multiome ATAC);
+        # a barcode format mismatch gives ~0, a pool with few labelled cells ~5%
+        min_barcode_fraction: 0.02
     modalities: [cDNA]  # bams split per donor; multiome: [cDNA, ATAC] (both by the cDNA or external labels)
     min_cells_per_donor: 200
     subset_chr: 1 # Subset BAM files
