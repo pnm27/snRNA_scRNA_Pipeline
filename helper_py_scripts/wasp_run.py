@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
-"""Run one of WASP's python scripts with numpy's removed type aliases restored.
+"""Run one of WASP's python scripts with the numpy names it uses that newer
+numpy removed restored.
 
-WASP (github.com/bmvdgeijn/WASP) uses np.int (mapping/snptable.py), which
-numpy 1.24 removed, so with a newer numpy find_intersecting_snps.py fails
-with "module 'numpy' has no attribute 'int'". The aliases were the builtins
-(np.int is int), so restoring them changes nothing else. Used by
+WASP (github.com/bmvdgeijn/WASP, mapping/) was written for numpy 1.x. Of the
+numpy names its scripts use, two are gone (else "module 'numpy' has no
+attribute ..."):
+
+    np.int   snptable.py; removed in numpy 1.24: the builtin int
+    np.in1d  find_intersecting_snps.py; removed in numpy 2.4: np.isin of the
+             flattened array, as np.in1d was
+
+The rest of what they use (np.array, np.unique, ...; pysam's old names
+Samfile, qname, pos, qual; PyTables' open_file, get_node) is still there,
+and Python 3.12 runs them as they are: run end to end on the same inputs
+with numpy 2.5 and 1.26 (python 3.12, pysam 0.24), the outputs are the same.
+Only names missing from the numpy in use are set. Used by
 helper_sh_scripts/wasp_donor.sh; any arguments after the script are its own:
 
     python helper_py_scripts/wasp_run.py $WASP_HOME/mapping/find_intersecting_snps.py \\
@@ -13,23 +23,37 @@ helper_sh_scripts/wasp_donor.sh; any arguments after the script are its own:
 import os
 import runpy
 import sys
+import warnings
 
 import numpy as np
 
-# numpy < 1.24 has them (deprecated); with numpy >= 1.24 they raise AttributeError
-ALIASES = {'int': int, 'float': float, 'bool': bool, 'object': object,
-           'complex': complex, 'str': str}
+
+def in1d(ar1, ar2, assume_unique=False, invert=False, **kwargs):
+    """np.in1d as numpy < 2.4 had it: a 1-D result for the flattened ar1."""
+    return np.isin(np.asarray(ar1).ravel(), ar2, assume_unique=assume_unique,
+                   invert=invert, **kwargs)
+
+
+# The removed names WASP's scripts use -> what they were
+REMOVED = {'int': int, 'in1d': in1d}
 
 
 def restore_aliases():
-    """Set each removed alias; returns the names set."""
+    """Set each removed name the numpy in use lacks; returns the names set.
+    Where numpy still has them (np.int before 1.24, np.in1d before 2.4), its
+    deprecation warnings are silenced, to keep them out of WASP's logs."""
     restored = []
-    for name, builtin in ALIASES.items():
-        try:
-            getattr(np, name)
-        except AttributeError:
-            setattr(np, name, builtin)
+    for name, value in REMOVED.items():
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            present = hasattr(np, name)
+        if not present:
+            setattr(np, name, value)
             restored.append(name)
+    warnings.filterwarnings('ignore', category=DeprecationWarning,
+                            message=r'.*(np\.int\b|in1d).*')
+    warnings.filterwarnings('ignore', category=FutureWarning,
+                            message=r'.*(np\.int\b|in1d).*')
     return restored
 
 

@@ -13,6 +13,8 @@ SNPTABLE = "import numpy as np\ndef idx(xs):\n    return np.array(xs, dtype=np.i
 SCRIPT = """import sys, snptable
 print(sys.argv[1:], snptable.idx([1, 2]).dtype.kind, __name__)
 """
+sys.path.insert(0, os.path.join(REPO, "helper_py_scripts"))
+import wasp_run
 
 
 @pytest.fixture
@@ -50,3 +52,28 @@ def test_script_failure_passes_through(mapping, tmp_path):
 def test_no_script(tmp_path):
     out = run(WRAPPER, "nowhere.py", cwd=tmp_path)
     assert out.returncode != 0 and "no script nowhere.py" in out.stderr
+
+
+def test_in1d_as_numpy_had_it():
+    a, b = np.array([[1, 2], [3, 4]]), [2, 4, 9]
+    assert wasp_run.in1d(a, b).tolist() == [False, True, False, True]  # flattened
+    assert wasp_run.in1d([1, 5], b, invert=True).tolist() == [True, True]
+
+
+def test_restore_only_missing(monkeypatch):
+    monkeypatch.delattr(np, "in1d", raising=False)
+    restored = wasp_run.restore_aliases()
+    assert "in1d" in restored and np.in1d is wasp_run.in1d
+    assert np.in1d(np.array([3, 7]), [7]).tolist() == [False, True]
+    # names numpy still has are left alone
+    assert "int32" not in restored and "isin" not in restored
+
+
+def test_no_numpy_warnings_in_logs(mapping, tmp_path):
+    # np.in1d is deprecated (numpy 2.0-2.3) or gone (2.4): either way, no
+    # warning from the wrapper or the script lands in WASP's log
+    (mapping / "uses_in1d.py").write_text(
+        "import numpy as np\nprint(np.in1d([1, 2], [2]).tolist(), np.int(3))\n")
+    out = run(WRAPPER, str(mapping / "uses_in1d.py"), cwd=tmp_path)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.strip() == "[False, True] 3" and out.stderr == ""

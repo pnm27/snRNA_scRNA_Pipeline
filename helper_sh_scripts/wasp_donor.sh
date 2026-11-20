@@ -3,7 +3,7 @@
 # (rules/wasp/rna.smk, rules/wasp/atac.smk); only the remapping between
 # them differs (STAR, bwa-mem). As github.com/bmvdgeijn/WASP's mapping
 # pipeline; its scripts are in $WASP_HOME (the WASP env module), run with
-# that module's python, through helper_py_scripts/wasp_run.py (numpy >= 1.24).
+# that module's python, through helper_py_scripts/wasp_run.py (newer numpy).
 #
 #   prepare  the bam and the genotypes have chromosomes in common; the
 #            reads over the donor's SNPs (to remap, as <prefix>.remap.fq*.gz)

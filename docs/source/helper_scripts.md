@@ -352,9 +352,13 @@ bash helper_sh_scripts/wasp_donor.sh finish --work work/P1_D1 --bam D1.bam \
 ### wasp_run.py: WASP's scripts with a newer numpy
 
 Run by `wasp_donor.sh`: runs one of WASP's python scripts after restoring
-numpy's type aliases (`np.int`, ...) that numpy 1.24 removed and WASP's
-`snptable.py` still uses (else: `module 'numpy' has no attribute 'int'`).
-The script's own arguments follow it.
+the numpy names it uses that newer numpy removed (else: `module 'numpy' has
+no attribute ...`): `np.int` (removed in numpy 1.24; `snptable.py`) and
+`np.in1d` (removed in numpy 2.4; `find_intersecting_snps.py`). Only names
+missing from the numpy in use are set, and numpy's warnings about them are
+kept out of the logs. The rest of WASP's scripts runs as it is with Python
+3.12 and numpy 2.x (same results as with numpy 1.26). The script's own
+arguments follow it.
 
 ```bash
 python helper_py_scripts/wasp_run.py $WASP_HOME/mapping/find_intersecting_snps.py --is_sorted \
