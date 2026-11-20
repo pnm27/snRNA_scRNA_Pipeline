@@ -320,7 +320,7 @@ modules:
       array: {vcf: '/data/array/myVcf_{chrom}.vcf.gz', chrom_sizes: /data/hg38.chrom.sizes}
 ```
 
-**Chromosome names:** the genotypes and the bams must name chromosomes the same way (`chr1` or `1`). Each job checks this before it starts.
+**Chromosome names:** WASP matches a bam's chromosome to the genotypes' as it is or with the `chr` prefix added or stripped, so `chr1` bams work with genotypes naming `1` (and the other way round); other differences, e.g. `chrM` vs `MT`, leave that chromosome without SNPs. Each job checks that the bam and the genotypes have chromosomes in common this way before it starts.
 
 ## WASP remap references
 

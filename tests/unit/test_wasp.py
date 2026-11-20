@@ -490,13 +490,29 @@ def test_missing_samples_and_contigs(tmp_path):
     path = table(tmp_path, "pool\tdonor\tsample\nP1\tD1\tG1;G9\nP1\tD2\tG2\n")
     t = wasp.read_samples_table(path, sets=['main'])
     assert wasp_check_inputs.missing_samples(t, 'main', {'G1', 'G2'}) == ["P1 D1: G9"]
-    assert wasp_check_inputs.common_contigs(['chr1', 'chr2'], {'1', '2'}) == set()
     assert wasp_check_inputs.common_contigs(['1', 'MT'], {'1', '2'}) == {'1'}
+
+
+@pytest.mark.parametrize("bam, h5, common", [
+    (['chr1', 'chr2', 'chrM'], {'1', '2', 'MT'}, {'chr1', 'chr2'}),  # WASP strips 'chr'
+    (['1', '2', 'MT'], {'chr1', 'chr2', 'chrM'}, {'1', '2'}),        # and adds it
+    (['chr1', 'GL000220.1'], {'chr1'}, {'chr1'}),
+])
+def test_common_contigs_chr_prefix(bam, h5, common):
+    assert wasp_check_inputs.common_contigs(bam, h5) == common
+
+
+def test_check_contigs_chr_prefix(tmp_path, monkeypatch, capsys):
+    (tmp_path / "contigs.txt").write_text("1\n2\n")
+    monkeypatch.setattr(wasp_check_inputs, 'h5_chromosomes', lambda _: {'chr1', 'chr2'})
+    common = wasp_check_inputs.check_contigs(str(tmp_path / "contigs.txt"), "snp_tab.h5", "D1.bam")
+    assert common == {'1', '2'}
+    assert "matched to snp_tab.h5 by the 'chr' prefix" in capsys.readouterr().err
 
 
 def test_check_contigs_fails(tmp_path, monkeypatch):
     (tmp_path / "contigs.txt").write_text("chr1\nchr2\n")
-    monkeypatch.setattr(wasp_check_inputs, 'h5_chromosomes', lambda _: {'1', '2'})
+    monkeypatch.setattr(wasp_check_inputs, 'h5_chromosomes', lambda _: {'X1', 'X2'})
     with pytest.raises(SystemExit, match="no chromosome in common"):
         wasp_check_inputs.check_contigs(str(tmp_path / "contigs.txt"), "snp_tab.h5", "D1.bam")
 

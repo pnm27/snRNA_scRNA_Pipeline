@@ -5,7 +5,7 @@
 # pipeline; its scripts are in $WASP_HOME (the WASP env module), run with
 # that module's python.
 #
-#   prepare  the bam and the genotypes name chromosomes the same way; the
+#   prepare  the bam and the genotypes have chromosomes in common; the
 #            reads over the donor's SNPs (to remap, as <prefix>.remap.fq*.gz)
 #            and the others (<prefix>.keep.bam), with <prefix> =
 #            <work>/<bam name without .bam>
@@ -73,7 +73,8 @@ prepare)
     # shellcheck disable=SC2086
     printf '%s\n' ${samples} > "${work}/samples.txt"
 
-    # The bam and the genotypes name chromosomes the same way
+    # The bam and the genotypes have chromosomes in common (as WASP matches
+    # them: as they are, or with the 'chr' prefix added or stripped)
     samtools view -H "${bam}" \
         | awk -F'\t' '$1 == "@SQ" {for (i = 2; i <= NF; i++) if ($i ~ /^SN:/) print substr($i, 4)}' \
         > "${work}/contigs.txt"

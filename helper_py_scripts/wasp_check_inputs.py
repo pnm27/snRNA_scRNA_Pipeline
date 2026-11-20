@@ -5,9 +5,10 @@ samples
     each genotype sample ID of the samples table is in its set's
     haps.h5 (else find_intersecting_snps.py fails hours in)
 contigs
-    a bam and a set's snp_tab.h5 name chromosomes the same way
-    (chr1 vs 1): with no chromosome in common, WASP would find
-    no SNP and keep every read
+    a bam and a set's snp_tab.h5 have chromosomes in common, as WASP
+    matches them: the same name, or with the 'chr' prefix added or
+    stripped (chr1 vs 1); with none in common, WASP would find no SNP
+    and keep every read
 set-samples
     the genotype sample IDs of a set (not run by the pipeline: e.g. to
     subset VCFs by hand with bcftools view -S)
@@ -80,8 +81,19 @@ def missing_samples(table: dict, gset: str, known: set) -> list:
             for s in row['samples'] if s not in known]
 
 
+def h5_chrom_of(contig: str, h5_chroms) -> str:
+    """The h5 chromosome WASP reads for a bam contig (snptable.read_h5): the
+    same name, else with 'chr' stripped (chr1 -> 1) or added (1 -> chr1);
+    None if neither is there."""
+    if contig in h5_chroms:
+        return contig
+    other = contig[3:] if contig.startswith('chr') else f"chr{contig}"
+    return other if other in h5_chroms else None
+
+
 def common_contigs(bam_contigs, h5_chroms) -> set:
-    return set(bam_contigs) & set(h5_chroms)
+    """The bam contigs WASP finds SNPs of."""
+    return {c for c in bam_contigs if h5_chrom_of(c, h5_chroms)}
 
 
 def check_samples(table_path, sets: dict, need_bam: bool, out=None, names=None):
@@ -123,7 +135,12 @@ def check_contigs(contigs_path, snp_tab, bam):
         raise SystemExit(
             f"{bam} and {snp_tab} have no chromosome in common (bam: "
             f"{', '.join(contigs[:5])}...; genotypes: {', '.join(sorted(chroms)[:5])}...). "
-            "Do both use the 'chr' prefix (or neither)?")
+            "WASP matches names as they are or with 'chr' added or stripped.")
+    renamed = sorted(c for c in common if c not in chroms)
+    if renamed:
+        print(f"{bam}: {len(renamed)} chromosome(s) matched to {snp_tab} by the 'chr' "
+              f"prefix, as WASP does (e.g. {renamed[0]} -> {h5_chrom_of(renamed[0], chroms)})",
+              file=sys.stderr)
     return common
 
 
