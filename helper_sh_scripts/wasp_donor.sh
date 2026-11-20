@@ -14,6 +14,11 @@
 #            the reads marked as duplicates (0x400); flagstats and the
 #            donor's stats row; removes <work>
 #
+# Everything a step writes to stderr goes to its log (prepare: --log, the
+# find_intersecting_snps.py log; finish: --filter_log, after
+# filter_remapped_reads.py's own lines), and a failure names the command
+# that failed there and in the job's stderr.
+#
 # Usage:
 #   wasp_donor.sh prepare --work DIR --bam BAM --samples "G1 G2" \
 #       --snp_index H5 --snp_tab H5 --haps H5 [--paired] --log LOG
@@ -65,8 +70,18 @@ while [[ $# -gt 0 ]]; do
 done
 prefix="${work}/$(basename "${bam}" .bam)"
 
+# The step's stderr to its log (started empty); the job's stderr (fd 3) gets
+# a line on failure
+log_to() {
+    : > "$1"
+    exec 3>&2 2>>"$1"
+    step_log=$1
+    trap 'rc=$?; msg="wasp_donor.sh ${cmd}: failed (exit ${rc}) at line ${LINENO}: ${BASH_COMMAND}"; echo "${msg}" >&2; echo "${msg} (log: ${step_log})" >&3' ERR
+}
+
 case ${cmd} in
 prepare)
+    log_to "${log}"
     rm -rf "${work}"
     mkdir -p "${work}"
     # One genotype sample ID per line (find_intersecting_snps.py's --samples)
@@ -79,19 +94,20 @@ prepare)
         | awk -F'\t' '$1 == "@SQ" {for (i = 2; i <= NF; i++) if ($i ~ /^SN:/) print substr($i, 4)}' \
         > "${work}/contigs.txt"
     python "${REPO}/helper_py_scripts/wasp_check_inputs.py" contigs \
-        --contigs "${work}/contigs.txt" --snp_tab "${snp_tab}" --bam "${bam}"
+        --contigs "${work}/contigs.txt" --snp_tab "${snp_tab}" --bam "${bam}" >&2
 
     # Reads over the donor's SNPs (to remap) and the others (kept)
     python "${WASP_HOME}/mapping/find_intersecting_snps.py" ${paired:+--is_paired_end} \
         --is_sorted --snp_index "${snp_index}" --snp_tab "${snp_tab}" \
         --haplotype "${haps}" --samples "${work}/samples.txt" \
-        --output_dir "${work}" "${bam}" &> "${log}"
+        --output_dir "${work}" "${bam}" >&2
     ;;
 
 finish)
+    log_to "${filter_log}"
     # Keep the reads that map back to the same place, with those over no SNP
     python "${WASP_HOME}/mapping/filter_remapped_reads.py" "${prefix}.to.remap.bam" \
-        "${remapped}" "${work}/remap.keep.bam" &> "${filter_log}"
+        "${remapped}" "${work}/remap.keep.bam" >&2
     samtools merge -f -@ "${threads}" "${work}/merged.bam" \
         "${prefix}.keep.bam" "${work}/remap.keep.bam"
     if [[ -n ${drop_duplicates} ]]; then

@@ -437,6 +437,8 @@ Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the spli
 <modality>/wasp_plots.pdf     histograms of the summary_* columns
 ```
 
+The `find_intersecting_snps.log` has everything `wasp_donor.sh prepare` writes (the chromosome check, `samtools`, `find_intersecting_snps.py`), the `filter_remapped_reads.log` everything `finish` writes (`filter_remapped_reads.py`, `samtools`, the stats); a failed step ends its log with the command that failed. The donor's folder in `work_dir` (`<work_dir><modality>/<pool>/<final_donor>/`) holds the large intermediate bams and fastqs only while its job runs: it's removed when the job succeeds, and kept, for a look, when it fails (the job's next attempt starts it afresh).
+
 The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs; for ATAC also `wasp_kept` (after WASP, before removing duplicates) and `duplicates_removed`, so `removed` splits into WASP's part and the duplicates'. Counts are reads, or pairs for paired-end bams (ATAC, or cDNA with `paired_end: true`).
 
 ### Usage
