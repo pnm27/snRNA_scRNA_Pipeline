@@ -349,6 +349,19 @@ bash helper_sh_scripts/wasp_donor.sh finish --work work/P1_D1 --bam D1.bam \
     --pool P1 --donor D1 --final_donor D1 --sample G1 --modality cDNA --stats D1.stats.tsv
 ```
 
+### wasp_run.py: WASP's scripts with a newer numpy
+
+Run by `wasp_donor.sh`: runs one of WASP's python scripts after restoring
+numpy's type aliases (`np.int`, ...) that numpy 1.24 removed and WASP's
+`snptable.py` still uses (else: `module 'numpy' has no attribute 'int'`).
+The script's own arguments follow it.
+
+```bash
+python helper_py_scripts/wasp_run.py $WASP_HOME/mapping/find_intersecting_snps.py --is_sorted \
+    --snp_index geno/snp_index.h5 --snp_tab geno/snp_tab.h5 --haplotype geno/haps.h5 \
+    --samples samples.txt --output_dir work/P1_D1 D1.bam
+```
+
 ### wasp_stats.py: WASP's statistics
 
 `parse` (run by `wasp_donor.sh finish`) makes a donor bam's stats row from its

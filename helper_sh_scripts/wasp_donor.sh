@@ -3,7 +3,7 @@
 # (rules/wasp/rna.smk, rules/wasp/atac.smk); only the remapping between
 # them differs (STAR, bwa-mem). As github.com/bmvdgeijn/WASP's mapping
 # pipeline; its scripts are in $WASP_HOME (the WASP env module), run with
-# that module's python.
+# that module's python, through helper_py_scripts/wasp_run.py (numpy >= 1.24).
 #
 #   prepare  the bam and the genotypes have chromosomes in common; the
 #            reads over the donor's SNPs (to remap, as <prefix>.remap.fq*.gz)
@@ -97,7 +97,7 @@ prepare)
         --contigs "${work}/contigs.txt" --snp_tab "${snp_tab}" --bam "${bam}" >&2
 
     # Reads over the donor's SNPs (to remap) and the others (kept)
-    python "${WASP_HOME}/mapping/find_intersecting_snps.py" ${paired:+--is_paired_end} \
+    python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/find_intersecting_snps.py" ${paired:+--is_paired_end} \
         --is_sorted --snp_index "${snp_index}" --snp_tab "${snp_tab}" \
         --haplotype "${haps}" --samples "${work}/samples.txt" \
         --output_dir "${work}" "${bam}" >&2
@@ -106,7 +106,7 @@ prepare)
 finish)
     log_to "${filter_log}"
     # Keep the reads that map back to the same place, with those over no SNP
-    python "${WASP_HOME}/mapping/filter_remapped_reads.py" "${prefix}.to.remap.bam" \
+    python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/filter_remapped_reads.py" "${prefix}.to.remap.bam" \
         "${remapped}" "${work}/remap.keep.bam" >&2
     samtools merge -f -@ "${threads}" "${work}/merged.bam" \
         "${prefix}.keep.bam" "${work}/remap.keep.bam"
