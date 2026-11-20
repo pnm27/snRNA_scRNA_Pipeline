@@ -434,7 +434,7 @@ H5_FILES = {'snp_index': 'snp_index.h5', 'snp_tab': 'snp_tab.h5', 'haps': 'haps.
 
 
 def converted_dir(config, gset: str) -> str:
-    """Where a set given as VCF/BCF is converted to WASP's h5 files."""
+    """Where a set given as per-chromosome VCFs is converted to WASP's h5 files."""
     return f"{_dir(config)}genotypes/{gset}/"
 
 
@@ -449,11 +449,56 @@ def genotype_files(config, gset: str) -> dict:
 
 
 def vcf_sets(config) -> list:
-    """Genotype sets given as VCF/BCF (converted with snp2h5)."""
+    """Genotype sets given as per-chromosome VCFs (converted with snp2h5)."""
     return [s for s, g in (wasp_config(config).get('genotypes') or {}).items()
             if not (g or {}).get('h5_dir')]
 
 
+VCF_PATTERN = re.compile(r'.*\{chrom\}.*\.vcf(\.gz)?$')
+
+
+def read_chrom_sizes(path: str) -> list:
+    """Chromosome names (first column) of a chrom sizes file, in order."""
+    if not os.path.isfile(path):
+        raise ValueError(f"No chrom_sizes file {path}")
+    with open(path) as f:
+        return [line.split()[0] for line in f if line.strip() and not line.startswith('#')]
+
+
+def vcf_chrom_files(config, gset: str) -> dict:
+    """{chromosome: VCF} of a set's 'vcf' pattern, filled with each chromosome
+    of its 'chrom_sizes' whose file exists (in chrom_sizes' order).
+
+    snp2h5 reads one chromosome per file (the CHROM of its first record) and
+    only text VCF (.vcf.gz or .vcf), so the set is a pattern with {chrom},
+    e.g. myVcf_{chrom}.vcf.gz with chrom_sizes naming chr1, chr2, ...
+    Chromosomes without a file (e.g. chrM, alt contigs) are left out, with a
+    warning; none at all is an error."""
+    g = wasp_config(config)['genotypes'][gset]
+    pattern, sizes = g.get('vcf'), g.get('chrom_sizes')
+    if not isinstance(pattern, str) or not VCF_PATTERN.fullmatch(pattern):
+        raise ValueError(
+            f"Genotype set '{gset}': 'vcf' must be a pattern with {{chrom}} of "
+            f"per-chromosome VCFs (.vcf.gz or .vcf), e.g. myVcf_{{chrom}}.vcf.gz, "
+            f"not {pattern!r}: snp2h5 reads one chromosome per text VCF")
+    found, missing = {}, []
+    for chrom in read_chrom_sizes(sizes):
+        path = pattern.replace('{chrom}', chrom)
+        if os.path.exists(path):
+            found[chrom] = path
+        else:
+            missing.append(chrom)
+    if not found:
+        raise ValueError(
+            f"Genotype set '{gset}': no VCF {pattern} for the chromosomes of "
+            f"{sizes} (e.g. {pattern.replace('{chrom}', missing[0]) if missing else pattern}); "
+            "{chrom} is filled with chrom_sizes' names (chr1 or 1)")
+    if missing:
+        _warn(f"Genotype set '{gset}': no VCF {pattern} for {', '.join(missing)} "
+              f"(in {sizes}): left out of its h5 files")
+    return found
+
+
 def vcf_files(config, gset: str) -> list:
-    vcf = wasp_config(config)['genotypes'][gset].get('vcf')
-    return [vcf] if isinstance(vcf, str) else list(vcf or [])
+    """The set's per-chromosome VCFs (vcf_chrom_files)."""
+    return list(vcf_chrom_files(config, gset).values())

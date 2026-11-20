@@ -308,14 +308,16 @@ A row's `final_donor` and `vcfID`, in order: the samples table's; else the (pool
 `modules: wasp: genotypes`. Named sets, e.g. one for WGS and one for SNP arrays. Each set is one of:
 
 - **`h5_dir`:** a folder with WASP's `snp_index.h5`, `snp_tab.h5` and `haps.h5`, made with WASP's `snp2h5`.
-- **`vcf` and `chrom_sizes`:** an indexed VCF/BCF, or a list of them (e.g. one per chromosome). `chrom_sizes` is a two-column file of chromosome and length, as for `snp2h5 --chrom`. Rule `wasp_snp2h5` converts the set once to `<wasp_dir>genotypes/<set>/`, keeping the set's samples in the table and the sites variable among them.
+- **`vcf` and `chrom_sizes`:** per-chromosome VCFs, given as a path pattern with `{chrom}`, e.g. `/data/wgs/myVcf_{chrom}.vcf.gz`. `chrom_sizes` is a two-column file of chromosome and length, as for `snp2h5 --chrom`; `{chrom}` is filled with its names, so with files named `myVcf_chr1.vcf.gz` and a `chrom_sizes` naming `1`, `2`, ..., the pattern is `myVcf_chr{chrom}.vcf.gz`. Chromosomes of `chrom_sizes` with no file (e.g. `chrM`, alt contigs) are left out, with a warning; no file at all stops the run. Rule `wasp_snp2h5` converts the set once to `<wasp_dir>genotypes/<set>/` with WASP's `snp2h5`, which keeps every sample and site of the VCFs (WASP picks each donor's sample and its heterozygous sites).
+
+  `snp2h5` reads each file as one chromosome (the CHROM of its first record), and only text VCF: the files must be `.vcf.gz` or `.vcf`, one chromosome each, no BCF. Split or convert other VCFs first, e.g. `bcftools view -r chr1 -Oz -o myVcf_chr1.vcf.gz all.bcf` (and `-S samples.txt` to keep only your samples; `helper_py_scripts/wasp_check_inputs.py set-samples` lists them).
 
 ```yaml
 modules:
   wasp:
     genotypes:
       wgs: {h5_dir: /data/wasp_h5/wgs/}
-      array: {vcf: /data/array.bcf, chrom_sizes: /data/hg38.chrom.sizes}
+      array: {vcf: '/data/array/myVcf_{chrom}.vcf.gz', chrom_sizes: /data/hg38.chrom.sizes}
 ```
 
 **Chromosome names:** the genotypes and the bams must name chromosomes the same way (`chr1` or `1`). Each job checks this before it starts.

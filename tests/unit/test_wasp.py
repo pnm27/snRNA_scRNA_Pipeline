@@ -274,7 +274,7 @@ def config(**wasp_keys):
                         'cellranger_arc': {'ref': {'genome': 'refs/arc/'}},
                         'wasp': {'wasp_dir': 'out', 'work_dir': 'tmp/',
                                  'genotypes': {'wgs': {'h5_dir': 'h5'},
-                                               'chip': {'vcf': 'c.bcf', 'chrom_sizes': 'c.txt'}}}}}
+                                               'chip': {'vcf': 'c_{chrom}.vcf.gz', 'chrom_sizes': 'c.txt'}}}}}
     base['modules']['wasp'].update(wasp_keys)
     return base
 
@@ -291,7 +291,50 @@ def test_paths():
     assert wasp.genotype_files(c, 'wgs')['haps'] == "h5/haps.h5"
     assert wasp.genotype_files(c, 'chip')['snp_tab'] == "out/genotypes/chip/snp_tab.h5"
     assert wasp.vcf_sets(c) == ['chip']
-    assert wasp.vcf_files(c, 'chip') == ['c.bcf']
+
+
+# Genotype sets from per-chromosome VCFs (a {chrom} pattern) ------------------
+
+def vcf_config(tmp_path, pattern, chroms=("chr1", "chr2", "chrM"), files=("chr1", "chr2")):
+    sizes = tmp_path / "chrom.txt"
+    sizes.write_text("".join(f"{c}\t1000\n" for c in chroms))
+    for f in files:
+        (tmp_path / pattern.replace('{chrom}', f)).touch()
+    c = config()
+    c['modules']['wasp']['genotypes']['chip'] = {
+        'vcf': str(tmp_path / pattern), 'chrom_sizes': str(sizes)}
+    return c
+
+
+def test_vcf_chrom_files(tmp_path, capsys):
+    wasp._WARNED.clear()
+    c = vcf_config(tmp_path, "g_{chrom}.vcf.gz")
+    assert wasp.vcf_chrom_files(c, 'chip') == {
+        'chr1': str(tmp_path / "g_chr1.vcf.gz"), 'chr2': str(tmp_path / "g_chr2.vcf.gz")}
+    assert wasp.vcf_files(c, 'chip') == [str(tmp_path / "g_chr1.vcf.gz"), str(tmp_path / "g_chr2.vcf.gz")]
+    # chrM has no VCF: left out, with a warning
+    err = capsys.readouterr().err
+    assert "no VCF" in err and "for chrM " in err
+
+
+def test_vcf_pattern_without_chr_prefix(tmp_path):
+    # files named ..._chr1 with a chrom_sizes naming 1, 2
+    c = vcf_config(tmp_path, "g_chr{chrom}.vcf.gz", chroms=("1", "2"), files=("1",))
+    assert list(wasp.vcf_chrom_files(c, 'chip')) == ['1']
+
+
+def test_vcf_no_file(tmp_path):
+    c = vcf_config(tmp_path, "g_{chrom}.vcf.gz", files=())
+    with pytest.raises(ValueError, match="no VCF .* for the chromosomes"):
+        wasp.vcf_chrom_files(c, 'chip')
+
+
+@pytest.mark.parametrize("pattern", ["all.vcf.gz", "g_{chrom}.bcf", "g_{chrom}.vcf.gz.tbi"])
+def test_vcf_bad_pattern(tmp_path, pattern):
+    c = vcf_config(tmp_path, "g_{chrom}.vcf.gz")
+    c['modules']['wasp']['genotypes']['chip']['vcf'] = pattern
+    with pytest.raises(ValueError, match="pattern with \\{chrom\\}"):
+        wasp.vcf_chrom_files(c, 'chip')
 
 
 def test_remap_reference():
@@ -483,7 +526,10 @@ def test_minimal_wasp_config_is_valid():
     ({'modules': {'wasp': {'atac': {'drop_duplicates': 'all'}}}}, "marked"),
     ({'modules': {'split_bams': {'modalities': ['ATAC']}}}, "Only multiome runs"),
     ({'workflow': {'until': 'split_bams'}}, "start: wasp WASP-filters"),
-    ({'modules': {'wasp': {'genotypes': {'chip': {'vcf': 'x.bcf'}}}}}, "chrom_sizes"),
+    ({'modules': {'wasp': {'genotypes': {'chip': {'vcf': 'x_{chrom}.vcf.gz'}}}}}, "chrom_sizes"),
+    # one text VCF per chromosome only (snp2h5)
+    ({'modules': {'wasp': {'genotypes': {'chip': {'vcf': 'x.bcf', 'chrom_sizes': 'c.txt'}}}}}, "{chrom}"),
+    ({'modules': {'wasp': {'genotypes': {'chip': {'vcf': ['a.vcf.gz'], 'chrom_sizes': 'c.txt'}}}}}, "{chrom}"),
 ])
 def test_wasp_config_errors(over, error):
     c = fill_defaults(merge(MINIMAL, over))

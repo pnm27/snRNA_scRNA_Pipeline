@@ -322,8 +322,9 @@ bash helper_sh_scripts/create_bams_per_donor.sh P1_bc_hash.txt split/P1/ per_cel
 
 The WASP stage's checks before the long jobs. `samples` (rule
 `wasp_check_inputs`) checks the samples table against the genotypes;
-`set-samples` (rule `wasp_snp2h5`) prints a genotype set's sample IDs; `contigs`
-checks that a bam's chromosomes are named as the genotypes'.
+`contigs` checks that a bam's chromosomes are named as the genotypes';
+`set-samples` prints a genotype set's sample IDs (not run by the pipeline: e.g.
+to subset your VCFs by hand with `bcftools view -S`).
 
 ```bash
 python helper_py_scripts/wasp_check_inputs.py samples --table wasp_samples.tsv --set main \

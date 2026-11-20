@@ -299,7 +299,7 @@ def wasp_block() -> CommentedMap:
                "either table: a warning)", indent=4)
     wasp.yaml_add_eol_comment(SAMPLE_NAMES_COMMENT, 'sample_names')
     wasp.yaml_add_eol_comment(
-        "sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}",
+        "sets, e.g. main: {h5_dir: path/} or main: {vcf: x_{chrom}.vcf.gz, chrom_sizes: chrom.txt}",
         'genotypes')
     set_eol(wasp, 'rna', RNA_COMMENT)
     set_eol(wasp, 'atac', ATAC_COMMENT)

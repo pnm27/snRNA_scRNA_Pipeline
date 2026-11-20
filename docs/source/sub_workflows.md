@@ -386,7 +386,7 @@ The bams are split by the final demultiplexing, while swap corrections are only 
 Named sets (e.g. one for WGS, one for SNP arrays), each:
 
 - `h5_dir`: a folder with WASP's `snp_index.h5`, `snp_tab.h5` and `haps.h5` (made once with WASP's `snp2h5`), or
-- `vcf` (an indexed VCF/BCF, or a list of them, e.g. one per chromosome) and `chrom_sizes` (chromosome and length, `snp2h5 --chrom`): rule `wasp_snp2h5` makes the h5 files once (`<wasp_dir>genotypes/<set>/`), from the set's samples in the table and the sites variable among them (`bcftools view -S ... -q 0.000001:minor`), one chromosome at a time.
+- `vcf` (a pattern of per-chromosome `.vcf.gz` or `.vcf` files with `{chrom}`, e.g. `myVcf_{chrom}.vcf.gz`) and `chrom_sizes` (chromosome and length, `snp2h5 --chrom`; `{chrom}` takes its names, and chromosomes with no file are left out): rule `wasp_snp2h5` makes the h5 files once (`<wasp_dir>genotypes/<set>/`) with `snp2h5`, from all the VCFs' samples and sites. See [the genotype sets](optional_inputs.md) for the file requirements.
 
 ### Configuration
 
@@ -400,7 +400,7 @@ modules:
     genotypes:
       main:
         h5_dir: /path/to/snp2h5_output/
-      # chip: {vcf: /path/to/genotypes.bcf, chrom_sizes: /path/to/chromInfo.hg38.txt}
+      # chip: {vcf: '/path/to/myVcf_{chrom}.vcf.gz', chrom_sizes: /path/to/chromInfo.hg38.txt}
     rna:                     # cDNA bams
       remap:
         genome: null         # STAR index; null: the aligner's reference (start: wasp: required)
@@ -420,7 +420,7 @@ The remap references must be those the bams were aligned to: by default STARsolo
 
 ### Jobs
 
-1. `wasp_snp2h5` (sets given as VCF/BCF only).
+1. `wasp_snp2h5` (sets given as per-chromosome VCFs only).
 2. `wasp_check_inputs`, once: every `sample` of the table is in its set's `haps.h5`, so a wrong ID stops the run before the long jobs.
 3. Per donor bam, `wasp_remap_rna` (cDNA, as `genesis_wasp.R`) or `wasp_remap_atac` (ATAC, as `psychad_multiome_wasp.R`). `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes name chromosomes the same way (`chr1` vs `1`) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC). Then the remapping: STAR (two-pass, `NH HI AS nM NM MD`), or `bwa mem` of the pairs. `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities (`--resources wasp_slots=N` on the command line to change it). By default 6 cores, 18 GB and a day for `wasp_remap_rna`; 8 cores, 24 GB and a day for `wasp_remap_atac` (`execution: resources`).
 4. `wasp_stats`, per modality: the run's table, summary and plots.

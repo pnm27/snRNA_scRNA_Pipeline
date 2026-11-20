@@ -901,11 +901,11 @@ properties:
             - object
             - 'null'
             default: null
-            description: "Named genotype sets (e.g. one for WGS, one for SNP arrays), each WASP's h5 files (h5_dir, made by snp2h5) or VCF/BCF files converted once (vcf and chrom_sizes)"
+            description: "Named genotype sets (e.g. one for WGS, one for SNP arrays), each WASP's h5 files (h5_dir, made by snp2h5) or per-chromosome VCFs converted once by snp2h5 (vcf, a pattern with {chrom}, and chrom_sizes)"
             additionalProperties:
               type: object
               additionalProperties: false
-              x-explain: "A genotype set is either 'h5_dir' (a folder with WASP's snp_index.h5, snp_tab.h5 and haps.h5) or 'vcf' (an indexed VCF/BCF, or a list of them, e.g. one per chromosome) with 'chrom_sizes' (chromosome and length, snp2h5's --chrom)"
+              x-explain: "A genotype set is either 'h5_dir' (a folder with WASP's snp_index.h5, snp_tab.h5 and haps.h5) or 'vcf' (a pattern of per-chromosome text VCFs with {chrom}, e.g. myVcf_{chrom}.vcf.gz; snp2h5 reads one chromosome per file and no BCF) with 'chrom_sizes' (chromosome and length, snp2h5's --chrom; {chrom} is filled with its names)"
               properties:
                 h5_dir:
                   type:
@@ -914,10 +914,8 @@ properties:
                 vcf:
                   type:
                   - string
-                  - array
                   - 'null'
-                  items:
-                    type: string
+                  pattern: '\{chrom\}.*\.vcf(\.gz)?$'
                 chrom_sizes:
                   type:
                   - string
@@ -926,7 +924,7 @@ properties:
               - required: [h5_dir]
                 properties: {h5_dir: {type: string}}
               - required: [vcf, chrom_sizes]
-                properties: {vcf: {type: [string, array], minItems: 1}, chrom_sizes: {type: string}}
+                properties: {vcf: {type: string}, chrom_sizes: {type: string}}
           rna:
             type: object
             additionalProperties: false

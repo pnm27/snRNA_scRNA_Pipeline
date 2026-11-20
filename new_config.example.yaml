@@ -394,7 +394,7 @@ modules:
     # sample_names, else the donor (no final_donor column in either table: a warning)
     samples: null
     sample_names: null  # pool[, donor], final_donor, vcfID: final donors and genotype ID(s) of pools (or donors)
-    genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x.bcf, chrom_sizes: chrom.txt}
+    genotypes: null  # sets, e.g. main: {h5_dir: path/} or main: {vcf: x_{chrom}.vcf.gz, chrom_sizes: chrom.txt}
     rna:  # cDNA bams: STAR remapping, duplicates kept
       remap:
         genome: null  # STAR index; null: the aligner's reference (start: wasp: required)

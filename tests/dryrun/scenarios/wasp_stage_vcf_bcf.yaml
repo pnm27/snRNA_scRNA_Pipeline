@@ -1,0 +1,23 @@
+# a genotype set given as one BCF: snp2h5 reads one text VCF per
+# chromosome, so 'vcf' must be a {chrom} pattern of .vcf.gz/.vcf files
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p bams && touch chip.bcf chip.bcf.csi chrom.txt bams/D1.bam bams/D1.bam.bai
+# setup: printf "pool\tdonor\tsample\tbam\nP1\tD1\tG1\tbams/D1.bam\n" > wasp_samples.tsv
+# fails: {chrom}
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/2021-04
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      chip:
+        vcf: chip.bcf
+        chrom_sizes: chrom.txt
+    rna:
+      remap:
+        genome: star_idx/

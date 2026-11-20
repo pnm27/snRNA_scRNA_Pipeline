@@ -119,26 +119,21 @@ def wasp_donor_stats(wildcards) -> list:
     return [stats.format(pool=p, final_donor=f) for p, d, f in wasp_donors(wildcards.modality)]
 
 
-# Genotype sets given as VCF/BCF: WASP's h5 files, once per set ----------
+# Genotype sets given as per-chromosome VCFs: WASP's h5 files, once per set.
+# snp2h5 reads each VCF as one chromosome (the CHROM of its first record) and
+# keeps all its samples and sites; a chromosome of chrom_sizes with no VCF
+# is left out (lib/wasp.py: vcf_chrom_files)
 rule wasp_snp2h5:
     input:
         vcf = lambda wc: vcf_files(config, wc.gset),
-        table = wasp_config(config).get('samples') or [],
-        names = WASP_NAMES or [],
         chrom_sizes = lambda wc: wasp_config(config)['genotypes'][wc.gset]['chrom_sizes'],
 
     output:
         **{k: f"{converted_dir(config, '{gset}')}{f}" for k, f in H5_FILES.items()}
 
-    # Only the sets given as VCF/BCF are made here
+    # Only the sets given as VCFs are made here
     wildcard_constraints:
         gset = "|".join(map(re.escape, vcf_sets(config))) or r"(?!)",
-
-    params:
-        sets = genotype_sets(config),
-        names = WASP_NAMES_ARG,
-        need_bam = "--need_bam" if starts_at_wasp(config) else "",
-        out_dir = lambda wc: converted_dir(config, wc.gset),
 
     log:
         f"{converted_dir(config, '{gset}')}snp2h5.log"
@@ -148,36 +143,14 @@ rule wasp_snp2h5:
 
     envmodules:
         *WASP_MODULES,
-        "bcftools",
 
     shell:
         r"""
         set -euo pipefail
         : "${{WASP_HOME:?WASP_HOME is not set: load the WASP module (references: tools: wasp)}}"
-        out={params.out_dir}
-        mkdir -p "$out/vcf"
-        python helper_py_scripts/wasp_check_inputs.py set-samples --table {input.table} \
-            --set {wildcards.gset} --sets {params.sets} {params.names} {params.need_bam} \
-            > "$out/samples.txt"
-        # One file per chromosome (of chrom_sizes), with the set's samples
-        # and the sites variable among them (the vcfs must be indexed)
-        i=0
-        for vcf in {input.vcf}; do
-            i=$((i + 1))
-            for chrom in $(bcftools index -s "$vcf" | cut -f1); do
-                awk -v c="$chrom" '$1 == c {{f=1}} END {{exit !f}}' {input.chrom_sizes} || continue
-                bcftools view -S "$out/samples.txt" -q 0.000001:minor -r "$chrom" "$vcf" \
-                    -Oz -o "$out/vcf/${{chrom}}_${{i}}.vcf.gz"
-            done
-        done &> {log}
-        if ! ls "$out"/vcf/*.vcf.gz &> /dev/null; then
-            echo "No chromosome of {input.chrom_sizes} in {input.vcf}" | tee -a {log} >&2
-            exit 1
-        fi
         $WASP_HOME/snp2h5/snp2h5 --chrom {input.chrom_sizes} --format vcf \
             --snp_index {output.snp_index} --snp_tab {output.snp_tab} \
-            --haplotype {output.haps} "$out"/vcf/*.vcf.gz &>> {log}
-        rm -rf "$out/vcf"
+            --haplotype {output.haps} {input.vcf} &> {log}
         """
 
 
