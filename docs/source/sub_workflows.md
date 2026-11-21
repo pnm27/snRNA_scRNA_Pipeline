@@ -474,6 +474,39 @@ snakemake --configfile wasp_config.yaml --profile <cluster profile> --workflow-p
 
 After a run that split bams, the same config with `until: wasp` and a samples table without the bam column (`--rerun-triggers mtime` keeps the split bams from being remade when only the config changed).
 
+#### Samples in batches
+
+For a long list of samples, split the samples table into batches (same columns, some rows each) and run one batch after another, each with its own table and the same `wasp_dir`:
+
+```yaml
+modules:
+  wasp:
+    samples: wasp_samples.batch1.tsv   # then wasp_samples.batch2.tsv, ...
+    wasp_dir: /path/to/wasp_bams/      # the same for every batch
+```
+
+```bash
+snakemake --configfile wasp_config.batch1.yaml --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
+snakemake --configfile wasp_config.batch2.yaml --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
+```
+
+Each batch's run ends with `wasp_stats`, which joins every donor's stats file in `<wasp_dir><modality>/`, so after the last batch `wasp_stats.tsv`, `wasp_summary.tsv` and `wasp_plots.pdf` have the donors of all batches. Their rows are sorted by pool, then final donor. Only the batch's own donors are run, and earlier batches' outputs are left as they are. Put each donor in one batch only. A donor listed again in a later batch is redone, because that batch's input check (`checked_inputs.txt`, one per `wasp_dir`) is remade and every donor job of the batch depends on it. Its new stats replace the old ones, so it's still one row.
+
+- Batches run one after another in the same folder. Snakemake locks a run's files, and batches share `checked_inputs.txt` and the stats files, so a second run there at once stops with "Directory cannot be locked". A run from another folder at the same time is safe for the stats files, which are written under a temporary name and then moved into place, but whichever run ends last decides what the shared stats files hold. After the batches, remake them so they have every donor:
+
+  ```bash
+  snakemake --configfile wasp_config.batchN.yaml --forcerun wasp_stats --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
+  ```
+
+  Or remake them by hand, without Snakemake:
+
+  ```bash
+  python3 helper_py_scripts/wasp_stats.py summarize --collect /path/to/wasp_bams/cDNA -o /path/to/wasp_bams/cDNA
+  ```
+
+- To leave a donor out of the stats (a failed or dropped sample), remove its `<modality>/<pool>/stats/<final_donor>.wasp_stats.tsv` and remake them as above. Any stats file in that folder is counted, including ones from earlier runs.
+- A run with nothing new to do doesn't remake the stats; `--forcerun wasp_stats` does.
+
 Several datasets in one table, summary and plots:
 
 ```bash
