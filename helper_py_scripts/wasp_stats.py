@@ -6,7 +6,9 @@ parse      one row for a donor bam, from the logs of
            samtools flagstat of the bam before and after WASP
            (python standard library only: runs in the WASP module)
 summarize  joins rows (per-donor files, or the stats tables of whole
-           runs, e.g. of several datasets), and writes the table, a
+           runs, e.g. of several datasets; --collect: every donor's
+           file in a modality's folder, from all batches run into it),
+           and writes the table, a
            summary (mean, median, sd, min, max of each summary_* column,
            per dataset) and plots (histograms of the summary_* columns)
 
@@ -24,6 +26,9 @@ Usage::
         --flagstat_before D1.before_wasp.flagstat \\
         --flagstat_after D1.after_wasp.flagstat -o D1.wasp_stats.tsv
 
+    # every donor of a modality's folder, of all batches (rule wasp_stats)
+    python3 wasp_stats.py summarize --collect wasp_bams/cDNA -o wasp_bams/cDNA
+
     # several datasets, one label each
     python3 wasp_stats.py summarize A4/wasp_stats.tsv A13/wasp_stats.tsv \\
         --labels A4 A13 -o wasp_all/
@@ -31,6 +36,7 @@ Usage::
 
 import argparse
 import csv
+import glob
 import math
 import os
 import re
@@ -177,13 +183,38 @@ def _fmt(v):
     return str(v)
 
 
-def write_rows(rows, columns, path):
+def _tmp(path):
+    """A temporary name next to 'path' (same folder, same extension), to
+    write to and then move over 'path': a reader (another batch's run) never
+    sees a half-written file."""
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, 'w', newline='') as f:
+    stem, ext = os.path.splitext(path)
+    return f"{stem}.tmp{os.getpid()}{ext}"
+
+
+def write_rows(rows, columns, path):
+    tmp = _tmp(path)
+    with open(tmp, 'w', newline='') as f:
         w = csv.writer(f, delimiter='\t', lineterminator='\n')
         w.writerow(columns)
         for r in rows:
             w.writerow([_fmt(r.get(c)) for c in columns])
+    os.replace(tmp, path)
+
+
+# A donor's stats file under a modality's folder: <pool>/stats/<final_donor>.wasp_stats.tsv
+DONOR_STATS = os.path.join('*', 'stats', '*.wasp_stats.tsv')
+
+
+def collect(dirs, inputs=()):
+    """'inputs' and every donor's stats file under each of 'dirs' (a
+    modality's folder in wasp_dir: all batches run into it), each once,
+    sorted by path (pool, then final donor)."""
+    found = {os.path.abspath(p): p for p in inputs}
+    for d in dirs:
+        for p in glob.glob(os.path.join(d, DONOR_STATS)):
+            found.setdefault(os.path.abspath(p), p)
+    return [found[k] for k in sorted(found)]
 
 
 def read_rows(path, label=None):
@@ -254,12 +285,15 @@ def plot(rows, path):
     if handles:
         fig.legend(handles, labels, loc='upper center', ncol=min(len(labels), 4))
     fig.tight_layout(rect=(0, 0, 1, 0.97))
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    fig.savefig(path)
+    tmp = _tmp(path)
+    fig.savefig(tmp)
     plt.close(fig)
+    os.replace(tmp, path)
 
 
 def summarize(inputs, labels=None, stats=None, summary=None, plots=None):
+    if not inputs:
+        raise ValueError("no stats files to summarize")
     if labels and len(labels) != len(inputs):
         raise ValueError(f"{len(labels)} labels for {len(inputs)} stats files")
     rows = []
@@ -295,7 +329,11 @@ def main(argv=None):
     a.add_argument('-o', '--output', required=True)
 
     s = sub.add_parser('summarize', help="join stats files; summary and plots")
-    s.add_argument('inputs', nargs='+', help="stats files (per donor, or of whole runs)")
+    s.add_argument('inputs', nargs='*', help="stats files (per donor, or of whole runs)")
+    s.add_argument('--collect', nargs='+', metavar='DIR',
+                   help="also every donor's stats file under DIR "
+                        "(<pool>/stats/*.wasp_stats.tsv: a modality's folder in wasp_dir, "
+                        "so the donors of every batch run into it)")
     s.add_argument('--labels', nargs='+', help="a dataset label for each input")
     s.add_argument('-o', '--out_dir', help="writes wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf")
     s.add_argument('--stats')
@@ -318,7 +356,15 @@ def main(argv=None):
         out = {k: v or os.path.join(args.out_dir, names[k]) for k, v in out.items()}
     if not any(out.values()):
         p.error("give -o/--out_dir, or --stats, --summary and/or --plots")
-    summarize(args.inputs, args.labels, **out)
+    inputs = args.inputs
+    if args.collect:
+        if args.labels:
+            p.error("--labels label the inputs one by one: not with --collect")
+        inputs = collect(args.collect, inputs)
+    if not inputs:
+        p.error("no stats files: give them, or --collect a folder that has them")
+    print(f"wasp_stats.py summarize: {len(inputs)} stats file(s)", file=sys.stderr)
+    summarize(inputs, args.labels, **out)
     return 0
 
 

@@ -416,9 +416,15 @@ def work_dir(config, modality: str) -> str:
     return f"{d if d.endswith('/') else d + '/'}{modality}/{{pool}}/{{final_donor}}/"
 
 
+def modality_dir(config, modality: str) -> str:
+    """A modality's folder in wasp_dir: its pools' folders and its stats."""
+    return f"{_dir(config)}{modality}/"
+
+
 def run_outputs(config, modality: str) -> dict:
-    """The run's stats of 'modality' (or '{modality}', a wildcard)."""
-    d = f"{_dir(config)}{modality}/"
+    """The stats of 'modality' (or '{modality}', a wildcard): of every donor
+    in its folder, all batches (rule wasp_stats)."""
+    d = modality_dir(config, modality)
     return {
         'stats': f"{d}wasp_stats.tsv",
         'summary': f"{d}wasp_summary.tsv",

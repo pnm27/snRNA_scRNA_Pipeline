@@ -588,3 +588,41 @@ def test_until_wasp_needs_gt_check_off():
     assert any("gt_check: no" in e for e in errors), errors
     c['workflow']['gt_check'] = False
     assert not [e for e in config_problems(c, SCHEMA)[0] if 'wasp' in e.lower()]
+
+
+def test_summarize_collects_batches(tmp_path):
+    """--collect joins every donor's stats file in the modality's folder:
+    a second batch's run keeps the first batch's donors."""
+    files = logs(tmp_path)
+    cdna = tmp_path / "wasp_bams" / "cDNA"
+
+    def run_donor(pool, donor):
+        out = cdna / pool / "stats" / f"{donor}.wasp_stats.tsv"
+        args = ['parse', '--pool', pool, '--donor', donor, '--sample', 'G1', '-o', str(out)]
+        for k, v in files.items():
+            args += [f'--{k}', v]
+        assert wasp_stats.main(args) == 0
+        return str(out)
+
+    def summarize(*inputs):
+        assert wasp_stats.main(['summarize', *inputs, '--collect', str(cdna),
+                                '--stats', str(cdna / "wasp_stats.tsv"),
+                                '--summary', str(cdna / "wasp_summary.tsv")]) == 0
+        with open(cdna / "wasp_stats.tsv") as f:
+            return [(r['pool'], r['donor']) for r in csv.DictReader(f, delimiter='\t')]
+
+    batch1 = [run_donor('P1', 'D1'), run_donor('P1', 'D2')]
+    assert summarize(*batch1) == [('P1', 'D1'), ('P1', 'D2')]
+    batch2 = [run_donor('P2', 'D1')]
+    # The run's own inputs are found again by --collect: once each
+    assert summarize(*batch2) == [('P1', 'D1'), ('P1', 'D2'), ('P2', 'D1')]
+    assert sorted(p.name for p in cdna.iterdir() if p.is_file()) == [
+        'wasp_stats.tsv', 'wasp_summary.tsv']           # no temporary files left
+
+
+def test_summarize_needs_files(tmp_path):
+    with pytest.raises(SystemExit):
+        wasp_stats.main(['summarize', '--collect', str(tmp_path), '-o', str(tmp_path)])
+    with pytest.raises(SystemExit):
+        wasp_stats.main(['summarize', '--collect', str(tmp_path), '--labels', 'A',
+                         '-o', str(tmp_path)])

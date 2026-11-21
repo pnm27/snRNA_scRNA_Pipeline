@@ -370,7 +370,9 @@ python helper_py_scripts/wasp_run.py $WASP_HOME/mapping/find_intersecting_snps.p
 
 `parse` (run by `wasp_donor.sh finish`) makes a donor bam's stats row from its
 logs and flagstats; `summarize` (rule `wasp_stats`) joins a modality's rows
-into a table, a summary and plots.
+into a table, a summary and plots. `--collect <folder>` adds every donor's
+stats file in a modality's folder (`<pool>/stats/*.wasp_stats.tsv`), so the
+donors of all batches run into it are joined.
 
 ```bash
 python helper_py_scripts/wasp_stats.py parse --pool P1 --donor D1 --final_donor D1 --modality cDNA \
@@ -378,6 +380,7 @@ python helper_py_scripts/wasp_stats.py parse --pool P1 --donor D1 --final_donor 
     --flagstat_before D1.before.flagstat --flagstat_after D1.after.flagstat -o D1.stats.tsv
 python helper_py_scripts/wasp_stats.py summarize P1/stats/*.stats.tsv \
     --stats wasp_stats.tsv --summary wasp_summary.tsv --plots wasp_plots.pdf
+python helper_py_scripts/wasp_stats.py summarize --collect wasp_bams/cDNA -o wasp_bams/cDNA
 ```
 
 ## Python modules

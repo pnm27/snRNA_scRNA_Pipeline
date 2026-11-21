@@ -423,7 +423,7 @@ The remap references must be those the bams were aligned to: by default STARsolo
 1. `wasp_snp2h5` (sets given as per-chromosome VCFs only).
 2. `wasp_check_inputs`, once: every `sample` of the table is in its set's `haps.h5`, so a wrong ID stops the run before the long jobs.
 3. Per donor bam, `wasp_remap_rna` (cDNA, as `genesis_wasp.R`) or `wasp_remap_atac` (ATAC, as `psychad_multiome_wasp.R`). `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes have chromosomes in common (as WASP matches them: as they are, or with the `chr` prefix added or stripped) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC). Then the remapping: STAR (two-pass, `NH HI AS nM NM MD`), or `bwa mem` of the pairs. `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities (`--resources wasp_slots=N` on the command line to change it). By default 6 cores, 18 GB and a day for `wasp_remap_rna`; 8 cores, 24 GB and a day for `wasp_remap_atac` (`execution: resources`).
-4. `wasp_stats`, per modality: the run's table, summary and plots.
+4. `wasp_stats`, per modality, at the end of the run: the table, summary and plots of every donor in the modality's folder (`wasp_stats.py summarize --collect <wasp_dir><modality>/`). It waits for this run's donors but joins all donors' stats files there, so donors run in batches (one samples table, then the next, into the same `wasp_dir`) all end up in it: a later batch doesn't overwrite it with only its own donors. It's remade when a run adds or redoes donors; its files are written to a temporary name and moved into place, so a reader never sees half of one.
 
 Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the split bams, so the same final donor in several pools isn't overwritten (`<final_donor>` is the swap-corrected donor, see the samples table):
 
@@ -432,7 +432,7 @@ Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the spli
 <modality>/<pool>/stats/<final_donor>.wasp_stats.tsv, .before_wasp.flagstat, .after_wasp.flagstat
                         (ATAC also .wasp_with_duplicates.flagstat: after WASP, before removing duplicates)
 <modality>/<pool>/logs/<final_donor>.find_intersecting_snps.log, .star_remap.log (ATAC: .bwa_remap.log), .filter_remapped_reads.log
-<modality>/wasp_stats.tsv     one row per donor bam (pool, donor, final_donor, modality, sample: the vcfIDs, ...)
+<modality>/wasp_stats.tsv     one row per donor bam in the folder, all batches (pool, donor, final_donor, modality, sample: the vcfIDs, ...)
 <modality>/wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
 <modality>/wasp_plots.pdf     histograms of the summary_* columns
 ```

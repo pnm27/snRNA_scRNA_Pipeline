@@ -22,7 +22,7 @@
 
 from lib.wasp import (
     samples_table, starts_at_wasp, select_donors, missing_bams, table_row, donor_of,
-    donor_paths, donor_logs, work_dir, run_outputs, checked_inputs,
+    donor_paths, donor_logs, work_dir, run_outputs, modality_dir, checked_inputs,
     genotype_files, genotype_sets, vcf_sets, vcf_files, converted_dir,
     wasp_config, sample_names, H5_FILES,
 )
@@ -184,13 +184,20 @@ rule wasp_check_inputs:
         """
 
 
-# The run's stats of a modality: one row per donor bam, a summary and plots
+# The stats of a modality, at the end of the run: one row per donor bam, a
+# summary and plots. Its inputs are this run's donors (so it waits for them),
+# but it joins every donor's stats file in the modality's folder: donors run
+# as batches (one samples table, then another, into the same wasp_dir) all
+# end up in it, a later batch doesn't overwrite it with only its own
 rule wasp_stats:
     input:
         wasp_donor_stats
 
     output:
         **run_outputs(config, '{modality}')
+
+    params:
+        folder = lambda wc: modality_dir(config, wc.modality),
 
     resources:
         **get_resources("wasp_stats")
@@ -199,6 +206,6 @@ rule wasp_stats:
 
     shell:
         r"""
-        python3 helper_py_scripts/wasp_stats.py summarize {input} \
+        python3 helper_py_scripts/wasp_stats.py summarize {input} --collect {params.folder} \
             --stats {output.stats} --summary {output.summary} --plots {output.plots}
         """
