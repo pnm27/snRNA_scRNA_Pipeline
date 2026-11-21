@@ -233,9 +233,9 @@ RESOURCES = {
 
     # wasp.smk
     "wasp_snp2h5": {
-        "cpus_per_task": 2,
-        "mem_mb": {"base": 16000, "step": 16000},
-        "time_min": {"base": 360, "step": 360},
+        "cpus_per_task": 4,
+        "mem_mb": {"base": 8000, "step": 4000},
+        "time_min": {"base": 600, "step": 60},
     },
     "wasp_check_inputs": {
         "cpus_per_task": 1,
@@ -246,35 +246,35 @@ RESOURCES = {
     # the remapping, finish (filter_remapped_reads.py, samtools merge / sort)
     "wasp_prepare_rna": {
         "cpus_per_task": 1,
-        "mem_mb": {"base": 16000, "step": 8000, "max": 64000},
-        "time_min": {"base": 720, "step": 720},
+        "mem_mb": {"base": 12000, "step": 8000, "max": 20000},
+        "time_min": {"base": 120, "step": 120},
     },
     "wasp_prepare_atac": {
         "cpus_per_task": 1,
-        "mem_mb": {"base": 16000, "step": 8000, "max": 64000},
-        "time_min": {"base": 720, "step": 720},
+        "mem_mb": {"base": 12000, "step": 8000, "max": 20000},
+        "time_min": {"base": 120, "step": 120},
     },
     "wasp_finish_rna": {
         "cpus_per_task": 4,
-        "mem_mb": {"base": 12000, "step": 6000, "max": 48000},
-        "time_min": {"base": 720, "step": 720},
+        "mem_mb": {"base": 10000, "step": 6000, "max": 20000},
+        "time_min": {"base": 120, "step": 120},
     },
     "wasp_finish_atac": {
         "cpus_per_task": 4,
-        "mem_mb": {"base": 12000, "step": 6000, "max": 48000},
-        "time_min": {"base": 720, "step": 720},
+        "mem_mb": {"base": 10000, "step": 6000, "max": 20000},
+        "time_min": {"base": 120, "step": 120},
     },
     # STAR as in the lab's tested WASP runs: 6 cores, 18 GB, a day
     "wasp_remap_rna": {
-        "cpus_per_task": 6,
-        "mem_mb": {"base": 18000, "step": 6000, "max": 48000},
-        "time_min": {"base": 1440, "step": 720},
+        "cpus_per_task": 8,
+        "mem_mb": {"base": 8000, "step": 4000, "max": 20000},
+        "time_min": {"base": 600, "step": 60},
     },
     # As the lab's multiome ATAC runs (psychad_multiome_wasp.R): 8 cores, a day
     "wasp_remap_atac": {
-        "cpus_per_task": 8,
-        "mem_mb": {"base": 24000, "step": 8000, "max": 64000},
-        "time_min": {"base": 1440, "step": 720},
+        "cpus_per_task": 6,
+        "mem_mb": {"base": 6000, "step": 3000, "max": 20000},
+        "time_min": {"base": 480, "step": 60},
     },
     "wasp_stats": {
         "cpus_per_task": 1,

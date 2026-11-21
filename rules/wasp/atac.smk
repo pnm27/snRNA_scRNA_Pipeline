@@ -19,7 +19,7 @@ rule wasp_remap_atac:
     params:
         bwa_index = lambda wc: bwa_index(config),
         bwa_extra = bwa_extra(config),
-        threads = lambda wc, resources: resources.cpus_per_task,
+        threads = lambda wc, resources: resources.cpus_per_task*3,
 
     log:
         donor_logs(config, 'ATAC')['remap']

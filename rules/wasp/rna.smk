@@ -21,7 +21,7 @@ rule wasp_remap_rna:
         # a gzipped gtf is unzipped into the scratch dir for STAR, and removed after
         gtf = lambda wc: remap_reference(config)[1] or "",
         star_extra = (rna_config(config).get('remap') or {}).get('extra_params') or "",
-        threads = lambda wc, resources: resources.cpus_per_task,
+        threads = lambda wc, resources: resources.cpus_per_task*3,
 
     log:
         donor_logs(config, 'cDNA')['remap']
