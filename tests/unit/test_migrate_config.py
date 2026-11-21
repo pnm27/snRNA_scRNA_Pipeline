@@ -338,7 +338,7 @@ def test_new_layout_update_atac():
     old_block = (
         "    remap:\n"
         "      genome: null  # STAR index; null: the aligner's reference (start: wasp: required)\n"
-        "      gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's\n"
+        "      gtf: null  # plain or .gz (unzipped for STAR, then removed); null: STARsolo's genome_pick gtf when the genome is the aligner's\n"
         "      extra_params: null\n"
         "    paired_end: false  # true for paired-end GEX reads; 10x 3': false\n")
     before = text[:start] + old_block + text[end:]

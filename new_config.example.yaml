@@ -399,7 +399,7 @@ modules:
     rna:  # cDNA bams: STAR remapping, duplicates kept
       remap:
         genome: null  # STAR index; null: the aligner's reference (start: wasp: required)
-        gtf: null  # null: STARsolo's genome_pick gtf when the genome is the aligner's
+        gtf: null  # plain or .gz (unzipped for STAR, then removed); null: STARsolo's genome_pick gtf when the genome is the aligner's
         extra_params: null
       paired_end: false  # true for paired-end GEX reads; 10x 3': false
     atac:  # ATAC bams (multiome): paired-end, bwa-mem remapping

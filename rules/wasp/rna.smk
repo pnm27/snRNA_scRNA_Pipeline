@@ -1,6 +1,7 @@
 # WASP of the cDNA bams (sc/snRNA-seq, the RNA part of multiome): the
 # reads over SNPs are remapped with STAR (module 'references: tools:
-# wasp_star', else 'star'); duplicates are kept. Needs
+# wasp_star', else 'star'; a gzipped gtf is unzipped for it, then
+# removed); duplicates are kept. Needs
 # rules/wasp/common.smk. Settings: 'modules: wasp: rna'
 # (lib/wasp_modality.py).
 
@@ -19,8 +20,8 @@ rule wasp_remap_rna:
     params:
         **wasp_samples_param('cDNA'),
         genome = lambda wc: remap_reference(config)[0],
-        gtf = lambda wc: (
-            f"--sjdbGTFfile {remap_reference(config)[1]}" if remap_reference(config)[1] else ""),
+        # a gzipped gtf is unzipped into the work dir for STAR, and removed after
+        gtf = lambda wc: remap_reference(config)[1] or "",
         star_extra = (rna_config(config).get('remap') or {}).get('extra_params') or "",
         # (shell variables, so a function: no wildcard expansion)
         fastqs = lambda wc: (
@@ -50,14 +51,29 @@ rule wasp_remap_rna:
             --log {log.intersect}
         prefix="$work/$(basename {input.bam} .bam)"
 
+        # The gtf (STAR reads it plain): a gzipped one unzipped into the work
+        # dir, removed when STAR is done, or the job fails
+        gtf={params.gtf:q}
+        gtf_arg=""
+        if [ -n "$gtf" ]; then
+            case "$gtf" in
+                *.gz)
+                    trap 'rm -f "$work/remap.gtf"' EXIT
+                    gzip -cd "$gtf" > "$work/remap.gtf"
+                    gtf="$work/remap.gtf" ;;
+            esac
+            gtf_arg="--sjdbGTFfile $gtf"
+        fi
+
         # Remap them with the alleles swapped
-        STAR --runThreadN {params.threads} --genomeDir {params.genome} {params.gtf} \
+        STAR --runThreadN {params.threads} --genomeDir {params.genome} $gtf_arg \
             --readFilesIn {params.fastqs} --readFilesCommand zcat \
             --twopassMode Basic --limitOutSJcollapsed 2000000 --limitSjdbInsertNsj 2000000 \
             --outSAMtype BAM SortedByCoordinate --outSAMattributes NH HI AS nM NM MD \
             --limitBAMsortRAM 0 --outBAMsortingBinsN 50 \
             --outFileNamePrefix "$work/remap." {params.star_extra} &> {log.remap}
         cat "$work/remap.Log.final.out" >> {log.remap}
+        rm -f "$work/remap.gtf"
 
         bash helper_sh_scripts/wasp_donor.sh finish --work "$work" --bam {input.bam} \
             --remapped "$work/remap.Aligned.sortedByCoord.out.bam" --out {output.bam} \

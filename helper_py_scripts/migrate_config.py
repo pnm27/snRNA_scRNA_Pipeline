@@ -249,7 +249,7 @@ def rna_block() -> CommentedMap:
     remap.yaml_add_eol_comment(
         "STAR index; null: the aligner's reference (start: wasp: required)", 'genome')
     remap.yaml_add_eol_comment(
-        "null: STARsolo's genome_pick gtf when the genome is the aligner's", 'gtf')
+        "plain or .gz (unzipped for STAR, then removed); null: STARsolo's genome_pick gtf when the genome is the aligner's", 'gtf')
     rna = CommentedMap()
     rna['remap'] = remap
     rna['paired_end'] = False

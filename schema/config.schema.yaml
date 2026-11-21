@@ -953,7 +953,7 @@ properties:
                     - string
                     - 'null'
                     default: null
-                    description: "GTF for STAR's --sjdbGTFfile; null: STARsolo's genome_pick gtf when the genome is the aligner's, else none (the index's annotations)"
+                    description: "GTF for STAR's --sjdbGTFfile, plain or gzipped (.gz: unzipped into the donor's work dir for STAR, removed after); null: STARsolo's genome_pick gtf when the genome is the aligner's, else none (the index's annotations)"
                   extra_params:
                     type:
                     - string
