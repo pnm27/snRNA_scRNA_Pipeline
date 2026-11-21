@@ -333,17 +333,22 @@ python helper_py_scripts/wasp_check_inputs.py set-samples --table wasp_samples.t
 python helper_py_scripts/wasp_check_inputs.py contigs --contigs bam_contigs.txt --snp_tab geno/snp_tab.h5
 ```
 
-### wasp_donor.sh: a donor bam's WASP job
+### wasp_donor.sh: a donor bam's WASP steps
 
-Rules `wasp_remap_rna` and `wasp_remap_atac`: the steps before (`prepare`) and
-after (`finish`) the remapping, which the rules run in between (STAR or
-bwa-mem). Needs the WASP env module (`$WASP_HOME`).
+The steps before (`prepare`, rules `wasp_prepare_rna` / `wasp_prepare_atac`)
+and after (`finish`, rules `wasp_finish_rna` / `wasp_finish_atac`) the
+remapping, which is a job of its own in between (`wasp_remap_rna`: STAR,
+`wasp_remap_atac`: bwa-mem). `prepare` (re)makes the work dir and leaves
+`<work>/intersect/to.remap.bam`, `keep.bam` and the fastqs to remap
+(`remap.fq1.gz` `remap.fq2.gz`, or `remap.fq.gz`), fixed names whatever the
+bam's; `finish` reads them and the remapped bam, and removes the work dir.
+Needs the WASP env module (`$WASP_HOME`).
 
 ```bash
 bash helper_sh_scripts/wasp_donor.sh prepare --work work/P1_D1 --bam D1.bam --samples "G1" \
     --snp_index geno/snp_index.h5 --snp_tab geno/snp_tab.h5 --haps geno/haps.h5 --log D1.intersect.log
 bash helper_sh_scripts/wasp_donor.sh finish --work work/P1_D1 --bam D1.bam \
-    --remapped work/P1_D1/remap.Aligned.sortedByCoord.out.bam --out D1.after_wasp.bam \
+    --remapped work/P1_D1/remapped.bam --out D1.after_wasp.bam \
     --threads 4 --filter_log D1.filter.log --intersect_log D1.intersect.log \
     --flagstat_before D1.before.flagstat --flagstat_after D1.after.flagstat \
     --pool P1 --donor D1 --final_donor D1 --sample G1 --modality cDNA --stats D1.stats.tsv

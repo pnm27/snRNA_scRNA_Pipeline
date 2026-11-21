@@ -8,7 +8,7 @@
 # setup: for d in D1 D2 D3 P2_D1; do touch bams/$d.bam bams/$d.bam.bai; done
 # setup: printf "pool\tdonor\tbam\nP1\tD1\tbams/D1.bam\nP1\tD2\tbams/D2.bam\nP1\tD3\tbams/D3.bam\nP2\tD1\tbams/P2_D1.bam\n" > wasp_samples.tsv
 # setup: printf "pool\tdonor\tfinal_donor\tvcfID\nP1\tD1\tD1\tSUBJ_01\nP1\tD2\tD3\tSUBJ_03\nP1\tD3\tD2\tSUBJ_02\nP2\tD1\tD3\tSUBJ_03\n" > wasp_names.tsv
-# expect: wasp_snp2h5 wasp_check_inputs wasp_remap_rna wasp_stats
+# expect: wasp_snp2h5 wasp_check_inputs wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_stats
 # path: wasp_bams/cDNA/P1/D3.after_wasp.bam wasp_bams/cDNA/P1/stats/D3.wasp_stats.tsv bams/D2.bam wasp_bams/cDNA/P2/D3.after_wasp.bam bams/P2_D1.bam
 workflow:
   start: wasp

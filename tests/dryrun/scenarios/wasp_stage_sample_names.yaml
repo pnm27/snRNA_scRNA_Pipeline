@@ -7,7 +7,7 @@
 # setup: for p in P1 P2; do touch bams/$p.bam bams/$p.bam.bai; done
 # setup: printf "pool\tdonor\tbam\nP1\tP1\tbams/P1.bam\nP2\tP2\tbams/P2.bam\n" > wasp_samples.tsv
 # setup: printf "pool\tsample\nP1\tSUBJ_01\nP2\tSUBJ_02\n" > wasp_names.tsv
-# expect: wasp_snp2h5 wasp_check_inputs wasp_remap_rna wasp_stats
+# expect: wasp_snp2h5 wasp_check_inputs wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_stats
 # path: wasp_names.tsv
 # says: have no final_donor column: no swap corrections assumed (final_donor = donor)
 workflow:

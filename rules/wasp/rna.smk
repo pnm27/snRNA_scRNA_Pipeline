@@ -1,85 +1,69 @@
 # WASP of the cDNA bams (sc/snRNA-seq, the RNA part of multiome): the
 # reads over SNPs are remapped with STAR (module 'references: tools:
 # wasp_star', else 'star'; a gzipped gtf is unzipped for it, then
-# removed); duplicates are kept. Needs
-# rules/wasp/common.smk. Settings: 'modules: wasp: rna'
-# (lib/wasp_modality.py).
+# removed); duplicates are kept. Its own job, between the donor's
+# wasp_prepare_rna and wasp_finish_rna (rules/wasp/common.smk), so a failed
+# STAR is rerun alone. Settings: 'modules: wasp: rna' (lib/wasp_modality.py).
 
 from lib.wasp_modality import remap_reference, rna_config, remap_star_module
 
 
 rule wasp_remap_rna:
     input:
-        unpack(partial(wasp_input_bam, modality='cDNA')),
-        unpack(partial(wasp_genotype_files, modality='cDNA')),
-        checked = checked_inputs(config),
+        fastqs = remap_fastqs(config, 'cDNA', paired_end(config, 'cDNA')),
 
     output:
-        **donor_paths(config, 'cDNA')
+        bam = temp(remapped_bam(config, 'cDNA')),
 
     params:
-        **wasp_samples_param('cDNA'),
+        scratch = remap_scratch(config, 'cDNA'),
         genome = lambda wc: remap_reference(config)[0],
-        # a gzipped gtf is unzipped into the work dir for STAR, and removed after
+        # a gzipped gtf is unzipped into the scratch dir for STAR, and removed after
         gtf = lambda wc: remap_reference(config)[1] or "",
         star_extra = (rna_config(config).get('remap') or {}).get('extra_params') or "",
-        # (shell variables, so a function: no wildcard expansion)
-        fastqs = lambda wc: (
-            "${prefix}.remap.fq1.gz ${prefix}.remap.fq2.gz" if paired_end(config, 'cDNA')
-            else "${prefix}.remap.fq.gz"),
         threads = lambda wc, resources: resources.cpus_per_task,
 
     log:
-        **donor_logs(config, 'cDNA')
+        donor_logs(config, 'cDNA')['remap']
 
     resources:
         **get_resources("wasp_remap_rna"),
         wasp_slots = 1,
 
     envmodules:
-        *WASP_MODULES,
         remap_star_module(config),  # references: tools: wasp_star, else star
-        "samtools",
 
     shell:
         r"""
         set -euo pipefail
-        work={params.work}
-        bash helper_sh_scripts/wasp_donor.sh prepare --work "$work" --bam {input.bam} \
-            --samples {params.samples:q} --snp_index {input.snp_index} \
-            --snp_tab {input.snp_tab} --haps {input.haps} {params.paired} \
-            --log {log.intersect}
-        prefix="$work/$(basename {input.bam} .bam)"
+        # STAR's own files; a new start: nothing left of an earlier try
+        scratch={params.scratch}
+        scratch=${{scratch%/}}
+        rm -rf "$scratch"
+        mkdir -p "$scratch"
 
-        # The gtf (STAR reads it plain): a gzipped one unzipped into the work
-        # dir, removed when STAR is done, or the job fails
+        # The gtf (STAR reads it plain): a gzipped one unzipped into the
+        # scratch dir, removed when STAR is done, or the job fails
         gtf={params.gtf:q}
         gtf_arg=""
         if [ -n "$gtf" ]; then
             case "$gtf" in
                 *.gz)
-                    trap 'rm -f "$work/remap.gtf"' EXIT
-                    gzip -cd "$gtf" > "$work/remap.gtf"
-                    gtf="$work/remap.gtf" ;;
+                    trap 'rm -f "$scratch/remap.gtf"' EXIT
+                    gzip -cd "$gtf" > "$scratch/remap.gtf"
+                    gtf="$scratch/remap.gtf" ;;
             esac
             gtf_arg="--sjdbGTFfile $gtf"
         fi
 
-        # Remap them with the alleles swapped
+        # Remap the reads over SNPs, with the alleles swapped
         STAR --runThreadN {params.threads} --genomeDir {params.genome} $gtf_arg \
-            --readFilesIn {params.fastqs} --readFilesCommand zcat \
+            --readFilesIn {input.fastqs} --readFilesCommand zcat \
             --twopassMode Basic --limitOutSJcollapsed 2000000 --limitSjdbInsertNsj 2000000 \
             --outSAMtype BAM SortedByCoordinate --outSAMattributes NH HI AS nM NM MD \
             --limitBAMsortRAM 0 --outBAMsortingBinsN 50 \
-            --outFileNamePrefix "$work/remap." {params.star_extra} &> {log.remap}
-        cat "$work/remap.Log.final.out" >> {log.remap}
-        rm -f "$work/remap.gtf"
-
-        bash helper_sh_scripts/wasp_donor.sh finish --work "$work" --bam {input.bam} \
-            --remapped "$work/remap.Aligned.sortedByCoord.out.bam" --out {output.bam} \
-            --threads {params.threads} --filter_log {log.filter} \
-            --intersect_log {log.intersect} --flagstat_before {output.flagstat_before} \
-            --flagstat_after {output.flagstat_after} {params.paired} \
-            --pool {wildcards.pool} --donor {params.donor} --final_donor {wildcards.final_donor} \
-            --sample {params.sample_ids:q} --modality cDNA --stats {output.stats}
+            --outFileNamePrefix "$scratch/" {params.star_extra} &> {log}
+        cat "$scratch/Log.final.out" >> {log}
+        mv "$scratch/Aligned.sortedByCoord.out.bam" {output.bam}
+        rm -rf "$scratch"
         """

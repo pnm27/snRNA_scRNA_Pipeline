@@ -242,7 +242,29 @@ RESOURCES = {
         "mem_mb": {"base": 4000, "step": 4000},
         "time_min": 30,
     },
-    # As in the lab's tested WASP runs: 6 cores, 18 GB, a day
+    # A donor's WASP jobs: prepare (find_intersecting_snps.py, one core),
+    # the remapping, finish (filter_remapped_reads.py, samtools merge / sort)
+    "wasp_prepare_rna": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 16000, "step": 8000, "max": 64000},
+        "time_min": {"base": 720, "step": 720},
+    },
+    "wasp_prepare_atac": {
+        "cpus_per_task": 1,
+        "mem_mb": {"base": 16000, "step": 8000, "max": 64000},
+        "time_min": {"base": 720, "step": 720},
+    },
+    "wasp_finish_rna": {
+        "cpus_per_task": 4,
+        "mem_mb": {"base": 12000, "step": 6000, "max": 48000},
+        "time_min": {"base": 720, "step": 720},
+    },
+    "wasp_finish_atac": {
+        "cpus_per_task": 4,
+        "mem_mb": {"base": 12000, "step": 6000, "max": 48000},
+        "time_min": {"base": 720, "step": 720},
+    },
+    # STAR as in the lab's tested WASP runs: 6 cores, 18 GB, a day
     "wasp_remap_rna": {
         "cpus_per_task": 6,
         "mem_mb": {"base": 18000, "step": 6000, "max": 48000},

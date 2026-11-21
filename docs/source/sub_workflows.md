@@ -341,7 +341,8 @@ The rules are split so that a pipeline of one modality takes only its part:
 ```text
 lib/wasp.py               samples table, genotype sets, paths (every modality)
 lib/wasp_modality.py      what differs per modality: remap reference, paired-end, duplicates
-rules/wasp/common.smk     wasp_snp2h5, wasp_check_inputs, wasp_stats, input functions
+rules/wasp/common.smk     wasp_snp2h5, wasp_check_inputs, wasp_stats, input functions,
+                          wasp_prepare_<rna|atac>, wasp_finish_<rna|atac>
 rules/wasp/rna.smk        wasp_remap_rna  (STAR)
 rules/wasp/atac.smk       wasp_remap_atac (bwa-mem)
 helper_sh_scripts/wasp_donor.sh   per-donor steps shared by both (prepare / finish)
@@ -413,7 +414,7 @@ modules:
         extra_params: "-M -Y"
       drop_duplicates: marked   # or none
     wasp_dir: projdir/wasp_bams/
-    work_dir: projdir/wasp_tmp/   # large temporary files, removed per job: a place with space
+    work_dir: projdir/wasp_tmp/   # large temporary files, kept between a donor's jobs: a place with space
 ```
 
 The remap references must be those the bams were aligned to: by default STARsolo's `genome_pick` (with its gtf), or the `star` folder of the cellranger / cellranger-arc reference (see `config_caveats.md`), and for ATAC the cellranger-arc reference's `fasta/genome.fa` (`cellranger-arc mkref` indexes it for bwa). With `start: wasp`, each modality in the table needs its own (`rna: remap: genome`, `atac: remap: bwa_index`). Configs from before ATAC WASP had `remap` and `paired_end` directly under `modules: wasp`: `helper_py_scripts/migrate_config.py` moves them under `rna`.
@@ -422,7 +423,12 @@ The remap references must be those the bams were aligned to: by default STARsolo
 
 1. `wasp_snp2h5` (sets given as per-chromosome VCFs only).
 2. `wasp_check_inputs`, once: every `sample` of the table is in its set's `haps.h5`, so a wrong ID stops the run before the long jobs.
-3. Per donor bam, `wasp_remap_rna` (cDNA, as `genesis_wasp.R`) or `wasp_remap_atac` (ATAC, as `psychad_multiome_wasp.R`). `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes have chromosomes in common (as WASP matches them: as they are, or with the `chr` prefix added or stripped) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC). Then the remapping: STAR (two-pass, `NH HI AS nM NM MD`; a gzipped gtf is unzipped into the work dir for it and removed when STAR is done or the job fails), or `bwa mem` of the pairs. `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities (`--resources wasp_slots=N` on the command line to change it). By default 6 cores, 18 GB and a day for `wasp_remap_rna`; 8 cores, 24 GB and a day for `wasp_remap_atac` (`execution: resources`).
+3. Per donor bam, three jobs (cDNA as `genesis_wasp.R`, ATAC as `psychad_multiome_wasp.R`), so a failed one is rerun alone, on the files the one before left:
+   - `wasp_prepare_rna` / `wasp_prepare_atac`: `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes have chromosomes in common (as WASP matches them: as they are, or with the `chr` prefix added or stripped) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC).
+   - `wasp_remap_rna` / `wasp_remap_atac`: the remapping, STAR (two-pass, `NH HI AS nM NM MD`; a gzipped gtf is unzipped into its scratch dir for it and removed when STAR is done or fails), or `bwa mem` of the pairs.
+   - `wasp_finish_rna` / `wasp_finish_atac`: `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats, then removes the donor's work dir.
+
+   The files between them are Snakemake `temp()` files in the donor's work dir: the fastqs are removed once remapped, the rest when `finish` is done; a run after the outputs are made doesn't make them again. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities and all three steps (`--resources wasp_slots=N` on the command line to change it). A donor's work dir stays between its jobs, also while it holds no slot, so `work_dir` needs room for the donors waiting between steps too. By default (`execution: resources`): `wasp_prepare_*` 1 core, 16 GB, 12 hours; `wasp_remap_rna` 6 cores, 18 GB, a day; `wasp_remap_atac` 8 cores, 24 GB, a day; `wasp_finish_*` 4 cores, 12 GB, 12 hours.
 4. `wasp_stats`, per modality, at the end of the run: the table, summary and plots of every donor in the modality's folder (`wasp_stats.py summarize --collect <wasp_dir><modality>/`). It waits for this run's donors but joins all donors' stats files there, so donors run in batches (one samples table, then the next, into the same `wasp_dir`) all end up in it: a later batch doesn't overwrite it with only its own donors. It's remade when a run adds or redoes donors; its files are written to a temporary name and moved into place, so a reader never sees half of one.
 
 Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the split bams, so the same final donor in several pools isn't overwritten (`<final_donor>` is the swap-corrected donor, see the samples table):
@@ -437,7 +443,7 @@ Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the spli
 <modality>/wasp_plots.pdf     histograms of the summary_* columns
 ```
 
-The `find_intersecting_snps.log` has everything `wasp_donor.sh prepare` writes (the chromosome check, `samtools`, `find_intersecting_snps.py`), the `filter_remapped_reads.log` everything `finish` writes (`filter_remapped_reads.py`, `samtools`, the stats); a failed step ends its log with the command that failed. The donor's folder in `work_dir` (`<work_dir><modality>/<pool>/<final_donor>/`) holds the large intermediate bams and fastqs only while its job runs: it's removed when the job succeeds, and kept, for a look, when it fails (the job's next attempt starts it afresh).
+The `find_intersecting_snps.log` has everything `wasp_donor.sh prepare` writes (the chromosome check, `samtools`, `find_intersecting_snps.py`), the `filter_remapped_reads.log` everything `finish` writes (`filter_remapped_reads.py`, `samtools`, the stats); a failed step ends its log with the command that failed. The donor's folder in `work_dir` (`<work_dir><modality>/<pool>/<final_donor>/`) holds the large intermediate bams and fastqs from its `prepare` job until its `finish` job succeeds, which removes it: `intersect/` (`prepare`'s files), `remapped.bam`, and `remap/` (STAR's own files, removed when STAR succeeds). A failed job's files are kept, for a look: its next try starts its own part afresh (`prepare` the whole folder, the remap job `remap/`), and the jobs before it aren't rerun.
 
 The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs; for ATAC also `wasp_kept` (after WASP, before removing duplicates) and `duplicates_removed`, so `removed` splits into WASP's part and the duplicates'. Counts are reads, or pairs for paired-end bams (ATAC, or cDNA with `paired_end: true`).
 

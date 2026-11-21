@@ -411,9 +411,39 @@ def donor_logs(config, modality: str) -> dict:
 
 
 def work_dir(config, modality: str) -> str:
-    """Per-donor scratch dir (template), removed when the job ends."""
+    """Per-donor scratch dir (template): made by the donor's prepare job,
+    kept between its jobs, removed when its finish job ends well."""
     d = wasp_config(config).get('work_dir') or 'wasp_tmp/'
     return f"{d if d.endswith('/') else d + '/'}{modality}/{{pool}}/{{final_donor}}/"
+
+
+def intersect_paths(config, modality: str, paired: bool) -> dict:
+    """Outputs of a donor's 'wasp_prepare_*' job (helper_sh_scripts/wasp_donor.sh
+    prepare; templates, in the work dir): the reads over SNPs, as a bam (for
+    filter_remapped_reads.py) and as the fastqs to remap, and the others."""
+    d = f"{work_dir(config, modality)}intersect/"
+    out = {'to_remap': f"{d}to.remap.bam", 'keep': f"{d}keep.bam"}
+    if paired:
+        out.update(fq1=f"{d}remap.fq1.gz", fq2=f"{d}remap.fq2.gz")
+    else:
+        out['fq'] = f"{d}remap.fq.gz"
+    return out
+
+
+def remap_fastqs(config, modality: str, paired: bool) -> list:
+    """The fastqs the remap job reads (fq1 fq2, or fq)."""
+    return [p for k, p in intersect_paths(config, modality, paired).items() if k.startswith('fq')]
+
+
+def remapped_bam(config, modality: str) -> str:
+    """Output of a donor's remap job (template, in the work dir)."""
+    return f"{work_dir(config, modality)}remapped.bam"
+
+
+def remap_scratch(config, modality: str) -> str:
+    """The aligner's own files of a remap job (template): cleared when it
+    starts, removed when it ends well, kept when it fails."""
+    return f"{work_dir(config, modality)}remap/"
 
 
 def modality_dir(config, modality: str) -> str:

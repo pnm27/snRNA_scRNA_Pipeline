@@ -8,7 +8,7 @@
 # setup: printf "pool\tSubj_ID\tbarcodes\nsamp1\tD1\tAAAC-1\n" > projdir/inp_split_filt_bams/final/external_labels.tsv
 # setup: printf "pool\tdonor\tsample\nsamp1\tD1\tG1\nsamp1\tD2\tG2\n" > wasp_samples.tsv
 # donors: D1 D2
-# expect: check_external_barcodes check_barcodes_atac split_bams split_bams_atac wasp_remap_rna wasp_remap_atac
+# expect: check_external_barcodes check_barcodes_atac split_bams split_bams_atac wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_prepare_atac wasp_remap_atac wasp_finish_atac
 # path: split_bams_temp/samp1/samp1_ATAC_filt.bam root/samp1/atac.bam projdir/wasp_bams/ATAC/samp1/D2.after_wasp.bam
 workflow:
   aligner: cellranger_arc

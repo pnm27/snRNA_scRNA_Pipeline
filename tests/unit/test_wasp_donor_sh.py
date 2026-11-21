@@ -15,7 +15,11 @@ case "$*" in
     [[ $FAIL == contigs ]] && { echo "no chromosome in common" >&2; exit 1; }; exit 0 ;;
   *find_intersecting_snps.py*)
     echo "KEEP reads:"
-    [[ $FAIL == intersect ]] && { echo "Traceback: KeyError" >&2; exit 1; }; exit 0 ;;
+    [[ $FAIL == intersect ]] && { echo "Traceback: KeyError" >&2; exit 1; }
+    # its files, named after the bam
+    out=""; for a in "$@"; do [[ $prev == --output_dir ]] && out=$a; prev=$a; done
+    for f in keep.bam to.remap.bam remap.fq1.gz remap.fq2.gz; do echo "$f" > "$out/D1.$f"; done
+    exit 0 ;;
   *filter_remapped_reads.py*)
     echo "keep reads: 10"
     [[ $FAIL == filter ]] && { echo "Traceback: IOError" >&2; exit 1; }; exit 0 ;;
@@ -56,6 +60,18 @@ def finish(tmp_path, env, fail=""):
          "--pool", "P1", "--donor", "D1", "--sample", "G1", "--modality", "cDNA",
          "--stats", str(tmp_path / "stats.tsv")],
         env=dict(env, FAIL=fail), capture_output=True, text=True)
+
+
+def test_prepare_fixed_names(tmp_path, env):
+    # a leftover of an earlier try is cleared
+    (tmp_path / "work" / "remap").mkdir(parents=True)
+    out = prepare(tmp_path, env)
+    assert out.returncode == 0, out.stderr
+    intersect = tmp_path / "work" / "intersect"
+    assert sorted(p.name for p in intersect.iterdir()) == [
+        "keep.bam", "remap.fq1.gz", "remap.fq2.gz", "to.remap.bam"]
+    assert (intersect / "keep.bam").read_text() == "keep.bam\n"
+    assert not (tmp_path / "work" / "remap").exists()
 
 
 def test_prepare_logs(tmp_path, env):

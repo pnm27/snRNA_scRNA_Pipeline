@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# The steps of a donor bam's WASP job that are the same for every modality
-# (rules/wasp/rna.smk, rules/wasp/atac.smk); only the remapping between
-# them differs (STAR, bwa-mem). As github.com/bmvdgeijn/WASP's mapping
+# The steps of a donor bam's WASP filtering that are the same for every
+# modality, each its own job (rules wasp_prepare_* and wasp_finish_*, in
+# rules/wasp/common.smk); only the remapping between them differs (its own
+# job: STAR, bwa-mem; rules/wasp/rna.smk, atac.smk), so a failed step is
+# rerun alone. As github.com/bmvdgeijn/WASP's mapping
 # pipeline; its scripts are in $WASP_HOME (the WASP env module), run with
 # that module's python, through helper_py_scripts/wasp_run.py (newer numpy).
 #
-#   prepare  the bam and the genotypes have chromosomes in common; the
-#            reads over the donor's SNPs (to remap, as <prefix>.remap.fq*.gz)
-#            and the others (<prefix>.keep.bam), with <prefix> =
-#            <work>/<bam name without .bam>
-#   finish   keeps the remapped reads that map back to the same place,
-#            merged with the others, sorted and indexed; optionally without
-#            the reads marked as duplicates (0x400); flagstats and the
-#            donor's stats row; removes <work>
+#   prepare  (re)makes <work>; the bam and the genotypes have chromosomes
+#            in common; the reads over the donor's SNPs (<work>/intersect/:
+#            to.remap.bam, and to remap remap.fq1.gz remap.fq2.gz, or
+#            remap.fq.gz) and the others (keep.bam)
+#   finish   keeps the remapped reads (--remapped) that map back to the
+#            same place, merged with the others, sorted and indexed;
+#            optionally without the reads marked as duplicates (0x400);
+#            flagstats and the donor's stats row; removes <work>
 #
 # Everything a step writes to stderr goes to its log (prepare: --log, the
 # find_intersecting_snps.py log; finish: --filter_log, after
@@ -68,7 +70,8 @@ while [[ $# -gt 0 ]]; do
         *) echo "wasp_donor.sh: unknown option $1" >&2; exit 1 ;;
     esac
 done
-prefix="${work}/$(basename "${bam}" .bam)"
+work=${work%/}
+intersect="${work}/intersect"
 
 # The step's stderr to its log (started empty); the job's stderr (fd 3) gets
 # a line on failure
@@ -82,8 +85,9 @@ log_to() {
 case ${cmd} in
 prepare)
     log_to "${log}"
+    # A new start: nothing left of an earlier try of this donor
     rm -rf "${work}"
-    mkdir -p "${work}"
+    mkdir -p "${intersect}"
     # One genotype sample ID per line (find_intersecting_snps.py's --samples)
     # shellcheck disable=SC2086
     printf '%s\n' ${samples} > "${work}/samples.txt"
@@ -100,16 +104,23 @@ prepare)
     python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/find_intersecting_snps.py" ${paired:+--is_paired_end} \
         --is_sorted --snp_index "${snp_index}" --snp_tab "${snp_tab}" \
         --haplotype "${haps}" --samples "${work}/samples.txt" \
-        --output_dir "${work}" "${bam}" >&2
+        --output_dir "${intersect}" "${bam}" >&2
+    # Its files are named after the bam (<name>.keep.bam, ...): fixed names,
+    # the next jobs' inputs
+    name=$(basename "${bam}" .bam)
+    for f in "${intersect}/${name}".*; do
+        [[ -e ${f} ]] || continue
+        mv "${f}" "${intersect}/${f#"${intersect}/${name}."}"
+    done
     ;;
 
 finish)
     log_to "${filter_log}"
     # Keep the reads that map back to the same place, with those over no SNP
-    python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/filter_remapped_reads.py" "${prefix}.to.remap.bam" \
+    python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/filter_remapped_reads.py" "${intersect}/to.remap.bam" \
         "${remapped}" "${work}/remap.keep.bam" >&2
     samtools merge -f -@ "${threads}" "${work}/merged.bam" \
-        "${prefix}.keep.bam" "${work}/remap.keep.bam"
+        "${intersect}/keep.bam" "${work}/remap.keep.bam"
     if [[ -n ${drop_duplicates} ]]; then
         # Duplicates as marked by the aligner (cellranger-arc: per cell barcode)
         samtools sort -@ "${threads}" -T "${work}/sort" -o "${work}/sorted.bam" "${work}/merged.bam"

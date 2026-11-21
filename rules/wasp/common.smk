@@ -2,20 +2,29 @@
 # wasp' for bams listed in the samples table): what every modality shares.
 # See lib/wasp.py and docs/source/sub_workflows.md.
 #
-#   common.smk  genotypes (snp2h5), input checks, the run's stats, and the
-#               input functions of the per-donor jobs
+#   common.smk  genotypes (snp2h5), input checks, the run's stats, the
+#               per-donor prepare and finish jobs, and their input functions
 #   rna.smk     cDNA (sc/snRNA-seq, multiome GEX): STAR remapping
-#   atac.smk    ATAC (multiome ATAC, scATAC): bwa-mem remapping, duplicates
-#               marked by cellranger-arc removed
+#   atac.smk    ATAC (multiome ATAC, scATAC): bwa-mem remapping
 #
 # A pipeline of one modality includes common.smk and its own file. Per donor
 # bam, as github.com/bmvdgeijn/WASP's mapping pipeline:
 # find_intersecting_snps.py (reads over the donor's SNPs, the --samples IDs
 # of the samples table), remapping of those reads with the alleles swapped,
 # filter_remapped_reads.py (keeps the reads that map back to the same
-# place), merged with the reads over no SNP (helper_sh_scripts/wasp_donor.sh
-# runs all but the remapping). WASP comes from its env module
-# ('references: tools: wasp'), whose scripts are in $WASP_HOME.
+# place), merged with the reads over no SNP. Three jobs per donor bam, so a
+# failed one is rerun alone (the files the next one reads are kept):
+#
+#   wasp_prepare_<rna|atac>  wasp_donor.sh prepare: chromosome names,
+#                            find_intersecting_snps.py
+#   wasp_remap_<rna|atac>    the remapping (rna.smk, atac.smk)
+#   wasp_finish_<rna|atac>   wasp_donor.sh finish: filter_remapped_reads.py,
+#                            merge, sort, duplicates (ATAC), index, flagstat,
+#                            stats; removes the donor's work dir
+#
+# The files between them are temp() in the donor's work dir ('work_dir').
+# WASP comes from its env module ('references: tools: wasp'), whose scripts
+# are in $WASP_HOME.
 #
 # At most 'wasp_slots' jobs at a time (each holds one): the temporary bams
 # are large, e.g. --resources wasp_slots=100.
@@ -23,10 +32,11 @@
 from lib.wasp import (
     samples_table, starts_at_wasp, select_donors, missing_bams, table_row, donor_of,
     donor_paths, donor_logs, work_dir, run_outputs, modality_dir, checked_inputs,
+    intersect_paths, remap_fastqs, remapped_bam, remap_scratch,
     genotype_files, genotype_sets, vcf_sets, vcf_files, converted_dir,
     wasp_config, sample_names, H5_FILES,
 )
-from lib.wasp_modality import paired_end
+from lib.wasp_modality import paired_end, drop_duplicates
 from lib.utils import split_bams_fold
 
 ALL_TOOLS = config['references']['tools']
@@ -117,6 +127,97 @@ def wasp_donors(modality: str) -> list:
 def wasp_donor_stats(wildcards) -> list:
     stats = donor_paths(config, wildcards.modality)['stats']
     return [stats.format(pool=p, final_donor=f) for p, d, f in wasp_donors(wildcards.modality)]
+
+
+# The per-donor jobs before and after the remapping, one rule of each per
+# modality ---------------------------------------------------------------
+WASP_RULE_SUFFIX = {'cDNA': 'rna', 'ATAC': 'atac'}
+
+for _modality, _suffix in WASP_RULE_SUFFIX.items():
+    _paired = paired_end(config, _modality)
+
+    # Reads over the donor's SNPs (to remap) and the others
+    rule:
+        name: f"wasp_prepare_{_suffix}"
+
+        input:
+            unpack(partial(wasp_input_bam, modality=_modality)),
+            unpack(partial(wasp_genotype_files, modality=_modality)),
+            checked = checked_inputs(config),
+
+        output:
+            **{k: temp(p) for k, p in intersect_paths(config, _modality, _paired).items()}
+
+        params:
+            **wasp_samples_param(_modality),
+
+        log:
+            donor_logs(config, _modality)['intersect']
+
+        resources:
+            **get_resources(f"wasp_prepare_{_suffix}"),
+            wasp_slots = 1,
+
+        envmodules:
+            *WASP_MODULES,
+            "samtools",
+
+        shell:
+            r"""
+            bash helper_sh_scripts/wasp_donor.sh prepare --work {params.work} --bam {input.bam} \
+                --samples {params.samples:q} --snp_index {input.snp_index} \
+                --snp_tab {input.snp_tab} --haps {input.haps} {params.paired} \
+                --log {log}
+            """
+
+    # The remapped reads that map back to the same place, with the others
+    rule:
+        name: f"wasp_finish_{_suffix}"
+
+        input:
+            unpack(partial(wasp_input_bam, modality=_modality)),
+            to_remap = intersect_paths(config, _modality, _paired)['to_remap'],
+            keep = intersect_paths(config, _modality, _paired)['keep'],
+            remapped = remapped_bam(config, _modality),
+
+        output:
+            **donor_paths(config, _modality)
+
+        params:
+            **wasp_samples_param(_modality),
+            # the prepare job's log, which the stats read
+            intersect_log = (lambda m: lambda wc: donor_logs(config, m)['intersect'].format(
+                pool=wc.pool, final_donor=wc.final_donor))(_modality),
+            # ATAC: the flagstat before the duplicates are removed, and removing them
+            flagstat_wasp = lambda wc, output: (
+                f"--flagstat_wasp {output.flagstat_wasp}" if 'flagstat_wasp' in output.keys() else ""),
+            drop_duplicates = (
+                "--drop_duplicates" if _modality == 'ATAC' and drop_duplicates(config) else ""),
+            modality = _modality,
+            threads = lambda wc, resources: resources.cpus_per_task,
+
+        log:
+            donor_logs(config, _modality)['filter']
+
+        resources:
+            **get_resources(f"wasp_finish_{_suffix}"),
+            wasp_slots = 1,
+
+        envmodules:
+            *WASP_MODULES,
+            "samtools",
+
+        shell:
+            r"""
+            bash helper_sh_scripts/wasp_donor.sh finish --work {params.work} --bam {input.bam} \
+                --remapped {input.remapped} --out {output.bam} \
+                --threads {params.threads} --filter_log {log} \
+                --intersect_log {params.intersect_log} --flagstat_before {output.flagstat_before} \
+                --flagstat_after {output.flagstat_after} {params.flagstat_wasp} \
+                {params.drop_duplicates} {params.paired} \
+                --pool {wildcards.pool} --donor {params.donor} --final_donor {wildcards.final_donor} \
+                --sample {params.sample_ids:q} --modality {params.modality} --stats {output.stats}
+            """
 
 
 # Genotype sets given as per-chromosome VCFs: WASP's h5 files, once per set.
