@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """What WASP does differently per modality (see lib/wasp.py).
 
-  cDNA  'modules: wasp: rna': STAR remapping (genome, gtf), paired_end
-        (false for 10x 3', where only R2 has the cDNA); duplicates kept
-        (rules/wasp/rna.smk)
+  cDNA  'modules: wasp: rna': STAR remapping (genome, gtf; the STAR module
+        'references: tools: wasp_star'), paired_end (false for 10x 3', where
+        only R2 has the cDNA); duplicates kept (rules/wasp/rna.smk)
   ATAC  'modules: wasp: atac': bwa-mem remapping (bwa_index, as
         cellranger-arc), always paired-end; with 'drop_duplicates: marked'
         the reads cellranger-arc marked as duplicates (flag 0x400, per cell
@@ -13,7 +13,7 @@ A pipeline of one modality (e.g. sc/snRNA-seq only) needs only its own
 part of this module, rules/wasp/common.smk and its rules/wasp/<modality>.smk.
 """
 
-from .wasp import wasp_config, starts_at_wasp
+from .wasp import wasp_config, starts_at_wasp, _warn
 
 
 def rna_config(config) -> dict:
@@ -58,6 +58,29 @@ def remap_reference(config) -> tuple:
         raise ValueError(f"Unrecognised aligner: {aligner}")
     genome = mods[section]['ref']['genome']
     return f"{genome.rstrip('/')}/star", r.get('gtf')
+
+
+def remap_star_module(config) -> str:
+    """Env module of the STAR that remaps the cDNA: 'references: tools:
+    wasp_star', else the aligner's 'star'.
+
+    A STAR index loads only in a STAR compatible with the one that built it,
+    so the remap's STAR is set apart from the aligner's: e.g. the 'star'
+    folder of a cellranger / cellranger-arc reference (the default remap
+    genome with those aligners) was built by that cellranger's STAR. Using
+    'star' for it gives a warning.
+    """
+    tools = (config.get('references') or {}).get('tools') or {}
+    if tools.get('wasp_star'):
+        return tools['wasp_star']
+    aligner = str((config.get('workflow') or {}).get('aligner')).lower()
+    if (aligner in ('cellranger', 'cellranger_arc') and not starts_at_wasp(config)
+            and not (rna_config(config).get('remap') or {}).get('genome')):
+        _warn(f"'references: tools: wasp_star' isn't set: the WASP cDNA remap loads "
+              f"the {aligner} reference's STAR index with 'star' ({tools.get('star')}). "
+              "If STAR refuses it (\"Genome version ... is INCOMPATIBLE\"), set wasp_star "
+              "to a STAR module that can read that index")
+    return tools.get('star')
 
 
 # ATAC ---------------------------------------------------------------------

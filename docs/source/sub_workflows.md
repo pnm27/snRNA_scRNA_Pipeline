@@ -405,7 +405,7 @@ modules:
       remap:
         genome: null         # STAR index; null: the aligner's reference (start: wasp: required)
         gtf: null            # null: STARsolo's genome_pick gtf when the genome is the aligner's
-        extra_params: null   # more STAR options
+        extra_params: null   # more STAR options (the STAR module: references: tools: wasp_star, null: star)
       paired_end: false      # true for paired-end GEX reads; 10x 3': false
     atac:                    # ATAC bams (multiome)
       remap:

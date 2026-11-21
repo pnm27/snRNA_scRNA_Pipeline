@@ -349,6 +349,8 @@ def added_since(cfg) -> dict:
             new['modules.split_bams.split_by.external'] = external_labels_block()
         if not get('references.tools.wasp')[1]:
             new['references.tools.wasp'] = WASP_MODULE
+        if not get('references.tools.wasp_star')[1]:
+            new['references.tools.wasp_star'] = None
         if not get('modules.wasp')[1]:
             new['modules.wasp'] = wasp_block()
     ext, _ = get('modules.split_bams.split_by.external')
@@ -503,6 +505,7 @@ def derived(old) -> dict:
     # The WASP stage, added since (unused unless 'until: wasp')
     if whole_config(old):
         new['references.tools.wasp'] = WASP_MODULE
+        new['references.tools.wasp_star'] = None
         new['modules.wasp'] = wasp_block()
         new['modules.split_bams.modalities'] = modalities_seq()
     # Keys added to a whole swap correction block since (see

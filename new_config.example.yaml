@@ -73,6 +73,7 @@ references:
     cellranger_arc: cellranger-arc/2.0.2
     cellranger: cellranger/8.0.1
     wasp: wasp/2021-04  # env module of WASP (sets WASP_HOME), for until: wasp
+    wasp_star: null  # STAR module of WASP's cDNA remap, one that can read its index; null: star
 
 # What to run: the aligner, the first stage ('start') and the last ('until')
 workflow:

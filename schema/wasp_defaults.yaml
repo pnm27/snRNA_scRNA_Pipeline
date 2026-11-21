@@ -9,6 +9,7 @@
 #   references:
 #     tools:
 #       wasp: wasp/2021-04            # env module that sets $WASP_HOME
+#       wasp_star: star/2.7.10a       # STAR module of the cDNA remap (its index's); null: star
 #   modules:
 #     wasp:
 #       samples: wasp_samples.tsv     # pool, donor, bam[, final_donor, vcfID, bai, modality, genotype_set]

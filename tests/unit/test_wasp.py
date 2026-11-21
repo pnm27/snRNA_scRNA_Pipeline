@@ -350,6 +350,30 @@ def test_remap_reference():
         wasp_modality.remap_reference(c)
 
 
+def test_remap_star_module(capsys, monkeypatch):
+    monkeypatch.setattr(wasp, '_WARNED', set())
+    c = config()
+    c['references'] = {'tools': {'star': 'star/2.7.10a'}}
+    # STARsolo: the aligner's STAR, no warning
+    assert wasp_modality.remap_star_module(c) == 'star/2.7.10a'
+    assert capsys.readouterr().err == ""
+    # cellranger-arc's own STAR index with the aligner's STAR: a warning
+    c['workflow']['aligner'] = 'cellranger_arc'
+    assert wasp_modality.remap_star_module(c) == 'star/2.7.10a'
+    assert "'references: tools: wasp_star' isn't set" in capsys.readouterr().err
+    # set apart: used, no warning
+    c['references']['tools']['wasp_star'] = 'star/2.7.2b'
+    assert wasp_modality.remap_star_module(c) == 'star/2.7.2b'
+    assert capsys.readouterr().err == ""
+    # a genome of its own: no warning
+    monkeypatch.setattr(wasp, '_WARNED', set())
+    c = config(rna={'remap': {'genome': 'mine'}})
+    c['workflow']['aligner'] = 'cellranger'
+    c['references'] = {'tools': {'star': 'star/2.7.10a'}}
+    assert wasp_modality.remap_star_module(c) == 'star/2.7.10a'
+    assert capsys.readouterr().err == ""
+
+
 def test_atac_settings():
     c = config()
     assert wasp_modality.paired_end(c, 'ATAC') and not wasp_modality.paired_end(c, 'cDNA')

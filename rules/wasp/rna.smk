@@ -1,9 +1,10 @@
 # WASP of the cDNA bams (sc/snRNA-seq, the RNA part of multiome): the
-# reads over SNPs are remapped with STAR; duplicates are kept. Needs
+# reads over SNPs are remapped with STAR (module 'references: tools:
+# wasp_star', else 'star'); duplicates are kept. Needs
 # rules/wasp/common.smk. Settings: 'modules: wasp: rna'
 # (lib/wasp_modality.py).
 
-from lib.wasp_modality import remap_reference, rna_config
+from lib.wasp_modality import remap_reference, rna_config, remap_star_module
 
 
 rule wasp_remap_rna:
@@ -36,7 +37,7 @@ rule wasp_remap_rna:
 
     envmodules:
         *WASP_MODULES,
-        config['references']['tools']['star'],
+        remap_star_module(config),  # references: tools: wasp_star, else star
         "samtools",
 
     shell:

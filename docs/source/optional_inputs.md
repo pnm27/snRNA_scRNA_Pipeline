@@ -326,7 +326,7 @@ modules:
 
 The references the reads over SNPs are remapped to. They must be those the bams were aligned to.
 
-- **cDNA:** `modules: wasp: rna: remap`: the STAR index (`genome`) and, optionally, the GTF (`gtf`). After `split_bams`, `null` takes the aligner's reference: STARsolo's `genome_pick`, or the `star` folder of the cellranger / cellranger-arc reference; the latter may need a STAR index rebuilt for a newer STAR (see [config caveats](config_caveats.md)).
+- **cDNA:** `modules: wasp: rna: remap`: the STAR index (`genome`) and, optionally, the GTF (`gtf`). After `split_bams`, `null` takes the aligner's reference: STARsolo's `genome_pick`, or the `star` folder of the cellranger / cellranger-arc reference. The STAR that remaps is its own env module, `references: tools: wasp_star` (`null`: `star`, the aligner's), since an index loads only in a STAR compatible with the one that built it: a cellranger / cellranger-arc reference's `star` folder was built by that cellranger's STAR, so set `wasp_star` to a STAR that reads it (without it, those aligners give a warning), or rebuild the index (see [config caveats](config_caveats.md)).
 - **ATAC:** `modules: wasp: atac: remap: bwa_index`: the bwa-indexed fasta. After `split_bams`, `null` takes the cellranger-arc reference's `fasta/genome.fa` (`cellranger-arc mkref` indexes it for bwa).
 - **With `start: wasp`:** each modality of the samples table needs its own (`genome` for cDNA rows, `bwa_index` for ATAC rows).
 

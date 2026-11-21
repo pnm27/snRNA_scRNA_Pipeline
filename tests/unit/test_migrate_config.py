@@ -29,6 +29,7 @@ EXAMPLE = os.path.join(REPO, "new_config.example.yaml")
 # The WASP stage's keys, added to whole configs with the example's values
 WASP_NEW_KEYS = {
     'references.tools.wasp': 'wasp/2021-04',
+    'references.tools.wasp_star': None,
     'modules.wasp': yaml.safe_load(open(EXAMPLE))['modules']['wasp'],
     # (with ATAC WASP: split bams of each modality)
     'modules.split_bams.modalities': ['cDNA'],
@@ -293,6 +294,7 @@ def test_new_layout_update():
     y = yaml_rt()
     cfg = y.load(text)
     del cfg['references']['tools']['wasp']
+    del cfg['references']['tools']['wasp_star']
     del cfg['modules']['wasp']
     del cfg['modules']['split_bams']['split_by']['external']
     out = io.StringIO()

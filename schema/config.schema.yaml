@@ -56,6 +56,12 @@ properties:
             - 'null'
             default: null
             description: "Env module of WASP (github.com/bmvdgeijn/WASP) for 'workflow: until: wasp', e.g. wasp/2021-04 (as new_config.example.yaml and migrate_config.py): it sets WASP_HOME, where its scripts are (mapping/find_intersecting_snps.py, mapping/filter_remapped_reads.py, snp2h5/snp2h5), with a python that has PyTables"
+          wasp_star:
+            type:
+            - string
+            - 'null'
+            default: null
+            description: "Env module of the STAR that remaps the cDNA reads over SNPs in WASP (rule wasp_remap_rna), e.g. star/2.7.10a; null: 'star', the aligner's. Set apart since a STAR index loads only in a STAR compatible with the one that built it: e.g. the remap genome's default with cellranger / cellranger-arc is the 'star' folder of their reference, built by that cellranger's STAR (null then gives a warning)"
         required:
         - star
         - featuremap_script

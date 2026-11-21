@@ -4,6 +4,7 @@
 # donors: D1 D2
 # expect: bamfilt_by_CB split_bams wasp_remap_rna wasp_stats
 # path: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam projdir/wasp_bams/cDNA/P1/D2.after_wasp.bam
+# says: 'references: tools: wasp_star' isn't set
 workflow:
   aligner: cellranger_arc
   start: align
