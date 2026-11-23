@@ -1,0 +1,26 @@
+# A later batch into a wasp_dir whose stats an earlier batch made: its donors
+# are still run (each donor's outputs are targets, not only the stats, which
+# exist), and the stats remade
+# standalone:
+# setup: rm projdir/fastq_files.txt
+# setup: mkdir -p bams/P1 bams/P2 geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: for d in P1/D1 P2/D3; do touch bams/$d.bam bams/$d.bam.bai; done
+# setup: printf "pool\tdonor\tsample\tbam\nP1\tD1\tG1\tbams/P1/D1.bam\nP2\tD3\tG3\tbams/P2/D3.bam\n" > wasp_samples.tsv
+# setup: mkdir -p projdir/wasp_bams/cDNA && touch projdir/wasp_bams/checked_inputs.txt projdir/wasp_bams/cDNA/wasp_stats.tsv projdir/wasp_bams/cDNA/wasp_summary.tsv projdir/wasp_bams/cDNA/wasp_plots.pdf
+# expect: wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_stats
+# path: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam projdir/wasp_bams/cDNA/P2/D3.after_wasp.bam
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    rna:
+      remap:
+        genome: star_idx/

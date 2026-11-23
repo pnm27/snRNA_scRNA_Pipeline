@@ -280,6 +280,19 @@ def targets_wasp() -> list:
     return [f for m in modalities for f in run_outputs(config, m).values()]
 
 
+def targets_wasp_donors() -> list:
+    """Every WASP output of each donor bam of this run. The stats alone
+    aren't enough as targets: they're there after the first batch into a
+    wasp_dir (or an earlier run), and Snakemake only looks for the missing
+    outputs of jobs before a file that exists when something else reruns it
+    (the changed set of its inputs, which '--rerun-triggers mtime' ignores)."""
+    from lib.wasp import donor_paths, wasp_modalities
+    return [path.format(pool=pool, final_donor=final)
+            for m in wasp_modalities(config)
+            for pool, _, final in wasp_donors(m)   # rules/wasp/common.smk
+            for path in donor_paths(config, m).values()]
+
+
 STATIC_TARGETS = {
     "align":   targets_align,
     "cellsnp": targets_cellSNP,
@@ -307,6 +320,7 @@ def produce_targets(wildcards) -> list:
 
     if "wasp" in STAGES:
         targets += targets_wasp()
+        targets += targets_wasp_donors()
 
     return targets
 
