@@ -18,6 +18,9 @@ whole config (one with a whole split bams block), 'split_by: external'
 external'), the WASP block 'modules: wasp' and its env module
 'references: tools: wasp' (unused unless 'until: wasp'). A last_step
 naming wasp (e.g. STARsolo_split_bams_wasp) becomes 'until: wasp'.
+Their comments say what the WASP module needs (pysam, PyTables) and that
+the stats of all batches into 'wasp_dir' are a run of their own
+(snakemake --configfile <config> wasp_stats).
 
 A config already in the new layout gets only the keys added since that
 it lacks (e.g. 'modules: wasp', 'split_bams: modalities'), and the WASP
@@ -219,6 +222,10 @@ def external_labels_block() -> CommentedMap:
 
 # Env module of WASP written to 'references: tools: wasp' (as new_config.example.yaml)
 WASP_MODULE = 'wasp/2021-04'
+WASP_MODULE_COMMENT = ("env module of WASP (sets WASP_HOME; its python has pysam, "
+                       "PyTables), for until: wasp")
+# The stats of all batches into wasp_dir are a run of their own (rule wasp_stats)
+WASP_DIR_COMMENT = "outputs; stats of all batches: snakemake --configfile <config> wasp_stats"
 
 SAMPLE_NAMES_COMMENT = ("pool[, donor], final_donor, vcfID: final donors and genotype ID(s) "
                         "of pools (or donors)")
@@ -303,6 +310,7 @@ def wasp_block() -> CommentedMap:
         'genotypes')
     set_eol(wasp, 'rna', RNA_COMMENT)
     set_eol(wasp, 'atac', ATAC_COMMENT)
+    set_eol(wasp, 'wasp_dir', WASP_DIR_COMMENT)
     wasp.yaml_add_eol_comment(
         'large temporary files, removed per job', 'work_dir')
     return wasp
@@ -470,6 +478,8 @@ def update(cfg) -> dict:
         tail = take_tail(parent)
         set_path(cfg, path, value)
         put_tail(parent, tail)
+        if path == 'references.tools.wasp':
+            set_eol(parent, 'wasp', WASP_MODULE_COMMENT)
     return new
 
 
@@ -637,6 +647,8 @@ def migrate(old):
         set_path(new, path, value)
         if path == 'modules.split_bams.modalities':
             set_eol(get_node(new, path.rsplit('.', 1)[0]), 'modalities', MODALITIES_COMMENT)
+        if path == 'references.tools.wasp':
+            set_eol(get_node(new, 'references.tools'), 'wasp', WASP_MODULE_COMMENT)
 
     for path, order in ORDER.items():
         node = new

@@ -2,7 +2,8 @@
 # wasp' for bams listed in the samples table): what every modality shares.
 # See lib/wasp.py and docs/source/sub_workflows.md.
 #
-#   common.smk  genotypes (snp2h5), input checks, the run's stats, the
+#   common.smk  genotypes (snp2h5), input checks, the stats (a run of
+#               their own: target wasp_stats_all), the
 #               per-donor prepare and finish jobs, and their input functions
 #   rna.smk     cDNA (sc/snRNA-seq, multiome GEX): STAR remapping
 #   atac.smk    ATAC (multiome ATAC, scATAC): bwa-mem remapping
@@ -31,12 +32,14 @@
 
 from lib.wasp import (
     samples_table, starts_at_wasp, select_donors, missing_bams, table_row, donor_of,
-    donor_paths, donor_logs, work_dir, run_outputs, modality_dir, checked_inputs,
+    donor_paths, donor_logs, work_dir, modality_dir, checked_inputs,
     intersect_paths, remap_fastqs, remapped_bam, remap_scratch,
     genotype_files, genotype_sets, vcf_sets, vcf_files, converted_dir,
     wasp_config, sample_names, H5_FILES,
 )
 from lib.wasp_modality import paired_end, drop_duplicates
+import glob as _glob
+import os
 from lib.utils import split_bams_fold
 
 ALL_TOOLS = config['references']['tools']
@@ -124,9 +127,18 @@ def wasp_donors(modality: str) -> list:
     return out
 
 
-def wasp_donor_stats(wildcards) -> list:
-    stats = donor_paths(config, wildcards.modality)['stats']
-    return [stats.format(pool=p, final_donor=f) for p, d, f in wasp_donors(wildcards.modality)]
+# A donor's stats file in a modality's folder (as wasp_stats.py --collect)
+DONOR_STATS_GLOB = os.path.join('*', 'stats', '*.wasp_stats.tsv')
+
+
+def wasp_stats_modalities() -> list:
+    """The modalities of wasp_dir that have donors' stats files."""
+    out = [m for m in WASP_RULE_SUFFIX
+           if _glob.glob(os.path.join(modality_dir(config, m), DONOR_STATS_GLOB))]
+    if not out:
+        raise ValueError(f"No donor's WASP stats in any modality's folder of "
+                         f"{modality_dir(config, '')} ({DONOR_STATS_GLOB}): run the donors first")
+    return out
 
 
 # The per-donor jobs before and after the remapping, one rule of each per
@@ -285,20 +297,27 @@ rule wasp_check_inputs:
         """
 
 
-# The stats of a modality, at the end of the run: one row per donor bam, a
-# summary and plots. Its inputs are this run's donors (so it waits for them),
-# but it joins every donor's stats file in the modality's folder: donors run
-# as batches (one samples table, then another, into the same wasp_dir) all
-# end up in it, a later batch doesn't overwrite it with only its own
+# The stats of each modality: one row per donor bam, a summary and plots
+# (<wasp_dir><modality>/wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf), of
+# every donor's stats file in the modality's folder (all batches run into
+# the wasp_dir). Not a target of the donors' runs, so a batch neither remakes
+# them nor waits for them: a run of their own, after (or between) the
+# batches, with any batch's config (only its wasp_dir is used):
+#
+#   snakemake --configfile <config> wasp_stats --use-conda ...
+#
+# No files declared: the donors' stats files would tie it to their jobs
+# (whose donors another batch's samples table doesn't have), and it runs
+# every time it's asked for. Each file is written to a temporary name and
+# moved into place. Each run has its own log, named by its start time
+# (<wasp_dir>logs/wasp_stats.<YYYYmmdd_HHMMSS>.log): when, the pipeline's
+# commit and config, and each modality's stats files used (with their
+# times) and files written
 rule wasp_stats:
-    input:
-        wasp_donor_stats
-
-    output:
-        **run_outputs(config, '{modality}')
-
     params:
-        folder = lambda wc: modality_dir(config, wc.modality),
+        folders = lambda wc: " ".join(modality_dir(config, m) for m in wasp_stats_modalities()),
+        log_dir = f"{modality_dir(config, '')}logs/",
+        configfiles = " ".join(os.path.abspath(f) for f in workflow.overwrite_configfiles) or "none",
 
     resources:
         **get_resources("wasp_stats")
@@ -307,6 +326,18 @@ rule wasp_stats:
 
     shell:
         r"""
-        python3 helper_py_scripts/wasp_stats.py summarize {input} --collect {params.folder} \
-            --stats {output.stats} --summary {output.summary} --plots {output.plots}
+        set -euo pipefail
+        mkdir -p {params.log_dir}
+        log={params.log_dir}wasp_stats.$(date +%Y%m%d_%H%M%S).log
+        echo "wasp_stats: log $log" >&2
+        exec 3>&2 >>"$log" 2>&1
+        trap 'echo "wasp_stats: failed (exit $?), see $log" >&3' ERR
+        echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] wasp_stats started on $(hostname)"
+        echo "pipeline: $PWD, commit $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+        echo "config: {params.configfiles}"
+        for folder in {params.folders}; do
+            echo "== $folder"
+            python3 helper_py_scripts/wasp_stats.py summarize --collect "$folder" -o "$folder"                 --log "$log"
+        done
+        echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] wasp_stats done"
         """

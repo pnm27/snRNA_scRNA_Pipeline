@@ -361,3 +361,12 @@ def test_new_layout_update_min_barcode_fraction():
     new = yaml.safe_load(after)
     assert new['modules']['split_bams']['split_by']['external']['min_barcode_fraction'] == 0.02
     assert migrate_text(after) == after
+
+
+def test_wasp_comments():
+    """The WASP block's notes: the stats run at wasp_dir, the module's needs."""
+    text = migrate_text(load(OLD_EXAMPLE))
+    assert "wasp_dir: projdir/wasp_bams/  # outputs; stats of all batches: " \
+           "snakemake --configfile <config> wasp_stats" in text
+    assert "wasp: wasp/2021-04  # env module of WASP (sets WASP_HOME; its python has " \
+           "pysam, PyTables)" in text

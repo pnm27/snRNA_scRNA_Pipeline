@@ -10,11 +10,15 @@
 #   prepare  (re)makes <work>; the bam and the genotypes have chromosomes
 #            in common; the reads over the donor's SNPs (<work>/intersect/:
 #            to.remap.bam, and to remap remap.fq1.gz remap.fq2.gz, or
-#            remap.fq.gz) and the others (keep.bam)
+#            remap.fq.gz) and the others (keep.bam); the genotype files
+#            for finish (<work>/snp_files.txt)
 #   finish   keeps the remapped reads (--remapped) that map back to the
 #            same place, merged with the others, sorted and indexed;
 #            optionally without the reads marked as duplicates (0x400);
-#            flagstats and the donor's stats row; removes <work>
+#            flagstats; the ref and alt alleles of the reads over SNPs
+#            before and after WASP's test (wasp_allele_counts.py; if it
+#            fails, a warning and the stats are without them); the donor's
+#            stats row; removes <work>
 #
 # Everything a step writes to stderr goes to its log (prepare: --log, the
 # find_intersecting_snps.py log; finish: --filter_log, after
@@ -91,6 +95,8 @@ prepare)
     # One genotype sample ID per line (find_intersecting_snps.py's --samples)
     # shellcheck disable=SC2086
     printf '%s\n' ${samples} > "${work}/samples.txt"
+    # The genotype files, which finish reads too (its allele counts)
+    printf '%s\n' "${snp_index}" "${snp_tab}" "${haps}" > "${work}/snp_files.txt"
 
     # The bam and the genotypes have chromosomes in common (as WASP matches
     # them: as they are, or with the 'chr' prefix added or stripped)
@@ -119,6 +125,24 @@ finish)
     # Keep the reads that map back to the same place, with those over no SNP
     python "${REPO}/helper_py_scripts/wasp_run.py" "${WASP_HOME}/mapping/filter_remapped_reads.py" "${intersect}/to.remap.bam" \
         "${remapped}" "${work}/remap.keep.bam" >&2
+    # The ref and alt alleles of the reads over SNPs, before and after the
+    # test (the genotype files as prepare had them; a prepare of an older
+    # script has none: the stats are without them)
+    counts_arg=()
+    if [[ -s ${work}/snp_files.txt ]]; then
+        mapfile -t snp_files < "${work}/snp_files.txt"
+        if python "${REPO}/helper_py_scripts/wasp_allele_counts.py" \
+            --snp_index "${snp_files[0]}" --snp_tab "${snp_files[1]}" --haps "${snp_files[2]}" \
+            --samples "${work}/samples.txt" ${drop_duplicates:+--skip_duplicates} \
+            --bam "before=${intersect}/to.remap.bam" --bam "after=${work}/remap.keep.bam" \
+            -o "${work}/allele_counts.tsv" >&2; then
+            counts_arg=(--allele_counts "${work}/allele_counts.tsv")
+        else
+            echo "WARNING: wasp_allele_counts.py failed: the stats are without the allele counts" >&2
+        fi
+    else
+        echo "WARNING: no ${work}/snp_files.txt (prepare of an older wasp_donor.sh): the stats are without the allele counts" >&2
+    fi
     samtools merge -f -@ "${threads}" "${work}/merged.bam" \
         "${intersect}/keep.bam" "${work}/remap.keep.bam"
     if [[ -n ${drop_duplicates} ]]; then
@@ -145,7 +169,8 @@ finish)
         --donor "${donor}" --final_donor "${final_donor:-${donor}}" --modality "${modality}" --sample "${sample}" \
         ${paired:+--paired_end} --intersect_log "${intersect_log}" \
         --filter_log "${filter_log}" --flagstat_before "${flagstat_before}" \
-        --flagstat_after "${flagstat_after}" ${wasp_arg[@]+"${wasp_arg[@]}"} -o "${stats}"
+        --flagstat_after "${flagstat_after}" ${wasp_arg[@]+"${wasp_arg[@]}"} \
+        ${counts_arg[@]+"${counts_arg[@]}"} -o "${stats}"
     rm -rf "${work}"
     ;;
 

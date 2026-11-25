@@ -23,6 +23,11 @@ case "$*" in
   *filter_remapped_reads.py*)
     echo "keep reads: 10"
     [[ $FAIL == filter ]] && { echo "Traceback: IOError" >&2; exit 1; }; exit 0 ;;
+  *wasp_allele_counts.py*)
+    echo "$*" > "$WASP_HOME/counts_args"
+    [[ $FAIL == counts ]] && { echo "Traceback: counts" >&2; exit 1; }; exit 0 ;;
+  *wasp_stats.py*)
+    echo "$*" > "$WASP_HOME/stats_args"; exit 0 ;;
 esac
 """
 SAMTOOLS = """#!/usr/bin/env bash
@@ -107,3 +112,42 @@ def test_finish_failure_in_log(tmp_path, env, fail, message):
     assert "wasp_donor.sh finish: failed" in log and "filter.log" in out.stderr
     # the work dir is kept when a step fails
     assert (tmp_path / "work").is_dir()
+
+
+def test_prepare_keeps_genotype_files(tmp_path, env):
+    out = prepare(tmp_path, env)
+    assert out.returncode == 0, out.stderr
+    assert (tmp_path / "work" / "snp_files.txt").read_text().split() == ["i.h5", "t.h5", "h.h5"]
+
+
+def with_snp_files(tmp_path):
+    (tmp_path / "work").mkdir(exist_ok=True)
+    (tmp_path / "work" / "snp_files.txt").write_text("i.h5\nt.h5\nh.h5\n")
+
+
+def test_finish_counts_alleles(tmp_path, env):
+    with_snp_files(tmp_path)
+    out = finish(tmp_path, env)
+    assert out.returncode == 0, out.stderr
+    counts = (tmp_path / "counts_args").read_text()
+    work = tmp_path / "work"
+    assert "--snp_index i.h5 --snp_tab t.h5 --haps h.h5" in counts
+    assert f"--bam before={work}/intersect/to.remap.bam --bam after={work}/remap.keep.bam" in counts
+    assert "--skip_duplicates" not in counts
+    assert f"--allele_counts {work}/allele_counts.tsv" in (tmp_path / "stats_args").read_text()
+    assert not work.exists()
+
+
+def test_finish_without_allele_counts(tmp_path, env):
+    # their script fails: a warning, the rest as before
+    with_snp_files(tmp_path)
+    out = finish(tmp_path, env, "counts")
+    assert out.returncode == 0, out.stderr
+    log = (tmp_path / "filter.log").read_text()
+    assert "Traceback: counts" in log and "WARNING: wasp_allele_counts.py failed" in log
+    assert "--allele_counts" not in (tmp_path / "stats_args").read_text()
+    # a prepare of an older script: no genotype files
+    out = finish(tmp_path, env)
+    assert out.returncode == 0, out.stderr
+    assert "no " in (tmp_path / "filter.log").read_text()
+    assert "--allele_counts" not in (tmp_path / "stats_args").read_text()

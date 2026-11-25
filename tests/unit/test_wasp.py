@@ -499,6 +499,52 @@ def test_parse_duplicates(tmp_path):
     assert row['summary_duplicates_removed_pct'] == pytest.approx(1.8)
 
 
+ALLELES = "label\tref\talt\tother\tref_fraction\tsnps\nbefore\t60\t40\t2\t0.6\t50\nafter\t45\t36\t1\t0.555556\t48\n"
+
+
+def test_parse_allele_counts(tmp_path):
+    (tmp_path / "alleles").write_text(ALLELES)
+    row = wasp_stats.parse(**logs(tmp_path), allele_counts_path=str(tmp_path / "alleles"))
+    assert row['alleles_before_ref'] == 60 and row['alleles_after_snps'] == 48
+    assert row['summary_ref_allele_fraction_tested'] == pytest.approx(0.6)
+    assert row['summary_ref_allele_fraction_final'] == pytest.approx(45 / 81)
+    assert row['summary_ref_allele_fraction_change'] == pytest.approx(45 / 81 - 0.6)
+    assert row['summary_ref_removed_pct'] == pytest.approx(25)
+    assert row['summary_alt_removed_pct'] == pytest.approx(10)
+    # the fraction of every read over a SNP, from the log, as before
+    assert row['summary_ref_allele_fraction'] == pytest.approx(0.7)
+
+
+def test_parse_without_allele_counts(tmp_path):
+    row = wasp_stats.parse(**logs(tmp_path))
+    assert not any(k.startswith('alleles_') or k.endswith('_tested') for k in row)
+
+
+def test_kde():
+    np = pytest.importorskip('numpy')
+    grid = np.linspace(-5, 6, 2001)
+    dens = wasp_stats.kde([0.0, 1.0, 1.5], grid)
+    trapezoid = getattr(np, 'trapezoid', None) or np.trapz
+    assert trapezoid(dens, grid) == pytest.approx(1, abs=1e-3)
+    assert wasp_stats.kde([1.0], grid) is None and wasp_stats.kde([2.0, 2.0], grid) is None
+
+
+def test_plots_with_allele_counts(tmp_path):
+    pytest.importorskip('matplotlib')
+    (tmp_path / "alleles").write_text(ALLELES)
+    files = logs(tmp_path)
+    rows = []
+    for d in ['D1', 'D2', 'D3']:
+        rows.append({'pool': 'P1', 'donor': d,
+                     **wasp_stats.parse(**files, allele_counts_path=str(tmp_path / "alleles"))})
+    # a donor of an older run, without them
+    rows.append({'pool': 'P1', 'donor': 'D4', **wasp_stats.parse(**files)})
+    wasp_stats.write_rows(rows, list(rows[0]), str(tmp_path / "s.tsv"))
+    wasp_stats.summarize([str(tmp_path / "s.tsv")], plots=str(tmp_path / "p.pdf"))
+    assert (tmp_path / "p.pdf").read_bytes().count(b'/Type /Page\n') + \
+        (tmp_path / "p.pdf").read_bytes().count(b'/Type /Page ') >= 1
+
+
 def test_plots(tmp_path):
     pytest.importorskip('matplotlib')
     files = logs(tmp_path)

@@ -371,21 +371,56 @@ python helper_py_scripts/wasp_run.py $WASP_HOME/mapping/find_intersecting_snps.p
     --samples samples.txt --output_dir work/P1_D1 D1.bam
 ```
 
+### wasp_allele_counts.py: ref and alt alleles before and after WASP
+
+Run by `wasp_donor.sh finish` with the WASP module's python (it needs pysam
+and PyTables, as WASP's own scripts do). Counts the
+bases of a donor's reads over its heterozygous SNPs (WASP's own
+`snptable.py` and genotype h5 files, as `find_intersecting_snps.py` counts
+them) in each bam given: `to.remap.bam` (the reads WASP tested) and
+`remap.keep.bam` (those it kept, which are all the reads over SNPs in the
+bam after WASP). `--skip_duplicates` leaves out reads marked 0x400 (ATAC).
+One row per bam: ref, alt, other, ref_fraction, snps.
+
+```bash
+python helper_py_scripts/wasp_allele_counts.py --snp_index geno/snp_index.h5 \
+    --snp_tab geno/snp_tab.h5 --haps geno/haps.h5 --samples samples.txt \
+    --bam before=to.remap.bam --bam after=remap.keep.bam -o D1.allele_counts.tsv
+```
+
 ### wasp_stats.py: WASP's statistics
 
 `parse` (run by `wasp_donor.sh finish`) makes a donor bam's stats row from its
-logs and flagstats; `summarize` (rule `wasp_stats`) joins a modality's rows
+logs and flagstats; `summarize` (rule `wasp_stats`, a run of its own) joins a modality's rows
 into a table, a summary and plots. `--collect <folder>` adds every donor's
 stats file in a modality's folder (`<pool>/stats/*.wasp_stats.tsv`), so the
 donors of all batches run into it are joined.
 
+With `--allele_counts` (the table of `wasp_allele_counts.py`), the row has
+the reference allele fraction of the reads WASP tested, before
+(`summary_ref_allele_fraction_tested`) and after its test
+(`summary_ref_allele_fraction_final`, `_change`), and the % of ref and of alt
+bases it removed (`summary_ref_removed_pct`, `summary_alt_removed_pct`).
+`summary_ref_allele_fraction` is of every read over a SNP before WASP (its
+log). The plots: histograms with their kernel density of the `summary_*`
+columns that tell donors apart (`PLOT_COLUMNS`: `input`,
+`sent_for_remapping_pct`, `failed_remap_pct`, `removed_pct`,
+`duplicates_removed_pct`, `ref_allele_fraction`; the rest are counts of
+these or their complements, and stay in the table and summary), then a page
+of the fraction before vs after, per donor bam. `--log FILE` appends the
+time, every stats file joined (with its modification time) and the files
+written (rule `wasp_stats` gives each run its own,
+`<wasp_dir>logs/wasp_stats.<YYYYmmdd_HHMMSS>.log`).
+
 ```bash
 python helper_py_scripts/wasp_stats.py parse --pool P1 --donor D1 --final_donor D1 --modality cDNA \
     --sample G1 --intersect_log D1.intersect.log --filter_log D1.filter.log \
-    --flagstat_before D1.before.flagstat --flagstat_after D1.after.flagstat -o D1.stats.tsv
+    --flagstat_before D1.before.flagstat --flagstat_after D1.after.flagstat -o D1.stats.tsv \
+    --allele_counts D1.allele_counts.tsv
 python helper_py_scripts/wasp_stats.py summarize P1/stats/*.stats.tsv \
     --stats wasp_stats.tsv --summary wasp_summary.tsv --plots wasp_plots.pdf
-python helper_py_scripts/wasp_stats.py summarize --collect wasp_bams/cDNA -o wasp_bams/cDNA
+python helper_py_scripts/wasp_stats.py summarize --collect wasp_bams/cDNA -o wasp_bams/cDNA \
+    --log wasp_bams/logs/wasp_stats.$(date +%Y%m%d_%H%M%S).log
 ```
 
 ## Python modules

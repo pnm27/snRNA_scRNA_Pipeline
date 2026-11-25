@@ -1,0 +1,26 @@
+# The WASP stats as a run of their own (target wasp_stats), after the
+# batches: every donor's stats file in each modality's folder, whatever
+# the config's samples table lists (here a donor whose bam isn't there);
+# no donor job
+# standalone:
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tsample\tbam\nP9\tD9\tG9\tbams/P9/D9.bam\n" > wasp_samples.tsv
+# setup: for d in P1/stats/D1 P2/stats/D3; do mkdir -p projdir/wasp_bams/cDNA/$(dirname $d) && touch projdir/wasp_bams/cDNA/$d.wasp_stats.tsv; done
+# targets: wasp_stats
+# expect: wasp_stats
+# absent: wasp_check_inputs wasp_prepare_rna wasp_remap_rna wasp_finish_rna
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    rna:
+      remap:
+        genome: star_idx/

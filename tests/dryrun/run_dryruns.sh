@@ -19,6 +19,8 @@
 #   # nopath: <text>                      (must not be in any input/output path)
 #   # fails: <text>                       (snakemake must fail with this text)
 #   # says: <text>                        (must be in the output, e.g. a warning)
+#   # targets: <target ...>             (what to run, else the default
+#                                          'all'; e.g. a rule name)
 #   # setup: <shell command>              (run in the scenario's project first,
 #                                          e.g. to create existing bams)
 #   # standalone:                       (the scenario is the whole config, as
@@ -69,7 +71,10 @@ mkdir -p outdir && touch outdir/reference.vcf.gz
 
 
 dry_run() {
-    PYTHONPATH="${REPO}" ${SNAKEMAKE} -s "${SNAKEFILE}" -n \
+    local targets
+    read -r -a targets <<< "$(sed -n 's/^# targets: *//p' "$1")"
+    # (the targets first: --configfile takes all the words after it)
+    PYTHONPATH="${REPO}" ${SNAKEMAKE} ${targets[@]+"${targets[@]}"} -s "${SNAKEFILE}" -n \
         --configfile new_config.yaml "$1" 2>&1
 }
 

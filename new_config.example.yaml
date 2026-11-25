@@ -72,7 +72,7 @@ references:
     star_snv_aware: star/2.7.10a
     cellranger_arc: cellranger-arc/2.0.2
     cellranger: cellranger/8.0.1
-    wasp: wasp/2021-04  # env module of WASP (sets WASP_HOME), for until: wasp
+    wasp: wasp/2021-04  # env module of WASP (sets WASP_HOME; its python has pysam, PyTables), for until: wasp
     wasp_star: null  # STAR module of WASP's cDNA remap, one that can read its index; null: star
 
 # What to run: the aligner, the first stage ('start') and the last ('until')
@@ -407,7 +407,7 @@ modules:
         bwa_index: null  # bwa-indexed fasta; null: cellranger-arc's fasta/genome.fa (start: wasp: required)
         extra_params: "-M -Y"
       drop_duplicates: marked  # marked: remove the aligner's duplicates (0x400) after WASP; or none
-    wasp_dir: projdir/wasp_bams/
+    wasp_dir: projdir/wasp_bams/  # outputs; stats of all batches: snakemake --configfile <config> wasp_stats
     work_dir: projdir/wasp_tmp/  # large temporary files, removed per job
   deeptools:
     fold_struct: "Sample-{pool}"

@@ -7,7 +7,8 @@
 # setup: for d in P1/D1 P2/D3; do touch bams/$d.bam bams/$d.bam.bai; done
 # setup: printf "pool\tdonor\tsample\tbam\nP1\tD1\tG1\tbams/P1/D1.bam\nP2\tD3\tG3\tbams/P2/D3.bam\n" > wasp_samples.tsv
 # setup: mkdir -p projdir/wasp_bams/cDNA && touch projdir/wasp_bams/checked_inputs.txt projdir/wasp_bams/cDNA/wasp_stats.tsv projdir/wasp_bams/cDNA/wasp_summary.tsv projdir/wasp_bams/cDNA/wasp_plots.pdf
-# expect: wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_stats
+# expect: wasp_prepare_rna wasp_remap_rna wasp_finish_rna
+# absent: wasp_stats
 # path: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam projdir/wasp_bams/cDNA/P2/D3.after_wasp.bam
 workflow:
   start: wasp

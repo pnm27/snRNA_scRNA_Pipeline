@@ -394,7 +394,7 @@ Named sets (e.g. one for WGS, one for SNP arrays), each:
 ```yaml
 references:
   tools:
-    wasp: wasp/2021-04     # env module that sets WASP_HOME (its scripts are under it)
+    wasp: wasp/2021-04     # env module that sets WASP_HOME (its scripts are under it); its python needs pysam and PyTables
 modules:
   wasp:
     samples: wasp_samples.tsv
@@ -426,10 +426,16 @@ The remap references must be those the bams were aligned to: by default STARsolo
 3. Per donor bam, three jobs (cDNA as `genesis_wasp.R`, ATAC as `psychad_multiome_wasp.R`), so a failed one is rerun alone, on the files the one before left:
    - `wasp_prepare_rna` / `wasp_prepare_atac`: `helper_sh_scripts/wasp_donor.sh prepare` checks that the bam and the genotypes have chromosomes in common (as WASP matches them: as they are, or with the `chr` prefix added or stripped) and runs `find_intersecting_snps.py` (`--is_paired_end` for ATAC).
    - `wasp_remap_rna` / `wasp_remap_atac`: the remapping, STAR (two-pass, `NH HI AS nM NM MD`; a gzipped gtf is unzipped into its scratch dir for it and removed when STAR is done or fails), or `bwa mem` of the pairs.
-   - `wasp_finish_rna` / `wasp_finish_atac`: `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, and the donor's stats, then removes the donor's work dir.
+   - `wasp_finish_rna` / `wasp_finish_atac`: `wasp_donor.sh finish` runs `filter_remapped_reads.py`, `samtools merge` with the reads over no SNP, `sort` (ATAC: then `samtools view -F 0x400`), `index`, `flagstat` of the bam before and after, the ref and alt alleles of the reads WASP tested, before and after its test (`wasp_allele_counts.py`, over the donor's heterozygous SNPs as WASP reads them; ATAC without the duplicates), and the donor's stats, then removes the donor's work dir. If the allele counts fail, the log has a warning and the stats are without them; the bam is made as before.
 
    The files between them are Snakemake `temp()` files in the donor's work dir: the fastqs are removed once remapped, the rest when `finish` is done; a run after the outputs are made doesn't make them again. Each job holds one `wasp_slots`: `workflow_profile/config.yaml` sets `resources: wasp_slots=100`, so at most 100 run at a time, of both modalities and all three steps (`--resources wasp_slots=N` on the command line to change it). A donor's work dir stays between its jobs, also while it holds no slot, so `work_dir` needs room for the donors waiting between steps too. By default (`execution: resources`): `wasp_prepare_*` 1 core, 16 GB, 12 hours; `wasp_remap_rna` 6 cores, 18 GB, a day; `wasp_remap_atac` 8 cores, 24 GB, a day; `wasp_finish_*` 4 cores, 12 GB, 12 hours.
-4. `wasp_stats`, per modality, at the end of the run: the table, summary and plots of every donor in the modality's folder (`wasp_stats.py summarize --collect <wasp_dir><modality>/`). It waits for this run's donors but joins all donors' stats files there, so donors run in batches (one samples table, then the next, into the same `wasp_dir`) all end up in it: a later batch doesn't overwrite it with only its own donors. It's remade when a run adds or redoes donors; its files are written to a temporary name and moved into place, so a reader never sees half of one.
+4. `wasp_stats`, a run of its own (not part of the donors' runs): the table, summary and plots of every donor in each modality's folder (`wasp_stats.py summarize --collect <wasp_dir><modality>/`), whatever the config's samples table lists, so donors run in batches (one samples table, then the next, into the same `wasp_dir`) all end up in it. A batch's run neither makes nor waits for them. Run it after the batches (or between them, to look) with any batch's config; only its `wasp_dir` is used:
+
+   ```bash
+   snakemake --configfile wasp_config.batchN.yaml wasp_stats --profile <cluster profile> --workflow-profile workflow_profile --use-conda
+   ```
+
+   It declares no files (the donors' stats files would tie it to their jobs, whose donors another batch's table doesn't have), so it runs every time it's asked for. Its files are written to a temporary name and moved into place, so a reader never sees half of one. Each run writes its own log, named by its start time (`<wasp_dir>logs/wasp_stats.<YYYYmmdd_HHMMSS>.log`, so earlier runs' logs are kept): when it started and ended, the host, the pipeline's folder and commit, the config file(s), and per modality every donor stats file it joined (with its modification time) and the files it wrote. Snakemake's job log says where it is, and so does a failure.
 
 Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the split bams, so the same final donor in several pools isn't overwritten (`<final_donor>` is the swap-corrected donor, see the samples table):
 
@@ -440,12 +446,16 @@ Outputs, under `wasp_dir`, per modality (`cDNA/`, `ATAC/`) and pool, as the spli
 <modality>/<pool>/logs/<final_donor>.find_intersecting_snps.log, .star_remap.log (ATAC: .bwa_remap.log), .filter_remapped_reads.log
 <modality>/wasp_stats.tsv     one row per donor bam in the folder, all batches (pool, donor, final_donor, modality, sample: the vcfIDs, ...)
 <modality>/wasp_summary.tsv   mean, median, sd, min, max of each summary_* column
-<modality>/wasp_plots.pdf     histograms of the summary_* columns
+<modality>/wasp_plots.pdf     page 1: histograms (with a kernel density) of the columns that tell donors
+                              apart: input, sent_for_remapping_pct, failed_remap_pct, removed_pct,
+                              duplicates_removed_pct (ATAC), ref_allele_fraction; page 2: the reference
+                              allele fraction of the reads WASP tested, before vs after its test
+logs/wasp_stats.<YYYYmmdd_HHMMSS>.log   each wasp_stats run: when, commit, config, the files joined and written
 ```
 
 The `find_intersecting_snps.log` has everything `wasp_donor.sh prepare` writes (the chromosome check, `samtools`, `find_intersecting_snps.py`), the `filter_remapped_reads.log` everything `finish` writes (`filter_remapped_reads.py`, `samtools`, the stats); a failed step ends its log with the command that failed. The donor's folder in `work_dir` (`<work_dir><modality>/<pool>/<final_donor>/`) holds the large intermediate bams and fastqs from its `prepare` job until its `finish` job succeeds, which removes it: `intersect/` (`prepare`'s files), `remapped.bam`, and `remap/` (STAR's own files, removed when STAR succeeds). A failed job's files are kept, for a look: its next try starts its own part afresh (`prepare` the whole folder, the remap job `remap/`), and the jobs before it aren't rerun.
 
-The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs; for ATAC also `wasp_kept` (after WASP, before removing duplicates) and `duplicates_removed`, so `removed` splits into WASP's part and the duplicates'. Counts are reads, or pairs for paired-end bams (ATAC, or cDNA with `paired_end: true`).
+The stats (`helper_py_scripts/wasp_stats.py`, as in `psychad_multiome_wasp.R`) are the reasons reads were set aside by `find_intersecting_snps.py` (`intersect_discard_*`), its kept and to-remap reads and SNP allele matches, `filter_remapped_reads.py`'s counts (`filter_*`), and the flagstat counts. The `summary_*` columns: `input` (mapped reads before), `no_snp_kept`, `sent_for_remapping`, `failed_remap` (bad + discarded), `final` (mapped reads after), `removed`, each also as `_pct` of `input`, and `ref_allele_fraction` of the reads over SNPs; with the allele counts (`alleles_before_*`, `alleles_after_*`) the same fraction for the reads WASP tested, before (`ref_allele_fraction_tested`) and after its test (`ref_allele_fraction_final`, `ref_allele_fraction_change`), and the % of ref and of alt bases it removed (`ref_removed_pct`, `alt_removed_pct`); for ATAC also `wasp_kept` (after WASP, before removing duplicates) and `duplicates_removed`, so `removed` splits into WASP's part and the duplicates'. Counts are reads, or pairs for paired-end bams (ATAC, or cDNA with `paired_end: true`).
 
 ### Usage
 
@@ -496,22 +506,24 @@ snakemake --configfile wasp_config.batch1.yaml --profile <cluster profile> --wor
 snakemake --configfile wasp_config.batch2.yaml --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
 ```
 
-Each batch's run ends with `wasp_stats`, which joins every donor's stats file in `<wasp_dir><modality>/`, so after the last batch `wasp_stats.tsv`, `wasp_summary.tsv` and `wasp_plots.pdf` have the donors of all batches. Their rows are sorted by pool, then final donor. Only the batch's own donors are run, and earlier batches' outputs are left as they are. A batch's donors are run even though the stats files are already there from an earlier batch (also with `--rerun-triggers mtime`): every donor's bam, index and stats are targets of the run, not only the stats files. Put each donor in one batch only. A donor listed again in a later batch is redone, because that batch's input check (`checked_inputs.txt`, one per `wasp_dir`) is remade and every donor job of the batch depends on it. Its new stats replace the old ones, so it's still one row.
+Only the batch's own donors are run, and earlier batches' outputs are left as they are. Every donor's bam, index and stats are targets of the run, so a batch's donors are run whatever is already in `wasp_dir` (also with `--rerun-triggers mtime`). Put each donor in one batch only. A donor listed again in a later batch is redone, because that batch's input check (`checked_inputs.txt`, one per `wasp_dir`) is remade and every donor job of the batch depends on it. Its new stats replace the old ones, so it's still one row.
 
-- Batches run one after another in the same folder. Snakemake locks a run's files, and batches share `checked_inputs.txt` and the stats files, so a second run there at once stops with "Directory cannot be locked". A run from another folder at the same time is safe for the stats files, which are written under a temporary name and then moved into place, but whichever run ends last decides what the shared stats files hold. After the batches, remake them so they have every donor:
+The batches don't make the joined stats (`wasp_stats.tsv`, `wasp_summary.tsv`, `wasp_plots.pdf`). Make them after the last batch, or at any time to look at the donors done so far, with any batch's config:
 
-  ```bash
-  snakemake --configfile wasp_config.batchN.yaml --forcerun wasp_stats --profile <cluster profile> --workflow-profile workflow_profile --use-envmodules --use-conda
-  ```
+```bash
+snakemake --configfile wasp_config.batchN.yaml wasp_stats --profile <cluster profile> --workflow-profile workflow_profile --use-conda
+```
 
-  Or remake them by hand, without Snakemake:
+It joins every donor's stats file in `<wasp_dir><modality>/` of each modality, rows sorted by pool, then final donor, and runs each time it's asked for. Or make them by hand, without Snakemake:
 
-  ```bash
-  python3 helper_py_scripts/wasp_stats.py summarize --collect /path/to/wasp_bams/cDNA -o /path/to/wasp_bams/cDNA
-  ```
+```bash
+python3 helper_py_scripts/wasp_stats.py summarize --collect /path/to/wasp_bams/cDNA -o /path/to/wasp_bams/cDNA
+```
 
+- Batches run one after another in the same folder. Snakemake locks a run's files, and batches share `checked_inputs.txt`, so a second run there at once stops with "Directory cannot be locked". The `wasp_stats` run declares no files, so it can run while a batch does; it joins the donors whose stats are there when it starts.
 - To leave a donor out of the stats (a failed or dropped sample), remove its `<modality>/<pool>/stats/<final_donor>.wasp_stats.tsv` and remake them as above. Any stats file in that folder is counted, including ones from earlier runs.
-- A run with nothing new to do doesn't remake the stats; `--forcerun wasp_stats` does.
+- To see which donors a set of stats came from, read that run's log in `<wasp_dir>logs/`.
+- Donors finished before the allele counts were added have no `ref_allele_fraction_tested` / `_final`: their rows show `NA` there and the before/after page of `wasp_plots.pdf` leaves them out.
 
 Several datasets in one table, summary and plots:
 

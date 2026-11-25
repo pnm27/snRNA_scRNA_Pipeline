@@ -2,7 +2,7 @@
 # setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
 # setup: printf "pool\tdonor\tsample\nP1\tD1\tG1\nP1\tD2\tG2\n" > wasp_samples.tsv
 # donors: D1 D2
-# expect: bamfilt_by_CB split_bams wasp_prepare_rna wasp_remap_rna wasp_finish_rna wasp_stats
+# expect: bamfilt_by_CB split_bams wasp_prepare_rna wasp_remap_rna wasp_finish_rna
 # path: projdir/wasp_bams/cDNA/P1/D1.after_wasp.bam projdir/wasp_bams/cDNA/P1/D2.after_wasp.bam
 # says: 'references: tools: wasp_star' isn't set
 workflow:

@@ -1,0 +1,21 @@
+# The WASP stats run before any donor is done: stops, saying so
+# standalone:
+# setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
+# setup: printf "pool\tdonor\tsample\tbam\nP9\tD9\tG9\tbams/P9/D9.bam\n" > wasp_samples.tsv
+# targets: wasp_stats
+# fails: No donor's WASP stats in any modality's folder
+workflow:
+  start: wasp
+  until: wasp
+references:
+  tools:
+    wasp: wasp/0.3.4
+modules:
+  wasp:
+    samples: wasp_samples.tsv
+    genotypes:
+      main:
+        h5_dir: geno/
+    rna:
+      remap:
+        genome: star_idx/

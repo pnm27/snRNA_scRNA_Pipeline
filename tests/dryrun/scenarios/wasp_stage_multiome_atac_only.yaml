@@ -3,7 +3,7 @@
 # setup: mkdir -p geno && touch geno/snp_index.h5 geno/snp_tab.h5 geno/haps.h5
 # setup: printf "pool\tdonor\tsample\tmodality\nP1\tD1\tG1\tATAC\nP1\tD2\tG2\tATAC\n" > wasp_samples.tsv
 # donors: D1 D2
-# expect: split_bams split_bams_atac wasp_prepare_atac wasp_remap_atac wasp_finish_atac wasp_stats
+# expect: split_bams split_bams_atac wasp_prepare_atac wasp_remap_atac wasp_finish_atac
 # absent: wasp_prepare_rna wasp_remap_rna wasp_finish_rna
 # path: projdir/wasp_bams/ATAC/P1/D1.after_wasp.bam
 # nopath: projdir/wasp_bams/cDNA/

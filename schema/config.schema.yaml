@@ -993,7 +993,7 @@ properties:
           wasp_dir:
             type: string
             default: projdir/wasp_bams/
-            description: "WASP-filtered bams (<modality>/<pool>/<donor>.after_wasp.bam, modality cDNA or ATAC), their stats and logs, and the run's stats of each modality (<modality>/wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf)"
+            description: "WASP-filtered bams (<modality>/<pool>/<donor>.after_wasp.bam, modality cDNA or ATAC), their stats and logs, and the joined stats of each modality (<modality>/wasp_stats.tsv, wasp_summary.tsv, wasp_plots.pdf; a run of their own: target wasp_stats)"
           work_dir:
             type: string
             default: projdir/wasp_tmp/

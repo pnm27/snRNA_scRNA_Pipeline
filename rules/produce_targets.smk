@@ -267,9 +267,10 @@ def targets_identify_swaps() -> list:
 
 
 def targets_wasp() -> list:
-    """The run's WASP stats of each modality (they need every donor's WASP
-    bam of that modality)."""
-    from lib.wasp import run_outputs, wasp_modalities
+    """Checks each WASP modality's remapping reference now (not per job).
+    The stats aren't targets of the run: a run of their own (rule
+    wasp_stats_all), so a batch doesn't remake them."""
+    from lib.wasp import wasp_modalities
     from lib.wasp_modality import remap_reference, bwa_index
     modalities = wasp_modalities(config)
     # The remapping reference of each modality (errors now, not per job)
@@ -277,15 +278,12 @@ def targets_wasp() -> list:
         remap_reference(config)
     if "ATAC" in modalities:
         bwa_index(config)
-    return [f for m in modalities for f in run_outputs(config, m).values()]
+    return []
 
 
 def targets_wasp_donors() -> list:
-    """Every WASP output of each donor bam of this run. The stats alone
-    aren't enough as targets: they're there after the first batch into a
-    wasp_dir (or an earlier run), and Snakemake only looks for the missing
-    outputs of jobs before a file that exists when something else reruns it
-    (the changed set of its inputs, which '--rerun-triggers mtime' ignores)."""
+    """Every WASP output of each donor bam of this run: the run's targets
+    (the stats are a run of their own, rule wasp_stats_all)."""
     from lib.wasp import donor_paths, wasp_modalities
     return [path.format(pool=pool, final_donor=final)
             for m in wasp_modalities(config)
