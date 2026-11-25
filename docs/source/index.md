@@ -28,6 +28,7 @@ basic_run
 
 sub_workflows
 optional_inputs
+batch_runs
 config_caveats
 ```
 
