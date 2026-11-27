@@ -245,12 +245,12 @@ RESOURCES = {
     # A donor's WASP jobs: prepare (find_intersecting_snps.py, one core),
     # the remapping, finish (filter_remapped_reads.py, samtools merge / sort)
     "wasp_prepare_rna": {
-        "cpus_per_task": 1,
+        "cpus_per_task": 4,
         "mem_mb": {"base": 12000, "step": 8000, "max": 20000},
         "time_min": {"base": 120, "step": 120},
     },
     "wasp_prepare_atac": {
-        "cpus_per_task": 1,
+        "cpus_per_task": 3,
         "mem_mb": {"base": 12000, "step": 8000, "max": 20000},
         "time_min": {"base": 120, "step": 120},
     },

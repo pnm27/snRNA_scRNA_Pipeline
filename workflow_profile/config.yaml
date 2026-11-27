@@ -25,23 +25,23 @@ set-resources:
   cellranger_arc_count:
     lsf_queue: premium
 
-  wasp_prepare_rna:
-    lsf_queue: premium
+  # wasp_prepare_rna:
+    # lsf_queue: premium
 
-  wasp_prepare_atac:
-    lsf_queue: premium
+  # wasp_prepare_atac:
+    # lsf_queue: premium
 
-  wasp_remap_rna:
-    lsf_queue: premium
+  # wasp_remap_rna:
+    # lsf_queue: premium
 
-  wasp_remap_atac:
-    lsf_queue: premium
+  # wasp_remap_atac:
+    # lsf_queue: premium
 
-  wasp_finish_rna:
-    lsf_queue: premium
+  # wasp_finish_rna:
+    # lsf_queue: premium
 
-  wasp_finish_atac:
-    lsf_queue: premium
+  # wasp_finish_atac:
+    # lsf_queue: premium
 
   wasp_snp2h5:
     lsf_queue: premium

@@ -109,7 +109,8 @@ do
    # Project-based base_filename selection
    # base_filename=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "_" -f5- | rev | sed "s#[aA][tT][aA][cC]-##g" | sed "s#[cC][dD][nN][aA]-##g")
    # base_filename=$(sed "s#NW_#NW-#g" <<< ${base_filename} | sed "s#NY_#NY-#g" | sed "s#_#-#g")
-   base_filename=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "_" -f4- | rev | sed "s#[aA][tT][aA][cC]-##g" | sed "s#[cC][dD][nN][aA]-##g" | sed "s#_#-#g" | sed -- "s#-cDNA##g" )
+   base_filename=$(rev <<< ${l} | cut -d "/" -f1 | cut -d "_" -f4- | rev | sed -E 's/-[cC][dD][nN][aA]-/-/g; s/_[cC][dD][nN][aA]_/_/g; s/-[cC][dD][nN][aA]//g; s/_[cC][dD][nN][aA]//g' | sed -E 's/-[aA][tT][aA][cC]-/-/g; s/_[aA][tT][aA][cC]_/_/g; s/-[aA][tT][aA][cC]//g; s/_[aA][tT][aA][cC]//g' )
+   base_filename=$(sed "s#NW_#NW-#g" <<< ${base_filename} | sed "s#NY_#NY-#g" | sed "s#_#-#g")
 
    # subdir=$(echo ${l} | tr '[:upper:]' '[:lower:]' | grep -q "atac" && echo "ATAC" || echo "cDNA") # OLD STYLE
    subdir=$(echo ${l} | tr '[:upper:]' '[:lower:]') # TEMP Store
